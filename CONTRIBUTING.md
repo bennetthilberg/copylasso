@@ -19,6 +19,14 @@ Thank you for helping build CopyLasso. The project is still in early pre-release
 - Treat new compiler and analyzer warnings as failures.
 - Update public documentation whenever user-visible behavior, requirements, privacy, or limitations change.
 
+Before submitting, run the canonical clean pipeline:
+
+```sh
+./scripts/ci.sh
+```
+
+It lints Swift, resolves dependencies, builds Debug and Universal 2 Release, builds both XCTest bundles, runs unit tests, asserts required build settings, and verifies the Release architectures. Run UI tests separately through Xcode with runnable local signing when the change affects launch or interface behavior.
+
 Some macOS behavior, including real privacy dialogs, global shortcut delivery, visual overlays, display capture, signing, notarization, and Gatekeeper checks, requires manual verification. Separate and automate the testable logic first, then describe the manual procedure and result in the pull request.
 
 ## Original Work and Privacy
@@ -37,5 +45,7 @@ A pull request should explain:
 - any remaining limitation or follow-up work.
 
 Submit only green commits. Reviewers may ask for a change to be split if unrelated work makes the behavior or verification difficult to assess.
+
+Maintainers may temporarily apply the `ci-failure-probe` pull-request label to verify that both CI architectures report a controlled failing unit test. The label must be removed after the red result; removal reruns the same commit without the probe. Do not add a deliberately failing commit for this purpose.
 
 By contributing, you agree that your contribution is licensed under the repository's [MIT License](LICENSE).

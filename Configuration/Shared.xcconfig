@@ -1,0 +1,4 @@
+// Shared, non-secret build configuration.
+// Local.xcconfig is optional and ignored by Git.
+CODE_SIGN_STYLE = Automatic
+#include? "../Local.xcconfig"
