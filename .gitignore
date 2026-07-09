@@ -1,0 +1,72 @@
+# macOS metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+__MACOSX/
+
+# Xcode user state
+xcuserdata/
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+
+# Xcode and Swift build output
+DerivedData/
+build/
+.build/
+*.hmap
+*.ipa
+*.dSYM
+*.dSYM.zip
+*.xcarchive
+*.xcresult
+*.xctestrun
+*.moved-aside
+
+# Exported and packaged applications
+*.app
+*.dmg
+*.pkg
+*.mpkg
+/Archives/
+/ExportedApps/
+/dist/
+
+# Dependency build output
+Carthage/Build/
+.swiftpm/xcode/package.xcworkspace/xcuserdata/
+
+# Local environment and secret-bearing configuration
+.env
+.env.*
+!.env.example
+!.env.sample
+Local.xcconfig
+Secrets.xcconfig
+*.secrets.xcconfig
+
+# Signing material and credentials
+*.cer
+*.crt
+*.der
+*.key
+*.keychain
+*.keychain-db
+*.mobileprovision
+*.p12
+*.p8
+*.pem
+*.pfx
+*.provisionprofile
+
+# Local logs
+*.log
