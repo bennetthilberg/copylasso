@@ -18,7 +18,7 @@ Verified July 9, 2026 on the maintainer workstation:
 
 Apple's current [Xcode support matrix](https://developer.apple.com/support/xcode/) lists Xcode 26.6 as the latest stable release; Xcode 27 is still a beta and is not the project baseline.
 
-CopyLasso itself targets macOS 14 or newer and will produce a Universal 2 Release application containing `arm64` and `x86_64`. Those project build settings are established and tested in later roadmap goals; G01 verifies only the development environment.
+CopyLasso targets macOS 14 or newer and produces a Universal 2 Release application containing `arm64` and `x86_64`. The project, shared scheme, and enforced settings are documented in [Build Configuration](architecture/build-configuration.md).
 
 ## Xcode Setup
 
@@ -59,6 +59,18 @@ Before installing it, confirm that the downloaded certificate is the Apple World
 
 Do not export or commit the Apple Development identity. If the certificate or private key is replaced later, verify the new identity before relying on privacy-permission continuity between development builds.
 
+## Local Project Signing
+
+The tracked `Configuration/Shared.xcconfig` optionally includes an ignored `Local.xcconfig`. Start from the empty example:
+
+```sh
+cp Local.xcconfig.example Local.xcconfig
+```
+
+For normal automatic development signing, set `DEVELOPMENT_TEAM` in the ignored file. Do not print that value into shared logs. Contributors who only need to run the current scaffold may use local ad hoc signing as documented in [Build Configuration](architecture/build-configuration.md); permission-dependent development requires a stable Apple Development identity.
+
+An authorization dialog from `codesign` requests the password of the named keychain, which may differ from the current macOS login password if that password changed without updating the keychain. Do not repeatedly enter credentials, reset a keychain, or delete signing material merely to run the scaffold. Stop the build and use the documented ad hoc configuration until the keychain can be repaired intentionally.
+
 ## Git Identity
 
 Git must have an intentional maintainer identity before creating commits. It may be configured globally or for this repository. Check presence without printing private values into shared logs:
@@ -75,7 +87,7 @@ fi
 
 Do not replace the maintainer's Git identity with a generic automation identity unless the maintainer explicitly requests that change.
 
-## Canonical Verification
+## Canonical Toolchain Verification
 
 Run these checks from the repository root:
 
@@ -111,6 +123,30 @@ fi
 
 The verified G01 environment has one valid Apple Development identity. The certificate and paired private key remain in the login keychain and are not repository artifacts.
 
+## Project Build and Test
+
+The canonical local and GitHub Actions entrypoint is:
+
+```sh
+./scripts/ci.sh
+```
+
+It selects clean DerivedData under `.build`, verifies Xcode 26.6, lints Swift sources, resolves packages, builds Debug, builds the unit and UI test bundles, runs unit tests, asserts the required build settings, builds Universal 2 Release, and verifies both binary slices. It disables code signing and never launches the unsigned UI-test runner.
+
+For interactive verification, open `CopyLasso.xcodeproj`, select the shared `CopyLasso` scheme and **My Mac**, then use:
+
+- **Product > Build** (`Command-B`) for Debug;
+- **Product > Run** (`Command-R`) for the placeholder application; and
+- **Product > Test** (`Command-U`) for the unit and UI suites.
+
+Interactive Run and UI testing require runnable local signing. Keep any team or identity override in ignored `Local.xcconfig`.
+
+## GitHub Actions
+
+`.github/workflows/ci.yml` runs for pull requests targeting `main` and pushes to `main`. It explicitly selects Xcode 26.6 and executes `scripts/ci.sh` on the GitHub-hosted macOS 26 Apple Silicon and Intel runner images. The workflow has read-only repository contents permission, persists no checkout credential, uses no secrets or cache, and bounds concurrent runs and job duration.
+
+The required check names are `build and test (arm64)` and `build and test (x86_64)`. Maintainers can apply the temporary `ci-failure-probe` label to a pull request to compile a controlled unit-test failure into both jobs. Removing the label restores green checks at the same commit. Delete the temporary repository label after verifying both transitions.
+
 ## Tooling Policy
 
 - G01 introduces no Homebrew-only build dependency.
@@ -118,6 +154,6 @@ The verified G01 environment has one valid Apple Development identity. The certi
 - Add external build tools only when a later approved goal has a concrete need and records the version, source, purpose, and license.
 - Keep generated build output, archives, exported applications, signing material, and credentials out of Git.
 
-## G01 Boundary
+## Current Boundary
 
-This environment setup intentionally creates no Xcode project, application source, entitlement, dependency, or build artifact. The project scaffold begins in G03 after the repository foundation in G02 is complete.
+The repository now contains only the buildable application and test scaffold. Menu-bar behavior, global shortcuts, screen capture, OCR, onboarding, settings, login-at-launch behavior, packaging, and release automation remain intentionally unimplemented.

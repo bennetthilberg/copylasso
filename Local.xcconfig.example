@@ -1,0 +1,6 @@
+// Copy this file to Local.xcconfig and set your Apple Developer team.
+DEVELOPMENT_TEAM =
+
+// For scaffold-only ad hoc signing when no unlocked identity is available:
+// CODE_SIGN_STYLE = Manual
+// CODE_SIGN_IDENTITY = -

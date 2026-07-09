@@ -8,3 +8,5 @@ All notable changes to CopyLasso will be documented in this file.
 
 - Initial v0.1 product contract and verified development-environment documentation.
 - Public project overview, contribution guidance, security-reporting policy, privacy policy, and repository hygiene rules.
+- Native SwiftUI Xcode scaffold with shared app, unit-test, and UI-test scheme.
+- Reproducible dual-architecture CI for Debug, XCTest bundles, unit tests, and Universal 2 Release builds.
