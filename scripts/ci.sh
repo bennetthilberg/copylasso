@@ -40,7 +40,9 @@ xcrun swift-format lint --recursive --strict \
     CopyLassoTests \
     CopyLassoUITests
 
-if /usr/bin/grep -Eq 'DEVELOPMENT_TEAM[^=]* = [A-Z0-9]{10};' \
+readonly committed_development_team_pattern='^[[:space:]]*"?DEVELOPMENT_TEAM(\[[^]]+\])?"?[[:space:]]*=[[:space:]]*[A-Z0-9]{10};'
+
+if /usr/bin/grep -Eq "$committed_development_team_pattern" \
     CopyLasso.xcodeproj/project.pbxproj; then
     echo "A concrete Apple development team must not be committed to the Xcode project." >&2
     exit 1
@@ -143,6 +145,18 @@ if [[ ! -x "$release_executable" ]]; then
     echo "Release executable was not produced." >&2
     exit 1
 fi
+
+for release_architecture in arm64 x86_64; do
+    release_module="$derived_data/Build/Products/Release/CopyLasso.swiftmodule/$release_architecture-apple-macos.swiftmodule"
+    if [[ ! -f "$release_module" ]]; then
+        echo "Release Swift module is missing $release_architecture." >&2
+        exit 1
+    fi
+    if /usr/bin/grep -a -q 'ScreenCaptureSpikeModel' "$release_module"; then
+        echo "The Debug-only screen-capture spike was compiled into Release." >&2
+        exit 1
+    fi
+done
 
 readonly release_architectures="$(xcrun lipo -archs "$release_executable")"
 for required_architecture in arm64 x86_64; do
