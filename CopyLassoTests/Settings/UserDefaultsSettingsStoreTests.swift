@@ -9,6 +9,8 @@ final class UserDefaultsSettingsStoreTests: XCTestCase {
     let store = makeStore()
 
     XCTAssertEqual(store.completedOnboardingVersion, 0)
+    XCTAssertFalse(store.hasConfiguredCaptureShortcut)
+    XCTAssertFalse(store.hasConfiguredLaunchAtLogin)
     XCTAssertEqual(store.history, ScreenCapturePermissionHistory())
   }
 
@@ -16,6 +18,8 @@ final class UserDefaultsSettingsStoreTests: XCTestCase {
     let defaults = try makeDefaults()
     var store = UserDefaultsSettingsStore(userDefaults: defaults)
     store.completedOnboardingVersion = 1
+    store.hasConfiguredCaptureShortcut = true
+    store.hasConfiguredLaunchAtLogin = true
     store.history = ScreenCapturePermissionHistory(
       hasRequested: true,
       hasObservedGranted: true
@@ -24,6 +28,8 @@ final class UserDefaultsSettingsStoreTests: XCTestCase {
     store = UserDefaultsSettingsStore(userDefaults: defaults)
 
     XCTAssertEqual(store.completedOnboardingVersion, 1)
+    XCTAssertTrue(store.hasConfiguredCaptureShortcut)
+    XCTAssertTrue(store.hasConfiguredLaunchAtLogin)
     XCTAssertEqual(
       store.history,
       ScreenCapturePermissionHistory(hasRequested: true, hasObservedGranted: true)
@@ -33,6 +39,8 @@ final class UserDefaultsSettingsStoreTests: XCTestCase {
   func testResetRemovesEveryOwnedPreference() throws {
     let store = makeStore()
     store.completedOnboardingVersion = 4
+    store.hasConfiguredCaptureShortcut = true
+    store.hasConfiguredLaunchAtLogin = true
     store.history = ScreenCapturePermissionHistory(
       hasRequested: true,
       hasObservedGranted: true
@@ -41,6 +49,8 @@ final class UserDefaultsSettingsStoreTests: XCTestCase {
     store.reset()
 
     XCTAssertEqual(store.completedOnboardingVersion, 0)
+    XCTAssertFalse(store.hasConfiguredCaptureShortcut)
+    XCTAssertFalse(store.hasConfiguredLaunchAtLogin)
     XCTAssertEqual(store.history, ScreenCapturePermissionHistory())
   }
 

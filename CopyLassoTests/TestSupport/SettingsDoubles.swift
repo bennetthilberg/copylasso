@@ -9,6 +9,8 @@ enum StubSettingsError: Error, Equatable {
 @MainActor
 final class StubAppSettingsStore: AppSettingsStoring {
   var completedOnboardingVersion: Int
+  var hasConfiguredCaptureShortcut = false
+  var hasConfiguredLaunchAtLogin = false
   var history = ScreenCapturePermissionHistory()
   private(set) var resetCallCount = 0
 
@@ -19,6 +21,8 @@ final class StubAppSettingsStore: AppSettingsStoring {
   func reset() {
     resetCallCount += 1
     completedOnboardingVersion = 0
+    hasConfiguredCaptureShortcut = false
+    hasConfiguredLaunchAtLogin = false
     history = ScreenCapturePermissionHistory()
   }
 }

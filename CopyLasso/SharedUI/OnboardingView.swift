@@ -7,7 +7,7 @@ struct OnboardingView: View {
 
   let settingsController: SettingsController
 
-  @State private var draftShortcut: KeyboardShortcuts.Shortcut? = Self.suggestedShortcut
+  @State private var draftShortcut: KeyboardShortcuts.Shortcut? = CaptureShortcutDefaults.suggested
   @State private var launchAtLogin = true
   @State private var didComplete = false
 
@@ -92,7 +92,7 @@ struct OnboardingView: View {
     .padding(28)
     .frame(width: 560, height: 620)
     .onAppear {
-      refreshRecoveryState()
+      prepareForPresentation()
     }
     .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification))
     {
@@ -101,8 +101,8 @@ struct OnboardingView: View {
     }
     .onDisappear {
       if !didComplete {
-        draftShortcut = Self.suggestedShortcut
-        launchAtLogin = true
+        draftShortcut = settingsController.onboardingShortcutDraft
+        launchAtLogin = settingsController.onboardingLaunchAtLoginDraft
         settingsController.onboardingClosed()
       }
     }
@@ -151,8 +151,14 @@ struct OnboardingView: View {
     }
   }
 
-  static var suggestedShortcut: KeyboardShortcuts.Shortcut {
-    KeyboardShortcuts.Shortcut(.two, modifiers: [.control, .shift, .command])
+  private func prepareForPresentation() {
+    didComplete = false
+    settingsController.refreshLaunchAtLoginStatus()
+    draftShortcut = settingsController.onboardingShortcutDraft
+    launchAtLogin = settingsController.onboardingLaunchAtLoginDraft
+    if settingsController.launchAtLoginIssue != nil {
+      launchAtLogin = settingsController.isLaunchAtLoginEnabled
+    }
   }
 }
 

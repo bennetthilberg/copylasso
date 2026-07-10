@@ -35,11 +35,17 @@ struct SettingsView: View {
       }
 
       Section("Shortcut") {
-        KeyboardShortcuts.Recorder("Capture Text", name: .captureText)
-          .accessibilityIdentifier("copylasso.settings.shortcut")
+        KeyboardShortcuts.Recorder(
+          "Capture Text",
+          shortcut: Binding(
+            get: { settingsController.captureShortcut },
+            set: { settingsController.setCaptureShortcut($0) }
+          )
+        )
+        .accessibilityIdentifier("copylasso.settings.shortcut")
         LabeledContent {
           Button("Use Suggested Shortcut") {
-            KeyboardShortcuts.setShortcut(OnboardingView.suggestedShortcut, for: .captureText)
+            settingsController.useSuggestedCaptureShortcut()
           }
           .accessibilityIdentifier("copylasso.settings.use-suggested-shortcut")
         } label: {
@@ -64,6 +70,12 @@ struct SettingsView: View {
           issue: settingsController.launchAtLoginIssue,
           openSystemSettings: settingsController.openLoginItemsSettings
         )
+        if settingsController.launchAtLoginStatus == .requiresApproval {
+          Button("Remove Pending Login Item", role: .destructive) {
+            settingsController.setLaunchAtLoginEnabled(false)
+          }
+          .accessibilityIdentifier("copylasso.settings.remove-pending-login-item")
+        }
       }
 
       Section("Privacy") {

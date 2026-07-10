@@ -252,6 +252,23 @@ final class CopyLassoUITests: XCTestCase {
   }
 
   @MainActor
+  func testSettingsCanRemoveAnApprovalRequiredLoginItem() {
+    let app = completedApp(extraArguments: ["--g10-g11-login-status=requires-approval"])
+    app.launch()
+    defer { app.terminate() }
+
+    openMenu(in: app)
+    menuItem("Settings…", in: app).click()
+
+    let removePending = app.buttons["copylasso.settings.remove-pending-login-item"]
+    XCTAssertTrue(removePending.waitForExistence(timeout: 5))
+    removePending.click()
+    XCTAssertTrue(
+      app.staticTexts["Launch at Login is disabled."].waitForExistence(timeout: 5)
+    )
+  }
+
+  @MainActor
   private func statusItem(in app: XCUIApplication) -> XCUIElement {
     app.menuBars.statusItems["CopyLasso"]
   }
@@ -286,13 +303,14 @@ final class CopyLassoUITests: XCTestCase {
   }
 
   @MainActor
-  private func completedApp() -> XCUIApplication {
+  private func completedApp(extraArguments: [String] = []) -> XCUIApplication {
     let app = XCUIApplication()
-    app.launchArguments = [
-      "--g10-g11-ui-testing",
-      "--g10-g11-reset-settings",
-      "--g10-g11-complete-onboarding",
-    ]
+    app.launchArguments =
+      [
+        "--g10-g11-ui-testing",
+        "--g10-g11-reset-settings",
+        "--g10-g11-complete-onboarding",
+      ] + extraArguments
     return app
   }
 

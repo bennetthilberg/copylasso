@@ -3,6 +3,8 @@ import Foundation
 @MainActor
 protocol AppSettingsStoring: ScreenCapturePermissionHistoryStoring {
   var completedOnboardingVersion: Int { get set }
+  var hasConfiguredCaptureShortcut: Bool { get set }
+  var hasConfiguredLaunchAtLogin: Bool { get set }
 }
 
 @MainActor
@@ -10,6 +12,8 @@ final class UserDefaultsSettingsStore: AppSettingsStoring {
   static let completedOnboardingVersionKey = "onboarding.completedVersion"
 
   private enum Key {
+    static let hasConfiguredCaptureShortcut = "settings.hasConfiguredCaptureShortcut"
+    static let hasConfiguredLaunchAtLogin = "settings.hasConfiguredLaunchAtLogin"
     static let permissionHasRequested = "screenCapturePermission.hasRequested"
     static let permissionHasObservedGranted = "screenCapturePermission.hasObservedGranted"
   }
@@ -22,6 +26,24 @@ final class UserDefaultsSettingsStore: AppSettingsStoring {
     }
     set {
       userDefaults.set(max(0, newValue), forKey: Self.completedOnboardingVersionKey)
+    }
+  }
+
+  var hasConfiguredCaptureShortcut: Bool {
+    get {
+      userDefaults.bool(forKey: Key.hasConfiguredCaptureShortcut)
+    }
+    set {
+      userDefaults.set(newValue, forKey: Key.hasConfiguredCaptureShortcut)
+    }
+  }
+
+  var hasConfiguredLaunchAtLogin: Bool {
+    get {
+      userDefaults.bool(forKey: Key.hasConfiguredLaunchAtLogin)
+    }
+    set {
+      userDefaults.set(newValue, forKey: Key.hasConfiguredLaunchAtLogin)
     }
   }
 
@@ -44,6 +66,8 @@ final class UserDefaultsSettingsStore: AppSettingsStoring {
 
   func reset() {
     userDefaults.removeObject(forKey: Self.completedOnboardingVersionKey)
+    userDefaults.removeObject(forKey: Key.hasConfiguredCaptureShortcut)
+    userDefaults.removeObject(forKey: Key.hasConfiguredLaunchAtLogin)
     userDefaults.removeObject(forKey: Key.permissionHasRequested)
     userDefaults.removeObject(forKey: Key.permissionHasObservedGranted)
   }

@@ -1,7 +1,15 @@
+import AppKit
 import KeyboardShortcuts
 
 extension KeyboardShortcuts.Name {
   static let captureText = Self("captureText")
+}
+
+enum CaptureShortcutDefaults {
+  static let suggested = KeyboardShortcuts.Shortcut(
+    .two,
+    modifiers: [.control, .shift, .command]
+  )
 }
 
 @MainActor

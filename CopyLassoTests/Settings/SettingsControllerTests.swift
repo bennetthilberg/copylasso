@@ -10,6 +10,8 @@ final class SettingsControllerTests: XCTestCase {
     let context = makeContext()
 
     XCTAssertTrue(context.controller.needsOnboarding)
+    XCTAssertEqual(context.controller.onboardingShortcutDraft, suggestedShortcut)
+    XCTAssertTrue(context.controller.onboardingLaunchAtLoginDraft)
     XCTAssertTrue(context.controller.takeInitialOnboardingPresentationRequest())
     XCTAssertFalse(context.controller.takeInitialOnboardingPresentationRequest())
     XCTAssertTrue(context.controller.requestOnboardingFromSettings())
@@ -148,6 +150,38 @@ final class SettingsControllerTests: XCTestCase {
     XCTAssertFalse(context.controller.setLaunchAtLoginEnabled(false))
     XCTAssertTrue(context.controller.isLaunchAtLoginEnabled)
     XCTAssertEqual(context.controller.launchAtLoginIssue, .disableFailed)
+  }
+
+  func testSettingsChoicesBecomeFutureOnboardingDrafts() {
+    let context = makeContext()
+    let replacement = KeyboardShortcuts.Shortcut(
+      .eight,
+      modifiers: [.option, .command]
+    )
+
+    context.controller.setCaptureShortcut(replacement)
+    context.login.statusAfterEnable = .enabled
+    XCTAssertTrue(context.controller.setLaunchAtLoginEnabled(true))
+    XCTAssertEqual(context.controller.onboardingShortcutDraft, replacement)
+    XCTAssertTrue(context.controller.onboardingLaunchAtLoginDraft)
+
+    context.controller.setCaptureShortcut(nil)
+    context.login.statusAfterDisable = .disabled
+    XCTAssertTrue(context.controller.setLaunchAtLoginEnabled(false))
+    XCTAssertNil(context.controller.onboardingShortcutDraft)
+    XCTAssertFalse(context.controller.onboardingLaunchAtLoginDraft)
+  }
+
+  func testApprovalRequiredLoginItemCanBeDisabled() {
+    let context = makeContext()
+    context.login.status = .requiresApproval
+    context.login.statusAfterDisable = .disabled
+    context.controller.refreshLaunchAtLoginStatus()
+
+    XCTAssertFalse(context.controller.isLaunchAtLoginEnabled)
+    XCTAssertTrue(context.controller.setLaunchAtLoginEnabled(false))
+    XCTAssertEqual(context.login.disableCallCount, 1)
+    XCTAssertEqual(context.controller.launchAtLoginStatus, .disabled)
   }
 
   func testExternalStatusRefreshReconcilesTheDisplayedValue() {

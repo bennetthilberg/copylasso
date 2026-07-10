@@ -35,6 +35,20 @@ final class SettingsController {
     launchAtLoginStatus == .enabled
   }
 
+  var captureShortcut: KeyboardShortcuts.Shortcut? {
+    shortcutStore.captureShortcut
+  }
+
+  var onboardingShortcutDraft: KeyboardShortcuts.Shortcut? {
+    settingsStore.hasConfiguredCaptureShortcut
+      ? shortcutStore.captureShortcut
+      : CaptureShortcutDefaults.suggested
+  }
+
+  var onboardingLaunchAtLoginDraft: Bool {
+    settingsStore.hasConfiguredLaunchAtLogin ? isLaunchAtLoginEnabled : true
+  }
+
   init(
     settingsStore: any AppSettingsStoring,
     launchAtLoginService: any LaunchAtLoginServicing,
@@ -95,7 +109,17 @@ final class SettingsController {
 
   @discardableResult
   func setLaunchAtLoginEnabled(_ enabled: Bool) -> Bool {
-    enabled ? enableLaunchAtLogin() : disableLaunchAtLogin(allowUnavailable: false)
+    settingsStore.hasConfiguredLaunchAtLogin = true
+    return enabled ? enableLaunchAtLogin() : disableLaunchAtLogin(allowUnavailable: false)
+  }
+
+  func setCaptureShortcut(_ shortcut: KeyboardShortcuts.Shortcut?) {
+    shortcutStore.captureShortcut = shortcut
+    settingsStore.hasConfiguredCaptureShortcut = true
+  }
+
+  func useSuggestedCaptureShortcut() {
+    setCaptureShortcut(CaptureShortcutDefaults.suggested)
   }
 
   func refreshLaunchAtLoginStatus() {
@@ -188,6 +212,8 @@ final class SettingsController {
 
   private func commitOnboarding(shortcut: KeyboardShortcuts.Shortcut?) {
     shortcutStore.captureShortcut = shortcut
+    settingsStore.hasConfiguredCaptureShortcut = true
+    settingsStore.hasConfiguredLaunchAtLogin = true
     settingsStore.completedOnboardingVersion = currentOnboardingVersion
     launchAtLoginIssue = Self.issue(for: launchAtLoginStatus)
   }
