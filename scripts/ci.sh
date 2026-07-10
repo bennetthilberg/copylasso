@@ -77,6 +77,10 @@ echo "Running unit tests"
 xcodebuild test-without-building \
     "${common_arguments[@]}" \
     -configuration Debug \
+    -parallel-testing-enabled NO \
+    -test-timeouts-enabled YES \
+    -default-test-execution-time-allowance 60 \
+    -maximum-test-execution-time-allowance 120 \
     -only-testing:CopyLassoTests \
     -resultBundlePath "$derived_data/UnitTests.xcresult" \
     "${probe_arguments[@]}"
