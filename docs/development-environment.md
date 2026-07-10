@@ -136,7 +136,7 @@ It selects clean DerivedData under `.build`, verifies Xcode 26.6, lints Swift so
 For interactive verification, open `CopyLasso.xcodeproj`, select the shared `CopyLasso` scheme and **My Mac**, then use:
 
 - **Product > Build** (`Command-B`) for Debug;
-- **Product > Run** (`Command-R`) for the placeholder application; and
+- **Product > Run** (`Command-R`) for the dockless menu-bar shell; and
 - **Product > Test** (`Command-U`) for the unit and UI suites.
 
 Interactive Run and UI testing require runnable local signing. Keep any team or identity override in ignored `Local.xcconfig`.
@@ -145,7 +145,7 @@ Interactive Run and UI testing require runnable local signing. Keep any team or 
 
 The G05-G07 executable feasibility harnesses were retired after their evidence was recorded. Their former launch arguments are no longer supported, and neither Debug nor Release contains live Vision, ScreenCaptureKit, overlay, clipboard, or feedback behavior.
 
-The application target now contains production-neutral models, service contracts, and workflow state only. See [Architecture Overview](architecture/overview.md) for dependency and actor boundaries, [ADR-001](architecture/ADR-001-vision-ocr.md) for OCR evidence, [ADR-002](architecture/ADR-002-screen-capture.md) for permission and capture evidence, and [ADR-003](architecture/ADR-003-selection-overlay.md) for selection and coordinate evidence. Later production goals reintroduce each live adapter behind the recorded contract.
+The application target now contains the dockless menu-bar shell plus production-neutral models, service contracts, and workflow state. Capture Text exercises only an auto-completing coordinator stub and performs no platform work. See [Architecture Overview](architecture/overview.md) for dependency and actor boundaries, [ADR-001](architecture/ADR-001-vision-ocr.md) for OCR evidence, [ADR-002](architecture/ADR-002-screen-capture.md) for permission and capture evidence, and [ADR-003](architecture/ADR-003-selection-overlay.md) for selection and coordinate evidence. Later production goals reintroduce each live adapter behind the recorded contract.
 
 ## GitHub Actions
 
@@ -162,4 +162,4 @@ The required check names are `build and test (arm64)` and `build and test (x86_6
 
 ## Current Boundary
 
-The repository contains the buildable placeholder, production-neutral capture architecture, service test doubles, and retained feasibility evidence. It contains no live capture workflow. Menu-bar behavior, global shortcuts, production platform adapters, onboarding, settings, login-at-launch behavior, packaging, and release automation remain intentionally unimplemented.
+The repository contains a buildable dockless menu-bar shell, production-neutral capture architecture, service test doubles, and retained feasibility evidence. It contains no live capture workflow. Global shortcuts, production platform adapters, onboarding, real settings, login-at-launch behavior, packaging, and release automation remain intentionally unimplemented.

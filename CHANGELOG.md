@@ -14,3 +14,4 @@ All notable changes to CopyLasso will be documented in this file.
 - A Debug-only in-memory ScreenCaptureKit experiment, permission-state tests, and a recorded capture viability decision.
 - A Debug-only multi-display AppKit selection experiment, coordinate-conversion tests, and a recorded overlay viability decision.
 - Production-neutral capture service contracts, a tested workflow state machine, explicit concurrency boundaries, and retired executable feasibility harnesses.
+- A dockless native menu-bar shell with reusable Capture Text routing, reopenable Settings and About windows, and a tested Quit boundary.

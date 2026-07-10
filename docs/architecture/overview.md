@@ -1,6 +1,6 @@
 # Architecture Overview
 
-CopyLasso currently provides a production-neutral architecture, not an end-to-end capture workflow. The application launches only the placeholder window. Feasibility evidence from G05-G07 is retained in the ADRs, while production platform adapters are added incrementally in G12-G17 and connected in G18.
+CopyLasso currently provides a production-neutral architecture and supporting menu-bar shell, not an end-to-end capture workflow. The application launches as a dockless status item with reopenable Settings and About windows. Feasibility evidence from G05-G07 is retained in the ADRs, while production platform adapters are added incrementally in G12-G17 and connected in G18.
 
 ## Components and Dependency Direction
 
@@ -14,7 +14,7 @@ flowchart LR
   Adapters["Future platform adapters G12-G17"] -. conform .-> Contracts
 ```
 
-- `App` owns process and scene lifecycle. `SharedUI` contains reusable SwiftUI presentation.
+- `App` owns the dockless process, scene lifecycle, menu command routing, and application termination boundary. `SharedUI` contains the menu and auxiliary-window presentation.
 - `CaptureWorkflow` owns phase transitions and busy-state policy. It does not call platform APIs in G08.
 - `Services` declares narrow permission, selection, capture, OCR, clipboard, and feedback boundaries.
 - `Models` contains geometry, observations, authorization observations, and feedback values without AppKit, SwiftUI, ScreenCaptureKit, or Vision dependencies.
@@ -36,7 +36,7 @@ flowchart LR
   Feedback --> Idle["Idle"]
 ```
 
-G08 models only the corresponding phases: idle, requesting permission, selecting, capturing, recognizing, completing, cancelled, and failed. It carries no image or recognized-text payload in observable state. G18 will own the private transient operation context and invoke the services in this order.
+The coordinator models the corresponding phases: idle, requesting permission, selecting, capturing, recognizing, completing, cancelled, and failed. It carries no image or recognized-text payload in observable state. The G09 Capture Text command reaches the same coordinator request boundary reserved for the G11 shortcut, then a no-side-effect stub completes the legal transitions back to idle. G18 will replace that stub with the private transient operation context and real service invocation.
 
 Cancellation is a normal result. It enters an explicit cancelled state and returns to idle only after a reset acknowledging cleanup. Failure records only the responsible stage, never captured content, recognized text, raw platform errors, or user data. A request received outside idle is rejected without changing state.
 
@@ -52,7 +52,9 @@ Cancellation is a normal result. It enters an explicit cancelled state and retur
 
 | Goal | Responsibility |
 | --- | --- |
-| G09-G11 | Menu-bar shell, settings, and shortcut invocation of the coordinator entry point |
+| G09 | Dockless menu-bar shell and shared Capture Text command |
+| G10 | First-run state, real settings content, and Launch at Login |
+| G11 | Persistent global shortcut invoking the shared capture command |
 | G12 | Production permission service and recovery UI |
 | G13 | Production AppKit selection adapter |
 | G14 | Production ScreenCaptureKit region capture adapter |

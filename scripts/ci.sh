@@ -68,6 +68,17 @@ if /usr/bin/grep -R -nE "$retired_runtime_pattern" CopyLasso; then
     exit 1
 fi
 
+if /usr/bin/grep -R -n 'WindowGroup' CopyLasso; then
+    echo "The dockless shell must not restore a normal launch window." >&2
+    exit 1
+fi
+
+if ! /usr/bin/grep -q 'MenuBarExtra' CopyLasso/App/CopyLassoApp.swift || \
+    ! /usr/bin/grep -q 'menuBarExtraStyle(.menu)' CopyLasso/App/CopyLassoApp.swift; then
+    echo "The application must expose the native pull-down menu-bar shell." >&2
+    exit 1
+fi
+
 if /usr/bin/grep -q 'EXCLUDED_SOURCE_FILE_NAMES' CopyLasso.xcodeproj/project.pbxproj; then
     echo "Debug and Release must compile the same production-neutral source architecture." >&2
     exit 1
@@ -150,10 +161,18 @@ assert_setting "$derived_data/debug-build-settings.txt" SWIFT_TREAT_WARNINGS_AS_
 assert_setting "$derived_data/debug-build-settings.txt" GCC_TREAT_WARNINGS_AS_ERRORS YES
 assert_setting "$derived_data/debug-build-settings.txt" ENABLE_APP_SANDBOX YES
 assert_setting "$derived_data/debug-build-settings.txt" PRODUCT_BUNDLE_IDENTIFIER io.github.bennetthilberg.copylasso.debug
+assert_setting "$derived_data/debug-build-settings.txt" INFOPLIST_KEY_LSUIElement YES
 assert_setting "$derived_data/release-build-settings.txt" PRODUCT_BUNDLE_IDENTIFIER io.github.bennetthilberg.copylasso
 assert_setting "$derived_data/release-build-settings.txt" ENABLE_HARDENED_RUNTIME YES
+assert_setting "$derived_data/release-build-settings.txt" INFOPLIST_KEY_LSUIElement YES
 assert_setting "$derived_data/release-build-settings.txt" ARCHS "arm64 x86_64"
 assert_setting "$derived_data/release-build-settings.txt" ONLY_ACTIVE_ARCH NO
+
+readonly debug_info_plist="$derived_data/Build/Products/Debug/CopyLasso.app/Contents/Info.plist"
+if [[ "$(/usr/bin/plutil -extract LSUIElement raw -o - "$debug_info_plist")" != "true" ]]; then
+    echo "The Debug application is not configured as a dockless agent." >&2
+    exit 1
+fi
 
 echo "Building Universal 2 Release"
 xcodebuild build \
@@ -165,6 +184,12 @@ xcodebuild build \
     -clonedSourcePackagesDirPath "$derived_data/SourcePackages" \
     CODE_SIGNING_ALLOWED=NO
 
+readonly release_info_plist="$derived_data/Build/Products/Release/CopyLasso.app/Contents/Info.plist"
+if [[ "$(/usr/bin/plutil -extract LSUIElement raw -o - "$release_info_plist")" != "true" ]]; then
+    echo "The Release application is not configured as a dockless agent." >&2
+    exit 1
+fi
+
 readonly release_executable="$derived_data/Build/Products/Release/CopyLasso.app/Contents/MacOS/CopyLasso"
 if [[ ! -x "$release_executable" ]]; then
     echo "Release executable was not produced." >&2
@@ -174,7 +199,8 @@ fi
 readonly debug_module="$derived_data/Build/Products/Debug/CopyLasso.swiftmodule/$requested_architecture-apple-macos.swiftmodule"
 if [[ ! -f "$debug_module" ]] || \
     ! /usr/bin/grep -a -q 'CaptureCoordinator' "$debug_module" || \
-    ! /usr/bin/grep -a -q 'DisplayGeometry' "$debug_module"; then
+    ! /usr/bin/grep -a -q 'DisplayGeometry' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'CaptureCommand' "$debug_module"; then
     echo "Debug is missing the production-neutral workflow architecture." >&2
     exit 1
 fi
@@ -186,7 +212,8 @@ for release_architecture in arm64 x86_64; do
         exit 1
     fi
     if ! /usr/bin/grep -a -q 'CaptureCoordinator' "$release_module" || \
-        ! /usr/bin/grep -a -q 'DisplayGeometry' "$release_module"; then
+        ! /usr/bin/grep -a -q 'DisplayGeometry' "$release_module" || \
+        ! /usr/bin/grep -a -q 'CaptureCommand' "$release_module"; then
         echo "Release is missing the production-neutral workflow architecture for $release_architecture." >&2
         exit 1
     fi
