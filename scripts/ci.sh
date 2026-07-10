@@ -156,6 +156,10 @@ for release_architecture in arm64 x86_64; do
         echo "The Debug-only screen-capture spike was compiled into Release." >&2
         exit 1
     fi
+    if /usr/bin/grep -a -q 'SelectionOverlayController\|DisplayGeometry' "$release_module"; then
+        echo "The Debug-only selection-overlay spike was compiled into Release." >&2
+        exit 1
+    fi
 done
 
 readonly release_architectures="$(xcrun lipo -archs "$release_executable")"

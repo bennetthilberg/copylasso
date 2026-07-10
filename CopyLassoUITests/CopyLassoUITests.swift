@@ -26,4 +26,16 @@ final class CopyLassoUITests: XCTestCase {
     XCTAssertTrue(app.buttons["copylasso.capture-spike.clear"].exists)
     XCTAssertTrue(app.buttons["copylasso.capture-spike.reset-history"].exists)
   }
+
+  @MainActor
+  func testSelectionOverlaySpikeHarnessLaunchesWithoutPresentingOverlay() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--g07-selection-spike"]
+    app.launch()
+
+    XCTAssertTrue(app.staticTexts["copylasso.selection-spike.title"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.buttons["copylasso.selection-spike.begin-now"].exists)
+    XCTAssertTrue(app.buttons["copylasso.selection-spike.begin-delayed"].exists)
+    XCTAssertTrue(app.staticTexts["copylasso.selection-spike.no-outcome"].exists)
+  }
 }
