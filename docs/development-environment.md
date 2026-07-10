@@ -156,4 +156,4 @@ The required check names are `build and test (arm64)` and `build and test (x86_6
 
 ## Current Boundary
 
-The repository now contains only the buildable application and test scaffold. Menu-bar behavior, global shortcuts, screen capture, OCR, onboarding, settings, login-at-launch behavior, packaging, and release automation remain intentionally unimplemented.
+The repository contains the buildable application and test scaffold plus an internal Vision OCR feasibility experiment. Menu-bar behavior, global shortcuts, screen capture, the production OCR flow, onboarding, settings, login-at-launch behavior, packaging, and release automation remain intentionally unimplemented.

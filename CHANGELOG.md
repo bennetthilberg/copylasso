@@ -10,3 +10,4 @@ All notable changes to CopyLasso will be documented in this file.
 - Public project overview, contribution guidance, security-reporting policy, privacy policy, and repository hygiene rules.
 - Native SwiftUI Xcode scaffold with shared app, unit-test, and UI-test scheme.
 - Reproducible dual-architecture CI for Debug, XCTest bundles, unit tests, and Universal 2 Release builds.
+- Project-owned OCR fixtures, a thin in-memory Vision experiment, explicit quality tests, and a recorded viability decision.
