@@ -10,7 +10,7 @@ The shared `CopyLasso` scheme contains:
 - `CopyLassoTests`, the XCTest unit-test bundle; and
 - `CopyLassoUITests`, the XCTest UI-test bundle.
 
-The application currently presents only a placeholder window. Menu-bar behavior, global shortcuts, screen capture, OCR, onboarding, settings, and login-at-launch behavior are intentionally outside this scaffold.
+The normal application currently presents only a placeholder window. Debug builds also contain internal OCR and screen-capture feasibility experiments; they are not production flows. Menu-bar behavior, global shortcuts, user-facing capture, onboarding, settings, and login-at-launch behavior remain unimplemented.
 
 ## Supported Configuration
 
