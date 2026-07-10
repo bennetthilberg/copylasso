@@ -141,6 +141,38 @@ For interactive verification, open `CopyLasso.xcodeproj`, select the shared `Cop
 
 Interactive Run and UI testing require runnable local signing. Keep any team or identity override in ignored `Local.xcconfig`.
 
+## G06 Debug Screen-Capture Spike
+
+The internal G06 harness is compiled only into Debug builds and requires a stable Apple Development identity. Build it into a fixed ignored DerivedData path and launch it with the opt-in argument:
+
+```sh
+xcodebuild build \
+  -project CopyLasso.xcodeproj \
+  -scheme CopyLasso \
+  -configuration Debug \
+  -destination 'platform=macOS,arch=arm64' \
+  -derivedDataPath .build/g06-signed
+
+open -n .build/g06-signed/Build/Products/Debug/CopyLasso.app \
+  --args --g06-capture-spike
+```
+
+Launching the harness preflights access but does not request permission, enumerate shareable content, or capture. **Request and Capture** is the only control that initiates the first request. **Capture Again** never repeats the request API. **Clear Preview** releases the in-memory image, and **Reset Local History** removes only the two G06 observation preferences; it does not change macOS permission state.
+
+Quit CopyLasso before resetting only its Debug Screen Recording entry:
+
+```sh
+/usr/bin/tccutil reset ScreenCapture io.github.bennetthilberg.copylasso.debug
+```
+
+Open the relevant System Settings pane when testing recovery:
+
+```sh
+open 'x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture'
+```
+
+Current macOS permission and warning observations are recorded in [ADR-002](architecture/ADR-002-screen-capture.md). Do not use an ad hoc identity for this matrix, do not reset another application's permission, and do not treat Core Graphics preflight as authoritative when an actual ScreenCaptureKit request returns a denial.
+
 ## GitHub Actions
 
 `.github/workflows/ci.yml` runs for pull requests targeting `main` and pushes to `main`. It explicitly selects Xcode 26.6 and executes `scripts/ci.sh` on the GitHub-hosted macOS 26 Apple Silicon and Intel runner images. The workflow has read-only repository contents permission, persists no checkout credential, uses no secrets or cache, and bounds concurrent runs and job duration.
@@ -156,4 +188,4 @@ The required check names are `build and test (arm64)` and `build and test (x86_6
 
 ## Current Boundary
 
-The repository contains the buildable application and test scaffold plus an internal Vision OCR feasibility experiment. Menu-bar behavior, global shortcuts, screen capture, the production OCR flow, onboarding, settings, login-at-launch behavior, packaging, and release automation remain intentionally unimplemented.
+The repository contains the buildable application and test scaffold plus internal Vision OCR and ScreenCaptureKit feasibility experiments. Menu-bar behavior, global shortcuts, production capture and OCR integration, onboarding, settings, login-at-launch behavior, packaging, and release automation remain intentionally unimplemented.

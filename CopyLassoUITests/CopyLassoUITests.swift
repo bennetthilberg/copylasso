@@ -13,4 +13,17 @@ final class CopyLassoUITests: XCTestCase {
     let title = app.staticTexts["copylasso.placeholder.title"]
     XCTAssertTrue(title.waitForExistence(timeout: 5))
   }
+
+  @MainActor
+  func testScreenCaptureSpikeHarnessLaunchesWithoutPrompting() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--g06-capture-spike"]
+    app.launch()
+
+    XCTAssertTrue(app.staticTexts["copylasso.capture-spike.title"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.buttons["copylasso.capture-spike.request"].exists)
+    XCTAssertTrue(app.buttons["copylasso.capture-spike.capture-again"].exists)
+    XCTAssertTrue(app.buttons["copylasso.capture-spike.clear"].exists)
+    XCTAssertTrue(app.buttons["copylasso.capture-spike.reset-history"].exists)
+  }
 }

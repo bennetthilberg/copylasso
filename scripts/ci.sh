@@ -40,6 +40,12 @@ xcrun swift-format lint --recursive --strict \
     CopyLassoTests \
     CopyLassoUITests
 
+if /usr/bin/grep -Eq 'DEVELOPMENT_TEAM[^=]* = [A-Z0-9]{10};' \
+    CopyLasso.xcodeproj/project.pbxproj; then
+    echo "A concrete Apple development team must not be committed to the Xcode project." >&2
+    exit 1
+fi
+
 echo "Resolving package dependencies"
 xcodebuild -resolvePackageDependencies \
     -project "$project_path" \
