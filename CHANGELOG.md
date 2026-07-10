@@ -12,3 +12,4 @@ All notable changes to CopyLasso will be documented in this file.
 - Reproducible dual-architecture CI for Debug, XCTest bundles, unit tests, and Universal 2 Release builds.
 - Project-owned OCR fixtures, a thin in-memory Vision experiment, explicit quality tests, and a recorded viability decision.
 - A Debug-only in-memory ScreenCaptureKit experiment, permission-state tests, and a recorded capture viability decision.
+- A Debug-only multi-display AppKit selection experiment, coordinate-conversion tests, and a recorded overlay viability decision.

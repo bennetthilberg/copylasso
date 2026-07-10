@@ -10,7 +10,7 @@ The shared `CopyLasso` scheme contains:
 - `CopyLassoTests`, the XCTest unit-test bundle; and
 - `CopyLassoUITests`, the XCTest UI-test bundle.
 
-The normal application currently presents only a placeholder window. Debug builds also contain internal OCR and screen-capture feasibility experiments; they are not production flows. Menu-bar behavior, global shortcuts, user-facing capture, onboarding, settings, and login-at-launch behavior remain unimplemented.
+The normal application currently presents only a placeholder window. Debug builds also contain internal OCR, screen-capture, and selection-overlay feasibility experiments; they are not production flows. Menu-bar behavior, global shortcuts, user-facing capture, onboarding, settings, and login-at-launch behavior remain unimplemented.
 
 ## Supported Configuration
 
@@ -29,6 +29,8 @@ The normal application currently presents only a placeholder window. Debug build
 | Hardened Runtime | Enabled |
 
 Release builds explicitly set both macOS architectures and disable `ONLY_ACTIVE_ARCH`. The canonical pipeline inspects the built executable with `lipo`; checking the build setting alone is not sufficient.
+
+The G06 screen-capture sources and G07 selection-overlay sources are explicitly excluded from the Release target. The canonical pipeline also inspects both compiled Release modules and fails if either Debug-only model is present.
 
 ## Signing
 
