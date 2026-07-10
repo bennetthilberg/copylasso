@@ -48,6 +48,31 @@ if /usr/bin/grep -Eq "$committed_development_team_pattern" \
     exit 1
 fi
 
+for required_source_group in App CaptureWorkflow Services Models Settings SharedUI; do
+    if [[ ! -d "CopyLasso/$required_source_group" ]]; then
+        echo "Required source group is missing: $required_source_group" >&2
+        exit 1
+    fi
+done
+
+if /usr/bin/grep -R -nE \
+    '^[[:space:]]*import[[:space:]]+(AppKit|SwiftUI|ScreenCaptureKit|Vision)[[:space:]]*$' \
+    CopyLasso/Models CopyLasso/CaptureWorkflow; then
+    echo "Models and capture-workflow state must not import UI or live platform frameworks." >&2
+    exit 1
+fi
+
+readonly retired_runtime_pattern='CGPreflightScreenCaptureAccess|CGRequestScreenCaptureAccess|SCScreenshotManager|SCShareableContent|VNRecognizeTextRequest|SelectionOverlayPanel|--g06-capture-spike|--g07-selection-spike|NSPasteboard'
+if /usr/bin/grep -R -nE "$retired_runtime_pattern" CopyLasso; then
+    echo "A retired experiment or live platform adapter remains in the application target." >&2
+    exit 1
+fi
+
+if /usr/bin/grep -q 'EXCLUDED_SOURCE_FILE_NAMES' CopyLasso.xcodeproj/project.pbxproj; then
+    echo "Debug and Release must compile the same production-neutral source architecture." >&2
+    exit 1
+fi
+
 echo "Resolving package dependencies"
 xcodebuild -resolvePackageDependencies \
     -project "$project_path" \
@@ -146,18 +171,23 @@ if [[ ! -x "$release_executable" ]]; then
     exit 1
 fi
 
+readonly debug_module="$derived_data/Build/Products/Debug/CopyLasso.swiftmodule/$requested_architecture-apple-macos.swiftmodule"
+if [[ ! -f "$debug_module" ]] || \
+    ! /usr/bin/grep -a -q 'CaptureCoordinator' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'DisplayGeometry' "$debug_module"; then
+    echo "Debug is missing the production-neutral workflow architecture." >&2
+    exit 1
+fi
+
 for release_architecture in arm64 x86_64; do
     release_module="$derived_data/Build/Products/Release/CopyLasso.swiftmodule/$release_architecture-apple-macos.swiftmodule"
     if [[ ! -f "$release_module" ]]; then
         echo "Release Swift module is missing $release_architecture." >&2
         exit 1
     fi
-    if /usr/bin/grep -a -q 'ScreenCaptureSpikeModel' "$release_module"; then
-        echo "The Debug-only screen-capture spike was compiled into Release." >&2
-        exit 1
-    fi
-    if /usr/bin/grep -a -q 'SelectionOverlayController\|DisplayGeometry' "$release_module"; then
-        echo "The Debug-only selection-overlay spike was compiled into Release." >&2
+    if ! /usr/bin/grep -a -q 'CaptureCoordinator' "$release_module" || \
+        ! /usr/bin/grep -a -q 'DisplayGeometry' "$release_module"; then
+        echo "Release is missing the production-neutral workflow architecture for $release_architecture." >&2
         exit 1
     fi
 done

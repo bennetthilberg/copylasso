@@ -3,7 +3,7 @@ import XCTest
 
 @testable import CopyLasso
 
-final class SelectionOverlaySpikeTests: XCTestCase {
+final class SelectionGeometryTests: XCTestCase {
   func testForwardAndReverseDragsProduceTheSameSelection() throws {
     let display = try makeDisplay()
 

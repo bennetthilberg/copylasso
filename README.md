@@ -4,7 +4,7 @@
 
 CopyLasso is a free, open-source macOS utility for copying visible text from anywhere on screen. Press a global shortcut, drag around text, and receive the recognized plain text on the clipboard.
 
-> **Project status:** CopyLasso is in early pre-release development. The repository contains a buildable placeholder application plus successful internal OCR, screen-capture, and multi-display selection feasibility experiments, but the production workflow and intended menu-bar experience are not implemented, and no public release is available.
+> **Project status:** CopyLasso is in early pre-release development. OCR, screen-capture, and multi-display selection feasibility are proven and recorded in architecture decisions. The executable experiments have been retired in favor of tested production-neutral service contracts and workflow state, but the production workflow and intended menu-bar experience are not implemented, and no public release is available.
 
 ## Planned v0.1 Experience
 
@@ -29,7 +29,7 @@ See the full [privacy policy](PRIVACY.md) and [v0.1 product contract](docs/v0.1-
 - Swift 6 and the `swift-format` version bundled with that Xcode release
 - An Apple Development signing identity for signed local builds
 
-The current verified baseline is Xcode 26.6 with Swift 6.3.3. See [Development Environment](docs/development-environment.md) for setup and canonical commands, and [Build Configuration](docs/architecture/build-configuration.md) for target and signing decisions.
+The current verified baseline is Xcode 26.6 with Swift 6.3.3. See [Architecture Overview](docs/architecture/overview.md) for component boundaries, [Development Environment](docs/development-environment.md) for setup and canonical commands, and [Build Configuration](docs/architecture/build-configuration.md) for target and signing decisions.
 
 Run the same unsigned build and unit-test pipeline used by CI:
 

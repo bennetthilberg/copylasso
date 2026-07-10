@@ -448,13 +448,6 @@
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
-				EXCLUDED_SOURCE_FILE_NAMES = (
-					ScreenCaptureSpike.swift,
-					ScreenCaptureSpikeView.swift,
-					SelectionGeometry.swift,
-					SelectionOverlayController.swift,
-					SelectionOverlaySpikeView.swift,
-				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Bennett Hilberg. All rights reserved.";
 				LD_RUNPATH_SEARCH_PATHS = (

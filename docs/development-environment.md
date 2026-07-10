@@ -141,57 +141,11 @@ For interactive verification, open `CopyLasso.xcodeproj`, select the shared `Cop
 
 Interactive Run and UI testing require runnable local signing. Keep any team or identity override in ignored `Local.xcconfig`.
 
-## G06 Debug Screen-Capture Spike
+## Architecture Baseline
 
-The internal G06 harness is compiled only into Debug builds and requires a stable Apple Development identity. Build it into a fixed ignored DerivedData path and launch it with the opt-in argument:
+The G05-G07 executable feasibility harnesses were retired after their evidence was recorded. Their former launch arguments are no longer supported, and neither Debug nor Release contains live Vision, ScreenCaptureKit, overlay, clipboard, or feedback behavior.
 
-```sh
-xcodebuild build \
-  -project CopyLasso.xcodeproj \
-  -scheme CopyLasso \
-  -configuration Debug \
-  -destination 'platform=macOS,arch=arm64' \
-  -derivedDataPath .build/g06-signed
-
-open -n .build/g06-signed/Build/Products/Debug/CopyLasso.app \
-  --args --g06-capture-spike
-```
-
-Launching the harness preflights access but does not request permission, enumerate shareable content, or capture. **Request and Capture** is the only control that initiates the first request. **Capture Again** never repeats the request API. **Clear Preview** releases the in-memory image, and **Reset Local History** removes only the two G06 observation preferences; it does not change macOS permission state.
-
-Quit CopyLasso before resetting only its Debug Screen Recording entry:
-
-```sh
-/usr/bin/tccutil reset ScreenCapture io.github.bennetthilberg.copylasso.debug
-```
-
-Open the relevant System Settings pane when testing recovery:
-
-```sh
-open 'x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture'
-```
-
-Current macOS permission and warning observations are recorded in [ADR-002](architecture/ADR-002-screen-capture.md). Do not use an ad hoc identity for this matrix, do not reset another application's permission, and do not treat Core Graphics preflight as authoritative when an actual ScreenCaptureKit request returns a denial.
-
-## G07 Debug Selection-Overlay Spike
-
-The internal G07 harness is also compiled only into Debug builds. Build it into a fixed ignored DerivedData path and launch it with the opt-in argument:
-
-```sh
-xcodebuild build \
-  -project CopyLasso.xcodeproj \
-  -scheme CopyLasso \
-  -configuration Debug \
-  -destination 'platform=macOS,arch=arm64' \
-  -derivedDataPath .build/g07-signed
-
-open -n .build/g07-signed/Build/Products/Debug/CopyLasso.app \
-  --args --g07-selection-spike
-```
-
-Launching the harness enumerates display geometry for diagnostic text but does not present an overlay. **Begin Selection Now** starts immediately. **Begin in 5 Seconds** provides time to switch to another application, Space, or full-screen window. Drag on any display and release to report AppKit, Core Graphics, and backing-pixel rectangles; press Escape to cancel.
-
-Every overlay panel is clear until mouse-down. During a drag only the initiating display is lightly dimmed, and an endpoint crossing onto another display clamps to the initiating display edge. The experiment never requests Screen Recording permission, captures pixels, calls OCR, or changes the clipboard. Its coordinate model and current live evidence are recorded in [ADR-003](architecture/ADR-003-selection-overlay.md).
+The application target now contains production-neutral models, service contracts, and workflow state only. See [Architecture Overview](architecture/overview.md) for dependency and actor boundaries, [ADR-001](architecture/ADR-001-vision-ocr.md) for OCR evidence, [ADR-002](architecture/ADR-002-screen-capture.md) for permission and capture evidence, and [ADR-003](architecture/ADR-003-selection-overlay.md) for selection and coordinate evidence. Later production goals reintroduce each live adapter behind the recorded contract.
 
 ## GitHub Actions
 
@@ -208,4 +162,4 @@ The required check names are `build and test (arm64)` and `build and test (x86_6
 
 ## Current Boundary
 
-The repository contains the buildable application and test scaffold plus internal Vision OCR, ScreenCaptureKit, and AppKit selection-overlay feasibility experiments. Menu-bar behavior, global shortcuts, production capture and OCR integration, onboarding, settings, login-at-launch behavior, packaging, and release automation remain intentionally unimplemented.
+The repository contains the buildable placeholder, production-neutral capture architecture, service test doubles, and retained feasibility evidence. It contains no live capture workflow. Menu-bar behavior, global shortcuts, production platform adapters, onboarding, settings, login-at-launch behavior, packaging, and release automation remain intentionally unimplemented.
