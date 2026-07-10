@@ -54,4 +54,4 @@ Test failure messages identify fixtures and metrics without printing recognized 
 
 ## Consequences
 
-G06 may proceed with screen-capture feasibility after G05 is merged. G15 should turn this evidence into the production OCR service while preserving the in-memory, local-only boundary and the explicit fixture thresholds.
+G06 may proceed with screen-capture feasibility after G05 is merged. G08 retired the executable adapter while preserving the fixtures, generator, this evidence, and a framework-neutral observation model. G15 should implement the production OCR service behind the architecture interface while preserving the in-memory, local-only boundary and the explicit fixture thresholds.

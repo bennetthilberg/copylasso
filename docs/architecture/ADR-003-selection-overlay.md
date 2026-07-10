@@ -88,4 +88,5 @@ With TextEdit in a separate full-screen Space, the five-second trigger left the 
 - G14 must capture only after the selection completion callback and must use the selected display's local Core Graphics rectangle.
 - Display configuration changes cancel the current session; production code must rebuild descriptors before another selection.
 - Full hardening across more physical arrangements, display rotations, and macOS versions remains G19 and G29 work.
+- G08 retired the executable overlay harness while retaining the pure geometry and selection-session model. G13 owns the production AppKit adapter.
 - G07 introduces no public API, dependency, permission request, pixel capture, OCR integration, clipboard behavior, onboarding, or production UI.

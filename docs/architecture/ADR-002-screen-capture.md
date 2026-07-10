@@ -73,4 +73,4 @@ Apple documents manual permission management in [Control access to screen and sy
 - The live permission matrix covers the maintainer's current Apple Silicon macOS 26 workstation. macOS 14 compatibility is established by the deployment target and macOS 14 API surface; clean older-system VM behavior remains a later release check.
 - Protected or DRM-controlled content may legitimately capture as blank and is outside the arbitrary-allowed-pixels guarantee.
 - The private-window-picker warning wording and duration are controlled by macOS and may change. Production UI must present recovery guidance without promising a distinction or restart behavior the API cannot prove.
-- G07 may proceed with overlay and coordinate-conversion feasibility. This spike does not connect capture to OCR, introduce onboarding or Settings, or become the production permission flow.
+- G07 may proceed with overlay and coordinate-conversion feasibility. G08 retired the executable harness and live adapter while preserving the authorization-history semantics and narrow permission/capture contracts. G12 and G14 own their production implementations.
