@@ -48,7 +48,7 @@ final class GlobalShortcutControllerTests: XCTestCase {
     let context = makeContext()
     context.controller.start()
     context.controller.stop()
-    await Task.yield()
+    await context.events.waitForCancellation()
 
     context.events.emit(.keyUp)
     await Task.yield()

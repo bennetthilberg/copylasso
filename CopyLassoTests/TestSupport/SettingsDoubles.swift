@@ -101,6 +101,7 @@ final class StubLaunchAtLoginBackend: LaunchAtLoginBackend {
 @MainActor
 final class StubGlobalShortcutEventSource: GlobalShortcutEventSourcing {
   private var continuation: AsyncStream<GlobalShortcutEvent>.Continuation?
+  private var cancellationWaiters: [CheckedContinuation<Void, Never>] = []
   private(set) var wasCancelled = false
 
   func events() -> AsyncStream<GlobalShortcutEvent> {
@@ -108,7 +109,7 @@ final class StubGlobalShortcutEventSource: GlobalShortcutEventSourcing {
       self.continuation = continuation
       continuation.onTermination = { [weak self] _ in
         Task { @MainActor in
-          self?.wasCancelled = true
+          self?.markCancelled()
         }
       }
     }
@@ -116,5 +117,26 @@ final class StubGlobalShortcutEventSource: GlobalShortcutEventSourcing {
 
   func emit(_ event: GlobalShortcutEvent) {
     continuation?.yield(event)
+  }
+
+  func waitForCancellation() async {
+    guard !wasCancelled else {
+      return
+    }
+    await withCheckedContinuation { continuation in
+      cancellationWaiters.append(continuation)
+    }
+  }
+
+  private func markCancelled() {
+    guard !wasCancelled else {
+      return
+    }
+    wasCancelled = true
+    let waiters = cancellationWaiters
+    cancellationWaiters.removeAll()
+    for waiter in waiters {
+      waiter.resume()
+    }
   }
 }
