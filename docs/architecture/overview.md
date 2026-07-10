@@ -1,6 +1,6 @@
 # Architecture Overview
 
-CopyLasso currently provides a production-neutral architecture and supporting menu-bar shell, not an end-to-end capture workflow. The application launches as a dockless status item with reopenable Settings and About windows. Feasibility evidence from G05-G07 is retained in the ADRs, while production platform adapters are added incrementally in G12-G17 and connected in G18.
+CopyLasso currently provides a production-neutral capture architecture and a usable dockless shell, not an end-to-end capture workflow. The application includes versioned onboarding, persistent Settings, Launch at Login, and a configurable global shortcut. Feasibility evidence from G05-G07 is retained in the ADRs, while production capture adapters are added incrementally in G12-G17 and connected in G18.
 
 ## Components and Dependency Direction
 
@@ -10,15 +10,16 @@ flowchart LR
   Coordinator --> Contracts["Service contracts"]
   Coordinator --> Models["Neutral models"]
   Contracts --> Models
-  Settings["Settings contracts"] --> Models
+  Settings["Settings and onboarding"] --> Services
+  Settings --> Models
   Adapters["Future platform adapters G12-G17"] -. conform .-> Contracts
 ```
 
-- `App` owns the dockless process, scene lifecycle, menu command routing, and application termination boundary. `SharedUI` contains the menu and auxiliary-window presentation.
+- `App` owns the dockless process, scene lifecycle, menu and shortcut command routing, and application termination boundary. `SharedUI` contains the menu, onboarding, Settings, and auxiliary-window presentation.
 - `CaptureWorkflow` owns phase transitions and busy-state policy. It does not call platform APIs in G08.
 - `Services` declares narrow permission, selection, capture, OCR, clipboard, and feedback boundaries.
 - `Models` contains geometry, observations, authorization observations, and feedback values without AppKit, SwiftUI, ScreenCaptureKit, or Vision dependencies.
-- `Settings` currently contains only permission-history state and its persistence contract. It does not implement `UserDefaults` or onboarding.
+- `Settings` owns the typed `UserDefaults` adapter, onboarding-version policy, shortcut storage boundary, and observable settings controller. The system login-item adapter remains isolated in `Services`.
 
 Dependencies point toward contracts and neutral models. UI and future adapters may depend on them; models and workflow state must never depend on UI or live platform frameworks.
 
@@ -36,7 +37,7 @@ flowchart LR
   Feedback --> Idle["Idle"]
 ```
 
-The coordinator models the corresponding phases: idle, requesting permission, selecting, capturing, recognizing, completing, cancelled, and failed. It carries no image or recognized-text payload in observable state. The G09 Capture Text command reaches the same coordinator request boundary reserved for the G11 shortcut, then a no-side-effect stub completes the legal transitions back to idle. G18 will replace that stub with the private transient operation context and real service invocation.
+The coordinator models the corresponding phases: idle, requesting permission, selecting, capturing, recognizing, completing, cancelled, and failed. It carries no image or recognized-text payload in observable state. Menu and global-shortcut requests now reach the same `CaptureCommand`; a no-side-effect stub completes the legal transitions back to idle. G18 will replace that stub with the private transient operation context and real service invocation.
 
 Cancellation is a normal result. It enters an explicit cancelled state and returns to idle only after a reset acknowledging cleanup. Failure records only the responsible stage, never captured content, recognized text, raw platform errors, or user data. A request received outside idle is rejected without changing state.
 
@@ -53,8 +54,7 @@ Cancellation is a normal result. It enters an explicit cancelled state and retur
 | Goal | Responsibility |
 | --- | --- |
 | G09 | Dockless menu-bar shell and shared Capture Text command |
-| G10 | First-run state, real settings content, and Launch at Login |
-| G11 | Persistent global shortcut invoking the shared capture command |
+| G10-G11 | First-run state, persistent settings, Launch at Login, and the global shortcut invoking the shared capture command |
 | G12 | Production permission service and recovery UI |
 | G13 | Production AppKit selection adapter |
 | G14 | Production ScreenCaptureKit region capture adapter |
@@ -63,4 +63,4 @@ Cancellation is a normal result. It enters an explicit cancelled state and retur
 | G17 | Clipboard and nonactivating feedback adapters |
 | G18 | End-to-end service orchestration, cleanup, and integration tests |
 
-Until the owning goal is implemented, its service has only a contract and test double. G08 intentionally introduces no dependency container, live adapter, or hidden workflow.
+Until the owning goal is implemented, each capture service has only a contract and test double. The settings and shortcut adapters are live, but no hidden capture workflow exists.

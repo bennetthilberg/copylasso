@@ -56,9 +56,33 @@ for required_source_group in App CaptureWorkflow Services Models Settings Shared
 done
 
 if /usr/bin/grep -R -nE \
-    '^[[:space:]]*import[[:space:]]+(AppKit|SwiftUI|ScreenCaptureKit|Vision)[[:space:]]*$' \
+    '^[[:space:]]*import[[:space:]]+(AppKit|SwiftUI|ScreenCaptureKit|Vision|KeyboardShortcuts|ServiceManagement)[[:space:]]*$' \
     CopyLasso/Models CopyLasso/CaptureWorkflow; then
-    echo "Models and capture-workflow state must not import UI or live platform frameworks." >&2
+    echo "Models and capture-workflow state must not import UI, shortcut, or live platform frameworks." >&2
+    exit 1
+fi
+
+readonly package_resolved="CopyLasso.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+if [[ ! -f "$package_resolved" ]] || \
+    ! /usr/bin/grep -q '"location" : "https://github.com/sindresorhus/KeyboardShortcuts"' "$package_resolved" || \
+    ! /usr/bin/grep -q '"revision" : "49c3fc04ea827f816df67843bfcc57286b47ff06"' "$package_resolved" || \
+    ! /usr/bin/grep -q '"version" : "3.0.1"' "$package_resolved"; then
+    echo "KeyboardShortcuts must remain resolved exactly to 3.0.1." >&2
+    exit 1
+fi
+
+if ! /usr/bin/grep -q 'kind = exactVersion;' CopyLasso.xcodeproj/project.pbxproj || \
+    ! /usr/bin/grep -q 'version = 3.0.1;' CopyLasso.xcodeproj/project.pbxproj || \
+    ! /usr/bin/grep -q 'KeyboardShortcuts 3.0.1' THIRD_PARTY_NOTICES.md || \
+    ! /usr/bin/grep -q 'License: MIT' THIRD_PARTY_NOTICES.md; then
+    echo "The exact shortcut dependency and its MIT notice must remain documented." >&2
+    exit 1
+fi
+
+service_management_imports="$({ /usr/bin/grep -R -l \
+    '^[[:space:]]*import[[:space:]]\+ServiceManagement[[:space:]]*$' CopyLasso || true; })"
+if [[ "$service_management_imports" != "CopyLasso/Services/LaunchAtLoginService.swift" ]]; then
+    echo "ServiceManagement must remain confined to LaunchAtLoginService.swift." >&2
     exit 1
 fi
 
@@ -196,11 +220,18 @@ if [[ ! -x "$release_executable" ]]; then
     exit 1
 fi
 
+if /usr/bin/strings "$release_executable" | /usr/bin/grep -q -- '--g10-g11-'; then
+    echo "Debug-only G10-G11 UI-test controls leaked into Release." >&2
+    exit 1
+fi
+
 readonly debug_module="$derived_data/Build/Products/Debug/CopyLasso.swiftmodule/$requested_architecture-apple-macos.swiftmodule"
 if [[ ! -f "$debug_module" ]] || \
     ! /usr/bin/grep -a -q 'CaptureCoordinator' "$debug_module" || \
     ! /usr/bin/grep -a -q 'DisplayGeometry' "$debug_module" || \
-    ! /usr/bin/grep -a -q 'CaptureCommand' "$debug_module"; then
+    ! /usr/bin/grep -a -q 'CaptureCommand' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'SettingsController' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'GlobalShortcutController' "$debug_module"; then
     echo "Debug is missing the production-neutral workflow architecture." >&2
     exit 1
 fi
@@ -213,7 +244,9 @@ for release_architecture in arm64 x86_64; do
     fi
     if ! /usr/bin/grep -a -q 'CaptureCoordinator' "$release_module" || \
         ! /usr/bin/grep -a -q 'DisplayGeometry' "$release_module" || \
-        ! /usr/bin/grep -a -q 'CaptureCommand' "$release_module"; then
+        ! /usr/bin/grep -a -q 'CaptureCommand' "$release_module" || \
+        ! /usr/bin/grep -a -q 'SettingsController' "$release_module" || \
+        ! /usr/bin/grep -a -q 'GlobalShortcutController' "$release_module"; then
         echo "Release is missing the production-neutral workflow architecture for $release_architecture." >&2
         exit 1
     fi

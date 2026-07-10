@@ -162,4 +162,8 @@ The required check names are `build and test (arm64)` and `build and test (x86_6
 
 ## Current Boundary
 
-The repository contains a buildable dockless menu-bar shell, production-neutral capture architecture, service test doubles, and retained feasibility evidence. It contains no live capture workflow. Global shortcuts, production platform adapters, onboarding, real settings, login-at-launch behavior, packaging, and release automation remain intentionally unimplemented.
+The repository contains a buildable dockless menu-bar app with onboarding, persistent Settings, Launch at Login, a configurable global shortcut, production-neutral capture architecture, service test doubles, and retained feasibility evidence. The shortcut and menu both reach the no-side-effect capture coordinator stub; production permission, selection, capture, OCR, clipboard, and feedback adapters remain intentionally unimplemented.
+
+For a development-only clean first-run state, open Settings and choose **Reset Local Development State…**. After confirmation, CopyLasso unregisters its login item and clears its owned preferences and shortcut data before reopening onboarding. This does not reset Screen Recording permission.
+
+Launch at Login uses `SMAppService.mainApp` and therefore requires a runnable signed app for real verification. The automated unit suite covers status mapping, failure handling, and reconciliation with doubles; final local verification must still enable the real item, log out and back in or reboot, confirm the dockless process starts, then disable it and repeat.

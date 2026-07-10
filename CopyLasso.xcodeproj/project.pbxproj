@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		C0B1A0033002000000000003 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = C0B1A0013002000000000001 /* KeyboardShortcuts */; };
+		C0B1A0043002000000000004 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = C0B1A0023002000000000002 /* KeyboardShortcuts */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		AACED2F930004BEC001F9909 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -53,6 +58,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C0B1A0033002000000000003 /* KeyboardShortcuts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -60,6 +66,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C0B1A0043002000000000004 /* KeyboardShortcuts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -122,6 +129,7 @@
 			);
 			name = CopyLasso;
 			packageProductDependencies = (
+				C0B1A0013002000000000001 /* KeyboardShortcuts */,
 			);
 			productName = CopyLasso;
 			productReference = AACED2EB30004BEB001F9909 /* CopyLasso.app */;
@@ -145,6 +153,7 @@
 			);
 			name = CopyLassoTests;
 			packageProductDependencies = (
+				C0B1A0023002000000000002 /* KeyboardShortcuts */,
 			);
 			productName = CopyLassoTests;
 			productReference = AACED2F830004BEC001F9909 /* CopyLassoTests.xctest */;
@@ -205,6 +214,9 @@
 			);
 			mainGroup = AACED2E230004BEB001F9909;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				C0B1A0053002000000000005 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AACED2EC30004BEB001F9909 /* Products */;
 			projectDirPath = "";
@@ -588,6 +600,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		C0B1A0053002000000000005 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
+			requirement = {
+				kind = exactVersion;
+				version = 3.0.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		C0B1A0013002000000000001 /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0B1A0053002000000000005 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
+		};
+		C0B1A0023002000000000002 /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0B1A0053002000000000005 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AACED2E330004BEB001F9909 /* Project object */;
 }
