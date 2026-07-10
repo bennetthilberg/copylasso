@@ -10,7 +10,7 @@ The shared `CopyLasso` scheme contains:
 - `CopyLassoTests`, the XCTest unit-test bundle; and
 - `CopyLassoUITests`, the XCTest UI-test bundle.
 
-The application currently presents only a placeholder window. Debug and Release compile the same production-neutral models, service contracts, and capture-workflow state. Neither configuration contains a live permission, selection, capture, OCR, clipboard, or feedback adapter. Menu-bar behavior, global shortcuts, user-facing capture, onboarding, settings, and login-at-launch behavior remain unimplemented.
+The application is a dockless SwiftUI menu-bar utility. Debug and Release compile the same menu shell, production-neutral models, service contracts, and capture-workflow state. Neither configuration contains a live permission, selection, capture, OCR, clipboard, or feedback adapter. Global shortcuts, user-facing capture, onboarding, real settings, and login-at-launch behavior remain unimplemented.
 
 ## Supported Configuration
 
@@ -27,10 +27,13 @@ The application currently presents only a placeholder window. Debug and Release 
 | Release architectures | `arm64`, `x86_64` |
 | App Sandbox | Enabled |
 | Hardened Runtime | Enabled |
+| Agent application (`LSUIElement`) | Enabled |
 
 Release builds explicitly set both macOS architectures and disable `ONLY_ACTIVE_ARCH`. The canonical pipeline inspects the built executable with `lipo`; checking the build setting alone is not sufficient.
 
 There is no source-file exclusion list for experimental code. The G05-G07 executable experiments were retired after their decisions were recorded. The canonical pipeline rejects their former launch arguments and live platform symbols, enforces model/workflow import boundaries, and verifies that the neutral coordinator and geometry model compile into both Debug and Release.
+
+Both configurations generate their Info.plist through Xcode and set `LSUIElement` to `YES`. The canonical pipeline checks the build setting and the generated Debug and Release bundles so a normal Dock application cannot be introduced accidentally.
 
 ## Signing
 
