@@ -1,5 +1,6 @@
 import AppKit
 import KeyboardShortcuts
+import Observation
 import XCTest
 
 @testable import CopyLasso
@@ -170,6 +171,27 @@ final class SettingsControllerTests: XCTestCase {
     XCTAssertTrue(context.controller.setLaunchAtLoginEnabled(false))
     XCTAssertNil(context.controller.onboardingShortcutDraft)
     XCTAssertFalse(context.controller.onboardingLaunchAtLoginDraft)
+  }
+
+  func testSuggestedShortcutPublishesAnImmediateRecorderUpdate() {
+    let context = makeContext()
+    let replacement = KeyboardShortcuts.Shortcut(
+      .eight,
+      modifiers: [.option, .command]
+    )
+    context.controller.setCaptureShortcut(replacement)
+    let update = expectation(description: "Capture shortcut observation changed")
+
+    withObservationTracking {
+      _ = context.controller.captureShortcut
+    } onChange: {
+      update.fulfill()
+    }
+
+    context.controller.useSuggestedCaptureShortcut()
+
+    wait(for: [update], timeout: 0.1)
+    XCTAssertEqual(context.controller.captureShortcut, suggestedShortcut)
   }
 
   func testApprovalRequiredLoginItemCanBeDisabled() {

@@ -24,6 +24,7 @@ final class SettingsController {
   private let currentOnboardingVersion: Int
   private var presentedInitialOnboarding = false
 
+  private(set) var captureShortcut: KeyboardShortcuts.Shortcut?
   private(set) var launchAtLoginStatus: LaunchAtLoginStatus
   private(set) var launchAtLoginIssue: LaunchAtLoginIssue?
 
@@ -35,13 +36,9 @@ final class SettingsController {
     launchAtLoginStatus == .enabled
   }
 
-  var captureShortcut: KeyboardShortcuts.Shortcut? {
-    shortcutStore.captureShortcut
-  }
-
   var onboardingShortcutDraft: KeyboardShortcuts.Shortcut? {
     settingsStore.hasConfiguredCaptureShortcut
-      ? shortcutStore.captureShortcut
+      ? captureShortcut
       : CaptureShortcutDefaults.suggested
   }
 
@@ -59,6 +56,7 @@ final class SettingsController {
     self.launchAtLoginService = launchAtLoginService
     self.shortcutStore = shortcutStore
     self.currentOnboardingVersion = currentOnboardingVersion
+    captureShortcut = shortcutStore.captureShortcut
     launchAtLoginStatus = launchAtLoginService.status
     launchAtLoginIssue = Self.issue(for: launchAtLoginService.status)
   }
@@ -115,6 +113,7 @@ final class SettingsController {
 
   func setCaptureShortcut(_ shortcut: KeyboardShortcuts.Shortcut?) {
     shortcutStore.captureShortcut = shortcut
+    captureShortcut = shortcut
     settingsStore.hasConfiguredCaptureShortcut = true
   }
 
@@ -139,6 +138,7 @@ final class SettingsController {
       }
       settingsStore.reset()
       shortcutStore.reset()
+      captureShortcut = nil
       presentedInitialOnboarding = false
       return true
     }
@@ -211,8 +211,7 @@ final class SettingsController {
   }
 
   private func commitOnboarding(shortcut: KeyboardShortcuts.Shortcut?) {
-    shortcutStore.captureShortcut = shortcut
-    settingsStore.hasConfiguredCaptureShortcut = true
+    setCaptureShortcut(shortcut)
     settingsStore.hasConfiguredLaunchAtLogin = true
     settingsStore.completedOnboardingVersion = currentOnboardingVersion
     launchAtLoginIssue = Self.issue(for: launchAtLoginStatus)
