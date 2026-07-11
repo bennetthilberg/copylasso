@@ -74,7 +74,7 @@ Use the same stably signed Debug app after Screen Recording access is enabled. F
 
 1. On the primary display, invoke Capture Text from both the menu and shortcut. Verify the overlay is clear before mouse-down, the cursor is a crosshair, and only the area outside the active rectangle dims after dragging begins.
 2. Exercise forward and reverse drags, a click, a sub-four-point drag, exactly four points, Escape before dragging, Escape during dragging, and every display-edge clamp.
-3. Connect an extended display and repeat a selection there. Record fresh display identifiers, AppKit frames, Core Graphics bounds, and backing scales; never hardcode runtime identifiers.
+3. Connect an extended display and repeat a selection there, including invoking while the pointer is on one display and starting the drag on the other. Press Escape during that drag and confirm the clicked display receives it immediately. Record fresh display identifiers, AppKit frames, Core Graphics bounds, and backing scales; never hardcode runtime identifiers.
 4. Drag from each display toward the other. The rectangle must stop at the initiating display edge, and only that display may dim.
 5. Repeat menu and shortcut selection at least 20 times across valid, click, and Escape outcomes. Every outcome must remove all panels, restore the cursor, leave the command reusable, and leave the clipboard unchanged.
 6. Repeat with Finder, a browser, TextEdit, another Space, and a full-screen Space frontmost. Starting and cancelling selection must not activate CopyLasso or switch Spaces.
