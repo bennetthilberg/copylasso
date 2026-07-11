@@ -41,7 +41,7 @@ Verify in this order:
 7. Repeat recovery while an ordinary full-screen application is frontmost. Confirm presenting or updating CopyLasso's nonactivating panel does not change the frontmost application. Only **Open System Settings** intentionally changes focus.
 8. Confirm macOS did not show the ScreenCaptureKit private-window-picker-bypass warning and that no Accessibility, Input Monitoring, Microphone, or clipboard access was introduced.
 
-Core Graphics preflight may remain positive inside a process after permission is disabled. G12 records revocation once preflight reflects it, normally after relaunch. The G14 capture path treats an actual ScreenCaptureKit denial as authoritative when preflight is stale.
+Core Graphics preflight may remain positive inside a process after permission is disabled. G12 records revocation once preflight reflects it, normally after relaunch. The G14 capture path treats an actual ScreenCaptureKit denial as authoritative when preflight is stale. Ordinary capture requests retain that denial; an explicit **Try Again** permits one new attempt so restored access can recover without weakening the default guard.
 
 ### G12 Verified Result
 
@@ -190,7 +190,7 @@ The unattended July 11, 2026 run completed the deterministic matrix but could no
 
 ## Multi-Display And Retina Hardening Matrix
 
-G19 adds a synthetic topology with primary, left, right, above, below, diagonal, portrait, and recorded Sidecar-style shapes across 1×, 1.5×, and 2× scales. For every fixture, tests drive global selection through display-local Core Graphics conversion and capture-request planning, preserve the initiating display identity, clamp every cross-display endpoint, validate outward-rounded pixels, and reject changed identity, full point size, scale, or derived pixel dimensions. AppKit tests also prove every mixed-scale display can initiate through a panel covering its complete `NSScreen.frame`.
+G19 adds a synthetic topology with primary, left, right, above, below, diagonal, portrait, and recorded Sidecar-style shapes across 1×, 1.5×, and 2× scales. For every fixture, tests drive global selection through display-local Core Graphics conversion and capture-request planning, preserve the initiating display identity, clamp every cross-display endpoint, validate outward-rounded pixels, and reject changed identity, full point size, scale, or derived pixel dimensions. A fractional-scale edge regression also proves the aligned source rectangle stays within the right and bottom display bounds while retaining the outward-rounded output pixels. AppKit tests prove every mixed-scale display can initiate through a panel covering its complete `NSScreen.frame`.
 
 The synthetic matrix is deterministic regression protection; it is not evidence that unavailable physical hardware or a particular menu-bar arrangement worked.
 
@@ -278,9 +278,9 @@ The unattended July 11, 2026 G22 run completed the source, dependency, signed-en
 
 ## Automated Coverage, Repeatability, And OS Matrix
 
-G23 keeps behavior—not a percentage—as the test contract, then uses coverage to detect unreviewed gaps and regressions. The canonical Xcode 26.6 result contains 196 unit tests organized across geometry, coordinator transitions, permission and settings decisions, text assembly, clipboard and feedback decisions, lifecycle recovery, service-boundary orchestration, Vision fixtures, multi-display snapshots, and accessibility/appearance policy.
+G23 keeps behavior—not a percentage—as the test contract, then uses coverage to detect unreviewed gaps and regressions. The canonical Xcode 26.6 result contains 202 unit tests organized across geometry, coordinator transitions, permission and settings decisions, text assembly, clipboard and feedback decisions, lifecycle recovery, service-boundary orchestration, Vision fixtures, multi-display snapshots, and accessibility/appearance policy.
 
-`scripts/audit-coverage.sh` reads the canonical `UnitTests.xcresult`. The reviewed baseline is 2,763/3,858 application lines (71.61%) and 967/1,010 platform-neutral Models/CaptureWorkflow/Settings lines (95.74%). Critical per-file floors prevent the aggregate from hiding a regression. See [Automated Coverage Review](coverage-review.md) for each floor, the G22 comparison, the reachable branches added in G23, and the explicit signed/manual owner for every uncovered category.
+`scripts/audit-coverage.sh` reads the canonical `UnitTests.xcresult`. The reviewed stable baseline is 2,482/3,450 application lines (71.94%) after excluding three retained-state-dependent SwiftUI onboarding builders, and 967/1,010 platform-neutral Models/CaptureWorkflow/Settings lines (95.74%). The 70% aggregate floor is unchanged; every other application file remains included. Critical per-file floors prevent the aggregate from hiding a regression. See [Automated Coverage Review](coverage-review.md) for each floor, the G22 comparison, the reachable branches added in G23, and the explicit signed/manual owner for every uncovered category.
 
 Run a local coverage and determinism check after the canonical build:
 

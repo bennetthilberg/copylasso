@@ -8,19 +8,21 @@ The application target is measured from the nonparallel, timeout-bounded `CopyLa
 
 | Metric | G22 baseline | G23 reviewed baseline |
 | --- | ---: | ---: |
-| Unit tests | 187 | 196 |
-| Application target | 2,718 / 3,854 (70.52%) | 2,763 / 3,858 (71.61%) |
+| Unit tests | 187 | 202 |
+| Stable application aggregate | 2,382 / 3,396 (70.14%) | 2,482 / 3,450 (71.94%) |
 | Models, CaptureWorkflow, and Settings | 922 / 1,006 (91.65%) | 967 / 1,010 (95.74%) |
 | `SettingsController.swift` | 144 / 168 (85.71%) | 167 / 172 (97.09%) |
 | `TextAssembler.swift` | 164 / 203 (80.78%) | 186 / 203 (91.62%) |
 
-The new tests exercise idempotent Launch at Login state, approval/unavailable states, failed postcondition readback, every disable failure, explicit continuation without login, deterministic positioned and unpositioned text-order ties, NaN confidence, and signed-zero geometry. The postcondition test found and fixed one real state-reporting defect: an external re-enable after an idempotent disable now reports a recoverable disable failure instead of returning false with no issue.
+The stable application aggregate excludes `OnboardingView.swift`, `LaunchAtLoginStatusView.swift`, and `MenuBarLabelView.swift`. Those app-hosted SwiftUI builders execute incidentally only while the Debug preference domain says onboarding is incomplete; signed QA legitimately changes that retained state. Their layout, focus, accessibility, and first-run behavior remain owned by the signed UI and manual checks below. The 70% floor is unchanged, and every other application file remains in the aggregate.
+
+The G23 tests exercise idempotent Launch at Login state, approval/unavailable states, failed postcondition readback, every disable failure, explicit continuation without login, deterministic positioned and unpositioned text-order ties, NaN confidence, and signed-zero geometry. Review propagation adds direct configuration, permission-retry, display-size, fractional-edge, and Debug runtime-option regressions. The postcondition test found and fixed one real state-reporting defect: an external re-enable after an idempotent disable now reports a recoverable disable failure instead of returning false with no issue.
 
 ## Enforced Gate
 
 `scripts/audit-coverage.sh` reads the canonical `UnitTests.xcresult` and fails when:
 
-- application-target coverage falls below 70%;
+- the stable application aggregate falls below 70%;
 - the platform-neutral Models, CaptureWorkflow, and Settings aggregate falls below 90%;
 - a required core file disappears from coverage; or
 - a reviewed per-file floor regresses. The strictest floors retain 100% for coordinator and persistent-state primitives, 98% for selection geometry, 95% for clipboard output, 92% for Settings, and 90% for capture orchestration, permission decisions, OCR, and text assembly.
@@ -31,7 +33,7 @@ These are regression floors below the reviewed values, not targets to game. A ch
 
 | Region | Why it remains uncovered in the unit result | Required evidence |
 | --- | --- | --- |
-| SwiftUI `SettingsView`, `AboutView`, onboarding, status, and menu builders | Instantiating declarative builder branches without a window does not prove layout, focus, keyboard order, or accessibility. | Signed focused XCUITests plus the G21/G24 manual accessibility matrix. UI tests have no unconditional retry and are not reported as hosted passes when the runner is unsigned or shielded by `loginwindow`. |
+| SwiftUI `SettingsView`, `AboutView`, onboarding, status, and menu builders | Instantiating declarative builder branches without a window does not prove layout, focus, keyboard order, or accessibility. The aggregate explicitly excludes the three retained-state-dependent onboarding builders so a developer completing setup cannot change the gate without changing code. | Signed focused XCUITests plus the G21/G24 manual accessibility matrix. UI tests have no unconditional retry and are not reported as hosted passes when the runner is unsigned or shielded by `loginwindow`. |
 | `CopyLassoApp` entrypoint and real application termination | A unit test must not start a second app lifecycle or terminate its own process. Root wiring is exercised through injected command/menu tests. | Signed cold-launch, singleton-window, menu, login-item, and Quit checks. |
 | Debug-only permission/selection/capture UI doubles | They exist solely to make signed XCUITests deterministic and are compiled out of Release. | Their controlled UI tests and Release binary/source guards. |
 | AppKit selection panel/event-monitor paths | Pure geometry, clamping, session cancellation, cleanup ordering, and panel-controller seams are directly tested. WindowServer focus, Spaces, display change, cursor, and real mouse delivery are not faithfully reproducible in unit tests. | G13/G19 signed overlay matrices and G24 physical QA. |
