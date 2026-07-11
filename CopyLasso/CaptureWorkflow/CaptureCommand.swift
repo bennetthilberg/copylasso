@@ -6,6 +6,7 @@ final class CaptureCommand: CaptureRequesting {
   private let coordinator: CaptureCoordinator
   private let permissionService: any ScreenCapturePermissionService
   private let selectionService: any RegionSelectionService
+  private let screenCaptureService: any ScreenCaptureService
   private let recoveryPresenter: any PermissionRecoveryPresenting
   private let scheduleWork: WorkScheduler
 
@@ -17,12 +18,14 @@ final class CaptureCommand: CaptureRequesting {
     coordinator: CaptureCoordinator,
     permissionService: any ScreenCapturePermissionService,
     selectionService: any RegionSelectionService,
+    screenCaptureService: any ScreenCaptureService,
     recoveryPresenter: any PermissionRecoveryPresenting,
     scheduleWork: @escaping WorkScheduler = CaptureCommand.scheduleOnNextMainActorTurn
   ) {
     self.coordinator = coordinator
     self.permissionService = permissionService
     self.selectionService = selectionService
+    self.screenCaptureService = screenCaptureService
     self.recoveryPresenter = recoveryPresenter
     self.scheduleWork = scheduleWork
   }
@@ -70,8 +73,8 @@ final class CaptureCommand: CaptureRequesting {
     do {
       let outcome = try await selectionService.selectRegion()
       switch outcome {
-      case .selected:
-        _ = coordinator.handle(.fail(.internal))
+      case .selected(let selection):
+        await proceedToPendingCapture(selection)
       case .cancelled(let reason):
         _ = coordinator.handle(.cancel(reason.captureCancellationReason))
       }
@@ -79,6 +82,19 @@ final class CaptureCommand: CaptureRequesting {
       _ = coordinator.handle(.fail(.selection))
     }
     resetTerminalState()
+  }
+
+  private func proceedToPendingCapture(_ selection: SelectionResult) async {
+    guard case .transitioned = coordinator.handle(.selectionCompleted) else {
+      return
+    }
+
+    do {
+      _ = try await screenCaptureService.capture(selection)
+      _ = coordinator.handle(.fail(.capture))
+    } catch {
+      _ = coordinator.handle(.fail(.capture))
+    }
   }
 
   private func finishPermissionFailure(

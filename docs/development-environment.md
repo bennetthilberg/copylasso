@@ -143,9 +143,9 @@ Interactive Run and UI testing require runnable local signing. Keep any team or 
 
 ## Architecture Baseline
 
-The G05-G07 executable feasibility harnesses were retired after their evidence was recorded. Their former launch arguments are no longer supported, and neither Debug nor Release contains live Vision, ScreenCaptureKit, overlay, clipboard, or feedback behavior.
+The G05-G07 executable feasibility harnesses were retired after their evidence was recorded. Their former launch arguments are no longer supported. Both Debug and Release now contain the production AppKit selection overlay, but neither contains live Vision, ScreenCaptureKit capture, clipboard, or feedback behavior.
 
-The application target now contains the dockless menu-bar shell, production-neutral models and service contracts, and the live Core Graphics Screen Recording permission adapter. Capture Text performs the G12 permission slice and, after authorization, reaches a temporary selection service that intentionally stops before any overlay or pixel access. See [Architecture Overview](architecture/overview.md) for dependency and actor boundaries, [Testing](testing.md) for the signed permission matrix, [ADR-001](architecture/ADR-001-vision-ocr.md) for OCR evidence, [ADR-002](architecture/ADR-002-screen-capture.md) for permission and capture evidence, and [ADR-003](architecture/ADR-003-selection-overlay.md) for selection and coordinate evidence.
+The application target contains the dockless menu-bar shell, production-neutral models and service contracts, the live Core Graphics Screen Recording permission adapter, and the live per-display AppKit selection adapter. Capture Text performs the G12 permission slice, begins production selection after authorization, and sends valid geometry to a temporary G14 boundary that always stops before pixel access. See [Architecture Overview](architecture/overview.md) for dependency and actor boundaries, [Testing](testing.md) for the signed permission and selection matrices, [ADR-001](architecture/ADR-001-vision-ocr.md) for OCR evidence, [ADR-002](architecture/ADR-002-screen-capture.md) for permission and capture evidence, and [ADR-003](architecture/ADR-003-selection-overlay.md) for selection and coordinate evidence.
 
 ## GitHub Actions
 
@@ -162,7 +162,9 @@ The required check names are `build and test (arm64)` and `build and test (x86_6
 
 ## Current Boundary
 
-The repository contains a buildable dockless menu-bar app with onboarding, persistent Settings, Launch at Login, a configurable global shortcut, a production Screen Recording permission service, a singleton nonactivating recovery panel, service test doubles, and retained feasibility evidence. The shortcut and menu both enter the same permission workflow. Selection is a temporary unavailable boundary, and production selection, capture, OCR, clipboard, and feedback remain intentionally unimplemented.
+The repository contains a buildable dockless menu-bar app with onboarding, persistent Settings, Launch at Login, a configurable global shortcut, a production Screen Recording permission service, a singleton nonactivating recovery panel, production multi-display selection, service test doubles, and retained feasibility evidence. The shortcut and menu both enter the same permission and selection workflow. Valid selection geometry reaches a temporary no-pixel capture service; production ScreenCaptureKit capture, OCR, clipboard, and feedback remain intentionally unimplemented.
+
+Normal Debug and Release runs use the production selection service. Signed UI tests keep their existing menu/settings coverage deterministic with a Debug-only selection double. Add `--g13-live-selection` to the controlled UI-test launch arguments to exercise the real accessible overlay with a controlled granted permission observation. The argument and double are compiled out of Release.
 
 For a development-only clean first-run state, open Settings and choose **Reset Local Development State…**. After confirmation, CopyLasso unregisters its login item and clears its owned preferences and shortcut data before reopening onboarding. This does not reset Screen Recording permission.
 

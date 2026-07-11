@@ -115,22 +115,110 @@ final class CapturePermissionFlowTests: XCTestCase {
     XCTAssertEqual(context.scheduler.scheduledWorkCount, 3)
   }
 
+  func testValidSelectionReachesNoPixelCaptureBoundaryExactlyOnceAndReturnsIdle() async throws {
+    let selection = try makeSelection()
+    let context = makeContext(
+      current: .granted,
+      selectionResult: .success(.selected(selection))
+    )
+
+    _ = context.command.perform()
+    await context.scheduler.runNext()
+
+    let capturedSelections = await context.screenCapture.selections
+    XCTAssertEqual(capturedSelections, [selection])
+    XCTAssertEqual(context.coordinator.state, .idle)
+    XCTAssertTrue(context.command.isEnabled)
+  }
+
+  func testSelectionCancellationNeverCallsCaptureAndReturnsIdle() async {
+    let context = makeContext(
+      current: .granted,
+      selectionResult: .success(.cancelled(.escape))
+    )
+
+    _ = context.command.perform()
+    await context.scheduler.runNext()
+
+    let capturedSelections = await context.screenCapture.selections
+    XCTAssertEqual(capturedSelections, [])
+    XCTAssertEqual(context.coordinator.state, .idle)
+  }
+
+  func testSelectionFailureNeverCallsCaptureAndReturnsIdle() async {
+    let context = makeContext(current: .granted, selectionResult: .failure(.injected))
+
+    _ = context.command.perform()
+    await context.scheduler.runNext()
+
+    let capturedSelections = await context.screenCapture.selections
+    XCTAssertEqual(capturedSelections, [])
+    XCTAssertEqual(context.coordinator.state, .idle)
+  }
+
+  func testPendingCaptureServiceRejectsBeforeProducingPixels() async throws {
+    let service = PendingScreenCaptureService()
+
+    do {
+      _ = try await service.capture(makeSelection())
+      XCTFail("Expected the G14 boundary to be unavailable")
+    } catch {
+      XCTAssertEqual(error as? PendingScreenCaptureError, .unavailableUntilG14)
+    }
+  }
+
+  func testCommandRemainsBusyWhileProductionSelectionIsPending() async {
+    let coordinator = CaptureCoordinator()
+    let selection = HoldingRegionSelectionService()
+    let scheduler = ManualCaptureWorkScheduler()
+    let command = CaptureCommand(
+      coordinator: coordinator,
+      permissionService: StubScreenCapturePermissionService(
+        currentResult: .granted,
+        requestResult: .granted
+      ),
+      selectionService: selection,
+      screenCaptureService: StubScreenCaptureService(result: .failure(.injected)),
+      recoveryPresenter: SpyPermissionRecoveryPresenter(),
+      scheduleWork: scheduler.schedule
+    )
+
+    XCTAssertEqual(
+      command.perform(),
+      .transitioned(from: .idle, to: .requestingPermission)
+    )
+    let flow = Task { @MainActor in await scheduler.runNext() }
+    await Task.yield()
+    await Task.yield()
+
+    XCTAssertEqual(coordinator.state, .selecting)
+    XCTAssertEqual(command.perform(), .rejectedBusy(currentState: .selecting))
+    XCTAssertEqual(selection.selectRegionCallCount, 1)
+
+    selection.complete(with: .cancelled(.escape))
+    await flow.value
+    XCTAssertEqual(coordinator.state, .idle)
+  }
+
   private func makeContext(
     current: ScreenCaptureAuthorizationObservation,
-    request: ScreenCaptureAuthorizationObservation = .granted
+    request: ScreenCaptureAuthorizationObservation = .granted,
+    selectionResult: Result<SelectionOutcome, TestServiceError> = .failure(.injected)
   ) -> Context {
     let coordinator = CaptureCoordinator()
     let permission = StubScreenCapturePermissionService(
       currentResult: current,
       requestResult: request
     )
-    let selection = StubRegionSelectionService(result: .failure(.injected))
+    let selection = StubRegionSelectionService(result: selectionResult)
+    let screenCapture = StubScreenCaptureService(result: .failure(.injected))
     let recovery = SpyPermissionRecoveryPresenter()
     let scheduler = ManualCaptureWorkScheduler()
     let command = CaptureCommand(
       coordinator: coordinator,
       permissionService: permission,
       selectionService: selection,
+      screenCaptureService: screenCapture,
       recoveryPresenter: recovery,
       scheduleWork: scheduler.schedule
     )
@@ -138,9 +226,22 @@ final class CapturePermissionFlowTests: XCTestCase {
       coordinator: coordinator,
       permission: permission,
       selection: selection,
+      screenCapture: screenCapture,
       recovery: recovery,
       scheduler: scheduler,
       command: command
+    )
+  }
+
+  private func makeSelection() throws -> SelectionResult {
+    let display = try DisplayGeometry(
+      displayID: 7,
+      appKitFrame: CGRect(x: 0, y: 0, width: 100, height: 100),
+      coreGraphicsBounds: CGRect(x: 0, y: 0, width: 100, height: 100),
+      backingScale: 2
+    )
+    return try XCTUnwrap(
+      display.selectionResult(from: CGPoint(x: 10, y: 20), to: CGPoint(x: 50, y: 60))
     )
   }
 
@@ -148,6 +249,7 @@ final class CapturePermissionFlowTests: XCTestCase {
     let coordinator: CaptureCoordinator
     let permission: StubScreenCapturePermissionService
     let selection: StubRegionSelectionService
+    let screenCapture: StubScreenCaptureService
     let recovery: SpyPermissionRecoveryPresenter
     let scheduler: ManualCaptureWorkScheduler
     let command: CaptureCommand
@@ -175,5 +277,26 @@ private final class ManualCaptureWorkScheduler {
       return XCTFail("Expected scheduled capture work")
     }
     await pendingWork.removeFirst()()
+  }
+}
+
+@MainActor
+private final class HoldingRegionSelectionService: RegionSelectionService {
+  private var continuation: CheckedContinuation<SelectionOutcome, Never>?
+  private(set) var selectRegionCallCount = 0
+
+  func selectRegion() async throws -> SelectionOutcome {
+    selectRegionCallCount += 1
+    return await withCheckedContinuation { self.continuation = $0 }
+  }
+
+  func cancelSelection() {
+    complete(with: .cancelled(.applicationTerminated))
+  }
+
+  func complete(with outcome: SelectionOutcome) {
+    let continuation = continuation
+    self.continuation = nil
+    continuation?.resume(returning: outcome)
   }
 }

@@ -12,10 +12,12 @@ struct CopyLassoApp: App {
     let shortcutStore = KeyboardShortcutsStore()
     let launchAtLoginService: any LaunchAtLoginServicing
     let permissionService: any ScreenCapturePermissionService
+    let selectionService: any RegionSelectionService
 
     #if DEBUG
       let arguments = ProcessInfo.processInfo.arguments
       let isUITesting = arguments.contains("--g10-g11-ui-testing")
+      let isLiveSelectionTesting = arguments.contains("--g13-live-selection")
       if isUITesting {
         launchAtLoginService = DebugLaunchAtLoginService(
           status: Self.debugLaunchAtLoginStatus(arguments: arguments)
@@ -34,12 +36,17 @@ struct CopyLassoApp: App {
         settingsStore.completedOnboardingVersion = SettingsController.currentOnboardingVersion
       }
       permissionService =
-        isUITesting
+        isUITesting || isLiveSelectionTesting
         ? DebugScreenCapturePermissionService(arguments: arguments)
         : SystemScreenCapturePermissionService(historyStore: settingsStore)
+      selectionService =
+        isUITesting && !isLiveSelectionTesting
+        ? DebugRegionSelectionService()
+        : AppKitRegionSelectionService()
     #else
       launchAtLoginService = SystemLaunchAtLoginService()
       permissionService = SystemScreenCapturePermissionService(historyStore: settingsStore)
+      selectionService = AppKitRegionSelectionService()
     #endif
 
     settingsController = SettingsController(
@@ -54,7 +61,8 @@ struct CopyLassoApp: App {
     let captureCommand = CaptureCommand(
       coordinator: coordinator,
       permissionService: permissionService,
-      selectionService: PendingRegionSelectionService(),
+      selectionService: selectionService,
+      screenCaptureService: PendingScreenCaptureService(),
       recoveryPresenter: recoveryController
     )
     recoveryController.captureRequester = captureCommand

@@ -27,7 +27,9 @@ The application stores only ordinary preferences needed for versioned onboarding
 
 CopyLasso needs macOS Screen Recording permission to capture the selected pixels. It performs no permission check or request merely by launching. A user-initiated Capture Text command checks access and requests it only when the current CopyLasso preference history has never requested it. When access remains unavailable, a nonactivating recovery panel explains the manual System Settings path without claiming macOS can distinguish denial from pending approval or definitively identify revocation.
 
-Core Graphics preflight can remain stale inside a running process after access changes. G12 detects revocation once preflight reflects it, typically after relaunch. A future real capture denial will be authoritative even if preflight still reports access. No screen pixels are captured by the current production workflow.
+After approval, CopyLasso creates temporary transparent AppKit panels so the user can select a rectangle. The panels retain only display metadata and in-memory geometry for the active selection. They are ordered out and released before the next workflow stage, and the selected rectangle is not persisted or logged.
+
+Core Graphics preflight can remain stale inside a running process after access changes. G12 detects revocation once preflight reflects it, typically after relaunch. A future real capture denial will be authoritative even if preflight still reports access. The current production workflow stops at a no-pixel capture boundary after selection, so it still does not capture screen content.
 
 The v0.1 core workflow does not require Accessibility or Input Monitoring permission. macOS may prevent protected or DRM-restricted content from being captured, and CopyLasso does not attempt to bypass those protections.
 

@@ -2,13 +2,13 @@
 
 - **Status:** Accepted
 - **Date:** July 10, 2026
-- **Scope:** G07 feasibility spike; production selection remains deferred to G13 and region capture to G14
+- **Scope:** G07 feasibility decision adopted by the production G13 selection service; region capture remains deferred to G14
 
 ## Context
 
 CopyLasso must let a user begin a rectangular selection on any attached display without activating the app, dimming unrelated displays, or including the overlay in the later capture. AppKit and Core Graphics describe the same display with different origins and Y-axis conventions, and backing pixels may use a nonintegral scale. G07 tests the windowing and geometry assumptions before they become production architecture.
 
-The experiment is Debug-only and is launched explicitly with `--g07-selection-spike`. Launching it presents a diagnostic window but does not present overlays. It never captures pixels, calls Vision, writes the clipboard, or persists selection data.
+The original experiment was Debug-only and used `--g07-selection-spike`; G08 retired that executable harness while preserving its evidence and geometry. G13 now implements the same decision in the normal Debug and Release path. Construction and launch remain inert: panels are created only after an authorized user command reaches selection. The current workflow never captures pixels, calls Vision, writes the clipboard, or persists selection data.
 
 ## Decision
 
@@ -46,7 +46,7 @@ Conversion is per display rather than based on the primary display:
 4. Add that display's Core Graphics bounds origin for the global top-left rectangle.
 5. Multiply the local top-left rectangle by the backing scale, using `floor` for minimum edges and `ceil` for maximum edges so partially covered pixels are included.
 
-The harness cross-checks the reported backing scale against `NSScreen.convertRectToBacking`. Invalid frames, nonfinite coordinates, and nonpositive scales are rejected. Unit tests cover 1×, 1.5×, and 2× scaling; negative origins; displays above, below, and beside the primary; all edge clamps; and the current Sidecar-style offset shape without embedding its runtime display identifier.
+The production display provider cross-checks the reported backing scale against `NSScreen.convertRectToBacking`. It reads `NSScreen.screens` fresh for every session, rejects missing or duplicate display identifiers and invalid geometry, and never caches a display layout. Unit tests cover 1×, 1.5×, and 2× scaling; negative origins; displays above, below, and beside the primary; all edge clamps; and the current Sidecar-style offset shape without embedding its runtime display identifier.
 
 ## Completion and Cancellation
 
@@ -61,7 +61,9 @@ Every path completes at most once. On mouse-up or cancellation, the controller s
 5. verifies that no panel remains visible; and
 6. delivers only the geometry outcome on the next main-actor turn.
 
-That order establishes the G14 boundary: a future capture may begin only from the completion callback, after the overlay is absent. The G07 spike itself never performs capture.
+That order establishes the G14 boundary: capture may begin only from the completion callback, after the overlay is absent. G13 sends a valid `SelectionResult` to a temporary `ScreenCaptureService` implementation that always throws `unavailableUntilG14` before calling any capture API, then resets the coordinator to idle.
+
+The production service allows only one controller and unresolved continuation at a time. Concurrent menu or shortcut requests remain rejected while selection is active. Partial setup failures, display changes, application termination, and explicit lifecycle cancellation share the same cleanup path; surfaces hold only weak event callbacks, and the controller is released before the deferred result resumes the workflow.
 
 ## Live Evidence
 
@@ -82,11 +84,21 @@ At Dell 1600 × 900 and 144 Hz, live descriptors rebuilt to `(0, 0, 1600, 900)` 
 
 With TextEdit in a separate full-screen Space, the five-second trigger left the panel transparent until mouse-down, changed the cursor to a crosshair, and then displayed the expected initiating-display dim and border over TextEdit. It did not switch Spaces or bring CopyLasso forward. Final inspection found no CopyLasso process or window after termination, and no panel, dim, border, or crosshair remained after any completed or cancelled session.
 
+## Production Adoption
+
+G13 replaces the temporary unavailable selection service with `AppKitRegionSelectionService`. Normal Debug and Release runs use it. A Debug-only deterministic selection double keeps unrelated signed UI tests from covering the desktop, while `--g13-live-selection` combines a controlled granted permission observation with the real accessible overlay. Both the argument and double are absent from Release.
+
+Automated coverage begins from an expected compile failure before the production service types exist and covers fresh enumeration, surface construction and partial failure, initiating-display-only rendering, clamping and conversion, every cancellation source, deferred cleanup, hidden-window verification, overlap rejection, controller reuse, no launch-time overlay, no-pixel command orchestration, and at least 20 sequential sessions. The signed live matrix and its exact workstation display evidence are recorded in `docs/testing.md` and the local roadmap when executed.
+
+The G13 production run on macOS 26.5.1 used the Dell primary display at 1920 × 1080 and 144 Hz: display ID `4`, matching AppKit and Core Graphics bounds `(0, 0, 1920, 1080)`, 1× backing scale, and a matching 100-point backing conversion. Menu and global-shortcut invocation each presented one accessible overlay without replacing frontmost TextEdit. Escape, click cancellation, a valid drag, full-screen TextEdit, and quitting during selection all removed every panel and left no CopyLasso window or process behind. The signed suite completed 20 mixed live sessions without changing the clipboard.
+
+A fresh physical extended-display run was not possible during G13 because the temporary Sidecar iPad had been disconnected and was unavailable. The production service still uses the G07-proven per-display strategy, the current suite retains the exact Sidecar-style 2× geometry fixture, and a signed conditional test exercises both directions of a cross-display drag whenever an extended display is attached. That conditional test was compiled on both architectures and skipped—rather than reported as passing—on the one-display G13 workstation state. G19 remains responsible for the broader physical display matrix.
+
 ## Consequences and Limits
 
-- G13 may turn the proven behavior into production selection architecture without changing the coordinate contract.
+- G13 turns the proven behavior into production selection architecture without changing the coordinate contract.
 - G14 must capture only after the selection completion callback and must use the selected display's local Core Graphics rectangle.
 - Display configuration changes cancel the current session; production code must rebuild descriptors before another selection.
 - Full hardening across more physical arrangements, display rotations, and macOS versions remains G19 and G29 work.
 - G08 retired the executable overlay harness while retaining the pure geometry and selection-session model. G13 owns the production AppKit adapter.
-- G07 introduces no public API, dependency, permission request, pixel capture, OCR integration, clipboard behavior, onboarding, or production UI.
+- G13 introduces no public API, dependency, additional permission request, pixel capture, OCR integration, clipboard behavior, or feedback UI.
