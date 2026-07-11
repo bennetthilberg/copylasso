@@ -145,7 +145,7 @@ Interactive Run and UI testing require runnable local signing. Keep any team or 
 
 The G05-G07 executable feasibility harnesses were retired after their evidence was recorded. Their former launch arguments are no longer supported, and neither Debug nor Release contains live Vision, ScreenCaptureKit, overlay, clipboard, or feedback behavior.
 
-The application target now contains the dockless menu-bar shell plus production-neutral models, service contracts, and workflow state. Capture Text exercises only an auto-completing coordinator stub and performs no platform work. See [Architecture Overview](architecture/overview.md) for dependency and actor boundaries, [ADR-001](architecture/ADR-001-vision-ocr.md) for OCR evidence, [ADR-002](architecture/ADR-002-screen-capture.md) for permission and capture evidence, and [ADR-003](architecture/ADR-003-selection-overlay.md) for selection and coordinate evidence. Later production goals reintroduce each live adapter behind the recorded contract.
+The application target now contains the dockless menu-bar shell, production-neutral models and service contracts, and the live Core Graphics Screen Recording permission adapter. Capture Text performs the G12 permission slice and, after authorization, reaches a temporary selection service that intentionally stops before any overlay or pixel access. See [Architecture Overview](architecture/overview.md) for dependency and actor boundaries, [Testing](testing.md) for the signed permission matrix, [ADR-001](architecture/ADR-001-vision-ocr.md) for OCR evidence, [ADR-002](architecture/ADR-002-screen-capture.md) for permission and capture evidence, and [ADR-003](architecture/ADR-003-selection-overlay.md) for selection and coordinate evidence.
 
 ## GitHub Actions
 
@@ -162,8 +162,16 @@ The required check names are `build and test (arm64)` and `build and test (x86_6
 
 ## Current Boundary
 
-The repository contains a buildable dockless menu-bar app with onboarding, persistent Settings, Launch at Login, a configurable global shortcut, production-neutral capture architecture, service test doubles, and retained feasibility evidence. The shortcut and menu both reach the no-side-effect capture coordinator stub; production permission, selection, capture, OCR, clipboard, and feedback adapters remain intentionally unimplemented.
+The repository contains a buildable dockless menu-bar app with onboarding, persistent Settings, Launch at Login, a configurable global shortcut, a production Screen Recording permission service, a singleton nonactivating recovery panel, service test doubles, and retained feasibility evidence. The shortcut and menu both enter the same permission workflow. Selection is a temporary unavailable boundary, and production selection, capture, OCR, clipboard, and feedback remain intentionally unimplemented.
 
 For a development-only clean first-run state, open Settings and choose **Reset Local Development State…**. After confirmation, CopyLasso unregisters its login item and clears its owned preferences and shortcut data before reopening onboarding. This does not reset Screen Recording permission.
+
+Reset the Debug bundle's macOS permission separately only when running the controlled matrix:
+
+```sh
+/usr/bin/tccutil reset ScreenCapture io.github.bennetthilberg.copylasso.debug
+```
+
+The complete order, expected observations, and focus checks are documented in [Testing](testing.md). Use a stably signed Debug build so a rebuild does not create misleading permission churn.
 
 Launch at Login uses `SMAppService.mainApp` and therefore requires a runnable signed app for real verification. The automated unit suite covers status mapping, failure handling, and reconciliation with doubles; final local verification must still enable the real item, log out and back in or reboot, confirm the dockless process starts, then disable it and repeat.

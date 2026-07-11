@@ -21,11 +21,13 @@ CopyLasso v0.1 has no:
 - analytics or telemetry; or
 - logging of screenshots, recognized text, clipboard text, or copied-text previews.
 
-The application stores only ordinary preferences needed for versioned onboarding, shortcut configuration, permission-history presentation, and settings behavior. Launch at Login state is read from macOS rather than copied into a preference that could become stale. These values never contain captured images or recognized text.
+The application stores only ordinary preferences needed for versioned onboarding, shortcut configuration, permission-history presentation, and settings behavior. Its permission history records only whether CopyLasso has requested Screen Recording access and whether access was previously observed; it does not store screen content or a definitive macOS authorization status. Launch at Login state is read from macOS rather than copied into a preference that could become stale. These values never contain captured images or recognized text.
 
 ## macOS Permissions
 
-CopyLasso needs macOS Screen Recording permission to capture the selected pixels. It requests that permission only when the user first attempts a capture and provides recovery guidance if access is denied or later revoked.
+CopyLasso needs macOS Screen Recording permission to capture the selected pixels. It performs no permission check or request merely by launching. A user-initiated Capture Text command checks access and requests it only when the current CopyLasso preference history has never requested it. When access remains unavailable, a nonactivating recovery panel explains the manual System Settings path without claiming macOS can distinguish denial from pending approval or definitively identify revocation.
+
+Core Graphics preflight can remain stale inside a running process after access changes. G12 detects revocation once preflight reflects it, typically after relaunch. A future real capture denial will be authoritative even if preflight still reports access. No screen pixels are captured by the current production workflow.
 
 The v0.1 core workflow does not require Accessibility or Input Monitoring permission. macOS may prevent protected or DRM-restricted content from being captured, and CopyLasso does not attempt to bypass those protections.
 

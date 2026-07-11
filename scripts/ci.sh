@@ -86,9 +86,19 @@ if [[ "$service_management_imports" != "CopyLasso/Services/LaunchAtLoginService.
     exit 1
 fi
 
-readonly retired_runtime_pattern='CGPreflightScreenCaptureAccess|CGRequestScreenCaptureAccess|SCScreenshotManager|SCShareableContent|VNRecognizeTextRequest|SelectionOverlayPanel|--g06-capture-spike|--g07-selection-spike|NSPasteboard'
-if /usr/bin/grep -R -nE "$retired_runtime_pattern" CopyLasso; then
-    echo "A retired experiment or live platform adapter remains in the application target." >&2
+readonly permission_service='CopyLasso/Services/ScreenCapturePermissionService.swift'
+permission_api_files="$({ /usr/bin/grep -R -lE \
+    'CGPreflightScreenCaptureAccess|CGRequestScreenCaptureAccess' CopyLasso || true; })"
+if [[ "$permission_api_files" != "$permission_service" ]] || \
+    ! /usr/bin/grep -q 'CGPreflightScreenCaptureAccess' "$permission_service" || \
+    ! /usr/bin/grep -q 'CGRequestScreenCaptureAccess' "$permission_service"; then
+    echo "Core Graphics Screen Recording permission APIs must remain confined to the production permission service." >&2
+    exit 1
+fi
+
+readonly prohibited_capture_runtime_pattern='import[[:space:]]+(ScreenCaptureKit|Vision)|SCScreenshotManager|SCShareableContent|SCContentSharingPicker|CGWindowListCreateImage|CGDisplayCreateImage|VNRecognizeTextRequest|SelectionOverlayPanel|--g06-capture-spike|--g07-selection-spike|NSPasteboard'
+if /usr/bin/grep -R -nE "$prohibited_capture_runtime_pattern" CopyLasso; then
+    echo "A prohibited capture, OCR, pasteboard, or retired experiment API remains in the application target." >&2
     exit 1
 fi
 
@@ -220,8 +230,8 @@ if [[ ! -x "$release_executable" ]]; then
     exit 1
 fi
 
-if /usr/bin/strings "$release_executable" | /usr/bin/grep -q -- '--g10-g11-'; then
-    echo "Debug-only G10-G11 UI-test controls leaked into Release." >&2
+if /usr/bin/strings "$release_executable" | /usr/bin/grep -qE -- '--g10-g11-|--g12-'; then
+    echo "Debug-only UI-test controls leaked into Release." >&2
     exit 1
 fi
 
@@ -230,6 +240,8 @@ if [[ ! -f "$debug_module" ]] || \
     ! /usr/bin/grep -a -q 'CaptureCoordinator' "$debug_module" || \
     ! /usr/bin/grep -a -q 'DisplayGeometry' "$debug_module" || \
     ! /usr/bin/grep -a -q 'CaptureCommand' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'SystemScreenCapturePermissionService' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'PermissionRecoveryPanelController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'SettingsController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'GlobalShortcutController' "$debug_module"; then
     echo "Debug is missing the production-neutral workflow architecture." >&2
@@ -245,6 +257,8 @@ for release_architecture in arm64 x86_64; do
     if ! /usr/bin/grep -a -q 'CaptureCoordinator' "$release_module" || \
         ! /usr/bin/grep -a -q 'DisplayGeometry' "$release_module" || \
         ! /usr/bin/grep -a -q 'CaptureCommand' "$release_module" || \
+        ! /usr/bin/grep -a -q 'SystemScreenCapturePermissionService' "$release_module" || \
+        ! /usr/bin/grep -a -q 'PermissionRecoveryPanelController' "$release_module" || \
         ! /usr/bin/grep -a -q 'SettingsController' "$release_module" || \
         ! /usr/bin/grep -a -q 'GlobalShortcutController' "$release_module"; then
         echo "Release is missing the production-neutral workflow architecture for $release_architecture." >&2

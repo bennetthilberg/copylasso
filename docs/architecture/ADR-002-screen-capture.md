@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** July 10, 2026
-- **Scope:** G06 feasibility spike; production permission UI remains deferred to G11 and production capture to G14
+- **Scope:** G06 feasibility evidence, G12 production permission handling, and the G14 production capture boundary
 
 ## Context
 
@@ -25,6 +25,10 @@ ScreenCaptureKit is viable for CopyLasso v0.1. The internal experiment:
 The experiment uses [`CGPreflightScreenCaptureAccess()`](https://developer.apple.com/documentation/coregraphics/cgpreflightscreencaptureaccess%28%29) and [`CGRequestScreenCaptureAccess()`](https://developer.apple.com/documentation/coregraphics/cgrequestscreencaptureaccess%28%29), plus two preferences recording whether this CopyLasso preferences history has requested or previously observed access. Its labels intentionally say "after a prior request" and "may have been revoked" rather than claiming an unavailable macOS state.
 
 An actual ScreenCaptureKit permission-denied error is authoritative. It overrides a stale positive preflight result and produces the likely-revoked observation.
+
+G12 implements the production permission portion with the same deliberately limited semantics. A `SystemScreenCapturePermissionService` performs Core Graphics preflight only after a user invokes Capture Text, records request history before calling the system request, and records previously observed access only after a direct positive result. A singleton nonactivating recovery panel explains the manual path without claiming macOS can distinguish denial from pending approval. It never retries automatically after System Settings changes.
+
+The approved production split is explicit: G12 detects revocation once Core Graphics preflight reflects it. The same-process stale-positive case observed below remains G14's responsibility, because only the real ScreenCaptureKit attempt can authoritatively report that access is unavailable while preflight still says granted.
 
 CopyLasso will not use `SCContentSharingPicker` because a case-by-case picker cannot preserve the shortcut-to-arbitrary-region workflow. It will not request the managed persistent-content-capture entitlement, which Apple documents for screen-sharing products, and it will not fall back to deprecated Core Graphics screenshot APIs. Apple Developer Technical Support identifies the picker and managed entitlement as the two ways to avoid the direct-capture warning. Neither is appropriate for CopyLasso. See Apple's [ScreenCaptureKit warning discussion](https://developer.apple.com/forums/thread/765103).
 
@@ -54,6 +58,23 @@ The Debug bundle's scoped reset command is:
 
 Apple documents manual permission management in [Control access to screen and system audio recording on Mac](https://support.apple.com/guide/mac-help/control-access-screen-system-audio-recording-mchld6aa7d23/mac).
 
+## G12 Production Permission Evidence
+
+The production Core Graphics lifecycle was verified July 10, 2026 with the same macOS 26.5.1 (`25F80`), Xcode 26.6 (`17F113`), and stable Apple Development signing requirement used for the feasibility work:
+
+| State or action | Production result |
+| --- | --- |
+| Ordinary dockless launch | No Screen Recording check, system prompt, or CopyLasso recovery panel appeared. |
+| First shortcut request and Deny | macOS presented its Screen Recording dialog. After **Deny**, CopyLasso presented one nonactivating recovery panel and did not enter selection. |
+| Repeated denied attempts | Three shortcut attempts reused the same panel without another system request or inconsistent busy state. |
+| Open System Settings | The explicit action intentionally changed focus and opened Screen & System Audio Recording directly. |
+| Enable and choose Later | CopyLasso did not retry automatically. An explicit retry remained unavailable and explained that choosing **Later** requires quitting and reopening. |
+| Relaunch after approval | The designated signing requirement was unchanged. Three shortcut attempts reached the temporary G13 selection boundary, returned to idle, and produced no overlay, pixels, OCR, clipboard mutation, or visible feedback. |
+| Revoke and relaunch | Preflight reflected the revocation and the panel said access was previously available and may have been turned off. **Try Again** updated the same panel with explicit relaunch guidance. |
+| Full-screen focus | The panel appeared in a full-screen TextEdit Space while CopyLasso remained non-frontmost according to Launch Services. |
+
+No ScreenCaptureKit enumeration or capture call occurred, so the private-window-picker-bypass warning did not appear. Source and binary guards also confirmed that G12 added no Accessibility, Input Monitoring, Microphone, Vision, pasteboard, or pixel path.
+
 ## Privacy and Sandbox Results
 
 - App Sandbox and Hardened Runtime remained enabled in the signed experiment.
@@ -73,4 +94,4 @@ Apple documents manual permission management in [Control access to screen and sy
 - The live permission matrix covers the maintainer's current Apple Silicon macOS 26 workstation. macOS 14 compatibility is established by the deployment target and macOS 14 API surface; clean older-system VM behavior remains a later release check.
 - Protected or DRM-controlled content may legitimately capture as blank and is outside the arbitrary-allowed-pixels guarantee.
 - The private-window-picker warning wording and duration are controlled by macOS and may change. Production UI must present recovery guidance without promising a distinction or restart behavior the API cannot prove.
-- G07 may proceed with overlay and coordinate-conversion feasibility. G08 retired the executable harness and live adapter while preserving the authorization-history semantics and narrow permission/capture contracts. G12 and G14 own their production implementations.
+- G07 established overlay and coordinate-conversion feasibility. G08 retired the executable harness and live adapter while preserving the authorization-history semantics and narrow permission/capture contracts. G12 now owns the production Core Graphics lifecycle and recovery UI; G14 remains responsible for authoritative ScreenCaptureKit denial and pixel capture.

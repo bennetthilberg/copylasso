@@ -4,12 +4,12 @@ import XCTest
 
 @MainActor
 final class CaptureCommandTests: XCTestCase {
-  func testAcceptedRequestWaitsForScheduledStubCompletion() {
+  func testAcceptedRequestWaitsForScheduledStubCompletion() async {
     let coordinator = CaptureCoordinator()
     let scheduler = ManualCaptureCompletionScheduler()
-    let command = CaptureCommand(
+    let command = makeTestCaptureCommand(
       coordinator: coordinator,
-      scheduleCompletion: scheduler.schedule
+      scheduleWork: scheduler.schedule
     )
 
     XCTAssertTrue(command.isEnabled)
@@ -21,7 +21,7 @@ final class CaptureCommandTests: XCTestCase {
     XCTAssertFalse(command.isEnabled)
     XCTAssertEqual(scheduler.scheduledCompletionCount, 1)
 
-    scheduler.runNext()
+    await scheduler.runNext()
 
     XCTAssertEqual(coordinator.state, .idle)
     XCTAssertTrue(command.isEnabled)
@@ -30,9 +30,9 @@ final class CaptureCommandTests: XCTestCase {
   func testConcurrentRequestIsRejectedWithoutSchedulingAnotherCompletion() {
     let coordinator = CaptureCoordinator()
     let scheduler = ManualCaptureCompletionScheduler()
-    let command = CaptureCommand(
+    let command = makeTestCaptureCommand(
       coordinator: coordinator,
-      scheduleCompletion: scheduler.schedule
+      scheduleWork: scheduler.schedule
     )
 
     XCTAssertEqual(
@@ -51,9 +51,9 @@ final class CaptureCommandTests: XCTestCase {
     for state in CaptureState.nonIdleCaptureCommandTestCases {
       let coordinator = CaptureCoordinator(initialState: state)
       let scheduler = ManualCaptureCompletionScheduler()
-      let command = CaptureCommand(
+      let command = makeTestCaptureCommand(
         coordinator: coordinator,
-        scheduleCompletion: scheduler.schedule
+        scheduleWork: scheduler.schedule
       )
 
       XCTAssertFalse(command.isEnabled)
@@ -63,12 +63,12 @@ final class CaptureCommandTests: XCTestCase {
     }
   }
 
-  func testCaptureCommandCanCompleteThreeSequentialRequests() {
+  func testCaptureCommandCanCompleteThreeSequentialRequests() async {
     let coordinator = CaptureCoordinator()
     let scheduler = ManualCaptureCompletionScheduler()
-    let command = CaptureCommand(
+    let command = makeTestCaptureCommand(
       coordinator: coordinator,
-      scheduleCompletion: scheduler.schedule
+      scheduleWork: scheduler.schedule
     )
 
     for _ in 0..<3 {
@@ -76,7 +76,7 @@ final class CaptureCommandTests: XCTestCase {
         command.perform(),
         .transitioned(from: .idle, to: .requestingPermission)
       )
-      scheduler.runNext()
+      await scheduler.runNext()
       XCTAssertEqual(coordinator.state, .idle)
     }
 
@@ -84,17 +84,17 @@ final class CaptureCommandTests: XCTestCase {
     XCTAssertEqual(scheduler.pendingCompletionCount, 0)
   }
 
-  func testScheduledCompletionDoesNotOverrideAnUnexpectedStateChange() {
+  func testScheduledCompletionDoesNotOverrideAnUnexpectedStateChange() async {
     let coordinator = CaptureCoordinator()
     let scheduler = ManualCaptureCompletionScheduler()
-    let command = CaptureCommand(
+    let command = makeTestCaptureCommand(
       coordinator: coordinator,
-      scheduleCompletion: scheduler.schedule
+      scheduleWork: scheduler.schedule
     )
 
     _ = command.perform()
     _ = coordinator.handle(.fail(.permission))
-    scheduler.runNext()
+    await scheduler.runNext()
 
     XCTAssertEqual(coordinator.state, .failed(.permission))
   }
@@ -102,7 +102,7 @@ final class CaptureCommandTests: XCTestCase {
 
 @MainActor
 private final class ManualCaptureCompletionScheduler {
-  typealias Completion = @MainActor @Sendable () -> Void
+  typealias Completion = @MainActor @Sendable () async -> Void
 
   private var pendingCompletions: [Completion] = []
   private(set) var scheduledCompletionCount = 0
@@ -116,11 +116,11 @@ private final class ManualCaptureCompletionScheduler {
     pendingCompletions.append(completion)
   }
 
-  func runNext() {
+  func runNext() async {
     guard !pendingCompletions.isEmpty else {
       return XCTFail("Expected a scheduled completion")
     }
-    pendingCompletions.removeFirst()()
+    await pendingCompletions.removeFirst()()
   }
 }
 
