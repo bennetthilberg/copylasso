@@ -6,10 +6,11 @@ import XCTest
 final class MenuBarShellTests: XCTestCase {
   func testQuitRoutesToTheInjectedApplicationTerminatorExactlyOnce() {
     let terminator = SpyApplicationTerminator()
+    let coordinator = CaptureCoordinator()
     let handler = MenuBarCommandHandler(
-      captureCommand: CaptureCommand(
-        coordinator: CaptureCoordinator(),
-        scheduleCompletion: { _ in }
+      captureCommand: makeTestCaptureCommand(
+        coordinator: coordinator,
+        scheduleWork: { _ in }
       ),
       applicationTerminator: terminator
     )

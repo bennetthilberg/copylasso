@@ -8,15 +8,15 @@ struct CopyLassoApp: App {
   private let globalShortcutController: GlobalShortcutController
 
   init() {
-    let coordinator = CaptureCoordinator()
-    let captureCommand = CaptureCommand(coordinator: coordinator)
     let settingsStore = UserDefaultsSettingsStore()
     let shortcutStore = KeyboardShortcutsStore()
     let launchAtLoginService: any LaunchAtLoginServicing
+    let permissionService: any ScreenCapturePermissionService
 
     #if DEBUG
       let arguments = ProcessInfo.processInfo.arguments
-      if arguments.contains("--g10-g11-ui-testing") {
+      let isUITesting = arguments.contains("--g10-g11-ui-testing")
+      if isUITesting {
         launchAtLoginService = DebugLaunchAtLoginService(
           status: Self.debugLaunchAtLoginStatus(arguments: arguments)
         )
@@ -24,7 +24,7 @@ struct CopyLassoApp: App {
         launchAtLoginService = SystemLaunchAtLoginService()
       }
       if arguments.contains("--g10-g11-reset-settings") {
-        if !arguments.contains("--g10-g11-ui-testing") {
+        if !isUITesting {
           try? launchAtLoginService.disable()
         }
         settingsStore.reset()
@@ -33,8 +33,13 @@ struct CopyLassoApp: App {
       if arguments.contains("--g10-g11-complete-onboarding") {
         settingsStore.completedOnboardingVersion = SettingsController.currentOnboardingVersion
       }
+      permissionService =
+        isUITesting
+        ? DebugScreenCapturePermissionService(arguments: arguments)
+        : SystemScreenCapturePermissionService(historyStore: settingsStore)
     #else
       launchAtLoginService = SystemLaunchAtLoginService()
+      permissionService = SystemScreenCapturePermissionService(historyStore: settingsStore)
     #endif
 
     settingsController = SettingsController(
@@ -42,6 +47,17 @@ struct CopyLassoApp: App {
       launchAtLoginService: launchAtLoginService,
       shortcutStore: shortcutStore
     )
+    let coordinator = CaptureCoordinator()
+    let recoveryController = PermissionRecoveryPanelController(
+      permissionService: permissionService
+    )
+    let captureCommand = CaptureCommand(
+      coordinator: coordinator,
+      permissionService: permissionService,
+      selectionService: PendingRegionSelectionService(),
+      recoveryPresenter: recoveryController
+    )
+    recoveryController.captureRequester = captureCommand
     commandHandler = MenuBarCommandHandler(
       captureCommand: captureCommand,
       applicationTerminator: SystemApplicationTerminator()

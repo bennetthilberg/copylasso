@@ -269,6 +269,142 @@ final class CopyLassoUITests: XCTestCase {
   }
 
   @MainActor
+  func testPermissionRecoveryExplainsPriorRequestWithoutTouchingTCC() {
+    let app = completedApp(extraArguments: ["--g12-permission=after-request"])
+    app.launch()
+    defer { app.terminate() }
+    let pasteboardChangeCount = NSPasteboard.general.changeCount
+
+    openMenu(in: app)
+    menuItem("Capture Text", in: app).click()
+
+    XCTAssertTrue(
+      app.staticTexts["copylasso.permission-recovery.title"]
+        .waitForExistence(timeout: 5)
+    )
+    XCTAssertTrue(app.staticTexts["copylasso.permission-recovery.status"].exists)
+    XCTAssertTrue(app.buttons["copylasso.permission-recovery.open-settings"].exists)
+    XCTAssertTrue(app.buttons["copylasso.permission-recovery.try-again"].exists)
+    XCTAssertTrue(app.buttons["copylasso.permission-recovery.cancel"].exists)
+    XCTAssertEqual(NSPasteboard.general.changeCount, pasteboardChangeCount)
+  }
+
+  @MainActor
+  func testLikelyRevokedRecoveryRemainsSingletonAcrossRepeatedAttempts() {
+    let app = completedApp(extraArguments: ["--g12-permission=previously-granted"])
+    app.launch()
+    defer { app.terminate() }
+
+    for _ in 0..<3 {
+      openMenu(in: app)
+      menuItem("Capture Text", in: app).click()
+      XCTAssertTrue(
+        app.staticTexts["copylasso.permission-recovery.title"]
+          .waitForExistence(timeout: 5)
+      )
+    }
+
+    XCTAssertEqual(
+      app.staticTexts.matching(identifier: "copylasso.permission-recovery.title").count,
+      1
+    )
+    XCTAssertTrue(app.staticTexts["copylasso.permission-recovery.status"].exists)
+
+    app.buttons["copylasso.permission-recovery.try-again"].click()
+    XCTAssertTrue(
+      app.staticTexts["copylasso.permission-recovery.retry-status"]
+        .waitForExistence(timeout: 5)
+    )
+  }
+
+  @MainActor
+  func testPermissionRecoverySettingsFailureRetryAndCancel() {
+    let app = completedApp(
+      extraArguments: [
+        "--g12-permission-sequence=after-request,granted,after-request",
+        "--g12-settings-open=failure",
+      ]
+    )
+    app.launch()
+    defer { app.terminate() }
+
+    openMenu(in: app)
+    menuItem("Capture Text", in: app).click()
+    XCTAssertTrue(
+      app.staticTexts["copylasso.permission-recovery.title"]
+        .waitForExistence(timeout: 5)
+    )
+
+    app.buttons["copylasso.permission-recovery.open-settings"].click()
+    XCTAssertTrue(
+      app.staticTexts["copylasso.permission-recovery.settings-failure"]
+        .waitForExistence(timeout: 5)
+    )
+
+    app.buttons["copylasso.permission-recovery.try-again"].click()
+    XCTAssertTrue(
+      app.staticTexts["copylasso.permission-recovery.title"]
+        .waitForNonExistence(timeout: 5)
+    )
+
+    openMenu(in: app)
+    menuItem("Capture Text", in: app).click()
+    XCTAssertTrue(
+      app.staticTexts["copylasso.permission-recovery.title"]
+        .waitForExistence(timeout: 5)
+    )
+    app.buttons["copylasso.permission-recovery.cancel"].click()
+    XCTAssertTrue(
+      app.staticTexts["copylasso.permission-recovery.title"]
+        .waitForNonExistence(timeout: 5)
+    )
+
+    openMenu(in: app)
+    menuItem("Capture Text", in: app).click()
+    XCTAssertTrue(
+      app.staticTexts["copylasso.permission-recovery.title"]
+        .waitForExistence(timeout: 5)
+    )
+    XCTAssertEqual(
+      app.staticTexts.matching(identifier: "copylasso.permission-recovery.title").count,
+      1
+    )
+  }
+
+  @MainActor
+  func testPermissionRecoverySupportsKeyboardCancelAndAccessibleButtonLabels() {
+    let app = completedApp(extraArguments: ["--g12-permission=after-request"])
+    app.launch()
+    defer { app.terminate() }
+
+    openMenu(in: app)
+    menuItem("Capture Text", in: app).click()
+    XCTAssertTrue(
+      app.staticTexts["copylasso.permission-recovery.title"]
+        .waitForExistence(timeout: 5)
+    )
+
+    XCTAssertEqual(
+      app.buttons["copylasso.permission-recovery.open-settings"].label,
+      "Open System Settings"
+    )
+    XCTAssertEqual(
+      app.buttons["copylasso.permission-recovery.try-again"].label,
+      "Try Again"
+    )
+    XCTAssertEqual(
+      app.buttons["copylasso.permission-recovery.cancel"].label,
+      "Cancel"
+    )
+
+    app.typeKey(XCUIKeyboardKey.escape, modifierFlags: [])
+    XCTAssertTrue(
+      app.staticTexts["copylasso.permission-recovery.title"]
+        .waitForNonExistence(timeout: 5)
+    )
+  }
+
+  @MainActor
   private func statusItem(in app: XCUIApplication) -> XCUIElement {
     app.menuBars.statusItems["CopyLasso"]
   }
@@ -310,6 +446,7 @@ final class CopyLassoUITests: XCTestCase {
         "--g10-g11-ui-testing",
         "--g10-g11-reset-settings",
         "--g10-g11-complete-onboarding",
+        "--g12-permission=granted",
       ] + extraArguments
     return app
   }

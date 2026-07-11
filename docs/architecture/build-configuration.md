@@ -10,7 +10,7 @@ The shared `CopyLasso` scheme contains:
 - `CopyLassoTests`, the XCTest unit-test bundle; and
 - `CopyLassoUITests`, the XCTest UI-test bundle.
 
-The application is a dockless SwiftUI menu-bar utility. Debug and Release compile the same onboarding, Settings, Launch at Login, global-shortcut, production-neutral model, service-contract, and capture-workflow code. Neither configuration contains a live permission, selection, capture, OCR, clipboard, or feedback adapter.
+The application is a dockless SwiftUI menu-bar utility. Debug and Release compile the same onboarding, Settings, Launch at Login, global-shortcut, model, service-contract, capture-workflow, production permission, and recovery-panel code. Neither configuration contains a live selection, capture, OCR, clipboard, or feedback adapter.
 
 ## Supported Configuration
 
@@ -31,7 +31,7 @@ The application is a dockless SwiftUI menu-bar utility. Debug and Release compil
 
 Release builds explicitly set both macOS architectures and disable `ONLY_ACTIVE_ARCH`. The canonical pipeline inspects the built executable with `lipo`; checking the build setting alone is not sufficient.
 
-There is no source-file exclusion list for experimental code. The G05-G07 executable experiments were retired after their decisions were recorded. The canonical pipeline rejects their former launch arguments and live platform symbols, enforces model/workflow import boundaries, and verifies that the neutral coordinator and geometry model compile into both Debug and Release.
+There is no source-file exclusion list for experimental code. The G05-G07 executable experiments were retired after their decisions were recorded. The canonical pipeline rejects their former launch arguments and all live selection, capture, OCR, and pasteboard symbols; permits the two Core Graphics Screen Recording authorization functions only in `ScreenCapturePermissionService.swift`; enforces model/workflow import boundaries; rejects Debug-only G12 controls in Release; and verifies that the coordinator, geometry model, production permission service, and recovery controller compile into both Debug and Release.
 
 Both configurations generate their Info.plist through Xcode and set `LSUIElement` to `YES`. The canonical pipeline checks the build setting and the generated Debug and Release bundles so a normal Dock application cannot be introduced accidentally.
 

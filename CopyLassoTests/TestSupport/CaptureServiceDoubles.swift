@@ -10,8 +10,10 @@ enum TestServiceError: Error, Equatable, Sendable {
 final class StubScreenCapturePermissionService: ScreenCapturePermissionService {
   var currentResult: ScreenCaptureAuthorizationObservation
   var requestResult: ScreenCaptureAuthorizationObservation
+  var openSystemSettingsResult = true
   private(set) var currentObservationCallCount = 0
   private(set) var requestAccessCallCount = 0
+  private(set) var openSystemSettingsCallCount = 0
 
   init(
     currentResult: ScreenCaptureAuthorizationObservation,
@@ -29,6 +31,25 @@ final class StubScreenCapturePermissionService: ScreenCapturePermissionService {
   func requestAccess() -> ScreenCaptureAuthorizationObservation {
     requestAccessCallCount += 1
     return requestResult
+  }
+
+  func openSystemSettings() -> Bool {
+    openSystemSettingsCallCount += 1
+    return openSystemSettingsResult
+  }
+}
+
+@MainActor
+final class SpyPermissionRecoveryPresenter: PermissionRecoveryPresenting {
+  private(set) var presentedObservations: [ScreenCaptureAuthorizationObservation] = []
+  private(set) var dismissCallCount = 0
+
+  func present(_ observation: ScreenCaptureAuthorizationObservation) {
+    presentedObservations.append(observation)
+  }
+
+  func dismiss() {
+    dismissCallCount += 1
   }
 }
 
@@ -104,4 +125,21 @@ final class SpyFeedbackService: FeedbackService {
     }
     presentedFeedback.append(feedback)
   }
+}
+
+@MainActor
+func makeTestCaptureCommand(
+  coordinator: CaptureCoordinator,
+  scheduleWork: @escaping CaptureCommand.WorkScheduler
+) -> CaptureCommand {
+  CaptureCommand(
+    coordinator: coordinator,
+    permissionService: StubScreenCapturePermissionService(
+      currentResult: .granted,
+      requestResult: .granted
+    ),
+    selectionService: StubRegionSelectionService(result: .failure(.injected)),
+    recoveryPresenter: SpyPermissionRecoveryPresenter(),
+    scheduleWork: scheduleWork
+  )
 }

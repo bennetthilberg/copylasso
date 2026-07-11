@@ -37,7 +37,7 @@ final class GlobalShortcutControllerTests: XCTestCase {
     for _ in 0..<3 {
       context.events.emit(.keyUp)
       await waitForState(.requestingPermission, coordinator: context.coordinator)
-      context.scheduler.runNext()
+      await context.scheduler.runNext()
       XCTAssertEqual(context.coordinator.state, .idle)
     }
 
@@ -60,9 +60,9 @@ final class GlobalShortcutControllerTests: XCTestCase {
   private func makeContext() -> Context {
     let coordinator = CaptureCoordinator()
     let scheduler = ShortcutCaptureCompletionScheduler()
-    let command = CaptureCommand(
+    let command = makeTestCaptureCommand(
       coordinator: coordinator,
-      scheduleCompletion: scheduler.schedule
+      scheduleWork: scheduler.schedule
     )
     let events = StubGlobalShortcutEventSource()
     let controller = GlobalShortcutController(
@@ -97,7 +97,7 @@ final class GlobalShortcutControllerTests: XCTestCase {
 
 @MainActor
 private final class ShortcutCaptureCompletionScheduler {
-  typealias Completion = @MainActor @Sendable () -> Void
+  typealias Completion = @MainActor @Sendable () async -> Void
 
   private var completions: [Completion] = []
   private(set) var scheduledCompletionCount = 0
@@ -107,10 +107,10 @@ private final class ShortcutCaptureCompletionScheduler {
     completions.append(completion)
   }
 
-  func runNext() {
+  func runNext() async {
     guard !completions.isEmpty else {
       return XCTFail("Expected a completion")
     }
-    completions.removeFirst()()
+    await completions.removeFirst()()
   }
 }

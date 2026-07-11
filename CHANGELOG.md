@@ -17,3 +17,4 @@ All notable changes to CopyLasso will be documented in this file.
 - A dockless native menu-bar shell with reusable Capture Text routing, reopenable Settings and About windows, and a tested Quit boundary.
 - Versioned first-run setup, persistent native Settings, explicit Launch at Login reconciliation, and a configurable global shortcut shared with the menu capture command.
 - KeyboardShortcuts 3.0.1 with exact Swift Package Manager resolution and an MIT third-party notice.
+- Production Core Graphics Screen Recording permission observation and requests, persistent neutral history, a singleton nonactivating recovery panel with explicit retry feedback, and a temporary post-approval selection boundary.
