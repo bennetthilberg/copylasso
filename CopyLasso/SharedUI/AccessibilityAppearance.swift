@@ -6,6 +6,11 @@ struct SelectionOverlayStyle: Equatable, Sendable {
   let innerBorderWidth: CGFloat
 }
 
+enum FeedbackHUDBackgroundStyle: Equatable, Sendable {
+  case regularMaterial
+  case opaqueWindowBackground
+}
+
 struct AccessibilityAppearance: Equatable, Sendable {
   let increaseContrast: Bool
   let differentiateWithoutColor: Bool
@@ -26,6 +31,10 @@ struct AccessibilityAppearance: Equatable, Sendable {
         innerBorderWidth: 1
       )
     }
+  }
+
+  var feedbackHUDBackgroundStyle: FeedbackHUDBackgroundStyle {
+    reduceTransparency ? .opaqueWindowBackground : .regularMaterial
   }
 }
 

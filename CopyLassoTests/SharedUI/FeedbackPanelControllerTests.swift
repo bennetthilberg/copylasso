@@ -89,6 +89,60 @@ final class FeedbackPanelControllerTests: XCTestCase {
     XCTAssertEqual(host.hideCallCount, 2)
   }
 
+  func testReusedHostRefreshesBackgroundStyleFromCurrentAccessibilityAppearance()
+    async throws
+  {
+    let appearanceProvider = MutableAccessibilityAppearanceProvider(
+      currentAppearance: AccessibilityAppearance(
+        increaseContrast: false,
+        differentiateWithoutColor: false,
+        reduceTransparency: false,
+        reduceMotion: false
+      )
+    )
+    let host = SpyFeedbackPanelHost()
+    let waiter = ManualFeedbackWaiter()
+    var makePanelCallCount = 0
+    let controller = FeedbackPanelController(
+      appearanceProvider: appearanceProvider,
+      makePanel: { _ in
+        makePanelCallCount += 1
+        return host
+      },
+      waitForDismissal: waiter.wait
+    )
+
+    let first = Task { @MainActor in
+      try await controller.present(.noText)
+    }
+    await waiter.waitUntilCallCount(1)
+    XCTAssertEqual(controller.model.feedbackHUDBackgroundStyle, .regularMaterial)
+    XCTAssertEqual(makePanelCallCount, 1)
+    waiter.resumeCall(at: 0)
+    try await first.value
+
+    appearanceProvider.currentAppearance = AccessibilityAppearance(
+      increaseContrast: false,
+      differentiateWithoutColor: false,
+      reduceTransparency: true,
+      reduceMotion: false
+    )
+    let second = Task { @MainActor in
+      try await controller.present(.failure(.feedback))
+    }
+    await waiter.waitUntilCallCount(2)
+
+    XCTAssertEqual(
+      controller.model.feedbackHUDBackgroundStyle,
+      .opaqueWindowBackground
+    )
+    XCTAssertEqual(makePanelCallCount, 1)
+    XCTAssertEqual(host.showCallCount, 2)
+
+    waiter.resumeCall(at: 1)
+    try await second.value
+  }
+
   func testOlderDismissalCannotHideANewerPresentation() async throws {
     let host = SpyFeedbackPanelHost()
     let waiter = ManualFeedbackWaiter()
@@ -209,6 +263,15 @@ private final class SpyFeedbackPanelHost: FeedbackPanelHosting {
 
   func hide() {
     hideCallCount += 1
+  }
+}
+
+@MainActor
+private final class MutableAccessibilityAppearanceProvider: AccessibilityAppearanceProviding {
+  var currentAppearance: AccessibilityAppearance
+
+  init(currentAppearance: AccessibilityAppearance) {
+    self.currentAppearance = currentAppearance
   }
 }
 

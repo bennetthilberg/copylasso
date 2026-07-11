@@ -236,7 +236,7 @@ The unattended July 11, 2026 run could not perform real sleep/wake, lock/unlock,
 
 ## Accessibility And Appearance Checklist
 
-G21 unit coverage reads every supported `NSWorkspace` accessibility-display flag, verifies standard and Increased Contrast overlay styles, prohibits app-defined feedback/recovery animation, proves a real hosted HUD expands for wrapped text, and retains textual states for success, no text, failure, login status, and permission recovery. Signed UI tests retain light/dark launches and add named compound-control plus keyboard default/close actions.
+G21 unit coverage reads every supported `NSWorkspace` accessibility-display flag, verifies standard and Increased Contrast overlay styles, proves the HUD uses regular material normally and an opaque semantic background under Reduce Transparency even when its host is reused, prohibits app-defined feedback/recovery animation, proves a real hosted HUD expands for wrapped text, and retains textual states for success, no text, failure, login status, and permission recovery. Signed UI tests retain light/dark launches and add named compound-control plus keyboard default/close actions.
 
 Run this checklist with one stably signed Debug app and a normal unlocked graphical session:
 
@@ -247,7 +247,7 @@ Run this checklist with one stably signed Debug app and a normal unlocked graphi
 5. Start selection. Confirm Accessibility Inspector reports one overlay group per display with the label `CopyLasso text selection overlay` and help `Drag to select text. Press Escape to cancel.` The visual drag itself is intentionally not replaced by a VoiceOver-driven workflow in v0.1.
 6. Test Light and Dark appearances. Inspect the template menu symbol, native forms, links, text, permission panel, success/no-text/failure HUD, clear pre-drag overlay, dim treatment, black/white border, and crosshair on bright and dark content.
 7. Enable Increased Contrast. Confirm the initiating-display dim strengthens from 18% to 28% and the two-tone border from 3/1 points to 5/2 points; unrelated displays stay clear. Repeat with Differentiate Without Color and verify every state remains named and symbol/text differentiated without hue.
-8. Enable Reduce Transparency and inspect native materials, text, borders, and window backgrounds. No essential copy may become unreadable. Enable Reduce Motion and confirm selection, recovery, and feedback panels present and disappear without app-defined animation.
+8. Enable Reduce Transparency and confirm every newly presented or reused feedback HUD replaces its material with an opaque semantic window background while retaining readable text and borders. Inspect the remaining native materials and window backgrounds; no essential copy may become unreadable. Enable Reduce Motion and confirm selection, recovery, and feedback panels present and disappear without app-defined animation.
 9. Increase the system text size to its largest supported value. Confirm onboarding, Settings, About, permission guidance, login errors, and the longest bounded feedback preview wrap or grow without clipped labels or inaccessible controls.
 10. Repeat keyboard and VoiceOver checks after closing/reopening each singleton window and while another application or full-screen Space is frontmost. Explicit Settings/About actions may activate their windows; capture feedback and selection must preserve the other application's focus policy.
 

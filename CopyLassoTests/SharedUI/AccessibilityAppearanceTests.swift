@@ -41,6 +41,27 @@ final class AccessibilityAppearanceTests: XCTestCase {
     )
   }
 
+  func testFeedbackHUDUsesMaterialUnlessReduceTransparencyRequiresOpaqueBackground() {
+    let standard = AccessibilityAppearance(
+      increaseContrast: false,
+      differentiateWithoutColor: false,
+      reduceTransparency: false,
+      reduceMotion: false
+    )
+    let reducedTransparency = AccessibilityAppearance(
+      increaseContrast: false,
+      differentiateWithoutColor: false,
+      reduceTransparency: true,
+      reduceMotion: false
+    )
+
+    XCTAssertEqual(standard.feedbackHUDBackgroundStyle, .regularMaterial)
+    XCTAssertEqual(
+      reducedTransparency.feedbackHUDBackgroundStyle,
+      .opaqueWindowBackground
+    )
+  }
+
   func testFeedbackLayoutUsesItsMinimumAndExpandsToFittingHeight() {
     XCTAssertEqual(FeedbackPanelLayout.contentHeight(fittingHeight: 40), 104)
     XCTAssertEqual(FeedbackPanelLayout.contentHeight(fittingHeight: 104), 104)

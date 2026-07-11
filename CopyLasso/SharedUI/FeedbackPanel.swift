@@ -6,13 +6,18 @@ import SwiftUI
 @Observable
 final class FeedbackPresentationModel {
   private(set) var feedback: CaptureFeedback?
+  private(set) var feedbackHUDBackgroundStyle: FeedbackHUDBackgroundStyle = .regularMaterial
 
   var content: FeedbackPresentationContent? {
     feedback.map(FeedbackPresentationContent.init)
   }
 
-  func present(_ feedback: CaptureFeedback) {
+  func present(
+    _ feedback: CaptureFeedback,
+    backgroundStyle: FeedbackHUDBackgroundStyle
+  ) {
     self.feedback = feedback
+    feedbackHUDBackgroundStyle = backgroundStyle
   }
 
   func dismiss() {
@@ -34,15 +39,19 @@ final class FeedbackPanelController: FeedbackService {
   let model = FeedbackPresentationModel()
 
   private let makePanel: PanelFactory
+  private let appearanceProvider: any AccessibilityAppearanceProviding
   private let waitForDismissal: DismissalWaiter
   private var panel: (any FeedbackPanelHosting)?
   private var presentationGeneration: UInt = 0
 
   init(
     displayDuration: Duration = .milliseconds(2500),
+    appearanceProvider: any AccessibilityAppearanceProviding =
+      SystemAccessibilityAppearanceProvider(),
     makePanel: @escaping PanelFactory = { AppKitFeedbackPanelHost(model: $0) },
     waitForDismissal: DismissalWaiter? = nil
   ) {
+    self.appearanceProvider = appearanceProvider
     self.makePanel = makePanel
     self.waitForDismissal =
       waitForDismissal
@@ -54,7 +63,10 @@ final class FeedbackPanelController: FeedbackService {
   func present(_ feedback: CaptureFeedback) async throws {
     presentationGeneration &+= 1
     let generation = presentationGeneration
-    model.present(feedback)
+    model.present(
+      feedback,
+      backgroundStyle: appearanceProvider.currentAppearance.feedbackHUDBackgroundStyle
+    )
     ensurePanel().show()
 
     do {
@@ -110,7 +122,10 @@ private struct FeedbackHUDView: View {
       .padding(.horizontal, 18)
       .padding(.vertical, 14)
       .frame(width: FeedbackPanelLayout.width, alignment: .leading)
-      .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+      .background(
+        model.feedbackHUDBackgroundStyle.shapeStyle,
+        in: RoundedRectangle(cornerRadius: 14)
+      )
       .overlay {
         RoundedRectangle(cornerRadius: 14)
           .stroke(.separator.opacity(0.8), lineWidth: 1)
@@ -118,6 +133,19 @@ private struct FeedbackHUDView: View {
       .accessibilityElement(children: .ignore)
       .accessibilityLabel(content.accessibilityLabel)
       .accessibilityIdentifier("copylasso.feedback.hud")
+    }
+  }
+}
+
+extension FeedbackHUDBackgroundStyle {
+  fileprivate var shapeStyle: AnyShapeStyle {
+    switch self {
+    case .regularMaterial:
+      AnyShapeStyle(.regularMaterial)
+    case .opaqueWindowBackground:
+      AnyShapeStyle(
+        Color(nsColor: NSColor.windowBackgroundColor.withAlphaComponent(1))
+      )
     }
   }
 }
