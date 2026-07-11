@@ -15,3 +15,5 @@ All notable changes to CopyLasso will be documented in this file.
 - A Debug-only multi-display AppKit selection experiment, coordinate-conversion tests, and a recorded overlay viability decision.
 - Production-neutral capture service contracts, a tested workflow state machine, explicit concurrency boundaries, and retired executable feasibility harnesses.
 - A dockless native menu-bar shell with reusable Capture Text routing, reopenable Settings and About windows, and a tested Quit boundary.
+- Versioned first-run setup, persistent native Settings, explicit Launch at Login reconciliation, and a configurable global shortcut shared with the menu capture command.
+- KeyboardShortcuts 3.0.1 with exact Swift Package Manager resolution and an MIT third-party notice.

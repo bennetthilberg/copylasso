@@ -21,7 +21,7 @@ CopyLasso v0.1 has no:
 - analytics or telemetry; or
 - logging of screenshots, recognized text, clipboard text, or copied-text previews.
 
-The application stores only ordinary preferences needed for onboarding, shortcut configuration, Launch at Login presentation, and settings behavior. It does not use those preferences to retain captured images or recognized text.
+The application stores only ordinary preferences needed for versioned onboarding, shortcut configuration, permission-history presentation, and settings behavior. Launch at Login state is read from macOS rather than copied into a preference that could become stale. These values never contain captured images or recognized text.
 
 ## macOS Permissions
 
