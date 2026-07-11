@@ -140,6 +140,7 @@ final class PermissionRecoveryPanelController: PermissionRecoveryPresenting {
           model.recordRetryRejection()
           return
         }
+        permissionService.beginUserInitiatedRetry()
       },
       cancel: { [weak self] in
         self?.dismiss()

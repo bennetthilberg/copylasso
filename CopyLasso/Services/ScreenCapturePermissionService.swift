@@ -6,7 +6,12 @@ protocol ScreenCapturePermissionService: AnyObject {
   func currentObservation() -> ScreenCaptureAuthorizationObservation
   func requestAccess() -> ScreenCaptureAuthorizationObservation
   func recordCaptureDenial() -> ScreenCaptureAuthorizationObservation
+  func beginUserInitiatedRetry()
   func openSystemSettings() -> Bool
+}
+
+extension ScreenCapturePermissionService {
+  func beginUserInitiatedRetry() {}
 }
 
 @MainActor
@@ -30,7 +35,7 @@ struct ScreenCapturePermissionClient {
 final class SystemScreenCapturePermissionService: ScreenCapturePermissionService {
   private let historyStore: any ScreenCapturePermissionHistoryStoring
   private let client: ScreenCapturePermissionClient
-  private var hasAuthoritativeCaptureDenial = false
+  private var hasAuthoritativeCaptureDenialUntilUserRetry = false
 
   init(
     historyStore: any ScreenCapturePermissionHistoryStoring,
@@ -41,7 +46,7 @@ final class SystemScreenCapturePermissionService: ScreenCapturePermissionService
   }
 
   func currentObservation() -> ScreenCaptureAuthorizationObservation {
-    if hasAuthoritativeCaptureDenial {
+    if hasAuthoritativeCaptureDenialUntilUserRetry {
       return .notGrantedAfterPreviouslyGranted
     }
     return observation(granted: client.preflight())
@@ -55,12 +60,16 @@ final class SystemScreenCapturePermissionService: ScreenCapturePermissionService
   }
 
   func recordCaptureDenial() -> ScreenCaptureAuthorizationObservation {
-    hasAuthoritativeCaptureDenial = true
+    hasAuthoritativeCaptureDenialUntilUserRetry = true
     var history = historyStore.history
     history.hasRequested = true
     history.hasObservedGranted = true
     historyStore.history = history
     return .notGrantedAfterPreviouslyGranted
+  }
+
+  func beginUserInitiatedRetry() {
+    hasAuthoritativeCaptureDenialUntilUserRetry = false
   }
 
   func openSystemSettings() -> Bool {
