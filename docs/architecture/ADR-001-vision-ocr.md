@@ -58,4 +58,4 @@ Test failure messages identify fixtures and metrics without printing recognized 
 
 ## Consequences
 
-G06 proceeded with screen-capture feasibility after G05. G08 retired the executable adapter while preserving the fixtures, generator, this evidence, and a framework-neutral observation model. G15 now provides the production OCR service behind that architecture interface while preserving the in-memory, local-only boundary and explicit fixture thresholds. G16 owns observation ordering and plain-text assembly.
+G06 proceeded with screen-capture feasibility after G05. G08 retired the executable adapter while preserving the fixtures, generator, this evidence, and a framework-neutral observation model. G15 now provides the production OCR service behind that architecture interface while preserving the in-memory, local-only boundary and explicit fixture thresholds. G16 consumes only the neutral observations and now owns deterministic plain-text assembly; its exact rules and limitations are documented in [Plain-Text Assembly](text-assembly.md).

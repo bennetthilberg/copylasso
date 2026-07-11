@@ -81,7 +81,7 @@ Use the same stably signed Debug app after Screen Recording access is enabled. T
 7. Change a display resolution or disconnect an extended display during selection. The active operation must cancel once, remove all panels, and rebuild fresh descriptors on the next request.
 8. Terminate CopyLasso during selection and verify no panel, dim, cursor override, observer, controller, or continuation remains. Use Xcode's memory graph or debugger to confirm the completed controller and surfaces are released.
 9. Inspect light, dark, increased-contrast, and VoiceOver behavior. The black-and-white border and crosshair must remain distinguishable, and the overlay must expose its selection label and Escape help.
-10. Confirm no pixel file, retained image, pasteboard write, Accessibility prompt, or Input Monitoring prompt occurs. The controlled UI path may recognize the deterministic in-memory image but must stop at the intentional G16 formatting boundary.
+10. Confirm no pixel file, retained image, pasteboard write, Accessibility prompt, or Input Monitoring prompt occurs. The controlled UI path may recognize and format the deterministic in-memory image but must stop at the intentional G17 clipboard boundary.
 
 ### G13 Production Verification Record
 
@@ -133,3 +133,9 @@ The direct off-main thread assertion is deterministic and runs in both canonical
 ### G15 Production Verification Record
 
 On July 11, 2026, both canonical pipelines passed 129 of 129 tests with zero failures or skips on arm64 and x86_64. The focused production OCR suite passed 13 of 13 tests, including every fixture threshold, the enlarged fixture, typed empty/failure behavior, off-main execution, cancellation, and image release. The same built OCR suite passed 13 of 13 under a process sandbox that denied every network operation. Both Release slices contain the production service, while CI confines Vision to that file and rejects OCR logging or captured-image persistence paths.
+
+## Plain-Text Assembly Matrix
+
+G16 formatting tests use only neutral observations and do not execute Vision or screen capture. They cover empty and whitespace-only input, unordered words, multiple lines, uneven baselines, separated blocks, exact duplicates, repeated text in distinct positions, low-confidence text, twenty high-confidence observations, literal markup-like characters, malformed geometry, project fixture layouts, and unsupported multi-column input in several permutations.
+
+The required policy is conservative: only exact same-text/same-bounds detections are deduplicated, while every other nonempty observation remains in output regardless of confidence. Multi-column, table, vertical, and complex layouts may read imperfectly but must produce the same string for the same observation set and must never crash. See [Plain-Text Assembly](architecture/text-assembly.md) for the complete rules.

@@ -119,17 +119,18 @@ final class CapturePermissionFlowTests: XCTestCase {
   func testValidSelectionCapturesImageAndReachesProductionOCRExactlyOnce() async throws {
     let selection = try makeSelection()
     let image = try makeImage(width: 80, height: 80)
+    let observations = [
+      RecognizedTextObservation(
+        text: "transient",
+        confidence: 0.9,
+        boundingBox: CGRect(x: 0, y: 0, width: 1, height: 1)
+      )
+    ]
     let context = makeContext(
       current: .granted,
       selectionResult: .success(.selected(selection)),
       captureResult: .success(image),
-      ocrResult: .success([
-        RecognizedTextObservation(
-          text: "transient",
-          confidence: 0.9,
-          boundingBox: CGRect(x: 0, y: 0, width: 1, height: 1)
-        )
-      ])
+      ocrResult: .success(observations)
     )
 
     _ = context.command.perform()
@@ -139,6 +140,24 @@ final class CapturePermissionFlowTests: XCTestCase {
     let recognizedImageSizes = await context.ocr.recognizedImageSizes
     XCTAssertEqual(capturedSelections, [selection])
     XCTAssertEqual(recognizedImageSizes, [CGSize(width: 80, height: 80)])
+    XCTAssertEqual(context.textAssembler.inputs, [observations])
+    XCTAssertEqual(context.coordinator.state, .idle)
+    XCTAssertTrue(context.command.isEnabled)
+  }
+
+  func testEmptyRecognitionStillProducesAnEmptyFinalStringBoundary() async throws {
+    let context = makeContext(
+      current: .granted,
+      selectionResult: .success(.selected(try makeSelection())),
+      captureResult: .success(try makeImage(width: 80, height: 80)),
+      ocrResult: .success([]),
+      assembledText: ""
+    )
+
+    _ = context.command.perform()
+    await context.scheduler.runNext()
+
+    XCTAssertEqual(context.textAssembler.inputs, [[]])
     XCTAssertEqual(context.coordinator.state, .idle)
     XCTAssertTrue(context.command.isEnabled)
   }
@@ -159,6 +178,7 @@ final class CapturePermissionFlowTests: XCTestCase {
     let recognitionCallCount = await context.ocr.recognitionCallCount
     XCTAssertEqual(capturedSelections, [selection])
     XCTAssertEqual(recognitionCallCount, 1)
+    XCTAssertEqual(context.textAssembler.inputs, [])
     XCTAssertEqual(context.coordinator.state, .idle)
     XCTAssertTrue(context.command.isEnabled)
   }
@@ -181,6 +201,7 @@ final class CapturePermissionFlowTests: XCTestCase {
       ),
       screenCaptureService: screenCapture,
       ocrService: CancelledOCRService(),
+      textAssembler: TextAssembler(),
       recoveryPresenter: recovery,
       scheduleWork: scheduler.schedule
     )
@@ -209,6 +230,7 @@ final class CapturePermissionFlowTests: XCTestCase {
     let recognitionCallCount = await context.ocr.recognitionCallCount
     XCTAssertEqual(capturedSelections, [selection])
     XCTAssertEqual(recognitionCallCount, 0)
+    XCTAssertEqual(context.textAssembler.inputs, [])
     XCTAssertEqual(context.recovery.presentedObservations, [])
     XCTAssertEqual(context.coordinator.state, .idle)
   }
@@ -230,6 +252,7 @@ final class CapturePermissionFlowTests: XCTestCase {
       ),
       screenCaptureService: PermissionDeniedScreenCaptureService(),
       ocrService: ocr,
+      textAssembler: TextAssembler(),
       recoveryPresenter: recovery,
       scheduleWork: scheduler.schedule
     )
@@ -286,6 +309,7 @@ final class CapturePermissionFlowTests: XCTestCase {
       selectionService: selection,
       screenCaptureService: StubScreenCaptureService(result: .failure(.injected)),
       ocrService: StubOCRService(result: .failure(.injected)),
+      textAssembler: TextAssembler(),
       recoveryPresenter: SpyPermissionRecoveryPresenter(),
       scheduleWork: scheduler.schedule
     )
@@ -312,7 +336,8 @@ final class CapturePermissionFlowTests: XCTestCase {
     request: ScreenCaptureAuthorizationObservation = .granted,
     selectionResult: Result<SelectionOutcome, TestServiceError> = .failure(.injected),
     captureResult: Result<CGImage, TestServiceError> = .failure(.injected),
-    ocrResult: Result<[RecognizedTextObservation], TestServiceError> = .failure(.injected)
+    ocrResult: Result<[RecognizedTextObservation], TestServiceError> = .failure(.injected),
+    assembledText: String = "assembled"
   ) -> Context {
     let coordinator = CaptureCoordinator()
     let permission = StubScreenCapturePermissionService(
@@ -322,6 +347,7 @@ final class CapturePermissionFlowTests: XCTestCase {
     let selection = StubRegionSelectionService(result: selectionResult)
     let screenCapture = StubScreenCaptureService(result: captureResult)
     let ocr = StubOCRService(result: ocrResult)
+    let textAssembler = SpyTextAssembler(result: assembledText)
     let recovery = SpyPermissionRecoveryPresenter()
     let scheduler = ManualCaptureWorkScheduler()
     let command = CaptureCommand(
@@ -330,6 +356,7 @@ final class CapturePermissionFlowTests: XCTestCase {
       selectionService: selection,
       screenCaptureService: screenCapture,
       ocrService: ocr,
+      textAssembler: textAssembler,
       recoveryPresenter: recovery,
       scheduleWork: scheduler.schedule
     )
@@ -339,6 +366,7 @@ final class CapturePermissionFlowTests: XCTestCase {
       selection: selection,
       screenCapture: screenCapture,
       ocr: ocr,
+      textAssembler: textAssembler,
       recovery: recovery,
       scheduler: scheduler,
       command: command
@@ -381,6 +409,7 @@ final class CapturePermissionFlowTests: XCTestCase {
     let selection: StubRegionSelectionService
     let screenCapture: StubScreenCaptureService
     let ocr: StubOCRService
+    let textAssembler: SpyTextAssembler
     let recovery: SpyPermissionRecoveryPresenter
     let scheduler: ManualCaptureWorkScheduler
     let command: CaptureCommand

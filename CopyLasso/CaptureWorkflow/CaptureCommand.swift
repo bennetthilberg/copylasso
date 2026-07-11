@@ -10,6 +10,7 @@ final class CaptureCommand: CaptureRequesting {
   private let selectionService: any RegionSelectionService
   private let screenCaptureService: any ScreenCaptureService
   private let ocrService: any OCRService
+  private let textAssembler: any TextAssembling
   private let recoveryPresenter: any PermissionRecoveryPresenting
   private let scheduleWork: WorkScheduler
 
@@ -23,6 +24,7 @@ final class CaptureCommand: CaptureRequesting {
     selectionService: any RegionSelectionService,
     screenCaptureService: any ScreenCaptureService,
     ocrService: any OCRService,
+    textAssembler: any TextAssembling,
     recoveryPresenter: any PermissionRecoveryPresenting,
     scheduleWork: @escaping WorkScheduler = CaptureCommand.scheduleOnNextMainActorTurn
   ) {
@@ -31,6 +33,7 @@ final class CaptureCommand: CaptureRequesting {
     self.selectionService = selectionService
     self.screenCaptureService = screenCaptureService
     self.ocrService = ocrService
+    self.textAssembler = textAssembler
     self.recoveryPresenter = recoveryPresenter
     self.scheduleWork = scheduleWork
   }
@@ -111,12 +114,13 @@ final class CaptureCommand: CaptureRequesting {
     }
 
     do {
-      _ = try await ocrService.recognizeText(in: image)
+      let observations = try await ocrService.recognizeText(in: image)
       guard case .transitioned = coordinator.handle(.recognitionCompleted) else {
         _ = coordinator.handle(.fail(.internal))
         return
       }
-      _ = coordinator.handle(.fail(.formatting))
+      _ = textAssembler.assemble(observations)
+      _ = coordinator.handle(.fail(.clipboard))
     } catch VisionOCRError.cancelled {
       _ = coordinator.handle(.cancel(.user))
     } catch {

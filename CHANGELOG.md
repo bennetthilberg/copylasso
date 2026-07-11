@@ -21,3 +21,4 @@ All notable changes to CopyLasso will be documented in this file.
 - A production multi-display AppKit selection overlay with per-display coordinate conversion, initiating-display-only dimming, complete cancellation cleanup, and a temporary no-pixel G14 capture boundary.
 - Production in-memory ScreenCaptureKit region capture with outward-rounded Retina geometry, authoritative permission-denial recovery, exact output validation, and a tested OCR handoff seam.
 - Production local Vision OCR with accurate corrected U.S. English recognition, neutral text/confidence/bounds observations, typed failures, and cooperative cancellation away from the main actor.
+- Pure deterministic observation-to-text assembly with whitespace normalization, ordinary line and paragraph grouping, exact duplicate removal, and graceful unsupported-layout handling.

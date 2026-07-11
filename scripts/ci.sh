@@ -157,6 +157,15 @@ if [[ -e CopyLasso/Services/PendingRegionSelectionService.swift ]] || \
     exit 1
 fi
 
+readonly text_assembler='CopyLasso/Models/TextAssembler.swift'
+if [[ ! -e "$text_assembler" ]] || \
+    ! /usr/bin/grep -q 'textAssembler: TextAssembler()' CopyLasso/App/CopyLassoApp.swift || \
+    /usr/bin/grep -qE '^[[:space:]]*import[[:space:]]+(AppKit|SwiftUI|ScreenCaptureKit|Vision)' "$text_assembler" || \
+    /usr/bin/grep -qE '^[[:space:]]*import[[:space:]]+Vision' CopyLassoTests/Models/TextAssemblerTests.swift; then
+    echo "G16 text assembly must remain pure, platform-neutral, and active in the workflow." >&2
+    exit 1
+fi
+
 if /usr/bin/grep -R -n 'WindowGroup' CopyLasso; then
     echo "The dockless shell must not restore a normal launch window." >&2
     exit 1
@@ -285,7 +294,7 @@ if [[ ! -x "$release_executable" ]]; then
     exit 1
 fi
 
-if /usr/bin/strings "$release_executable" | /usr/bin/grep -qE -- '--g10-g11-|--g12-|--g13-|--g14-|--g15-'; then
+if /usr/bin/strings "$release_executable" | /usr/bin/grep -qE -- '--g10-g11-|--g12-|--g13-|--g14-|--g15-|--g16-'; then
     echo "Debug-only UI-test controls leaked into Release." >&2
     exit 1
 fi
@@ -299,6 +308,7 @@ if [[ ! -f "$debug_module" ]] || \
     ! /usr/bin/grep -a -q 'AppKitRegionSelectionService' "$debug_module" || \
     ! /usr/bin/grep -a -q 'SystemScreenCaptureService' "$debug_module" || \
     ! /usr/bin/grep -a -q 'VisionOCRService' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'TextAssembler' "$debug_module" || \
     ! /usr/bin/grep -a -q 'PermissionRecoveryPanelController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'SettingsController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'GlobalShortcutController' "$debug_module"; then
@@ -319,6 +329,7 @@ for release_architecture in arm64 x86_64; do
         ! /usr/bin/grep -a -q 'AppKitRegionSelectionService' "$release_module" || \
         ! /usr/bin/grep -a -q 'SystemScreenCaptureService' "$release_module" || \
         ! /usr/bin/grep -a -q 'VisionOCRService' "$release_module" || \
+        ! /usr/bin/grep -a -q 'TextAssembler' "$release_module" || \
         ! /usr/bin/grep -a -q 'PermissionRecoveryPanelController' "$release_module" || \
         ! /usr/bin/grep -a -q 'SettingsController' "$release_module" || \
         ! /usr/bin/grep -a -q 'GlobalShortcutController' "$release_module"; then
