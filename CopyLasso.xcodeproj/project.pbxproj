@@ -33,6 +33,7 @@
 		AACED2F830004BEC001F9909 /* CopyLassoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CopyLassoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AACED30230004BEC001F9909 /* CopyLassoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CopyLassoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0A1A0013001000000000001 /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
+		C0A1A0033001000000000003 /* CopyLasso-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "CopyLasso-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -104,6 +105,7 @@
 		C0A1A0023001000000000002 /* Configuration */ = {
 			isa = PBXGroup;
 			children = (
+				C0A1A0033001000000000003 /* CopyLasso-Info.plist */,
 				C0A1A0013001000000000001 /* Shared.xcconfig */,
 			);
 			path = Configuration;
@@ -431,6 +433,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Configuration/CopyLasso-Info.plist";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Bennett Hilberg. All rights reserved.";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -462,6 +465,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Configuration/CopyLasso-Info.plist";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Bennett Hilberg. All rights reserved.";
 				LD_RUNPATH_SEARCH_PATHS = (

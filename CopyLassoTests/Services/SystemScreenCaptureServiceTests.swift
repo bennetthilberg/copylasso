@@ -23,6 +23,7 @@ final class SystemScreenCaptureServiceTests: XCTestCase {
     let request = try ScreenCaptureRequestPlanner.request(for: selection)
 
     XCTAssertEqual(request.displayID, 44)
+    XCTAssertEqual(request.expectedDisplayPointSize, CGSize(width: 100, height: 80))
     XCTAssertEqual(request.sourceRect, CGRect(x: 10, y: 39, width: 21, height: 21))
     XCTAssertEqual(request.pixelWidth, 42)
     XCTAssertEqual(request.pixelHeight, 42)
@@ -158,6 +159,23 @@ final class SystemScreenCaptureServiceTests: XCTestCase {
     XCTAssertEqual(request.pixelWidth, 17)
     XCTAssertEqual(request.pixelHeight, 16)
     XCTAssertNoThrow(try ScreenCaptureRequestValidator.validate(request, against: snapshot))
+  }
+
+  func testDisplayValidationRejectsAChangedSizeEvenWhenTheSelectionStillFits() throws {
+    let request = try ScreenCaptureRequestPlanner.request(for: makeSelection())
+    let resizedDisplay = ScreenCaptureDisplaySnapshot(
+      displayID: request.displayID,
+      pointSize: CGSize(width: 90, height: 70),
+      pointPixelScale: request.backingScale
+    )
+
+    XCTAssertLessThan(request.sourceRect.maxX, resizedDisplay.pointSize.width)
+    XCTAssertLessThan(request.sourceRect.maxY, resizedDisplay.pointSize.height)
+    XCTAssertThrowsError(
+      try ScreenCaptureRequestValidator.validate(request, against: resizedDisplay)
+    ) { error in
+      XCTAssertEqual(error as? ScreenCaptureError, .displayConfigurationChanged)
+    }
   }
 
   func testCaptureReturnsExactInMemoryImageAndForwardsRequestOnce() async throws {
