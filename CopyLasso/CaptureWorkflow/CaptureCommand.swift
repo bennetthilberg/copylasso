@@ -181,6 +181,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     let image: CGImage
     do {
       image = try await screenCaptureService.capture(selection)
+      permissionService.recordCaptureSuccess()
     } catch {
       if let reason = cancellationReasonIfRequested {
         throw CaptureOperationInterruption.cancelled(reason)
