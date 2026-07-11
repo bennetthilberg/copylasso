@@ -24,3 +24,4 @@ All notable changes to CopyLasso will be documented in this file.
 - Pure deterministic observation-to-text assembly with whitespace normalization, ordinary line and paragraph grouping, exact duplicate removal, and graceful unsupported-layout handling.
 - Transactional plain-text clipboard output plus a silent, nonactivating, automatically dismissing HUD with bounded accessible previews and temporary menu-bar state.
 - End-to-end menu and shortcut orchestration with uniform cancellation, stage-specific failure feedback, busy rejection, terminal recovery, stress coverage, and operation-scoped release of captured pixels and unbounded recognized text.
+- Multi-display and Retina hardening that rejects mismatched coordinate-space metadata, carries the initiating display point size through capture validation, checks derived pixel dimensions, safely rejects ambiguous duplicate identifiers, and exercises a seven-layout synthetic topology.

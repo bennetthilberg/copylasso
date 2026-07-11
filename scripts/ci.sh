@@ -148,6 +148,17 @@ if [[ "$selection_api_files" != "$selection_service" ]] || \
     exit 1
 fi
 
+readonly multi_display_tests='CopyLassoTests/Models/MultiDisplayBehaviorTests.swift'
+if [[ ! -e "$multi_display_tests" ]] || \
+    ! /usr/bin/grep -q 'displayPointSize' CopyLasso/Models/SelectionGeometry.swift || \
+    ! /usr/bin/grep -q 'expectedDisplayPointSize' "$capture_service" || \
+    ! /usr/bin/grep -q 'testEverySyntheticDisplayPreservesIdentityAndLocalPixelsThroughCapturePlanning' "$multi_display_tests" || \
+    ! /usr/bin/grep -q 'testCurrentDisplayChangesRejectTheOriginalRequestForEveryScale' "$multi_display_tests" || \
+    /usr/bin/grep -q 'visibleFrame' "$selection_service"; then
+    echo "G19 must retain complete-frame overlays and full display-snapshot validation." >&2
+    exit 1
+fi
+
 readonly feedback_panel='CopyLasso/SharedUI/FeedbackPanel.swift'
 screen_list_files="$({ /usr/bin/grep -R -l 'NSScreen\.screens' CopyLasso || true; } | /usr/bin/sort)"
 expected_screen_list_files="$(/usr/bin/printf '%s\n%s' "$selection_service" "$feedback_panel" | /usr/bin/sort)"

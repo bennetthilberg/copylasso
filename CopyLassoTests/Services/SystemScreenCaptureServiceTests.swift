@@ -35,6 +35,7 @@ final class SystemScreenCaptureServiceTests: XCTestCase {
     let selection = try makeSelection()
     let invalidScale = SelectionResult(
       displayID: selection.displayID,
+      displayPointSize: selection.displayPointSize,
       appKitGlobalRect: selection.appKitGlobalRect,
       displayLocalRect: selection.displayLocalRect,
       coreGraphicsGlobalRect: selection.coreGraphicsGlobalRect,
@@ -44,6 +45,7 @@ final class SystemScreenCaptureServiceTests: XCTestCase {
     )
     let inconsistentPixels = SelectionResult(
       displayID: selection.displayID,
+      displayPointSize: selection.displayPointSize,
       appKitGlobalRect: selection.appKitGlobalRect,
       displayLocalRect: selection.displayLocalRect,
       coreGraphicsGlobalRect: selection.coreGraphicsGlobalRect,
@@ -94,6 +96,40 @@ final class SystemScreenCaptureServiceTests: XCTestCase {
         XCTAssertEqual(error as? ScreenCaptureError, .displayConfigurationChanged)
       }
     }
+  }
+
+  func testDisplayValidationRejectsPixelDimensionsThatDoNotMatchSourceGeometry() throws {
+    let request = try ScreenCaptureRequestPlanner.request(for: makeSelection(scale: 1.5))
+    let snapshot = ScreenCaptureDisplaySnapshot(
+      displayID: request.displayID,
+      pointSize: CGSize(width: 200, height: 100),
+      pointPixelScale: request.backingScale
+    )
+    let changedWidth = ScreenCaptureRequest(
+      displayID: request.displayID,
+      expectedDisplayPointSize: request.expectedDisplayPointSize,
+      sourceRect: request.sourceRect,
+      pixelWidth: request.pixelWidth + 1,
+      pixelHeight: request.pixelHeight,
+      backingScale: request.backingScale,
+      showsCursor: request.showsCursor,
+      capturesAudio: request.capturesAudio
+    )
+    let changedHeight = ScreenCaptureRequest(
+      displayID: request.displayID,
+      expectedDisplayPointSize: request.expectedDisplayPointSize,
+      sourceRect: request.sourceRect,
+      pixelWidth: request.pixelWidth,
+      pixelHeight: request.pixelHeight - 1,
+      backingScale: request.backingScale,
+      showsCursor: request.showsCursor,
+      capturesAudio: request.capturesAudio
+    )
+
+    XCTAssertThrowsError(
+      try ScreenCaptureRequestValidator.validate(changedWidth, against: snapshot))
+    XCTAssertThrowsError(
+      try ScreenCaptureRequestValidator.validate(changedHeight, against: snapshot))
   }
 
   func testCaptureReturnsExactInMemoryImageAndForwardsRequestOnce() async throws {

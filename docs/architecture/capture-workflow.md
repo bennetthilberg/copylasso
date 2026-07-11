@@ -20,7 +20,7 @@ flowchart LR
 
 ## Private Data Lifetime
 
-After selection, one private async function owns the selected geometry, captured `CGImage`, neutral OCR observations, and full assembled string. It returns only:
+After selection, one private async function owns the selected geometry, captured `CGImage`, neutral OCR observations, and full assembled string. The geometry carries the initiating display point size and scale; the capture adapter compares them with a fresh ScreenCaptureKit display snapshot before requesting pixels. The function returns only:
 
 - `.noText`; or
 - `.success` with a whitespace-normalized preview bounded to 80 extended grapheme clusters after the full string has been written.

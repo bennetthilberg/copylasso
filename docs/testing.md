@@ -187,3 +187,23 @@ Use one stably signed Debug app with Screen Recording enabled. Keep a unique sen
 9. Inspect the app container and temporary directories before and after the run. Confirm no screenshot, OCR text, preview, log, cache, or history artifact was created.
 
 The unattended July 11, 2026 run completed the deterministic matrix but could not perform this signed live matrix because the workstation was locked and real G14 capture permission/display evidence was unavailable. This is recorded as pending rather than passed; it remains release-blocking evidence for G24.
+
+## Multi-Display And Retina Hardening Matrix
+
+G19 adds a synthetic topology with primary, left, right, above, below, diagonal, portrait, and recorded Sidecar-style shapes across 1×, 1.5×, and 2× scales. For every fixture, tests drive global selection through display-local Core Graphics conversion and capture-request planning, preserve the initiating display identity, clamp every cross-display endpoint, validate outward-rounded pixels, and reject changed identity, full point size, scale, or derived pixel dimensions. AppKit tests also prove every mixed-scale display can initiate through a panel covering its complete `NSScreen.frame`.
+
+The synthetic matrix is deterministic regression protection; it is not evidence that unavailable physical hardware or a particular menu-bar arrangement worked.
+
+### Signed G19 Physical Matrix
+
+1. Record every connected display's current name, runtime ID, AppKit frame, Core Graphics bounds, backing scale, resolution, refresh rate, orientation, primary-menu-bar ownership, and the **Displays have separate Spaces** setting.
+2. On every display, capture a known corner-and-center calibration grid. Confirm the pixels, output size, and display identity match that display at its current scale.
+3. Select near the menu bar, any secondary menu bar, Dock edge, and each outer screen edge. The overlay must cover the complete display frame and the crop must exclude the overlay itself.
+4. Drag from each display toward every adjacent display. Only the initiating display may dim, the rectangle must stop at its edge, and no stitched or wrong-display image may result.
+5. Exercise every physically available left, right, above, below, diagonal, landscape, and portrait arrangement. Record unavailable arrangements explicitly rather than extrapolating.
+6. Exercise every available mixed-scale pair, including 1× plus 2× and any supported 1.5× mode. Verify outward-rounded dimensions and intended pixels on both sides.
+7. Change one supported resolution or scaling mode while selection is active. Confirm one display-change cancellation, complete overlay cleanup, idle recovery, and fresh descriptors on the next request.
+8. Reconfigure or disconnect the initiating display between selection and capture where a controlled pause makes that safe. Confirm capture rejects the stale identity/point-size/scale snapshot and the clipboard remains unchanged.
+9. Restore the original arrangement, resolution, scale, orientation, refresh rate, menu-bar assignment, and Sidecar state before finishing.
+
+The July 11, 2026 unattended G19 run could not execute this physical matrix because the session was locked and the Sidecar iPad was unavailable. A fresh read-only enumeration saw one online primary Dell S2721HGF at 1920 × 1080 and 144 Hz: runtime ID `4`, matching AppKit/Core Graphics frames `(0, 0, 1920, 1080)`, and 1× scale. That confirms the test environment only; it is not selection or pixel-crop evidence. G07's Dell/Sidecar results remain historical evidence. Fresh physical G19 results are pending release qualification.

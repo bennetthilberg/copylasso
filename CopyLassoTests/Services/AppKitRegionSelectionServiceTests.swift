@@ -82,6 +82,45 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(result.appKitGlobalRect, CGRect(x: 10, y: 10, width: 90, height: 50))
   }
 
+  func testEveryMixedScaleDisplayCanInitiateUsingItsCompleteFrameAndIdentity() async throws {
+    let displays = [
+      try makeDisplay(id: 1, origin: .zero, scale: 1),
+      try makeDisplay(id: 2, origin: CGPoint(x: -100, y: 25), scale: 2),
+      try makeDisplay(id: 3, origin: CGPoint(x: 100, y: -40), scale: 1.5),
+    ]
+
+    for initiatingIndex in displays.indices {
+      let factory = RecordingSelectionOverlaySurfaceFactory()
+      let context = makeContext(
+        provider: StubSelectionDisplayProvider(results: [.success(displays)]),
+        factory: factory
+      )
+      let task = Task { try await context.service.selectRegion() }
+      await Task.yield()
+
+      XCTAssertEqual(factory.surfaces.map(\.frame), displays.map(\.appKitFrame))
+      let display = displays[initiatingIndex]
+      let start = CGPoint(x: display.appKitFrame.minX + 10, y: display.appKitFrame.minY + 10)
+      let end = CGPoint(x: start.x + 50, y: start.y + 40)
+      factory.surfaces[initiatingIndex].send(.mouseDown(start))
+      factory.surfaces[initiatingIndex].send(.mouseUp(end))
+      await context.scheduler.runNext()
+
+      let outcome = try await task.value
+      guard case .selected(let result) = outcome else {
+        return XCTFail("Expected a selection on display \(display.displayID)")
+      }
+      XCTAssertEqual(result.displayID, display.displayID)
+      XCTAssertEqual(result.displayPointSize, display.appKitFrame.size)
+      XCTAssertEqual(result.backingScale, display.backingScale)
+      XCTAssertEqual(
+        result.backingPixelRect.size,
+        CGSize(width: 50 * display.backingScale, height: 40 * display.backingScale)
+      )
+      XCTAssertTrue(factory.surfaces.allSatisfy { !$0.isVisible })
+    }
+  }
+
   func testEscapeCleansEverythingBeforeDeferredCompletion() async throws {
     let display = try makeDisplay()
     let factory = RecordingSelectionOverlaySurfaceFactory()
@@ -292,6 +331,16 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
           hundredPointBackingSize: CGSize(width: 100, height: 100)
         ),
         .backingScaleMismatch
+      ),
+      (
+        SelectionDisplayMetadata(
+          displayID: 4,
+          appKitFrame: valid.appKitFrame,
+          coreGraphicsBounds: CGRect(x: 0, y: 0, width: 100, height: 99),
+          backingScale: valid.backingScale,
+          hundredPointBackingSize: valid.hundredPointBackingSize
+        ),
+        .invalidDisplayGeometry
       ),
     ]
 
