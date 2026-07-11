@@ -6,7 +6,14 @@ protocol ScreenCapturePermissionService: AnyObject {
   func currentObservation() -> ScreenCaptureAuthorizationObservation
   func requestAccess() -> ScreenCaptureAuthorizationObservation
   func recordCaptureDenial() -> ScreenCaptureAuthorizationObservation
+  func recordCaptureSuccess()
+  func beginUserInitiatedRetry()
   func openSystemSettings() -> Bool
+}
+
+extension ScreenCapturePermissionService {
+  func recordCaptureSuccess() {}
+  func beginUserInitiatedRetry() {}
 }
 
 @MainActor
@@ -31,6 +38,7 @@ final class SystemScreenCapturePermissionService: ScreenCapturePermissionService
   private let historyStore: any ScreenCapturePermissionHistoryStoring
   private let client: ScreenCapturePermissionClient
   private var hasAuthoritativeCaptureDenial = false
+  private var hasUserInitiatedObservationRetry = false
 
   init(
     historyStore: any ScreenCapturePermissionHistoryStoring,
@@ -42,7 +50,10 @@ final class SystemScreenCapturePermissionService: ScreenCapturePermissionService
 
   func currentObservation() -> ScreenCaptureAuthorizationObservation {
     if hasAuthoritativeCaptureDenial {
-      return .notGrantedAfterPreviouslyGranted
+      guard hasUserInitiatedObservationRetry else {
+        return .notGrantedAfterPreviouslyGranted
+      }
+      hasUserInitiatedObservationRetry = false
     }
     return observation(granted: client.preflight())
   }
@@ -56,11 +67,24 @@ final class SystemScreenCapturePermissionService: ScreenCapturePermissionService
 
   func recordCaptureDenial() -> ScreenCaptureAuthorizationObservation {
     hasAuthoritativeCaptureDenial = true
+    hasUserInitiatedObservationRetry = false
     var history = historyStore.history
     history.hasRequested = true
     history.hasObservedGranted = true
     historyStore.history = history
     return .notGrantedAfterPreviouslyGranted
+  }
+
+  func recordCaptureSuccess() {
+    hasAuthoritativeCaptureDenial = false
+    hasUserInitiatedObservationRetry = false
+  }
+
+  func beginUserInitiatedRetry() {
+    guard hasAuthoritativeCaptureDenial else {
+      return
+    }
+    hasUserInitiatedObservationRetry = true
   }
 
   func openSystemSettings() -> Bool {

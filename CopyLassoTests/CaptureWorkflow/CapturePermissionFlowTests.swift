@@ -140,6 +140,7 @@ final class CapturePermissionFlowTests: XCTestCase {
     let recognizedImageSizes = await context.ocr.recognizedImageSizes
     XCTAssertEqual(capturedSelections, [selection])
     XCTAssertEqual(recognizedImageSizes, [CGSize(width: 80, height: 80)])
+    XCTAssertEqual(context.permission.recordCaptureSuccessCallCount, 1)
     XCTAssertEqual(context.textAssembler.inputs, [observations])
     XCTAssertEqual(context.clipboard.writtenTexts, ["assembled"])
     XCTAssertEqual(context.feedback.presentedFeedback, [.success(preview: "assembled")])
@@ -337,6 +338,7 @@ final class CapturePermissionFlowTests: XCTestCase {
     let recognitionCallCount = await context.ocr.recognitionCallCount
     XCTAssertEqual(capturedSelections, [selection])
     XCTAssertEqual(recognitionCallCount, 0)
+    XCTAssertEqual(context.permission.recordCaptureSuccessCallCount, 0)
     XCTAssertEqual(context.textAssembler.inputs, [])
     XCTAssertEqual(context.recovery.presentedObservations, [])
     XCTAssertEqual(context.coordinator.state, .idle)
@@ -376,20 +378,28 @@ final class CapturePermissionFlowTests: XCTestCase {
     XCTAssertEqual(coordinator.state, .idle)
   }
 
-  func testSelectionCancellationNeverCallsCaptureAndReturnsIdle() async {
-    let context = makeContext(
-      current: .granted,
-      selectionResult: .success(.cancelled(.escape))
-    )
+  func testSelectionCancellationNeverRecordsCaptureSuccessForEveryReason() async {
+    for reason in [
+      SelectionCancellationReason.escape,
+      .tooSmall,
+      .displayChanged,
+      .applicationTerminated,
+    ] {
+      let context = makeContext(
+        current: .granted,
+        selectionResult: .success(.cancelled(reason))
+      )
 
-    _ = context.command.perform()
-    await context.scheduler.runNext()
+      _ = context.command.perform()
+      await context.scheduler.runNext()
 
-    let capturedSelections = await context.screenCapture.selections
-    XCTAssertEqual(capturedSelections, [])
-    let recognitionCallCount = await context.ocr.recognitionCallCount
-    XCTAssertEqual(recognitionCallCount, 0)
-    XCTAssertEqual(context.coordinator.state, .idle)
+      let capturedSelections = await context.screenCapture.selections
+      XCTAssertEqual(capturedSelections, [], "reason: \(reason)")
+      XCTAssertEqual(context.permission.recordCaptureSuccessCallCount, 0, "reason: \(reason)")
+      let recognitionCallCount = await context.ocr.recognitionCallCount
+      XCTAssertEqual(recognitionCallCount, 0, "reason: \(reason)")
+      XCTAssertEqual(context.coordinator.state, .idle, "reason: \(reason)")
+    }
   }
 
   func testSelectionFailureNeverCallsCaptureAndReturnsIdle() async {
