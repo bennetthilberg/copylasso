@@ -70,7 +70,7 @@ struct CopyLassoApp: App {
       permissionService: permissionService,
       selectionService: selectionService,
       screenCaptureService: screenCaptureService,
-      ocrService: PendingOCRService(),
+      ocrService: VisionOCRService(),
       recoveryPresenter: recoveryController
     )
     recoveryController.captureRequester = captureCommand

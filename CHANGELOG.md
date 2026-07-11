@@ -19,4 +19,5 @@ All notable changes to CopyLasso will be documented in this file.
 - KeyboardShortcuts 3.0.1 with exact Swift Package Manager resolution and an MIT third-party notice.
 - Production Core Graphics Screen Recording permission observation and requests, persistent neutral history, a singleton nonactivating recovery panel with explicit retry feedback, and a temporary post-approval selection boundary.
 - A production multi-display AppKit selection overlay with per-display coordinate conversion, initiating-display-only dimming, complete cancellation cleanup, and a temporary no-pixel G14 capture boundary.
-- Production in-memory ScreenCaptureKit region capture with outward-rounded Retina geometry, authoritative permission-denial recovery, exact output validation, and a temporary G15 OCR boundary.
+- Production in-memory ScreenCaptureKit region capture with outward-rounded Retina geometry, authoritative permission-denial recovery, exact output validation, and a tested OCR handoff seam.
+- Production local Vision OCR with accurate corrected U.S. English recognition, neutral text/confidence/bounds observations, typed failures, and cooperative cancellation away from the main actor.

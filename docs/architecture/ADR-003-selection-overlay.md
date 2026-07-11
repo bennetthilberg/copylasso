@@ -8,7 +8,7 @@
 
 CopyLasso must let a user begin a rectangular selection on any attached display without activating the app, dimming unrelated displays, or including the overlay in the later capture. AppKit and Core Graphics describe the same display with different origins and Y-axis conventions, and backing pixels may use a nonintegral scale. G07 tests the windowing and geometry assumptions before they become production architecture.
 
-The original experiment was Debug-only and used `--g07-selection-spike`; G08 retired that executable harness while preserving its evidence and geometry. G13 now implements the same decision in the normal Debug and Release path. Construction and launch remain inert: panels are created only after an authorized user command reaches selection. The current workflow never captures pixels, calls Vision, writes the clipboard, or persists selection data.
+The original experiment was Debug-only and used `--g07-selection-spike`; G08 retired that executable harness while preserving its evidence and geometry. G13 now implements the same decision in the normal Debug and Release path. Construction and launch remain inert: panels are created only after an authorized user command reaches selection. The selection adapter itself never captures pixels, calls Vision, writes the clipboard, or persists selection data; later workflow stages receive only its neutral geometry result.
 
 ## Decision
 

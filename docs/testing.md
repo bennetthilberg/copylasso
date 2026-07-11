@@ -12,7 +12,7 @@ The pipeline lints all Swift source, resolves the exact package dependency, buil
 
 Signed UI tests use Debug-only permission doubles. They cover prior-request and previously-granted recovery wording, singleton reuse, System Settings failure instructions, retry routing, Cancel, menu availability, keyboard actions, and accessibility identifiers without calling Core Graphics permission functions or changing real TCC state.
 
-Ordinary signed UI tests use deterministic Debug-only selection and capture doubles so shell tests never unexpectedly cover the desktop or touch TCC. Tests launched with `--g13-live-selection` use the production AppKit service with controlled permission and in-memory capture. They verify that the overlay is accessible, cancellation removes it, a valid drag reaches the pending G15 OCR boundary, the command becomes reusable, and the clipboard remains unchanged.
+Ordinary signed UI tests use deterministic Debug-only selection and capture doubles so shell tests never unexpectedly cover the desktop or touch TCC. Tests launched with `--g13-live-selection` use the production AppKit service with controlled permission and in-memory capture. They verify that the overlay is accessible, cancellation removes it, a valid drag reaches production OCR and then the pending formatting boundary, the command becomes reusable, and the clipboard remains unchanged.
 
 The controlled launch arguments begin with `--g12-` and `--g13-` and are compiled out of Release. CI inspects the Release executable to prevent them from leaking. The application uses the real production permission and selection services unless the existing `--g10-g11-ui-testing` boundary selects their controlled alternatives; `--g13-live-selection` explicitly restores the real selection adapter for overlay UI coverage.
 
@@ -81,7 +81,7 @@ Use the same stably signed Debug app after Screen Recording access is enabled. T
 7. Change a display resolution or disconnect an extended display during selection. The active operation must cancel once, remove all panels, and rebuild fresh descriptors on the next request.
 8. Terminate CopyLasso during selection and verify no panel, dim, cursor override, observer, controller, or continuation remains. Use Xcode's memory graph or debugger to confirm the completed controller and surfaces are released.
 9. Inspect light, dark, increased-contrast, and VoiceOver behavior. The black-and-white border and crosshair must remain distinguishable, and the overlay must expose its selection label and Escape help.
-10. Confirm no pixel file, image retention, OCR, pasteboard write, Accessibility prompt, or Input Monitoring prompt occurs. The controlled UI path must stop at the intentional G15-unavailable boundary.
+10. Confirm no pixel file, retained image, pasteboard write, Accessibility prompt, or Input Monitoring prompt occurs. The controlled UI path may recognize the deterministic in-memory image but must stop at the intentional G16 formatting boundary.
 
 ### G13 Production Verification Record
 
@@ -104,10 +104,32 @@ Use a stably signed Debug build with Screen Recording enabled. Invoke the real a
 3. Verify the captured image contains no border, dim treatment, or CopyLasso cursor. The production capture starts only after accessibility inspection reports no overlay windows.
 4. Revoke access while running and confirm a real `SCStreamError.userDeclined` overrides stale preflight, presents likely-revoked recovery, skips OCR, and returns to idle.
 5. Disconnect or reconfigure the selected display between selection and capture. Confirm display/scale/bounds validation fails safely and no image reaches OCR.
-6. Repeat capture at least 20 times. Inspect the app container and temporary directories for image files and confirm the image is released after the pending OCR call.
+6. Repeat capture at least 20 times. Inspect the app container and temporary directories for image files and confirm the image is released after the OCR call.
 
 ### G14 Unattended Verification Record
 
 Deterministic tests validate outward-rounded crop geometry, 1×/2× scale propagation, cursor/audio exclusion, current-display validation, exact in-memory pixel data and dimensions, nil/incorrect output, framework error mapping, capture-to-OCR forwarding, cancellation, and authoritative denial recovery. Both configurations compile the same production adapter; Debug UI runs substitute only the capture client to avoid touching real TCC.
 
 A fresh successful live crop could not be performed unattended: the Debug Screen Recording toggle was off, and the workstation auto-locked after G13. Two signed XCUITest attempts failed before invoking the command because Xcode could not traverse a locked menu bar; `loginwindow` was frontmost. These attempts are recorded as unavailable infrastructure evidence, not product failures or passes. G06 remains the latest successful real ScreenCaptureKit pixel proof, and the G14 production matrix must be rerun after unlock before G18/G24 release evidence can pass.
+
+## Production Vision OCR Matrix
+
+G15 recognition is verified without changing Screen Recording permission. The unit bundle contains project-owned fixture images and invokes the same `VisionOCRService` used by Debug and Release.
+
+The required automated matrix covers:
+
+1. Exact normalized text for clean multiline, small, light-on-dark, and rasterized-application fixtures.
+2. At least 90% character similarity, every expected token, and at most one unexpected token for the moderate-low-contrast fixture.
+3. The exact required phrase, every expected token, and at most one unexpected token for the generated photographic sign.
+4. Empty success for a blank image, distinct from a typed engine failure.
+5. Recognition of a deliberately enlarged 2400 x 1000 fixture.
+6. Confidence within 0...1 and normalized bounds for every returned observation.
+7. An injected performer proving execution occurs off the main thread.
+8. Cancellation before and after Vision request installation, exactly-once `VNRequest.cancel()`, typed cancellation, return within one second, and release of a 4000 x 2000 input image.
+9. Static confinement of Vision to the production OCR service and absence of logging, image encoding, persistence, pasteboard, or network code in that service.
+
+The direct off-main thread assertion is deterministic and runs in both canonical architecture jobs; it replaces a subjective Instruments-only judgment for this boundary. Instruments remains useful during G24 performance QA, where the entire live workflow can be profiled after the outstanding real-capture matrix is available.
+
+### G15 Production Verification Record
+
+On July 11, 2026, both canonical pipelines passed 129 of 129 tests with zero failures or skips on arm64 and x86_64. The focused production OCR suite passed 13 of 13 tests, including every fixture threshold, the enlarged fixture, typed empty/failure behavior, off-main execution, cancellation, and image release. The same built OCR suite passed 13 of 13 under a process sandbox that denied every network operation. Both Release slices contain the production service, while CI confines Vision to that file and rejects OCR logging or captured-image persistence paths.

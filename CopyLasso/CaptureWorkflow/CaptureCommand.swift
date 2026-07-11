@@ -112,7 +112,13 @@ final class CaptureCommand: CaptureRequesting {
 
     do {
       _ = try await ocrService.recognizeText(in: image)
-      _ = coordinator.handle(.fail(.recognition))
+      guard case .transitioned = coordinator.handle(.recognitionCompleted) else {
+        _ = coordinator.handle(.fail(.internal))
+        return
+      }
+      _ = coordinator.handle(.fail(.formatting))
+    } catch VisionOCRError.cancelled {
+      _ = coordinator.handle(.cancel(.user))
     } catch {
       _ = coordinator.handle(.fail(.recognition))
     }

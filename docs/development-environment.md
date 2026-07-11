@@ -143,9 +143,9 @@ Interactive Run and UI testing require runnable local signing. Keep any team or 
 
 ## Architecture Baseline
 
-The G05-G07 executable feasibility harnesses were retired after their evidence was recorded. Their former launch arguments are no longer supported. Both Debug and Release contain the production AppKit selection overlay and ScreenCaptureKit region capture, but neither contains live Vision, clipboard, or feedback behavior.
+The G05-G07 executable feasibility harnesses were retired after their evidence was recorded. Their former launch arguments are no longer supported. Both Debug and Release contain the production AppKit selection overlay, ScreenCaptureKit region capture, and local Vision OCR, but neither contains live text assembly, clipboard, or feedback behavior.
 
-The application target contains the dockless menu-bar shell, production-neutral models and service contracts, live permission and selection adapters, and actor-isolated production region capture. Capture Text validates a selected display, captures only after overlays are absent, and sends the in-memory image to a temporary G15 boundary that always stops before Vision work. See [Architecture Overview](architecture/overview.md) for dependency and actor boundaries, [Testing](testing.md) for signed matrices, [ADR-001](architecture/ADR-001-vision-ocr.md) for OCR evidence, [ADR-002](architecture/ADR-002-screen-capture.md) for permission and capture evidence, and [ADR-003](architecture/ADR-003-selection-overlay.md) for selection and coordinate evidence.
+The application target contains the dockless menu-bar shell, production-neutral models and service contracts, live permission and selection adapters, actor-isolated production region capture, and production Vision OCR. Capture Text validates a selected display, captures only after overlays are absent, and recognizes the in-memory image away from the main actor before stopping at the unimplemented G16 text-assembly boundary. See [Architecture Overview](architecture/overview.md) for dependency and actor boundaries, [Testing](testing.md) for signed matrices, [ADR-001](architecture/ADR-001-vision-ocr.md) for OCR evidence, [ADR-002](architecture/ADR-002-screen-capture.md) for permission and capture evidence, and [ADR-003](architecture/ADR-003-selection-overlay.md) for selection and coordinate evidence.
 
 ## GitHub Actions
 
@@ -162,7 +162,7 @@ The required check names are `build and test (arm64)` and `build and test (x86_6
 
 ## Current Boundary
 
-The repository contains a buildable dockless menu-bar app with onboarding, persistent Settings, Launch at Login, a configurable global shortcut, production permission recovery, multi-display selection, in-memory ScreenCaptureKit capture, service test doubles, and retained feasibility evidence. The shortcut and menu both enter the same permission, selection, and capture workflow. The captured image reaches a temporary unavailable OCR service; production Vision, formatting, clipboard, and feedback remain intentionally unimplemented.
+The repository contains a buildable dockless menu-bar app with onboarding, persistent Settings, Launch at Login, a configurable global shortcut, production permission recovery, multi-display selection, in-memory ScreenCaptureKit capture, local Vision OCR, service test doubles, and retained feasibility evidence. The shortcut and menu both enter the same permission, selection, capture, and recognition workflow. Structured observations remain transient and stop before production formatting; clipboard and feedback remain intentionally unimplemented.
 
 Normal Debug and Release runs use production selection and capture. Signed UI tests keep menu/settings coverage deterministic with Debug-only selection and capture doubles. Add `--g13-live-selection` to exercise the real overlay with controlled permission and in-memory capture; add `--g14-live-capture` only for an explicitly manual real ScreenCaptureKit run. Both controls and doubles are compiled out of Release.
 

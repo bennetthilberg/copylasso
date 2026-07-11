@@ -116,7 +116,34 @@ final class CapturePermissionFlowTests: XCTestCase {
     XCTAssertEqual(context.scheduler.scheduledWorkCount, 3)
   }
 
-  func testValidSelectionCapturesImageAndReachesPendingOCRBoundaryExactlyOnce() async throws {
+  func testValidSelectionCapturesImageAndReachesProductionOCRExactlyOnce() async throws {
+    let selection = try makeSelection()
+    let image = try makeImage(width: 80, height: 80)
+    let context = makeContext(
+      current: .granted,
+      selectionResult: .success(.selected(selection)),
+      captureResult: .success(image),
+      ocrResult: .success([
+        RecognizedTextObservation(
+          text: "transient",
+          confidence: 0.9,
+          boundingBox: CGRect(x: 0, y: 0, width: 1, height: 1)
+        )
+      ])
+    )
+
+    _ = context.command.perform()
+    await context.scheduler.runNext()
+
+    let capturedSelections = await context.screenCapture.selections
+    let recognizedImageSizes = await context.ocr.recognizedImageSizes
+    XCTAssertEqual(capturedSelections, [selection])
+    XCTAssertEqual(recognizedImageSizes, [CGSize(width: 80, height: 80)])
+    XCTAssertEqual(context.coordinator.state, .idle)
+    XCTAssertTrue(context.command.isEnabled)
+  }
+
+  func testRecognitionFailureReturnsIdleWithoutRetryingCapture() async throws {
     let selection = try makeSelection()
     let image = try makeImage(width: 80, height: 80)
     let context = makeContext(
@@ -129,11 +156,43 @@ final class CapturePermissionFlowTests: XCTestCase {
     await context.scheduler.runNext()
 
     let capturedSelections = await context.screenCapture.selections
-    let recognizedImageSizes = await context.ocr.recognizedImageSizes
+    let recognitionCallCount = await context.ocr.recognitionCallCount
     XCTAssertEqual(capturedSelections, [selection])
-    XCTAssertEqual(recognizedImageSizes, [CGSize(width: 80, height: 80)])
+    XCTAssertEqual(recognitionCallCount, 1)
     XCTAssertEqual(context.coordinator.state, .idle)
     XCTAssertTrue(context.command.isEnabled)
+  }
+
+  func testRecognitionCancellationReturnsIdleAsANonPermissionOutcome() async throws {
+    let coordinator = CaptureCoordinator()
+    let recovery = SpyPermissionRecoveryPresenter()
+    let scheduler = ManualCaptureWorkScheduler()
+    let screenCapture = StubScreenCaptureService(
+      result: .success(try makeImage(width: 80, height: 80))
+    )
+    let command = CaptureCommand(
+      coordinator: coordinator,
+      permissionService: StubScreenCapturePermissionService(
+        currentResult: .granted,
+        requestResult: .granted
+      ),
+      selectionService: StubRegionSelectionService(
+        result: .success(.selected(try makeSelection()))
+      ),
+      screenCaptureService: screenCapture,
+      ocrService: CancelledOCRService(),
+      recoveryPresenter: recovery,
+      scheduleWork: scheduler.schedule
+    )
+
+    _ = command.perform()
+    await scheduler.runNext()
+
+    let selections = await screenCapture.selections
+    XCTAssertEqual(selections.count, 1)
+    XCTAssertEqual(recovery.presentedObservations, [])
+    XCTAssertEqual(coordinator.state, .idle)
+    XCTAssertTrue(command.isEnabled)
   }
 
   func testCaptureFailureNeverCallsOCRAndReturnsIdle() async throws {
@@ -212,17 +271,6 @@ final class CapturePermissionFlowTests: XCTestCase {
     let recognitionCallCount = await context.ocr.recognitionCallCount
     XCTAssertEqual(recognitionCallCount, 0)
     XCTAssertEqual(context.coordinator.state, .idle)
-  }
-
-  func testPendingOCRServiceRejectsBeforeProducingObservations() async throws {
-    let service = PendingOCRService()
-
-    do {
-      _ = try await service.recognizeText(in: makeImage(width: 8, height: 6))
-      XCTFail("Expected the G15 boundary to be unavailable")
-    } catch {
-      XCTAssertEqual(error as? PendingOCRError, .unavailableUntilG15)
-    }
   }
 
   func testCommandRemainsBusyWhileProductionSelectionIsPending() async {
@@ -342,6 +390,12 @@ final class CapturePermissionFlowTests: XCTestCase {
 private actor PermissionDeniedScreenCaptureService: ScreenCaptureService {
   func capture(_ selection: SelectionResult) async throws -> CGImage {
     throw ScreenCaptureError.permissionDenied
+  }
+}
+
+private actor CancelledOCRService: OCRService {
+  func recognizeText(in image: CGImage) async throws -> [RecognizedTextObservation] {
+    throw VisionOCRError.cancelled
   }
 }
 
