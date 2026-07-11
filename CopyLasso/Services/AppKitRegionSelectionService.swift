@@ -234,6 +234,7 @@ private final class SelectionOverlayController {
 
     switch event {
     case .mouseDown(let point):
+      surfaces.first(where: { $0.displayID == displayID })?.makeInputReady()
       guard session.begin(on: displayID, at: point) else { return }
       renderCurrentDrag()
     case .mouseDragged(let point):
