@@ -86,6 +86,32 @@ final class ScreenCapturePermissionServiceTests: XCTestCase {
     XCTAssertEqual(context.client.requestCallCount, 1)
   }
 
+  func testAuthoritativeCaptureDenialRecordsLikelyRevokedWithoutAnotherSystemCall() {
+    let context = makeContext(
+      history: ScreenCapturePermissionHistory(hasObservedGranted: true),
+      preflight: true,
+      request: true
+    )
+
+    XCTAssertEqual(
+      context.service.recordCaptureDenial(),
+      .notGrantedAfterPreviouslyGranted
+    )
+    XCTAssertEqual(
+      context.history.history,
+      ScreenCapturePermissionHistory(
+        hasRequested: true,
+        hasObservedGranted: true
+      )
+    )
+    XCTAssertEqual(
+      context.service.currentObservation(),
+      .notGrantedAfterPreviouslyGranted
+    )
+    XCTAssertEqual(context.client.preflightCallCount, 0)
+    XCTAssertEqual(context.client.requestCallCount, 0)
+  }
+
   func testOpenSystemSettingsUsesTheScreenRecordingPrivacyPaneAndReportsFailure() {
     let success = makeContext(openSettings: true)
     XCTAssertTrue(success.service.openSystemSettings())

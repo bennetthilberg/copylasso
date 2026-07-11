@@ -96,9 +96,26 @@ if [[ "$permission_api_files" != "$permission_service" ]] || \
     exit 1
 fi
 
-readonly prohibited_capture_runtime_pattern='import[[:space:]]+(ScreenCaptureKit|Vision)|SCScreenshotManager|SCShareableContent|SCContentSharingPicker|CGWindowListCreateImage|CGDisplayCreateImage|VNRecognizeTextRequest|--g06-capture-spike|--g07-selection-spike|NSPasteboard|sharingType[[:space:]]*=[[:space:]]*\.none|NSWindow\.SharingType\.none'
+readonly prohibited_capture_runtime_pattern='import[[:space:]]+Vision|SCContentSharingPicker|CGWindowListCreateImage|CGDisplayCreateImage|VNRecognizeTextRequest|--g06-capture-spike|--g07-selection-spike|NSPasteboard|sharingType[[:space:]]*=[[:space:]]*\.none|NSWindow\.SharingType\.none'
 if /usr/bin/grep -R -nE "$prohibited_capture_runtime_pattern" CopyLasso; then
     echo "A prohibited capture, OCR, pasteboard, or retired experiment API remains in the application target." >&2
+    exit 1
+fi
+
+readonly capture_service='CopyLasso/Services/SystemScreenCaptureService.swift'
+capture_api_files="$({ /usr/bin/grep -R -lE \
+    'import[[:space:]]+ScreenCaptureKit|SCScreenshotManager|SCShareableContent|SCContentFilter|SCStreamConfiguration' CopyLasso || true; })"
+if [[ "$capture_api_files" != "$capture_service" ]] || \
+    ! /usr/bin/grep -q 'SCScreenshotManager.captureImage' "$capture_service" || \
+    ! /usr/bin/grep -q 'configuration.showsCursor = request.showsCursor' "$capture_service" || \
+    ! /usr/bin/grep -q 'configuration.capturesAudio = request.capturesAudio' "$capture_service"; then
+    echo "ScreenCaptureKit APIs must remain confined to the production in-memory capture service." >&2
+    exit 1
+fi
+
+readonly prohibited_image_persistence_pattern='CGImageDestination|NSBitmapImageRep|representation\(using:|pngRepresentation|jpegRepresentation|CIContext.*write|Data.*write\(to:'
+if /usr/bin/grep -R -nE "$prohibited_image_persistence_pattern" CopyLasso; then
+    echo "The application target must not encode or persist captured pixels." >&2
     exit 1
 fi
 
@@ -114,8 +131,9 @@ if [[ "$selection_api_files" != "$selection_service" ]] || \
 fi
 
 if [[ -e CopyLasso/Services/PendingRegionSelectionService.swift ]] || \
-    [[ ! -e CopyLasso/Services/PendingScreenCaptureService.swift ]]; then
-    echo "G13 must use production selection and stop at the temporary no-pixel G14 boundary." >&2
+    [[ -e CopyLasso/Services/PendingScreenCaptureService.swift ]] || \
+    [[ ! -e CopyLasso/Services/PendingOCRService.swift ]]; then
+    echo "G14 must use production selection and capture, then stop at the temporary G15 OCR boundary." >&2
     exit 1
 fi
 
@@ -247,7 +265,7 @@ if [[ ! -x "$release_executable" ]]; then
     exit 1
 fi
 
-if /usr/bin/strings "$release_executable" | /usr/bin/grep -qE -- '--g10-g11-|--g12-|--g13-'; then
+if /usr/bin/strings "$release_executable" | /usr/bin/grep -qE -- '--g10-g11-|--g12-|--g13-|--g14-'; then
     echo "Debug-only UI-test controls leaked into Release." >&2
     exit 1
 fi
@@ -259,7 +277,8 @@ if [[ ! -f "$debug_module" ]] || \
     ! /usr/bin/grep -a -q 'CaptureCommand' "$debug_module" || \
     ! /usr/bin/grep -a -q 'SystemScreenCapturePermissionService' "$debug_module" || \
     ! /usr/bin/grep -a -q 'AppKitRegionSelectionService' "$debug_module" || \
-    ! /usr/bin/grep -a -q 'PendingScreenCaptureService' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'SystemScreenCaptureService' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'PendingOCRService' "$debug_module" || \
     ! /usr/bin/grep -a -q 'PermissionRecoveryPanelController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'SettingsController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'GlobalShortcutController' "$debug_module"; then
@@ -278,7 +297,8 @@ for release_architecture in arm64 x86_64; do
         ! /usr/bin/grep -a -q 'CaptureCommand' "$release_module" || \
         ! /usr/bin/grep -a -q 'SystemScreenCapturePermissionService' "$release_module" || \
         ! /usr/bin/grep -a -q 'AppKitRegionSelectionService' "$release_module" || \
-        ! /usr/bin/grep -a -q 'PendingScreenCaptureService' "$release_module" || \
+        ! /usr/bin/grep -a -q 'SystemScreenCaptureService' "$release_module" || \
+        ! /usr/bin/grep -a -q 'PendingOCRService' "$release_module" || \
         ! /usr/bin/grep -a -q 'PermissionRecoveryPanelController' "$release_module" || \
         ! /usr/bin/grep -a -q 'SettingsController' "$release_module" || \
         ! /usr/bin/grep -a -q 'GlobalShortcutController' "$release_module"; then

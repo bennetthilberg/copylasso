@@ -12,7 +12,7 @@ The pipeline lints all Swift source, resolves the exact package dependency, buil
 
 Signed UI tests use Debug-only permission doubles. They cover prior-request and previously-granted recovery wording, singleton reuse, System Settings failure instructions, retry routing, Cancel, menu availability, keyboard actions, and accessibility identifiers without calling Core Graphics permission functions or changing real TCC state.
 
-Ordinary signed UI tests also use a deterministic Debug-only selection double so shell tests never unexpectedly cover the desktop. Tests launched with `--g13-live-selection` instead use the production AppKit service with the controlled granted permission observation. They verify that the overlay is accessible, Escape and click cancellation remove it, a valid drag reaches the no-pixel G14 boundary, the command becomes reusable, and the clipboard remains unchanged.
+Ordinary signed UI tests use deterministic Debug-only selection and capture doubles so shell tests never unexpectedly cover the desktop or touch TCC. Tests launched with `--g13-live-selection` use the production AppKit service with controlled permission and in-memory capture. They verify that the overlay is accessible, cancellation removes it, a valid drag reaches the pending G15 OCR boundary, the command becomes reusable, and the clipboard remains unchanged.
 
 The controlled launch arguments begin with `--g12-` and `--g13-` and are compiled out of Release. CI inspects the Release executable to prevent them from leaking. The application uses the real production permission and selection services unless the existing `--g10-g11-ui-testing` boundary selects their controlled alternatives; `--g13-live-selection` explicitly restores the real selection adapter for overlay UI coverage.
 
@@ -41,7 +41,7 @@ Verify in this order:
 7. Repeat recovery while an ordinary full-screen application is frontmost. Confirm presenting or updating CopyLasso's nonactivating panel does not change the frontmost application. Only **Open System Settings** intentionally changes focus.
 8. Confirm macOS did not show the ScreenCaptureKit private-window-picker-bypass warning and that no Accessibility, Input Monitoring, Microphone, or clipboard access was introduced.
 
-Core Graphics preflight may remain positive inside a process after permission is disabled. G12 records revocation only once preflight reflects it, normally after relaunch. G14 must treat an actual ScreenCaptureKit capture denial as authoritative when preflight is stale.
+Core Graphics preflight may remain positive inside a process after permission is disabled. G12 records revocation once preflight reflects it, normally after relaunch. The G14 capture path treats an actual ScreenCaptureKit denial as authoritative when preflight is stale.
 
 ### G12 Verified Result
 
@@ -81,7 +81,7 @@ Use the same stably signed Debug app after Screen Recording access is enabled. T
 7. Change a display resolution or disconnect an extended display during selection. The active operation must cancel once, remove all panels, and rebuild fresh descriptors on the next request.
 8. Terminate CopyLasso during selection and verify no panel, dim, cursor override, observer, controller, or continuation remains. Use Xcode's memory graph or debugger to confirm the completed controller and surfaces are released.
 9. Inspect light, dark, increased-contrast, and VoiceOver behavior. The black-and-white border and crosshair must remain distinguishable, and the overlay must expose its selection label and Escape help.
-10. Confirm no ScreenCaptureKit warning, pixel file, image retention, OCR, pasteboard write, Accessibility prompt, or Input Monitoring prompt occurs. Valid geometry must stop at the intentional G14-unavailable boundary.
+10. Confirm no pixel file, image retention, OCR, pasteboard write, Accessibility prompt, or Input Monitoring prompt occurs. The controlled UI path must stop at the intentional G15-unavailable boundary.
 
 ### G13 Production Verification Record
 
@@ -94,3 +94,20 @@ On July 10, 2026, the production adapter was exercised on macOS 26.5.1 with Xcod
 - The final unit pipelines passed 106 tests on both `arm64` and `x86_64`; Release contained `arm64` and `x86_64` and no Debug G13 controls.
 
 The temporary Sidecar display was not physically available for a fresh G13 run. The exact G07 Sidecar evidence remains in ADR-003, pure tests cover the 2× negative-origin shape and both cross-display clamps, and `testLiveSelectionCleansUpAfterCrossDisplayDrags` runs only when more than one real display is present. It was explicitly skipped in the one-display G13 environment and must be rerun during G19 rather than treated as passing evidence.
+
+## Real Region Capture Matrix
+
+Use a stably signed Debug build with Screen Recording enabled. Invoke the real adapter only with an ordinary app run or the explicit `--g14-live-capture` manual control; ordinary UI tests use an in-memory substitute.
+
+1. Select a known high-contrast grid after placing it at recorded display coordinates. Confirm the returned image dimensions equal the outward-rounded backing-pixel rectangle and compare corner, border, and interior pixels.
+2. Repeat at every physically available backing scale and with fractional selection edges. Confirm the service uses the selected display rather than the primary display.
+3. Verify the captured image contains no border, dim treatment, or CopyLasso cursor. The production capture starts only after accessibility inspection reports no overlay windows.
+4. Revoke access while running and confirm a real `SCStreamError.userDeclined` overrides stale preflight, presents likely-revoked recovery, skips OCR, and returns to idle.
+5. Disconnect or reconfigure the selected display between selection and capture. Confirm display/scale/bounds validation fails safely and no image reaches OCR.
+6. Repeat capture at least 20 times. Inspect the app container and temporary directories for image files and confirm the image is released after the pending OCR call.
+
+### G14 Unattended Verification Record
+
+Deterministic tests validate outward-rounded crop geometry, 1×/2× scale propagation, cursor/audio exclusion, current-display validation, exact in-memory pixel data and dimensions, nil/incorrect output, framework error mapping, capture-to-OCR forwarding, cancellation, and authoritative denial recovery. Both configurations compile the same production adapter; Debug UI runs substitute only the capture client to avoid touching real TCC.
+
+A fresh successful live crop could not be performed unattended: the Debug Screen Recording toggle was off, and the workstation auto-locked after G13. Two signed XCUITest attempts failed before invoking the command because Xcode could not traverse a locked menu bar; `loginwindow` was frontmost. These attempts are recorded as unavailable infrastructure evidence, not product failures or passes. G06 remains the latest successful real ScreenCaptureKit pixel proof, and the G14 production matrix must be rerun after unlock before G18/G24 release evidence can pass.

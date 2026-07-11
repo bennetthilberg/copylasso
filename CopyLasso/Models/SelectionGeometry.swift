@@ -77,7 +77,8 @@ struct DisplayGeometry: Equatable, Sendable {
       displayLocalRect: displayLocalRect,
       coreGraphicsGlobalRect: coreGraphicsGlobalRect,
       coreGraphicsDisplayLocalRect: coreGraphicsDisplayLocalRect,
-      backingPixelRect: backingPixelRect
+      backingPixelRect: backingPixelRect,
+      backingScale: backingScale
     )
   }
 
@@ -128,6 +129,7 @@ struct SelectionResult: Equatable, Sendable {
   let coreGraphicsGlobalRect: CGRect
   let coreGraphicsDisplayLocalRect: CGRect
   let backingPixelRect: CGRect
+  let backingScale: CGFloat
 }
 
 enum SelectionCancellationReason: String, Equatable, Sendable {

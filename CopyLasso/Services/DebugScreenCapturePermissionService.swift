@@ -46,6 +46,10 @@
       requestResult
     }
 
+    func recordCaptureDenial() -> ScreenCaptureAuthorizationObservation {
+      .notGrantedAfterPreviouslyGranted
+    }
+
     func openSystemSettings() -> Bool {
       settingsOpenResult
     }

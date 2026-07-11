@@ -1,6 +1,6 @@
 # Architecture Overview
 
-CopyLasso currently provides a usable dockless shell and the permission-and-selection portion of its production capture architecture, not an end-to-end capture workflow. The application includes versioned onboarding, persistent Settings, Launch at Login, a configurable global shortcut, production Screen Recording permission handling, and a lifecycle-safe multi-display selection overlay. Feasibility evidence from G05-G07 is retained in the ADRs, while the remaining production adapters are added incrementally in G14-G17 and connected in G18.
+CopyLasso currently provides a usable dockless shell and the permission, selection, and pixel-capture portion of its production architecture, not an end-to-end OCR workflow. The application includes versioned onboarding, persistent Settings, Launch at Login, a configurable global shortcut, production Screen Recording permission handling, a lifecycle-safe multi-display selection overlay, and in-memory ScreenCaptureKit region capture. Feasibility evidence from G05-G07 is retained in the ADRs, while the remaining production adapters are added incrementally in G15-G17 and connected in G18.
 
 ## Components and Dependency Direction
 
@@ -15,12 +15,13 @@ flowchart LR
   Permission["Core Graphics permission adapter G12"] -. conform .-> Contracts
   Recovery["Nonactivating recovery panel G12"] --> Permission
   Selection["AppKit selection adapter G13"] -. conform .-> Contracts
-  Adapters["Future platform adapters G14-G17"] -. conform .-> Contracts
+  Capture["ScreenCaptureKit adapter G14"] -. conform .-> Contracts
+  Adapters["Future platform adapters G15-G17"] -. conform .-> Contracts
 ```
 
 - `App` owns the dockless process, scene lifecycle, menu and shortcut command routing, and application termination boundary. `SharedUI` contains the menu, onboarding, Settings, and auxiliary-window presentation.
-- `CaptureWorkflow` owns phase transitions and busy-state policy. Its current command slice invokes permission, production selection, and the temporary no-pixel capture boundary.
-- `Services` declares narrow permission, selection, capture, OCR, clipboard, and feedback boundaries. The Core Graphics permission and AppKit selection adapters are isolated here.
+- `CaptureWorkflow` owns phase transitions and busy-state policy. Its current command slice invokes permission, production selection and capture, then the temporary G15 OCR boundary.
+- `Services` declares narrow permission, selection, capture, OCR, clipboard, and feedback boundaries. The Core Graphics permission, AppKit selection, and ScreenCaptureKit capture adapters are isolated here.
 - `Models` contains geometry, observations, authorization observations, and feedback values without AppKit, SwiftUI, ScreenCaptureKit, or Vision dependencies.
 - `Settings` owns the typed `UserDefaults` adapter, onboarding-version policy, shortcut storage boundary, and observable settings controller. The system login-item adapter remains isolated in `Services`.
 
@@ -40,7 +41,7 @@ flowchart LR
   Feedback --> Idle["Idle"]
 ```
 
-The coordinator models the corresponding phases: idle, requesting permission, selecting, capturing, recognizing, completing, cancelled, and failed. It carries no geometry, image, or recognized-text payload in observable state. Menu and global-shortcut requests reach the same `CaptureCommand`. G12 performs a user-initiated Core Graphics preflight, requests access only for a never-requested history, and presents recovery for unavailable access. After approval, G13 enumerates fresh display metadata, presents one nonactivating panel per display, and returns only validated per-display geometry after every panel is absent. Valid geometry reaches a temporary G14 capture service that intentionally fails before calling a capture API, then the command resets to idle. G18 will connect the complete service chain through a private transient operation context.
+The coordinator models the corresponding phases: idle, requesting permission, selecting, capturing, recognizing, completing, cancelled, and failed. It carries no geometry, image, or recognized-text payload in observable state. Menu and global-shortcut requests reach the same `CaptureCommand`. G12 performs a user-initiated Core Graphics preflight and recovery. G13 returns validated per-display geometry only after every overlay is absent. G14 enumerates shareable displays at that point, validates the selected display and scale, captures the outward-rounded pixel rectangle into one local `CGImage`, and forwards it directly to a temporary G15 service that throws before Vision work. G18 will connect the complete service chain through a private transient operation context.
 
 Cancellation is a normal result. It enters an explicit cancelled state and returns to idle only after a reset acknowledging cleanup. Failure records only the responsible stage, never captured content, recognized text, raw platform errors, or user data. A request received outside idle is rejected without changing state.
 
@@ -49,6 +50,7 @@ Cancellation is a normal result. It enters an explicit cancelled state and retur
 - `CaptureCoordinator`, permission, selection, clipboard, and feedback contracts are main-actor isolated because they coordinate application or UI state.
 - The Core Graphics permission adapter performs no work during construction or launch. The singleton recovery panel is nonactivating; only its explicit **Open System Settings** action changes focus.
 - The AppKit selection adapter also performs no work during construction or launch. Each user request owns at most one controller and continuation; it clears drawing, orders out every panel, restores the cursor, and releases the controller before delivering geometry on a later main-actor turn.
+- The ScreenCaptureKit adapter is actor-isolated and performs enumeration only after a valid selection. It checks the current display identity, bounds, and backing scale, disables cursor and audio capture, and returns only an in-memory image of the exact configured dimensions.
 - Capture and OCR contracts are asynchronous and `Sendable`. Their future adapters must not block the main actor.
 - The production Vision adapter introduced in G15 will perform user-initiated recognition away from the main actor, following ADR-001.
 - Geometry and future text assembly remain pure and independent of AppKit UI objects and Vision framework types.
@@ -68,4 +70,4 @@ Cancellation is a normal result. It enters an explicit cancelled state and retur
 | G17 | Clipboard and nonactivating feedback adapters |
 | G18 | End-to-end service orchestration, cleanup, and integration tests |
 
-The G12 permission adapter, recovery panel, and G13 selection overlay are live. Capture stops at a production `ScreenCaptureService` boundary whose temporary implementation always throws before producing pixels. OCR, clipboard, and feedback still have only contracts and test doubles. No hidden pixel or text workflow exists.
+The G12 permission adapter, recovery panel, G13 selection overlay, and G14 capture adapter are live. Captured pixels exist only as the local image passed to a temporary OCR implementation that immediately throws. OCR, clipboard, and feedback still have only contracts and test doubles. No hidden text or clipboard workflow exists.

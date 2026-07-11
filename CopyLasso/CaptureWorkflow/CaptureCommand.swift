@@ -1,3 +1,5 @@
+import CoreGraphics
+
 @MainActor
 final class CaptureCommand: CaptureRequesting {
   typealias Work = @MainActor @Sendable () async -> Void
@@ -7,6 +9,7 @@ final class CaptureCommand: CaptureRequesting {
   private let permissionService: any ScreenCapturePermissionService
   private let selectionService: any RegionSelectionService
   private let screenCaptureService: any ScreenCaptureService
+  private let ocrService: any OCRService
   private let recoveryPresenter: any PermissionRecoveryPresenting
   private let scheduleWork: WorkScheduler
 
@@ -19,6 +22,7 @@ final class CaptureCommand: CaptureRequesting {
     permissionService: any ScreenCapturePermissionService,
     selectionService: any RegionSelectionService,
     screenCaptureService: any ScreenCaptureService,
+    ocrService: any OCRService,
     recoveryPresenter: any PermissionRecoveryPresenting,
     scheduleWork: @escaping WorkScheduler = CaptureCommand.scheduleOnNextMainActorTurn
   ) {
@@ -26,6 +30,7 @@ final class CaptureCommand: CaptureRequesting {
     self.permissionService = permissionService
     self.selectionService = selectionService
     self.screenCaptureService = screenCaptureService
+    self.ocrService = ocrService
     self.recoveryPresenter = recoveryPresenter
     self.scheduleWork = scheduleWork
   }
@@ -74,7 +79,7 @@ final class CaptureCommand: CaptureRequesting {
       let outcome = try await selectionService.selectRegion()
       switch outcome {
       case .selected(let selection):
-        await proceedToPendingCapture(selection)
+        await proceedToCapture(selection)
       case .cancelled(let reason):
         _ = coordinator.handle(.cancel(reason.captureCancellationReason))
       }
@@ -84,16 +89,32 @@ final class CaptureCommand: CaptureRequesting {
     resetTerminalState()
   }
 
-  private func proceedToPendingCapture(_ selection: SelectionResult) async {
+  private func proceedToCapture(_ selection: SelectionResult) async {
     guard case .transitioned = coordinator.handle(.selectionCompleted) else {
       return
     }
 
+    let image: CGImage
     do {
-      _ = try await screenCaptureService.capture(selection)
-      _ = coordinator.handle(.fail(.capture))
+      image = try await screenCaptureService.capture(selection)
     } catch {
+      if error as? ScreenCaptureError == .permissionDenied {
+        recoveryPresenter.present(permissionService.recordCaptureDenial())
+      }
       _ = coordinator.handle(.fail(.capture))
+      return
+    }
+
+    guard case .transitioned = coordinator.handle(.captureCompleted) else {
+      _ = coordinator.handle(.fail(.internal))
+      return
+    }
+
+    do {
+      _ = try await ocrService.recognizeText(in: image)
+      _ = coordinator.handle(.fail(.recognition))
+    } catch {
+      _ = coordinator.handle(.fail(.recognition))
     }
   }
 

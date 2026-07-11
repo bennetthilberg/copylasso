@@ -29,7 +29,9 @@ CopyLasso needs macOS Screen Recording permission to capture the selected pixels
 
 After approval, CopyLasso creates temporary transparent AppKit panels so the user can select a rectangle. The panels retain only display metadata and in-memory geometry for the active selection. They are ordered out and released before the next workflow stage, and the selected rectangle is not persisted or logged.
 
-Core Graphics preflight can remain stale inside a running process after access changes. G12 detects revocation once preflight reflects it, typically after relaunch. A future real capture denial will be authoritative even if preflight still reports access. The current production workflow stops at a no-pixel capture boundary after selection, so it still does not capture screen content.
+Core Graphics preflight can remain stale inside a running process after access changes. CopyLasso therefore treats an actual ScreenCaptureKit denial as authoritative and returns to permission recovery even if preflight had just reported access.
+
+After the overlay is absent, the production capture service obtains one `CGImage` for the selected display-local rectangle. It disables cursor and audio capture, does not encode the image, and does not create a file-system intermediate. The current workflow passes that image directly to a temporary unavailable OCR boundary and then releases it; no image enters observable state, preferences, logs, caches, history, or feedback.
 
 The v0.1 core workflow does not require Accessibility or Input Monitoring permission. macOS may prevent protected or DRM-restricted content from being captured, and CopyLasso does not attempt to bypass those protections.
 

@@ -5,6 +5,7 @@ import CoreGraphics
 protocol ScreenCapturePermissionService: AnyObject {
   func currentObservation() -> ScreenCaptureAuthorizationObservation
   func requestAccess() -> ScreenCaptureAuthorizationObservation
+  func recordCaptureDenial() -> ScreenCaptureAuthorizationObservation
   func openSystemSettings() -> Bool
 }
 
@@ -29,6 +30,7 @@ struct ScreenCapturePermissionClient {
 final class SystemScreenCapturePermissionService: ScreenCapturePermissionService {
   private let historyStore: any ScreenCapturePermissionHistoryStoring
   private let client: ScreenCapturePermissionClient
+  private var hasAuthoritativeCaptureDenial = false
 
   init(
     historyStore: any ScreenCapturePermissionHistoryStoring,
@@ -39,7 +41,10 @@ final class SystemScreenCapturePermissionService: ScreenCapturePermissionService
   }
 
   func currentObservation() -> ScreenCaptureAuthorizationObservation {
-    observation(granted: client.preflight())
+    if hasAuthoritativeCaptureDenial {
+      return .notGrantedAfterPreviouslyGranted
+    }
+    return observation(granted: client.preflight())
   }
 
   func requestAccess() -> ScreenCaptureAuthorizationObservation {
@@ -47,6 +52,15 @@ final class SystemScreenCapturePermissionService: ScreenCapturePermissionService
     history.hasRequested = true
     historyStore.history = history
     return observation(granted: client.request())
+  }
+
+  func recordCaptureDenial() -> ScreenCaptureAuthorizationObservation {
+    hasAuthoritativeCaptureDenial = true
+    var history = historyStore.history
+    history.hasRequested = true
+    history.hasObservedGranted = true
+    historyStore.history = history
+    return .notGrantedAfterPreviouslyGranted
   }
 
   func openSystemSettings() -> Bool {

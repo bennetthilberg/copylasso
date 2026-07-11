@@ -1,3 +1,4 @@
+import CoreGraphics
 import XCTest
 
 @testable import CopyLasso
@@ -115,7 +116,27 @@ final class CapturePermissionFlowTests: XCTestCase {
     XCTAssertEqual(context.scheduler.scheduledWorkCount, 3)
   }
 
-  func testValidSelectionReachesNoPixelCaptureBoundaryExactlyOnceAndReturnsIdle() async throws {
+  func testValidSelectionCapturesImageAndReachesPendingOCRBoundaryExactlyOnce() async throws {
+    let selection = try makeSelection()
+    let image = try makeImage(width: 80, height: 80)
+    let context = makeContext(
+      current: .granted,
+      selectionResult: .success(.selected(selection)),
+      captureResult: .success(image)
+    )
+
+    _ = context.command.perform()
+    await context.scheduler.runNext()
+
+    let capturedSelections = await context.screenCapture.selections
+    let recognizedImageSizes = await context.ocr.recognizedImageSizes
+    XCTAssertEqual(capturedSelections, [selection])
+    XCTAssertEqual(recognizedImageSizes, [CGSize(width: 80, height: 80)])
+    XCTAssertEqual(context.coordinator.state, .idle)
+    XCTAssertTrue(context.command.isEnabled)
+  }
+
+  func testCaptureFailureNeverCallsOCRAndReturnsIdle() async throws {
     let selection = try makeSelection()
     let context = makeContext(
       current: .granted,
@@ -126,9 +147,42 @@ final class CapturePermissionFlowTests: XCTestCase {
     await context.scheduler.runNext()
 
     let capturedSelections = await context.screenCapture.selections
+    let recognitionCallCount = await context.ocr.recognitionCallCount
     XCTAssertEqual(capturedSelections, [selection])
+    XCTAssertEqual(recognitionCallCount, 0)
+    XCTAssertEqual(context.recovery.presentedObservations, [])
     XCTAssertEqual(context.coordinator.state, .idle)
-    XCTAssertTrue(context.command.isEnabled)
+  }
+
+  func testAuthoritativeCaptureDenialPresentsLikelyRevokedRecovery() async throws {
+    let coordinator = CaptureCoordinator()
+    let permission = StubScreenCapturePermissionService(
+      currentResult: .granted,
+      requestResult: .granted
+    )
+    let recovery = SpyPermissionRecoveryPresenter()
+    let scheduler = ManualCaptureWorkScheduler()
+    let ocr = StubOCRService(result: .failure(.injected))
+    let command = CaptureCommand(
+      coordinator: coordinator,
+      permissionService: permission,
+      selectionService: StubRegionSelectionService(
+        result: .success(.selected(try makeSelection()))
+      ),
+      screenCaptureService: PermissionDeniedScreenCaptureService(),
+      ocrService: ocr,
+      recoveryPresenter: recovery,
+      scheduleWork: scheduler.schedule
+    )
+
+    _ = command.perform()
+    await scheduler.runNext()
+
+    XCTAssertEqual(permission.recordCaptureDenialCallCount, 1)
+    XCTAssertEqual(recovery.presentedObservations, [.notGrantedAfterPreviouslyGranted])
+    let recognitionCallCount = await ocr.recognitionCallCount
+    XCTAssertEqual(recognitionCallCount, 0)
+    XCTAssertEqual(coordinator.state, .idle)
   }
 
   func testSelectionCancellationNeverCallsCaptureAndReturnsIdle() async {
@@ -142,6 +196,8 @@ final class CapturePermissionFlowTests: XCTestCase {
 
     let capturedSelections = await context.screenCapture.selections
     XCTAssertEqual(capturedSelections, [])
+    let recognitionCallCount = await context.ocr.recognitionCallCount
+    XCTAssertEqual(recognitionCallCount, 0)
     XCTAssertEqual(context.coordinator.state, .idle)
   }
 
@@ -153,17 +209,19 @@ final class CapturePermissionFlowTests: XCTestCase {
 
     let capturedSelections = await context.screenCapture.selections
     XCTAssertEqual(capturedSelections, [])
+    let recognitionCallCount = await context.ocr.recognitionCallCount
+    XCTAssertEqual(recognitionCallCount, 0)
     XCTAssertEqual(context.coordinator.state, .idle)
   }
 
-  func testPendingCaptureServiceRejectsBeforeProducingPixels() async throws {
-    let service = PendingScreenCaptureService()
+  func testPendingOCRServiceRejectsBeforeProducingObservations() async throws {
+    let service = PendingOCRService()
 
     do {
-      _ = try await service.capture(makeSelection())
-      XCTFail("Expected the G14 boundary to be unavailable")
+      _ = try await service.recognizeText(in: makeImage(width: 8, height: 6))
+      XCTFail("Expected the G15 boundary to be unavailable")
     } catch {
-      XCTAssertEqual(error as? PendingScreenCaptureError, .unavailableUntilG14)
+      XCTAssertEqual(error as? PendingOCRError, .unavailableUntilG15)
     }
   }
 
@@ -179,6 +237,7 @@ final class CapturePermissionFlowTests: XCTestCase {
       ),
       selectionService: selection,
       screenCaptureService: StubScreenCaptureService(result: .failure(.injected)),
+      ocrService: StubOCRService(result: .failure(.injected)),
       recoveryPresenter: SpyPermissionRecoveryPresenter(),
       scheduleWork: scheduler.schedule
     )
@@ -203,7 +262,9 @@ final class CapturePermissionFlowTests: XCTestCase {
   private func makeContext(
     current: ScreenCaptureAuthorizationObservation,
     request: ScreenCaptureAuthorizationObservation = .granted,
-    selectionResult: Result<SelectionOutcome, TestServiceError> = .failure(.injected)
+    selectionResult: Result<SelectionOutcome, TestServiceError> = .failure(.injected),
+    captureResult: Result<CGImage, TestServiceError> = .failure(.injected),
+    ocrResult: Result<[RecognizedTextObservation], TestServiceError> = .failure(.injected)
   ) -> Context {
     let coordinator = CaptureCoordinator()
     let permission = StubScreenCapturePermissionService(
@@ -211,7 +272,8 @@ final class CapturePermissionFlowTests: XCTestCase {
       requestResult: request
     )
     let selection = StubRegionSelectionService(result: selectionResult)
-    let screenCapture = StubScreenCaptureService(result: .failure(.injected))
+    let screenCapture = StubScreenCaptureService(result: captureResult)
+    let ocr = StubOCRService(result: ocrResult)
     let recovery = SpyPermissionRecoveryPresenter()
     let scheduler = ManualCaptureWorkScheduler()
     let command = CaptureCommand(
@@ -219,6 +281,7 @@ final class CapturePermissionFlowTests: XCTestCase {
       permissionService: permission,
       selectionService: selection,
       screenCaptureService: screenCapture,
+      ocrService: ocr,
       recoveryPresenter: recovery,
       scheduleWork: scheduler.schedule
     )
@@ -227,6 +290,7 @@ final class CapturePermissionFlowTests: XCTestCase {
       permission: permission,
       selection: selection,
       screenCapture: screenCapture,
+      ocr: ocr,
       recovery: recovery,
       scheduler: scheduler,
       command: command
@@ -245,14 +309,39 @@ final class CapturePermissionFlowTests: XCTestCase {
     )
   }
 
+  private func makeImage(width: Int, height: Int) throws -> CGImage {
+    guard
+      let context = CGContext(
+        data: nil,
+        width: width,
+        height: height,
+        bitsPerComponent: 8,
+        bytesPerRow: 0,
+        space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+      ),
+      let image = context.makeImage()
+    else {
+      throw TestServiceError.injected
+    }
+    return image
+  }
+
   private struct Context {
     let coordinator: CaptureCoordinator
     let permission: StubScreenCapturePermissionService
     let selection: StubRegionSelectionService
     let screenCapture: StubScreenCaptureService
+    let ocr: StubOCRService
     let recovery: SpyPermissionRecoveryPresenter
     let scheduler: ManualCaptureWorkScheduler
     let command: CaptureCommand
+  }
+}
+
+private actor PermissionDeniedScreenCaptureService: ScreenCaptureService {
+  func capture(_ selection: SelectionResult) async throws -> CGImage {
+    throw ScreenCaptureError.permissionDenied
   }
 }
 
