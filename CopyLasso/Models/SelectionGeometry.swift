@@ -73,6 +73,7 @@ struct DisplayGeometry: Equatable, Sendable {
 
     return SelectionResult(
       displayID: displayID,
+      displayPointSize: appKitFrame.size,
       appKitGlobalRect: appKitGlobalRect,
       displayLocalRect: displayLocalRect,
       coreGraphicsGlobalRect: coreGraphicsGlobalRect,
@@ -124,6 +125,7 @@ struct DisplayGeometry: Equatable, Sendable {
 
 struct SelectionResult: Equatable, Sendable {
   let displayID: CGDirectDisplayID
+  let displayPointSize: CGSize
   let appKitGlobalRect: CGRect
   let displayLocalRect: CGRect
   let coreGraphicsGlobalRect: CGRect
