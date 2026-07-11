@@ -83,6 +83,7 @@ final class PermissionRecoveryTests: XCTestCase {
 
     capturedActions?.tryAgain()
     XCTAssertEqual(requester.performCallCount, 1)
+    XCTAssertEqual(permission.beginUserInitiatedRetryCallCount, 1)
 
     capturedActions?.cancel()
     XCTAssertEqual(host.hideCallCount, 1)
@@ -118,6 +119,33 @@ final class PermissionRecoveryTests: XCTestCase {
       "Access is still unavailable. If you chose Later, quit and reopen CopyLasso, then choose Try Again."
     )
   }
+
+  func testRejectedRetryDoesNotPermitAOneShotPermissionObservation() {
+    let permission = StubScreenCapturePermissionService(
+      currentResult: .notGrantedAfterPreviouslyGranted,
+      requestResult: .notGrantedAfterPreviouslyGranted
+    )
+    let requester = SpyCaptureRequester()
+    requester.result = .rejectedBusy(currentState: .requestingPermission)
+    var capturedActions: PermissionRecoveryPanelActions?
+    let controller = PermissionRecoveryPanelController(
+      permissionService: permission,
+      makePanel: { _, actions in
+        capturedActions = actions
+        return SpyPermissionRecoveryPanelHost()
+      }
+    )
+    controller.captureRequester = requester
+    controller.present(.notGrantedAfterPreviouslyGranted)
+
+    capturedActions?.tryAgain()
+
+    XCTAssertEqual(permission.beginUserInitiatedRetryCallCount, 0)
+    XCTAssertEqual(
+      controller.model.retryStatus,
+      "CopyLasso is already checking Screen Recording access."
+    )
+  }
 }
 
 @MainActor
@@ -136,11 +164,12 @@ private final class SpyPermissionRecoveryPanelHost: PermissionRecoveryPanelHosti
 
 @MainActor
 private final class SpyCaptureRequester: CaptureRequesting {
+  var result: CaptureTransitionResult = .transitioned(from: .idle, to: .requestingPermission)
   private(set) var performCallCount = 0
 
   @discardableResult
   func perform() -> CaptureTransitionResult {
     performCallCount += 1
-    return .transitioned(from: .idle, to: .requestingPermission)
+    return result
   }
 }
