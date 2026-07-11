@@ -34,9 +34,10 @@ Returning from that function ends the image, observations, and unbounded-text sc
 - Ordinary selection, capture, recognition, clipboard, and feedback errors are classified only by stage. Raw platform errors and content never enter observable state or user copy.
 - A real capture-time Screen Recording denial uses the specific permission-recovery panel rather than stacking a generic failure HUD.
 - Terminal cancellation or failure is explicitly reset only after the operation has unwound.
+- Sleep, screen sleep, and lock/session resign request `.systemInterrupted`; application termination requests `.applicationTerminated`. The root-owned task propagates cancellation through capture, OCR, and feedback, while selection receives an explicit synchronous cleanup request. Wake/unlock never retries automatically.
 
 The clipboard adapter is intentionally write-only. Cancellation and every failure before the pasteboard call preserve prior clipboard contents. A rare AppKit failure after the pasteboard has been cleared cannot restore prior contents without a prohibited read; that documented platform tradeoff remains unchanged.
 
 ## Verification Boundary
 
-The canonical suite injects every service, exercises all branch classes, performs 25 consecutive successful operations and 20 alternating success/cancel cycles, rejects concurrent work, and proves menu and shortcut use the exact same command. The signed manual matrix remains necessary for arbitrary app pixels, full-screen Spaces, real paste targets, and physical displays.
+The canonical suite injects every service, exercises all branch classes, performs 25 consecutive successful operations and 20 alternating success/cancel cycles, rejects concurrent work, proves menu and shortcut use the exact same command, and cancels pending selection, capture, OCR, and feedback work. The signed manual matrix remains necessary for arbitrary app pixels, full-screen Spaces, real paste targets, physical displays, sleep/wake, and lock/unlock.

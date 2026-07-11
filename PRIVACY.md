@@ -23,6 +23,8 @@ CopyLasso v0.1 has no:
 
 The application stores only ordinary preferences needed for versioned onboarding, shortcut configuration, permission-history presentation, and settings behavior. Its permission history records only whether CopyLasso has requested Screen Recording access and whether access was previously observed; it does not store screen content or a definitive macOS authorization status. Launch at Login state is read from macOS rather than copied into a preference that could become stale. These values never contain captured images or recognized text.
 
+CopyLasso emits only four fixed lifecycle diagnostic messages: interruption while idle, cancellation for sleep/lock, resume, and application termination cleanup. Those messages contain no captured or frontmost application name, display geometry, pixels, recognized text, clipboard text, preview, raw error, or user-supplied value. Capture results and failures are never interpolated into diagnostics.
+
 ## macOS Permissions
 
 CopyLasso needs macOS Screen Recording permission to capture the selected pixels. It performs no permission check or request merely by launching. A user-initiated Capture Text command checks access and requests it only when the current CopyLasso preference history has never requested it. When access remains unavailable, a nonactivating recovery panel explains the manual System Settings path without claiming macOS can distinguish denial from pending approval or definitively identify revocation.

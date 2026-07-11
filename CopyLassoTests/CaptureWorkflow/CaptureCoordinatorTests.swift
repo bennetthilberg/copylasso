@@ -194,6 +194,7 @@ extension CaptureCancellationReason {
     .user,
     .selectionTooSmall,
     .displayChanged,
+    .systemInterrupted,
     .applicationTerminated,
   ]
 }

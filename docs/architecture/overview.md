@@ -7,6 +7,8 @@ CopyLasso currently provides a usable dockless shell plus one complete, stress-t
 ```mermaid
 flowchart LR
   App["App and Shared UI"] --> Coordinator["CaptureCoordinator"]
+  Lifecycle["Lifecycle controller G20"] --> Coordinator
+  Lifecycle --> Services
   Coordinator --> Contracts["Service contracts"]
   Coordinator --> Models["Neutral models"]
   Contracts --> Models
@@ -23,7 +25,7 @@ flowchart LR
   Workflow --> Coordinator
 ```
 
-- `App` owns the dockless process, scene lifecycle, menu and shortcut command routing, and application termination boundary. `SharedUI` contains the menu, onboarding, Settings, and auxiliary-window presentation.
+- `App` owns the dockless process, scene lifecycle, menu and shortcut command routing, application termination boundary, and coalesced sleep/lock recovery. `SharedUI` contains the menu, onboarding, Settings, and auxiliary-window presentation.
 - `CaptureWorkflow` owns phase transitions, busy-state policy, and the complete operation lifecycle. Its shared command invokes permission, production selection, capture, OCR, pure formatting, clipboard output, and bounded feedback. Cancellations and failures enter explicit terminal states and reset to idle after cleanup.
 - `Services` declares narrow permission, selection, capture, OCR, clipboard, and feedback boundaries. The Core Graphics permission, AppKit selection, ScreenCaptureKit capture, and Vision OCR adapters are isolated here.
 - `Models` contains geometry, observations, authorization observations, and feedback values without AppKit, SwiftUI, ScreenCaptureKit, or Vision dependencies.
@@ -60,6 +62,7 @@ Cancellation is a normal result. It enters an explicit cancelled state and retur
 - Geometry and text assembly remain pure and independent of AppKit UI objects and Vision framework types.
 - Images, recognized observations, assembled text, clipboard text, and feedback previews remain private transient values. They must be released after the active operation and must never be logged, persisted, or placed in observable coordinator state.
 - One private async operation scope owns the image, observations, and full assembled string. It returns only bounded feedback after any pasteboard write. Success and failure tests hold the HUD open and prove the image has already been released while the coordinator remains busy.
+- The root lifecycle controller owns no private operation payload. It cancels the command's task for sleep, screen sleep, lock/session resign, or termination, and never restarts work on wake/unlock. Fixed OSLog diagnostics contain event classes only.
 
 ## Goal Ownership
 
@@ -75,5 +78,6 @@ Cancellation is a normal result. It enters an explicit cancelled state and retur
 | G17 | Clipboard and nonactivating feedback adapters |
 | G18 | End-to-end service orchestration, cleanup, and integration tests |
 | G19 | Multi-display topology, Retina, and display-snapshot hardening |
+| G20 | Sleep, lock, termination, task cancellation, recovery, and safe diagnostics |
 
 The G12 permission adapter, recovery panel, G13 selection overlay, G14 capture adapter, G15 Vision adapter, G16 text assembler, G17 clipboard/HUD adapters, and G18 orchestration are live. Captured pixels exist only as the local image passed to OCR; recognized observations, assembled text, and bounded previews remain transient. Pasteboard writes are confined to one service, that service never reads prior clipboard contents, and the feedback model clears on dismissal. Automated integration covers every service boundary, 25 consecutive successes, 20 alternating success/cancel cycles, shared menu/shortcut routing, busy rejection, and resource release. Physical end-to-end qualification remains in the later hardening goals. See [Capture Workflow](capture-workflow.md) for the operation and lifetime contract.

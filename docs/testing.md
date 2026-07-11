@@ -207,3 +207,23 @@ The synthetic matrix is deterministic regression protection; it is not evidence 
 9. Restore the original arrangement, resolution, scale, orientation, refresh rate, menu-bar assignment, and Sidecar state before finishing.
 
 The July 11, 2026 unattended G19 run could not execute this physical matrix because the session was locked and the Sidecar iPad was unavailable. A fresh read-only enumeration saw one online primary Dell S2721HGF at 1920 × 1080 and 144 Hz: runtime ID `4`, matching AppKit/Core Graphics frames `(0, 0, 1920, 1080)`, and 1× scale. That confirms the test environment only; it is not selection or pixel-crop evidence. G07's Dell/Sidecar results remain historical evidence. Fresh physical G19 results are pending release qualification.
+
+## Lifecycle, Reentrancy, And Recovery Matrix
+
+G20 unit coverage posts every registered application/workspace notification through isolated centers and injects cancellable selection, capture, OCR, and feedback gates. It verifies duplicate interruption coalescing, resume without automatic capture, observer teardown, recovery-panel dismissal, shortcut shutdown on termination, cancellation before scheduled work, 100 rapid busy requests, downstream call suppression, terminal reset, and a successful capture immediately after cancellation. The centralized stage-only failure copy remains covered separately for every failure stage.
+
+### Signed G20 Manual Matrix
+
+Use one stably signed Debug app and keep a clipboard sentinel before every pre-output interruption:
+
+1. While idle, sleep/wake and lock/unlock. Confirm no overlay, permission panel, HUD, clipboard change, or automatic capture appears after resume; the next shortcut request works.
+2. Begin selection, then sleep before mouse-up. Wake and confirm no dim, border, cursor override, key overlay window, or stuck busy state remains. Repeat with lock/unlock.
+3. Interrupt while ScreenCaptureKit capture is active using a deliberately large region, then while Vision recognizes a large fixture. Confirm no downstream clipboard write or generic failure HUD and immediate reuse after resume.
+4. Interrupt while success/no-text feedback is visible. Confirm the HUD disappears. If success already wrote the clipboard, retain that completed output; CopyLasso must not read the pasteboard to roll it back.
+5. Press the global shortcut rapidly at least 100 times while one selection is active. Confirm exactly one overlay and one eventual OCR job.
+6. Activate/deactivate CopyLasso Settings and About while another app remains frontmost. Ordinary app activation changes must not cancel or auto-start capture.
+7. Choose Quit while selection is active. Confirm the overlay and cursor disappear, shortcut delivery stops, CopyLasso terminates, and no process/window remains.
+8. Repeat selection cancellation, recoverable capture failure, and successful capture in sequence at least ten times without force-quitting.
+9. Inspect Console lifecycle messages. They may state only idle interruption, active interruption cancellation, resume, or termination cleanup; they must contain no captured/frontmost app name, geometry, pixels, recognized text, clipboard text, preview, or raw error.
+
+The unattended July 11, 2026 run could not perform real sleep/wake, lock/unlock, WindowServer inspection, or quit-during-selection because the workstation was already locked. Deterministic notification/task tests are not a substitute; this signed matrix remains pending release evidence.

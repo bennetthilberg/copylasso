@@ -162,7 +162,7 @@ The required check names are `build and test (arm64)` and `build and test (x86_6
 
 ## Current Boundary
 
-The repository contains a buildable dockless menu-bar app with onboarding, persistent Settings, Launch at Login, a configurable global shortcut, production permission recovery, multi-display selection, in-memory ScreenCaptureKit capture, local Vision OCR, pure text assembly, write-only clipboard output, nonactivating feedback, service test doubles, and retained feasibility evidence. The shortcut and menu enter the same complete production chain. Uniform cancellation, stage-specific error feedback, busy rejection, terminal recovery, 25-success and 20-alternating-cycle stress tests, operation-scoped cleanup, and a seven-layout 1×/1.5×/2× display-snapshot matrix are part of the canonical unit suite. Physical end-to-end and environmental hardening remain documented in the later manual matrices.
+The repository contains a buildable dockless menu-bar app with onboarding, persistent Settings, Launch at Login, a configurable global shortcut, production permission recovery, multi-display selection, in-memory ScreenCaptureKit capture, local Vision OCR, pure text assembly, write-only clipboard output, nonactivating feedback, root-owned sleep/lock/termination recovery, service test doubles, and retained feasibility evidence. The shortcut and menu enter the same complete production chain. Uniform cancellation, stage-specific error feedback, busy rejection, terminal recovery, 25-success and 20-alternating-cycle stress tests, operation-scoped cleanup, a seven-layout 1×/1.5×/2× display-snapshot matrix, and lifecycle cancellation gates are part of the canonical unit suite. Physical end-to-end and environmental hardening remain documented in the later manual matrices.
 
 Normal Debug and Release runs use production selection and capture. Signed UI tests keep menu/settings coverage deterministic with Debug-only selection and capture doubles. Add `--g13-live-selection` to exercise the real overlay with controlled permission and in-memory capture; add `--g14-live-capture` only for an explicitly manual real ScreenCaptureKit run. Both controls and doubles are compiled out of Release.
 
@@ -174,6 +174,6 @@ Reset the Debug bundle's macOS permission separately only when running the contr
 /usr/bin/tccutil reset ScreenCapture io.github.bennetthilberg.copylasso.debug
 ```
 
-The complete order, expected observations, and focus checks are documented in [Testing](testing.md). Use a stably signed Debug build so a rebuild does not create misleading permission churn.
+The complete order, expected observations, focus checks, and lifecycle matrix are documented in [Testing](testing.md). See [Lifecycle and Recovery](architecture/lifecycle-and-recovery.md) for observer, cancellation, and diagnostic boundaries. Use a stably signed Debug build so a rebuild does not create misleading permission churn.
 
 Launch at Login uses `SMAppService.mainApp` and therefore requires a runnable signed app for real verification. The automated unit suite covers status mapping, failure handling, and reconciliation with doubles; final local verification must still enable the real item, log out and back in or reboot, confirm the dockless process starts, then disable it and repeat.

@@ -227,6 +227,26 @@ if [[ ! -e "$workflow_integration_tests" ]] || \
     exit 1
 fi
 
+readonly lifecycle_controller='CopyLasso/App/ApplicationLifecycleController.swift'
+readonly lifecycle_logger='CopyLasso/Services/CaptureLifecycleLogger.swift'
+readonly lifecycle_tests='CopyLassoTests/CaptureWorkflow/CaptureLifecycleTests.swift'
+readonly lifecycle_controller_tests='CopyLassoTests/App/ApplicationLifecycleControllerTests.swift'
+lifecycle_log_files="$({ /usr/bin/grep -R -lE '^[[:space:]]*import[[:space:]]+OSLog|=[[:space:]]*Logger\(' CopyLasso || true; })"
+if [[ "$lifecycle_log_files" != "$lifecycle_logger" ]] || \
+    [[ ! -e "$lifecycle_controller" ]] || \
+    [[ ! -e "$lifecycle_tests" ]] || \
+    [[ ! -e "$lifecycle_controller_tests" ]] || \
+    ! /usr/bin/grep -q 'cancelActiveOperation' "$capture_command" || \
+    ! /usr/bin/grep -q 'NSWorkspace.sessionDidResignActiveNotification' "$lifecycle_controller" || \
+    ! /usr/bin/grep -q 'lifecycleController.start()' CopyLasso/App/CopyLassoApp.swift || \
+    ! /usr/bin/grep -q 'testSystemInterruptionCancelsPendingCaptureWithoutDownstreamWork' "$lifecycle_tests" || \
+    ! /usr/bin/grep -q 'testSystemEventSourceMapsWorkspaceAndApplicationNotificationsAndStopsCleanly' "$lifecycle_controller_tests" || \
+    /usr/bin/grep -F -q '\(' "$lifecycle_logger" || \
+    /usr/bin/grep -qE 'CGImage|RecognizedText|SelectionResult|NSPasteboard|rawError|preview' "$lifecycle_logger"; then
+    echo "G20 must retain owned lifecycle cancellation and fixed content-free diagnostics." >&2
+    exit 1
+fi
+
 if /usr/bin/grep -qE 'CGImage|RecognizedTextObservation|SelectionResult|CaptureFeedback' \
     "$capture_coordinator"; then
     echo "CaptureCoordinator must remain free of geometry, pixels, recognized text, and feedback payloads." >&2
@@ -387,7 +407,9 @@ if [[ ! -f "$debug_module" ]] || \
     ! /usr/bin/grep -a -q 'FeedbackPanelController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'PermissionRecoveryPanelController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'SettingsController' "$debug_module" || \
-    ! /usr/bin/grep -a -q 'GlobalShortcutController' "$debug_module"; then
+    ! /usr/bin/grep -a -q 'GlobalShortcutController' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'ApplicationLifecycleController' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'SystemCaptureLifecycleLogger' "$debug_module"; then
     echo "Debug is missing the production-neutral workflow architecture." >&2
     exit 1
 fi
@@ -410,7 +432,9 @@ for release_architecture in arm64 x86_64; do
         ! /usr/bin/grep -a -q 'FeedbackPanelController' "$release_module" || \
         ! /usr/bin/grep -a -q 'PermissionRecoveryPanelController' "$release_module" || \
         ! /usr/bin/grep -a -q 'SettingsController' "$release_module" || \
-        ! /usr/bin/grep -a -q 'GlobalShortcutController' "$release_module"; then
+        ! /usr/bin/grep -a -q 'GlobalShortcutController' "$release_module" || \
+        ! /usr/bin/grep -a -q 'ApplicationLifecycleController' "$release_module" || \
+        ! /usr/bin/grep -a -q 'SystemCaptureLifecycleLogger' "$release_module"; then
         echo "Release is missing the production-neutral workflow architecture for $release_architecture." >&2
         exit 1
     fi

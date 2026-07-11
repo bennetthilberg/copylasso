@@ -7,6 +7,7 @@ struct CopyLassoApp: App {
   private let settingsController: SettingsController
   private let globalShortcutController: GlobalShortcutController
   private let feedbackController: FeedbackPanelController
+  private let lifecycleController: ApplicationLifecycleController
 
   init() {
     let settingsStore = UserDefaultsSettingsStore()
@@ -84,11 +85,23 @@ struct CopyLassoApp: App {
       captureCommand: captureCommand,
       applicationTerminator: SystemApplicationTerminator()
     )
-    globalShortcutController = GlobalShortcutController(
+    let globalShortcutController = GlobalShortcutController(
       captureCommand: captureCommand,
       eventSource: KeyboardShortcutsEventSource()
     )
+    self.globalShortcutController = globalShortcutController
+    let lifecycleController = ApplicationLifecycleController(
+      eventSource: SystemApplicationLifecycleEventSource(),
+      captureCanceller: captureCommand,
+      recoveryPresenter: recoveryController,
+      stopShortcutDelivery: { [weak globalShortcutController] in
+        globalShortcutController?.stop()
+      },
+      logger: SystemCaptureLifecycleLogger()
+    )
+    self.lifecycleController = lifecycleController
     globalShortcutController.start()
+    lifecycleController.start()
   }
 
   var body: some Scene {

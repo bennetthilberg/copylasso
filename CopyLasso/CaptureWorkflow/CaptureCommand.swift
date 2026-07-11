@@ -1,7 +1,13 @@
 import CoreGraphics
 
 @MainActor
-final class CaptureCommand: CaptureRequesting {
+protocol ActiveCaptureCancelling: AnyObject {
+  @discardableResult
+  func cancelActiveOperation(reason: CaptureCancellationReason) -> Bool
+}
+
+@MainActor
+final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
   typealias Work = @MainActor @Sendable () async -> Void
   typealias WorkScheduler = @MainActor (@escaping Work) -> Void
 
@@ -14,7 +20,9 @@ final class CaptureCommand: CaptureRequesting {
   private let clipboardService: any ClipboardService
   private let feedbackService: any FeedbackService
   private let recoveryPresenter: any PermissionRecoveryPresenting
-  private let scheduleWork: WorkScheduler
+  private let scheduleWork: WorkScheduler?
+  private var activeTask: Task<Void, Never>?
+  private var requestedCancellationReason: CaptureCancellationReason?
 
   var isEnabled: Bool {
     !coordinator.isBusy
@@ -30,7 +38,7 @@ final class CaptureCommand: CaptureRequesting {
     clipboardService: any ClipboardService,
     feedbackService: any FeedbackService,
     recoveryPresenter: any PermissionRecoveryPresenting,
-    scheduleWork: @escaping WorkScheduler = CaptureCommand.scheduleOnNextMainActorTurn
+    scheduleWork: WorkScheduler? = nil
   ) {
     self.coordinator = coordinator
     self.permissionService = permissionService
@@ -51,31 +59,79 @@ final class CaptureCommand: CaptureRequesting {
       return result
     }
 
-    scheduleWork { [weak self] in
-      await self?.runPermissionFlowIfStillRequested()
+    let work: Work = { [weak self] in
+      await self?.runScheduledOperation()
+    }
+    if let scheduleWork {
+      scheduleWork(work)
+    } else {
+      activeTask = Task { @MainActor in
+        await Task.yield()
+        await work()
+      }
     }
     return result
+  }
+
+  @discardableResult
+  func cancelActiveOperation(reason: CaptureCancellationReason) -> Bool {
+    guard requestedCancellationReason == nil else { return false }
+    switch coordinator.state {
+    case .requestingPermission, .selecting, .capturing, .recognizing, .completing:
+      requestedCancellationReason = reason
+      if coordinator.state == .selecting {
+        selectionService.cancelSelection()
+      }
+      activeTask?.cancel()
+      return true
+    case .idle, .cancelled, .failed:
+      return false
+    }
+  }
+
+  private func runScheduledOperation() async {
+    defer {
+      activeTask = nil
+      requestedCancellationReason = nil
+    }
+    guard !transitionToRequestedCancellationIfNeeded() else {
+      resetTerminalState()
+      return
+    }
+    await runPermissionFlowIfStillRequested()
   }
 
   private func runPermissionFlowIfStillRequested() async {
     guard coordinator.state == .requestingPermission else {
       return
     }
+    guard !transitionToRequestedCancellationIfNeeded() else {
+      resetTerminalState()
+      return
+    }
 
     let observation = permissionService.currentObservation()
     switch observation {
     case .granted:
-      await proceedToSelection()
+      await proceedToSelectionUnlessCancelled()
     case .notGrantedNeverRequested:
       let requestObservation = permissionService.requestAccess()
       if requestObservation == .granted {
-        await proceedToSelection()
+        await proceedToSelectionUnlessCancelled()
       } else {
         finishPermissionFailure(requestObservation)
       }
     case .notGrantedAfterRequest, .notGrantedAfterPreviouslyGranted:
       finishPermissionFailure(observation)
     }
+  }
+
+  private func proceedToSelectionUnlessCancelled() async {
+    guard !transitionToRequestedCancellationIfNeeded() else {
+      resetTerminalState()
+      return
+    }
+    await proceedToSelection()
   }
 
   private func proceedToSelection() async {
@@ -88,12 +144,19 @@ final class CaptureCommand: CaptureRequesting {
       let outcome = try await selectionService.selectRegion()
       switch outcome {
       case .selected(let selection):
+        if transitionToRequestedCancellationIfNeeded() {
+          break
+        }
         await completeSelection(selection)
       case .cancelled(let reason):
-        _ = coordinator.handle(.cancel(reason.captureCancellationReason))
+        _ = coordinator.handle(
+          .cancel(requestedCancellationReason ?? reason.captureCancellationReason)
+        )
       }
     } catch {
-      await presentTerminalFailure(.selection)
+      if !transitionToRequestedCancellationIfNeeded() {
+        await presentTerminalFailure(.selection)
+      }
     }
     resetTerminalState()
   }
@@ -114,16 +177,21 @@ final class CaptureCommand: CaptureRequesting {
   }
 
   private func runPrivateOperation(_ selection: SelectionResult) async throws -> CaptureFeedback {
+    try throwIfCancellationRequested()
     let image: CGImage
     do {
       image = try await screenCaptureService.capture(selection)
     } catch {
+      if let reason = cancellationReasonIfRequested {
+        throw CaptureOperationInterruption.cancelled(reason)
+      }
       if error as? ScreenCaptureError == .permissionDenied {
         recoveryPresenter.present(permissionService.recordCaptureDenial())
         throw CaptureOperationInterruption.permissionRecoveryPresented
       }
       throw CaptureOperationInterruption.failure(.capture)
     }
+    try throwIfCancellationRequested()
 
     guard case .transitioned = coordinator.handle(.captureCompleted) else {
       throw CaptureOperationInterruption.failure(.internal)
@@ -133,10 +201,16 @@ final class CaptureCommand: CaptureRequesting {
     do {
       observations = try await ocrService.recognizeText(in: image)
     } catch VisionOCRError.cancelled {
-      throw CaptureOperationInterruption.cancelled(.user)
+      throw CaptureOperationInterruption.cancelled(
+        requestedCancellationReason ?? .user
+      )
     } catch {
+      if let reason = cancellationReasonIfRequested {
+        throw CaptureOperationInterruption.cancelled(reason)
+      }
       throw CaptureOperationInterruption.failure(.recognition)
     }
+    try throwIfCancellationRequested()
 
     guard case .transitioned = coordinator.handle(.recognitionCompleted) else {
       throw CaptureOperationInterruption.failure(.internal)
@@ -171,21 +245,30 @@ final class CaptureCommand: CaptureRequesting {
   private func presentCompletionFeedback(_ feedback: CaptureFeedback) async {
     do {
       try await feedbackService.present(feedback)
+      if transitionToRequestedCancellationIfNeeded() {
+        return
+      }
       guard case .transitioned = coordinator.handle(.completionFinished) else {
         _ = coordinator.handle(.fail(.internal))
         return
       }
     } catch {
-      _ = coordinator.handle(.fail(.feedback))
+      if !transitionToRequestedCancellationIfNeeded() {
+        _ = coordinator.handle(.fail(.feedback))
+      }
     }
   }
 
   private func presentTerminalFailure(_ stage: CaptureFailureStage) async {
     do {
       try await feedbackService.present(.failure(stage))
-      _ = coordinator.handle(.fail(stage))
+      if !transitionToRequestedCancellationIfNeeded() {
+        _ = coordinator.handle(.fail(stage))
+      }
     } catch {
-      _ = coordinator.handle(.fail(.feedback))
+      if !transitionToRequestedCancellationIfNeeded() {
+        _ = coordinator.handle(.fail(.feedback))
+      }
     }
   }
 
@@ -206,11 +289,23 @@ final class CaptureCommand: CaptureRequesting {
     }
   }
 
-  private static func scheduleOnNextMainActorTurn(_ work: @escaping Work) {
-    Task { @MainActor in
-      await Task.yield()
-      await work()
+  private var cancellationReasonIfRequested: CaptureCancellationReason? {
+    if let requestedCancellationReason {
+      return requestedCancellationReason
     }
+    return Task.isCancelled ? .systemInterrupted : nil
+  }
+
+  private func throwIfCancellationRequested() throws {
+    if let reason = cancellationReasonIfRequested {
+      throw CaptureOperationInterruption.cancelled(reason)
+    }
+  }
+
+  private func transitionToRequestedCancellationIfNeeded() -> Bool {
+    guard let reason = cancellationReasonIfRequested else { return false }
+    _ = coordinator.handle(.cancel(reason))
+    return true
   }
 }
 

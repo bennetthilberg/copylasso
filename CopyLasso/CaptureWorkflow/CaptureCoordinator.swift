@@ -4,6 +4,7 @@ enum CaptureCancellationReason: Equatable, Sendable {
   case user
   case selectionTooSmall
   case displayChanged
+  case systemInterrupted
   case applicationTerminated
 }
 

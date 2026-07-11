@@ -4,7 +4,7 @@
 
 CopyLasso is a free, open-source macOS utility for copying visible text from anywhere on screen. Press a global shortcut, drag around text, and receive the recognized plain text on the clipboard.
 
-> **Project status:** CopyLasso is in early pre-release development. The dockless app now includes first-run setup, persistent native Settings, explicit Launch at Login control, a configurable global shortcut, and one stress-tested production workflow from Screen Recording permission through multi-display selection, display-snapshot-validated in-memory capture, local OCR, deterministic plain-text assembly, clipboard output, and nonactivating feedback. Physical-display, lifecycle, accessibility, privacy, compatibility, and release qualification are still pending, and no public release is available.
+> **Project status:** CopyLasso is in early pre-release development. The dockless app now includes first-run setup, persistent native Settings, explicit Launch at Login control, a configurable global shortcut, and one lifecycle-hardened production workflow from Screen Recording permission through multi-display selection, display-snapshot-validated in-memory capture, local OCR, deterministic plain-text assembly, clipboard output, and nonactivating feedback. Physical sleep/lock/display, accessibility, privacy, compatibility, and release qualification are still pending, and no public release is available.
 
 ## Planned v0.1 Experience
 
