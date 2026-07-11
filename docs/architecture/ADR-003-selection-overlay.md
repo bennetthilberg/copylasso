@@ -22,7 +22,7 @@ The AppKit approach is viable. CopyLasso will use one transparent, borderless `N
 - displays a crosshair and, while dragging, dims only the initiating display outside the selection with 18% black; and
 - draws a black-and-white selection border that remains visible over light and dark content.
 
-The panel under the pointer becomes key and explicitly makes its overlay view first responder without activating CopyLasso. This gives Escape a deterministic path before or during a drag. A drag remains owned by its initiating display; moving the pointer onto another display clamps the endpoint to the initiating display edge. Unrelated display panels remain fully transparent.
+The panel under the pointer becomes key and explicitly makes its overlay view first responder without activating CopyLasso. If mouse-down occurs on any other display, that clicked panel becomes key and its overlay view becomes first responder before drag handling begins. This gives Escape a deterministic path before or during a drag regardless of which display was initially under the pointer. A drag remains owned by its initiating display; moving the pointer onto another display clamps the endpoint to the initiating display edge. Unrelated display panels remain fully transparent.
 
 Cursor setup follows panel setup rather than preceding it. After every panel is
 ordered and the input panel has made its overlay view first responder, each

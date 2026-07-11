@@ -74,7 +74,7 @@ Use the same stably signed Debug app after Screen Recording access is enabled. F
 
 1. On the primary display, invoke Capture Text from both the menu and shortcut. Verify the overlay is clear before mouse-down, the cursor is a crosshair, and only the area outside the active rectangle dims after dragging begins.
 2. Exercise forward and reverse drags, a click, a sub-four-point drag, exactly four points, Escape before dragging, Escape during dragging, and every display-edge clamp.
-3. Connect an extended display and repeat a selection there. Record fresh display identifiers, AppKit frames, Core Graphics bounds, and backing scales; never hardcode runtime identifiers.
+3. Connect an extended display and repeat a selection there, including invoking while the pointer is on one display and starting the drag on the other. Press Escape during that drag and confirm the clicked display receives it immediately. Record fresh display identifiers, AppKit frames, Core Graphics bounds, and backing scales; never hardcode runtime identifiers.
 4. Drag from each display toward the other. The rectangle must stop at the initiating display edge, and only that display may dim.
 5. Repeat menu and shortcut selection at least 20 times across valid, click, and Escape outcomes. Every outcome must remove all panels, restore the cursor, leave the command reusable, and leave the clipboard unchanged.
 6. Repeat with Finder, a browser, TextEdit, another Space, and a full-screen Space frontmost. Starting and cancelling selection must not activate CopyLasso or switch Spaces.
@@ -236,7 +236,7 @@ The unattended July 11, 2026 run could not perform real sleep/wake, lock/unlock,
 
 ## Accessibility And Appearance Checklist
 
-G21 unit coverage reads every supported `NSWorkspace` accessibility-display flag, verifies standard and Increased Contrast overlay styles, prohibits app-defined feedback/recovery animation, proves a real hosted HUD expands for wrapped text, and retains textual states for success, no text, failure, login status, and permission recovery. Signed UI tests retain light/dark launches and add named compound-control plus keyboard default/close actions.
+G21 unit coverage reads every supported `NSWorkspace` accessibility-display flag, verifies standard and Increased Contrast overlay styles, proves the HUD uses regular material normally and an opaque semantic background under Reduce Transparency even when its host is reused, prohibits app-defined feedback/recovery animation, proves a real hosted HUD expands for wrapped text, and retains textual states for success, no text, failure, login status, and permission recovery. Signed UI tests retain light/dark launches and add named compound-control plus keyboard default/close actions.
 
 Run this checklist with one stably signed Debug app and a normal unlocked graphical session:
 
@@ -247,7 +247,7 @@ Run this checklist with one stably signed Debug app and a normal unlocked graphi
 5. Start selection. Confirm Accessibility Inspector reports one overlay group per display with the label `CopyLasso text selection overlay` and help `Drag to select text. Press Escape to cancel.` The visual drag itself is intentionally not replaced by a VoiceOver-driven workflow in v0.1.
 6. Test Light and Dark appearances. Inspect the template menu symbol, native forms, links, text, permission panel, success/no-text/failure HUD, clear pre-drag overlay, dim treatment, black/white border, and crosshair on bright and dark content.
 7. Enable Increased Contrast. Confirm the initiating-display dim strengthens from 18% to 28% and the two-tone border from 3/1 points to 5/2 points; unrelated displays stay clear. Repeat with Differentiate Without Color and verify every state remains named and symbol/text differentiated without hue.
-8. Enable Reduce Transparency and inspect native materials, text, borders, and window backgrounds. No essential copy may become unreadable. Enable Reduce Motion and confirm selection, recovery, and feedback panels present and disappear without app-defined animation.
+8. Enable Reduce Transparency and confirm every newly presented or reused feedback HUD replaces its material with an opaque semantic window background while retaining readable text and borders. Inspect the remaining native materials and window backgrounds; no essential copy may become unreadable. Enable Reduce Motion and confirm selection, recovery, and feedback panels present and disappear without app-defined animation.
 9. Increase the system text size to its largest supported value. Confirm onboarding, Settings, About, permission guidance, login errors, and the longest bounded feedback preview wrap or grow without clipped labels or inaccessible controls.
 10. Repeat keyboard and VoiceOver checks after closing/reopening each singleton window and while another application or full-screen Space is frontmost. Explicit Settings/About actions may activate their windows; capture feedback and selection must preserve the other application's focus policy.
 
@@ -284,9 +284,9 @@ The unattended July 11, 2026 G22 run completed the source, dependency, signed-en
 
 ## Automated Coverage, Repeatability, And OS Matrix
 
-G23 keeps behavior—not a percentage—as the test contract, then uses coverage to detect unreviewed gaps and regressions. The canonical Xcode 26.6 result contains 204 unit tests organized across geometry, coordinator transitions, permission and settings decisions, text assembly, clipboard and feedback decisions, lifecycle recovery, service-boundary orchestration, Vision fixtures, multi-display snapshots, and accessibility/appearance policy.
+G23 keeps behavior—not a percentage—as the test contract, then uses coverage to detect unreviewed gaps and regressions. The canonical Xcode 26.6 result contains 207 unit tests organized across geometry, coordinator transitions, permission and settings decisions, text assembly, clipboard and feedback decisions, lifecycle recovery, service-boundary orchestration, Vision fixtures, multi-display snapshots, and accessibility/appearance policy.
 
-`scripts/audit-coverage.sh` reads the canonical `UnitTests.xcresult`. The reviewed stable baseline is 2,498/3,477 application lines (71.84%) after excluding three retained-state-dependent SwiftUI onboarding builders, and 968/1,011 platform-neutral Models/CaptureWorkflow/Settings lines (95.74%). The 70% aggregate floor is unchanged; every other application file remains included. Critical per-file floors prevent the aggregate from hiding a regression. See [Automated Coverage Review](coverage-review.md) for each floor, the G22 comparison, the reachable branches added in G23, and the explicit signed/manual owner for every uncovered category.
+`scripts/audit-coverage.sh` reads the canonical `UnitTests.xcresult`. The reviewed stable baseline is 2,519/3,501 application lines (71.95%) after excluding three retained-state-dependent SwiftUI onboarding builders, and 968/1,011 platform-neutral Models/CaptureWorkflow/Settings lines (95.74%). The 70% aggregate floor is unchanged; every other application file remains included. Critical per-file floors prevent the aggregate from hiding a regression. See [Automated Coverage Review](coverage-review.md) for each floor, the G22 comparison, the reachable branches added in G23, and the explicit signed/manual owner for every uncovered category.
 
 Run a local coverage and determinism check after the canonical build:
 

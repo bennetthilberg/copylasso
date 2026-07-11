@@ -14,11 +14,11 @@ Native tab traversal, default/cancel actions, `Command-,`, and `Command-W` provi
 
 ## Appearance Policy
 
-`SystemAccessibilityAppearanceProvider` reads Increased Contrast, Differentiate Without Color, Reduce Transparency, and Reduce Motion directly from `NSWorkspace` whenever a selection session creates its surfaces.
+`SystemAccessibilityAppearanceProvider` reads Increased Contrast, Differentiate Without Color, Reduce Transparency, and Reduce Motion directly from `NSWorkspace` whenever a selection session creates its surfaces and before every feedback presentation. Re-reading before presentation means the reusable feedback host follows a setting changed between HUD appearances.
 
 The selection rectangle always uses black and white strokes. Standard mode keeps the proven 18% initiating-display dim with three-point/one-point strokes; Increased Contrast uses a 28% dim with five-point/two-point strokes. Other displays remain clear, and no selection meaning depends on hue.
 
-SwiftUI materials and native controls inherit system light, dark, contrast, and transparency behavior. CopyLasso's selection, recovery, and feedback panels use no app-defined window animation, satisfying Reduce Motion without maintaining a separate animation path. The temporary `viewfinder` SF Symbol is template-rendered; G25 owns its replacement with the final original asset.
+The feedback HUD uses regular material in the standard appearance. With Reduce Transparency enabled, an explicit appearance decision replaces that material with an opaque semantic window-background color while retaining the rounded HUD shape and separator. Native controls continue to inherit system light, dark, and contrast behavior. CopyLasso's selection, recovery, and feedback panels use no app-defined window animation, satisfying Reduce Motion without maintaining a separate animation path. The temporary `viewfinder` SF Symbol is template-rendered; G25 owns its replacement with the final original asset.
 
 ## Dynamic Layout
 
@@ -28,6 +28,6 @@ Feedback remains mouse-transparent and transient. Its complete bounded message i
 
 ## Verification Boundary
 
-Unit tests cover both selection styles, every live `NSWorkspace` accessibility flag, fixed accessibility copy, motion-free panel configuration, and real hosted feedback expansion. Signed UI coverage checks compound-control labels, native keyboard completion/closure, menu availability, light/dark launches, recovery actions, and overlay semantics.
+Unit tests cover both selection styles, both feedback-background decisions, reusable-host refresh from the current appearance, every live `NSWorkspace` accessibility flag, fixed accessibility copy, motion-free panel configuration, and real hosted feedback expansion. Signed UI coverage checks compound-control labels, native keyboard completion/closure, menu availability, light/dark launches, recovery actions, and overlay semantics.
 
 The physical checklist in [Testing](../testing.md) remains necessary for VoiceOver speech/order, Accessibility Inspector hierarchy, Full Keyboard Access traversal, maximum text size, system Increased Contrast, Reduce Transparency, Differentiate Without Color, Reduce Motion, and actual light/dark rendering. An unavailable graphical session is recorded as pending rather than treated as a pass.
