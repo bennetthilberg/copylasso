@@ -29,7 +29,7 @@ See the full [privacy policy](PRIVACY.md), [security and privacy review](docs/se
 - Swift 6 and the `swift-format` version bundled with that Xcode release
 - An Apple Development signing identity for signed local builds
 
-The current verified baseline is Xcode 26.6 with Swift 6.3.3. See [Architecture Overview](docs/architecture/overview.md), [Capture Workflow](docs/architecture/capture-workflow.md), and [Accessibility and Appearance](docs/architecture/accessibility-and-appearance.md) for component and presentation boundaries, [Development Environment](docs/development-environment.md) for setup and canonical commands, [Testing](docs/testing.md) for automated and signed matrices, [Automated Coverage Review](docs/coverage-review.md) for reviewed gaps and regression floors, and [Build Configuration](docs/architecture/build-configuration.md) for target and signing decisions.
+The current verified baseline is Xcode 26.6 with Swift 6.3.3. See [Architecture Overview](docs/architecture/overview.md), [Capture Workflow](docs/architecture/capture-workflow.md), and [Accessibility and Appearance](docs/architecture/accessibility-and-appearance.md) for component and presentation boundaries, [Development Environment](docs/development-environment.md) for setup and canonical commands, [Testing](docs/testing.md) for automated and signed matrices, [Automated Coverage Review](docs/coverage-review.md) for reviewed gaps and regression floors, [Manual QA and Performance](docs/manual-qa-and-performance.md) for release qualification, and [Build Configuration](docs/architecture/build-configuration.md) for target and signing decisions.
 
 Run the same unsigned build and unit-test pipeline used by CI:
 

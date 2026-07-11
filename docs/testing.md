@@ -300,3 +300,5 @@ GitHub's current matrix has three responsibilities:
 The minimum runner is a runtime check because KeyboardShortcuts 3.0.1 requires Swift tools 6.2 and the macOS 14 hosted image offers Xcode 16.2 at most. Re-resolving or compiling that package there is unsupported and would not test the shipped artifact. GitHub has announced macOS 14 image removal on November 2, 2026; migrate this smoke to a maintained macOS 14 VM/runner before then.
 
 Signed XCUITests remain focused on first-run, Settings, menu, recovery, and accessibility behavior. They contain no unconditional retry. Hosted CI builds the bundle but cannot truthfully execute the unsigned runner or automate TCC dialogs. A locked local session is recorded as infrastructure-blocked rather than a pass; the signed matrices earlier in this document remain required.
+
+The versioned release checklist and performance result sheet are maintained in [Manual QA and Performance](manual-qa-and-performance.md). G24 must execute that complete document from one clean, stably signed Debug state; partial or historical evidence must not be promoted into a release pass.

@@ -29,3 +29,4 @@ All notable changes to CopyLasso will be documented in this file.
 - Accessibility and appearance hardening with explicit compound-control semantics, native keyboard actions, system accessibility-display observation, stronger increased-contrast selection treatment, motion-free transient panels, and vertically adaptive feedback.
 - A reconciled privacy and security review, explicit minimal App Sandbox entitlement, dependency justification, offline whole-suite proof, and reproducible source/secret/network/persistence audit.
 - A reviewed behavioral-coverage gate, targeted recovery and text-order branch tests, three-pass repeatability runner, and real macOS 14 artifact-launch job alongside latest arm64 and Intel CI.
+- A versioned manual QA and performance protocol with explicit functional, OCR-source, lifecycle, accessibility, privacy, latency, CPU, memory-growth, and Instruments result boundaries.
