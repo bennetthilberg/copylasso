@@ -392,13 +392,11 @@ assert_setting "$derived_data/debug-build-settings.txt" SWIFT_STRICT_CONCURRENCY
 assert_setting "$derived_data/debug-build-settings.txt" SWIFT_TREAT_WARNINGS_AS_ERRORS YES
 assert_setting "$derived_data/debug-build-settings.txt" GCC_TREAT_WARNINGS_AS_ERRORS YES
 assert_setting "$derived_data/debug-build-settings.txt" ENABLE_APP_SANDBOX YES
-assert_setting "$derived_data/debug-build-settings.txt" ENABLE_HARDENED_RUNTIME YES
 assert_setting "$derived_data/debug-build-settings.txt" CODE_SIGN_ENTITLEMENTS CopyLasso/CopyLasso.entitlements
 assert_setting "$derived_data/debug-build-settings.txt" PRODUCT_BUNDLE_IDENTIFIER io.github.bennetthilberg.copylasso.debug
 assert_setting "$derived_data/debug-build-settings.txt" INFOPLIST_KEY_LSUIElement YES
 assert_setting "$derived_data/release-build-settings.txt" PRODUCT_BUNDLE_IDENTIFIER io.github.bennetthilberg.copylasso
 assert_setting "$derived_data/release-build-settings.txt" ENABLE_APP_SANDBOX YES
-assert_setting "$derived_data/release-build-settings.txt" ENABLE_HARDENED_RUNTIME YES
 assert_setting "$derived_data/release-build-settings.txt" CODE_SIGN_ENTITLEMENTS CopyLasso/CopyLasso.entitlements
 assert_setting "$derived_data/release-build-settings.txt" INFOPLIST_KEY_LSUIElement YES
 assert_setting "$derived_data/release-build-settings.txt" ARCHS "arm64 x86_64"

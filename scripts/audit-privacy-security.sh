@@ -29,6 +29,12 @@ if [[ "$(/usr/bin/grep -c 'CODE_SIGN_ENTITLEMENTS = CopyLasso/CopyLasso.entitlem
     exit 1
 fi
 
+if [[ "$(/usr/bin/grep -c 'ENABLE_HARDENED_RUNTIME = YES;' \
+    CopyLasso.xcodeproj/project.pbxproj)" != 2 ]]; then
+    echo "Debug and Release must both enable Hardened Runtime." >&2
+    exit 1
+fi
+
 readonly prohibited_network_pattern='URLSession|NSURLSession|URLRequest|NSURLRequest|import[[:space:]]+Network|NWConnection|NWListener|CFNetwork|CFSocket|GCDAsyncSocket|WebKit|WKWebView|socket\('
 if /usr/bin/grep -R -nE "$prohibited_network_pattern" CopyLasso; then
     echo "The application target must not contain a network-client implementation." >&2
