@@ -96,7 +96,7 @@ if [[ "$permission_api_files" != "$permission_service" ]] || \
     exit 1
 fi
 
-readonly prohibited_capture_runtime_pattern='SCContentSharingPicker|CGWindowListCreateImage|CGDisplayCreateImage|--g06-capture-spike|--g07-selection-spike|NSPasteboard|sharingType[[:space:]]*=[[:space:]]*\.none|NSWindow\.SharingType\.none'
+readonly prohibited_capture_runtime_pattern='SCContentSharingPicker|CGWindowListCreateImage|CGDisplayCreateImage|--g06-capture-spike|--g07-selection-spike|sharingType[[:space:]]*=[[:space:]]*\.none|NSWindow\.SharingType\.none'
 if /usr/bin/grep -R -nE "$prohibited_capture_runtime_pattern" CopyLasso; then
     echo "A prohibited capture, OCR, pasteboard, or retired experiment API remains in the application target." >&2
     exit 1
@@ -139,12 +139,20 @@ fi
 
 readonly selection_service='CopyLasso/Services/AppKitRegionSelectionService.swift'
 selection_api_files="$({ /usr/bin/grep -R -lE \
-    'NSScreen\.screens|CGDisplayBounds|didChangeScreenParametersNotification|NSCursor\.crosshair|RegionSelectionPanel' CopyLasso || true; })"
+    'CGDisplayBounds|didChangeScreenParametersNotification|NSCursor\.crosshair|RegionSelectionPanel' CopyLasso || true; })"
 if [[ "$selection_api_files" != "$selection_service" ]] || \
     ! /usr/bin/grep -q 'styleMask: \[.borderless, .nonactivatingPanel\]' "$selection_service" || \
     ! /usr/bin/grep -q 'panel.level = .screenSaver' "$selection_service" || \
     ! /usr/bin/grep -q 'panel.collectionBehavior = \[.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle\]' "$selection_service"; then
     echo "Production display and selection-overlay APIs must remain confined to the AppKit selection service." >&2
+    exit 1
+fi
+
+readonly feedback_panel='CopyLasso/SharedUI/FeedbackPanel.swift'
+screen_list_files="$({ /usr/bin/grep -R -l 'NSScreen\.screens' CopyLasso || true; } | /usr/bin/sort)"
+expected_screen_list_files="$(/usr/bin/printf '%s\n%s' "$selection_service" "$feedback_panel" | /usr/bin/sort)"
+if [[ "$screen_list_files" != "$expected_screen_list_files" ]]; then
+    echo "Display enumeration must remain confined to selection and HUD placement." >&2
     exit 1
 fi
 
@@ -163,6 +171,41 @@ if [[ ! -e "$text_assembler" ]] || \
     /usr/bin/grep -qE '^[[:space:]]*import[[:space:]]+(AppKit|SwiftUI|ScreenCaptureKit|Vision)' "$text_assembler" || \
     /usr/bin/grep -qE '^[[:space:]]*import[[:space:]]+Vision' CopyLassoTests/Models/TextAssemblerTests.swift; then
     echo "G16 text assembly must remain pure, platform-neutral, and active in the workflow." >&2
+    exit 1
+fi
+
+readonly clipboard_service='CopyLasso/Services/ClipboardService.swift'
+pasteboard_api_files="$({ /usr/bin/grep -R -l 'NSPasteboard' CopyLasso || true; })"
+if [[ "$pasteboard_api_files" != "$clipboard_service" ]] || \
+    ! /usr/bin/grep -q 'NSPasteboard = \.general' "$clipboard_service" || \
+    ! /usr/bin/grep -q 'replaceWithPlainText' "$clipboard_service" || \
+    ! /usr/bin/grep -q 'forType: \.string' "$clipboard_service" || \
+    /usr/bin/grep -qE 'pasteboardItems|data\(forType:|string\(forType:|readObjects|canReadObject' "$clipboard_service"; then
+    echo "General pasteboard access must remain write-only, plain-text-only, and confined to the clipboard service." >&2
+    exit 1
+fi
+
+if [[ ! -e "$feedback_panel" ]] || \
+    ! /usr/bin/grep -q 'styleMask: \[\.borderless, \.nonactivatingPanel\]' "$feedback_panel" || \
+    ! /usr/bin/grep -q 'panel.ignoresMouseEvents = true' "$feedback_panel" || \
+    ! /usr/bin/grep -q 'panel.level = \.statusBar' "$feedback_panel" || \
+    ! /usr/bin/grep -q 'panel.orderFrontRegardless()' "$feedback_panel" || \
+    /usr/bin/grep -qE 'NSApp\.activate|NSSound|UserNotifications|UNUserNotification' "$feedback_panel"; then
+    echo "G17 feedback must use one silent, nonactivating, mouse-transparent HUD." >&2
+    exit 1
+fi
+
+if ! /usr/bin/grep -q 'clipboardService: SystemClipboardService()' CopyLasso/App/CopyLassoApp.swift || \
+    ! /usr/bin/grep -q 'feedbackService: feedbackController' CopyLasso/App/CopyLassoApp.swift || \
+    ! /usr/bin/grep -q 'feedbackModel: feedbackController.model' CopyLasso/App/CopyLassoApp.swift; then
+    echo "The production clipboard, HUD, and temporary menu state must remain wired at the app root." >&2
+    exit 1
+fi
+
+if /usr/bin/grep -nE 'print\(|debugPrint\(|NSLog\(|os_log|Logger\(|UserDefaults' \
+    "$clipboard_service" "$feedback_panel" CopyLasso/Models/FeedbackPreview.swift \
+    CopyLasso/Models/FeedbackPresentationContent.swift; then
+    echo "Clipboard text and feedback previews must not be logged or persisted." >&2
     exit 1
 fi
 
@@ -294,7 +337,7 @@ if [[ ! -x "$release_executable" ]]; then
     exit 1
 fi
 
-if /usr/bin/strings "$release_executable" | /usr/bin/grep -qE -- '--g10-g11-|--g12-|--g13-|--g14-|--g15-|--g16-'; then
+if /usr/bin/strings "$release_executable" | /usr/bin/grep -qE -- '--g10-g11-|--g12-|--g13-|--g14-|--g15-|--g16-|--g17-'; then
     echo "Debug-only UI-test controls leaked into Release." >&2
     exit 1
 fi
@@ -309,6 +352,8 @@ if [[ ! -f "$debug_module" ]] || \
     ! /usr/bin/grep -a -q 'SystemScreenCaptureService' "$debug_module" || \
     ! /usr/bin/grep -a -q 'VisionOCRService' "$debug_module" || \
     ! /usr/bin/grep -a -q 'TextAssembler' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'SystemClipboardService' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'FeedbackPanelController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'PermissionRecoveryPanelController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'SettingsController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'GlobalShortcutController' "$debug_module"; then
@@ -330,6 +375,8 @@ for release_architecture in arm64 x86_64; do
         ! /usr/bin/grep -a -q 'SystemScreenCaptureService' "$release_module" || \
         ! /usr/bin/grep -a -q 'VisionOCRService' "$release_module" || \
         ! /usr/bin/grep -a -q 'TextAssembler' "$release_module" || \
+        ! /usr/bin/grep -a -q 'SystemClipboardService' "$release_module" || \
+        ! /usr/bin/grep -a -q 'FeedbackPanelController' "$release_module" || \
         ! /usr/bin/grep -a -q 'PermissionRecoveryPanelController' "$release_module" || \
         ! /usr/bin/grep -a -q 'SettingsController' "$release_module" || \
         ! /usr/bin/grep -a -q 'GlobalShortcutController' "$release_module"; then

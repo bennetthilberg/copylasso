@@ -11,6 +11,8 @@ final class CaptureCommand: CaptureRequesting {
   private let screenCaptureService: any ScreenCaptureService
   private let ocrService: any OCRService
   private let textAssembler: any TextAssembling
+  private let clipboardService: any ClipboardService
+  private let feedbackService: any FeedbackService
   private let recoveryPresenter: any PermissionRecoveryPresenting
   private let scheduleWork: WorkScheduler
 
@@ -25,6 +27,8 @@ final class CaptureCommand: CaptureRequesting {
     screenCaptureService: any ScreenCaptureService,
     ocrService: any OCRService,
     textAssembler: any TextAssembling,
+    clipboardService: any ClipboardService,
+    feedbackService: any FeedbackService,
     recoveryPresenter: any PermissionRecoveryPresenting,
     scheduleWork: @escaping WorkScheduler = CaptureCommand.scheduleOnNextMainActorTurn
   ) {
@@ -34,6 +38,8 @@ final class CaptureCommand: CaptureRequesting {
     self.screenCaptureService = screenCaptureService
     self.ocrService = ocrService
     self.textAssembler = textAssembler
+    self.clipboardService = clipboardService
+    self.feedbackService = feedbackService
     self.recoveryPresenter = recoveryPresenter
     self.scheduleWork = scheduleWork
   }
@@ -119,12 +125,50 @@ final class CaptureCommand: CaptureRequesting {
         _ = coordinator.handle(.fail(.internal))
         return
       }
-      _ = textAssembler.assemble(observations)
-      _ = coordinator.handle(.fail(.clipboard))
+      let text = textAssembler.assemble(observations)
+      await complete(with: text)
     } catch VisionOCRError.cancelled {
       _ = coordinator.handle(.cancel(.user))
     } catch {
       _ = coordinator.handle(.fail(.recognition))
+    }
+  }
+
+  private func complete(with text: String) async {
+    if text.isEmpty {
+      await presentCompletionFeedback(.noText)
+      return
+    }
+
+    do {
+      try clipboardService.writePlainText(text)
+    } catch {
+      await presentCompletionFailure(.clipboard)
+      return
+    }
+
+    let preview = FeedbackPreview(text: text).text
+    await presentCompletionFeedback(.success(preview: preview))
+  }
+
+  private func presentCompletionFeedback(_ feedback: CaptureFeedback) async {
+    do {
+      try await feedbackService.present(feedback)
+      guard case .transitioned = coordinator.handle(.completionFinished) else {
+        _ = coordinator.handle(.fail(.internal))
+        return
+      }
+    } catch {
+      _ = coordinator.handle(.fail(.feedback))
+    }
+  }
+
+  private func presentCompletionFailure(_ stage: CaptureFailureStage) async {
+    do {
+      try await feedbackService.present(.failure(stage))
+      _ = coordinator.handle(.fail(stage))
+    } catch {
+      _ = coordinator.handle(.fail(.feedback))
     }
   }
 

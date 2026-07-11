@@ -170,6 +170,8 @@ func makeTestCaptureCommand(
     screenCaptureService: StubScreenCaptureService(result: .failure(.injected)),
     ocrService: StubOCRService(result: .failure(.injected)),
     textAssembler: TextAssembler(),
+    clipboardService: SpyClipboardService(),
+    feedbackService: SpyFeedbackService(),
     recoveryPresenter: SpyPermissionRecoveryPresenter(),
     scheduleWork: scheduleWork
   )

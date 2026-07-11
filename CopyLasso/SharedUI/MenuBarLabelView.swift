@@ -5,10 +5,13 @@ struct MenuBarLabelView: View {
   @Environment(\.openWindow) private var openWindow
 
   let settingsController: SettingsController
+  let feedbackModel: FeedbackPresentationModel
 
   var body: some View {
-    Image(systemName: "viewfinder")
-      .accessibilityLabel("CopyLasso")
+    Image(systemName: feedbackModel.content?.symbolName ?? "viewfinder")
+      .accessibilityLabel(
+        feedbackModel.content?.menuBarAccessibilityLabel ?? "CopyLasso"
+      )
       .task {
         await Task.yield()
         guard settingsController.takeInitialOnboardingPresentationRequest() else {

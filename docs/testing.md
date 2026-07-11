@@ -70,7 +70,7 @@ Permission history contains only the two booleans needed for these neutral label
 
 ## Real Selection Overlay Matrix
 
-Use the same stably signed Debug app after Screen Recording access is enabled. The current G13 workflow does not call ScreenCaptureKit, but retaining one stable app avoids mixing selection evidence with permission-identity churn.
+Use the same stably signed Debug app after Screen Recording access is enabled. For the isolated overlay regression matrix, use the existing controlled UI boundary so downstream capture produces only its deterministic blank image; retaining one stable app avoids mixing selection evidence with permission-identity churn.
 
 1. On the primary display, invoke Capture Text from both the menu and shortcut. Verify the overlay is clear before mouse-down, the cursor is a crosshair, and only the area outside the active rectangle dims after dragging begins.
 2. Exercise forward and reverse drags, a click, a sub-four-point drag, exactly four points, Escape before dragging, Escape during dragging, and every display-edge clamp.
@@ -81,7 +81,7 @@ Use the same stably signed Debug app after Screen Recording access is enabled. T
 7. Change a display resolution or disconnect an extended display during selection. The active operation must cancel once, remove all panels, and rebuild fresh descriptors on the next request.
 8. Terminate CopyLasso during selection and verify no panel, dim, cursor override, observer, controller, or continuation remains. Use Xcode's memory graph or debugger to confirm the completed controller and surfaces are released.
 9. Inspect light, dark, increased-contrast, and VoiceOver behavior. The black-and-white border and crosshair must remain distinguishable, and the overlay must expose its selection label and Escape help.
-10. Confirm no pixel file, retained image, pasteboard write, Accessibility prompt, or Input Monitoring prompt occurs. The controlled UI path may recognize and format the deterministic in-memory image but must stop at the intentional G17 clipboard boundary.
+10. Confirm no pixel file, retained image, pasteboard write, Accessibility prompt, or Input Monitoring prompt occurs. The controlled blank-image path should now produce distinct no-text feedback while preserving the clipboard; real successful clipboard output belongs to the separate G17 matrix below.
 
 ### G13 Production Verification Record
 
@@ -139,3 +139,22 @@ On July 11, 2026, both canonical pipelines passed 129 of 129 tests with zero fai
 G16 formatting tests use only neutral observations and do not execute Vision or screen capture. They cover empty and whitespace-only input, unordered words, multiple lines, uneven baselines, separated blocks, exact duplicates, repeated text in distinct positions, low-confidence text, twenty high-confidence observations, literal markup-like characters, malformed geometry, project fixture layouts, and unsupported multi-column input in several permutations.
 
 The required policy is conservative: only exact same-text/same-bounds detections are deduplicated, while every other nonempty observation remains in output regardless of confidence. Multi-column, table, vertical, and complex layouts may read imperfectly but must produce the same string for the same observation set and must never crash. See [Plain-Text Assembly](architecture/text-assembly.md) for the complete rules.
+
+## Clipboard and Feedback Matrix
+
+G17 unit coverage uses an isolated AppKit pasteboard plus a fault-injecting backend. It verifies one plain-string item and one change-count increment on success, rejection of empty text before pasteboard access, explicit prepared-write failure, no prior-pasteboard read in production source, and no rich-text representation. Workflow tests verify success writes once, no text never writes, clipboard failure never records a successful write, bounded preview derivation, feedback-failure recovery, repeated use, and busy rejection until HUD dismissal.
+
+The app-hosted feedback suite orders the production panel front while another process is frontmost. It verifies that the panel is visible, borderless, nonactivating, unable to become key or main, mouse-transparent, status-bar level, compatible with Spaces/full-screen apps, and removed after dismissal without changing the frontmost process. Model tests verify distinct success/no-text/failure wording, 80-character grapheme-safe truncation, automatic preview release, singleton host reuse, and stale-timer protection.
+
+### Signed G17 Manual Matrix
+
+This live matrix requires an unlocked graphical session and granted Screen Recording access:
+
+1. Put a unique value on the clipboard, invoke Capture Text, and cancel with Escape. Paste into TextEdit and confirm the unique value remains.
+2. Select a known paragraph, wait for the success HUD to disappear, and paste into both TextEdit and a browser text field. Confirm plain text, sensible line breaks, and exactly one clipboard replacement.
+3. Select a region with no visible text. Confirm the no-text HUD is distinct and the prior clipboard remains.
+4. Keep Finder, TextEdit, and a full-screen application frontmost in separate runs. Confirm the HUD appears without activation, key-window change, sound, notification request, or menu opening.
+5. Confirm the menu symbol changes only for the HUD lifetime, the preview is readable with VoiceOver, long text is truncated with one ellipsis, and no preview remains after dismissal.
+6. Repeat success, no-text, and cancellation three times each and confirm Capture Text returns to enabled after every result.
+
+On the unattended July 11, 2026 run, the workstation was locked and no interactive user session was available. The deterministic app-hosted focus/panel checks ran, but the two-application paste and VoiceOver portions remain mandatory live evidence before release.

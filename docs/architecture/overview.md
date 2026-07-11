@@ -1,6 +1,6 @@
 # Architecture Overview
 
-CopyLasso currently provides a usable dockless shell plus production permission, selection, pixel capture, text recognition, and plain-text assembly, not an end-to-end clipboard workflow. The application includes versioned onboarding, persistent Settings, Launch at Login, a configurable global shortcut, production Screen Recording permission handling, a lifecycle-safe multi-display selection overlay, in-memory ScreenCaptureKit region capture, local Vision OCR, and deterministic text assembly. Feasibility evidence from G05-G07 is retained in the ADRs, while clipboard and feedback are added in G17 and the full lifecycle is finalized in G18.
+CopyLasso currently provides a usable dockless shell plus the complete production service chain through clipboard output and nonactivating feedback. The application includes versioned onboarding, persistent Settings, Launch at Login, a configurable global shortcut, production Screen Recording permission handling, a lifecycle-safe multi-display selection overlay, in-memory ScreenCaptureKit region capture, local Vision OCR, deterministic text assembly, write-only plain-text output, and bounded HUD feedback. Feasibility evidence from G05-G07 is retained in the ADRs, while G18 owns uniform cross-stage cleanup and end-to-end stress integration.
 
 ## Components and Dependency Direction
 
@@ -18,11 +18,11 @@ flowchart LR
   Capture["ScreenCaptureKit adapter G14"] -. conform .-> Contracts
   OCR["Vision OCR adapter G15"] -. conform .-> Contracts
   Format["Pure text assembly G16"] --> Models
-  Adapters["Future adapters G17"] -. conform .-> Contracts
+  Output["Clipboard and feedback adapters G17"] -. conform .-> Contracts
 ```
 
 - `App` owns the dockless process, scene lifecycle, menu and shortcut command routing, and application termination boundary. `SharedUI` contains the menu, onboarding, Settings, and auxiliary-window presentation.
-- `CaptureWorkflow` owns phase transitions and busy-state policy. Its current command slice invokes permission, production selection, capture, OCR, and pure formatting, then stops at the G17 clipboard boundary.
+- `CaptureWorkflow` owns phase transitions and busy-state policy. Its current command slice invokes permission, production selection, capture, OCR, pure formatting, clipboard output, and success/no-text/clipboard-failure feedback. G18 will make failure and cleanup handling uniform across the entire operation.
 - `Services` declares narrow permission, selection, capture, OCR, clipboard, and feedback boundaries. The Core Graphics permission, AppKit selection, ScreenCaptureKit capture, and Vision OCR adapters are isolated here.
 - `Models` contains geometry, observations, authorization observations, and feedback values without AppKit, SwiftUI, ScreenCaptureKit, or Vision dependencies.
 - `Settings` owns the typed `UserDefaults` adapter, onboarding-version policy, shortcut storage boundary, and observable settings controller. The system login-item adapter remains isolated in `Services`.
@@ -43,7 +43,7 @@ flowchart LR
   Feedback --> Idle["Idle"]
 ```
 
-The coordinator models the corresponding phases: idle, requesting permission, selecting, capturing, recognizing, completing, cancelled, and failed. It carries no geometry, image, observation, or assembled-text payload in observable state. Menu and global-shortcut requests reach the same `CaptureCommand`. G12 performs a user-initiated Core Graphics preflight and recovery. G13 returns validated per-display geometry only after every overlay is absent. G14 enumerates shareable displays at that point, validates the selected display and scale, and captures the outward-rounded pixel rectangle into one local `CGImage`. G15 recognizes that image with accurate corrected U.S. English Vision OCR and returns transient neutral observations. G16 deterministically assembles them into a transient plain string before the current command stops at the G17 clipboard boundary. G18 will finalize the complete service lifecycle.
+The coordinator models the corresponding phases: idle, requesting permission, selecting, capturing, recognizing, completing, cancelled, and failed. It carries no geometry, image, observation, assembled-text, clipboard, or preview payload in observable state. Menu and global-shortcut requests reach the same `CaptureCommand`. G12 performs a user-initiated Core Graphics preflight and recovery. G13 returns validated per-display geometry only after every overlay is absent. G14 enumerates shareable displays at that point, validates the selected display and scale, and captures the outward-rounded pixel rectangle into one local `CGImage`. G15 recognizes that image with accurate corrected U.S. English Vision OCR and returns transient neutral observations. G16 deterministically assembles them into a transient plain string. G17 writes only nonempty text and holds the coordinator in `completing` until bounded feedback disappears. G18 will finalize the complete service lifecycle.
 
 Cancellation is a normal result. It enters an explicit cancelled state and returns to idle only after a reset acknowledging cleanup. Failure records only the responsible stage, never captured content, recognized text, raw platform errors, or user data. A request received outside idle is rejected without changing state.
 
@@ -72,4 +72,4 @@ Cancellation is a normal result. It enters an explicit cancelled state and retur
 | G17 | Clipboard and nonactivating feedback adapters |
 | G18 | End-to-end service orchestration, cleanup, and integration tests |
 
-The G12 permission adapter, recovery panel, G13 selection overlay, G14 capture adapter, G15 Vision adapter, and G16 text assembler are live. Captured pixels exist only as the local image passed to OCR; recognized observations and the assembled string remain transient and are discarded at the pending clipboard boundary. Clipboard and feedback still have only contracts and test doubles. No hidden pasteboard or feedback workflow exists.
+The G12 permission adapter, recovery panel, G13 selection overlay, G14 capture adapter, G15 Vision adapter, G16 text assembler, and G17 clipboard/HUD adapters are live. Captured pixels exist only as the local image passed to OCR; recognized observations, assembled text, and bounded previews remain transient. Pasteboard writes are confined to one service, that service never reads prior clipboard contents, and the feedback model clears on dismissal. G18 still owns uniform earlier-stage failure feedback, whole-operation cleanup, and stress integration.
