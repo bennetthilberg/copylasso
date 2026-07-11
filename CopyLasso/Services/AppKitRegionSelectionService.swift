@@ -234,7 +234,9 @@ private final class SelectionOverlayController {
 
     switch event {
     case .mouseDown(let point):
-      surfaces.first(where: { $0.displayID == displayID })?.makeInputReady()
+      let inputSurface = surfaces.first(where: { $0.displayID == displayID })
+      inputSurface?.makeInputReady()
+      inputSurface?.refreshCursorRects()
       guard session.begin(on: displayID, at: point) else { return }
       renderCurrentDrag()
     case .mouseDragged(let point):
@@ -454,7 +456,7 @@ private final class AppKitSelectionOverlaySurface: SelectionOverlaySurface {
   }
 
   func refreshCursorRects() {
-    contentView.installCrosshairCursorRect()
+    contentView.refreshCrosshairCursorRects()
   }
 
   func render(_ state: SelectionOverlayRenderState) {
@@ -472,7 +474,7 @@ private final class RegionSelectionPanel: NSPanel {
 }
 
 @MainActor
-private final class RegionSelectionView: NSView {
+final class RegionSelectionView: NSView {
   var eventHandler: ((SelectionOverlayEvent) -> Void)?
   var displayFrame: CGRect = .zero
   var renderState: SelectionOverlayRenderState = .clear {
@@ -510,9 +512,10 @@ private final class RegionSelectionView: NSView {
     addCrosshairCursorRect()
   }
 
-  func installCrosshairCursorRect() {
-    discardCursorRects()
-    addCrosshairCursorRect()
+  func refreshCrosshairCursorRects() {
+    guard let window else { return }
+    window.invalidateCursorRects(for: self)
+    window.resetCursorRects()
   }
 
   private func addCrosshairCursorRect() {
