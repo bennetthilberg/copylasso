@@ -18,9 +18,9 @@ The initial release targets ordinary, approximately horizontal, single-column En
 
 ## Privacy
 
-CopyLasso is designed to keep captured images and recognized text local, in memory, and only for as long as the active operation needs them. v0.1 has no accounts, cloud OCR, analytics, telemetry, or capture history. Core OCR does not require a network connection.
+CopyLasso is designed to keep captured images and recognized text local, in memory, and only for as long as the active operation needs them. v0.1 has no accounts, cloud OCR, analytics, telemetry, capture history, network-client entitlement, or automatic updater. Core OCR does not require a network connection.
 
-See the full [privacy policy](PRIVACY.md) and [v0.1 product contract](docs/v0.1-product-contract.md) for the approved guarantees and limitations.
+See the full [privacy policy](PRIVACY.md), [security and privacy review](docs/security-and-privacy-review.md), and [v0.1 product contract](docs/v0.1-product-contract.md) for the approved guarantees, implementation boundaries, and limitations.
 
 ## Development Requirements
 

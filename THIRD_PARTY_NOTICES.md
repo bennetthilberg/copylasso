@@ -8,6 +8,7 @@ CopyLasso includes the following open-source dependency.
 - Source: <https://github.com/sindresorhus/KeyboardShortcuts>
 - Copyright: Copyright (c) Sindre Sorhus
 - License: MIT
+- Justification: macOS exposes lower-level shortcut event APIs but no native SwiftUI control that combines global registration, conflict-aware recording, persistence, replacement, and clearing. This focused dependency materially reduces input-handling and lifecycle risk while avoiding any runtime network service.
 
 ```text
 MIT License

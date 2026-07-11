@@ -43,6 +43,6 @@ The v0.1 core workflow does not require Accessibility or Input Monitoring permis
 
 ## Network Activity
 
-Core functionality does not require network access, and v0.1 contains no automatic updater. Users obtain releases manually from GitHub. Any network activity involved in visiting GitHub or downloading a release occurs outside the CopyLasso core OCR workflow.
+Core functionality does not require network access. The application has no network-client or server entitlement, networking implementation, telemetry service, or automatic updater. Settings links ask macOS to open the default browser; CopyLasso does not fetch those pages itself. Users obtain releases manually from GitHub, outside the core OCR workflow.
 
-The detailed, release-blocking privacy requirements are part of the public [v0.1 product contract](docs/v0.1-product-contract.md).
+The detailed, release-blocking privacy requirements are part of the public [v0.1 product contract](docs/v0.1-product-contract.md). The implementation data flow, entitlements, dependency inventory, trust boundaries, and misuse cases are reconciled in the [security and privacy review](docs/security-and-privacy-review.md).

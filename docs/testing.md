@@ -246,3 +246,32 @@ Run this checklist with one stably signed Debug app and a normal unlocked graphi
 10. Repeat keyboard and VoiceOver checks after closing/reopening each singleton window and while another application or full-screen Space is frontmost. Explicit Settings/About actions may activate their windows; capture feedback and selection must preserve the other application's focus policy.
 
 The unattended July 11, 2026 implementation run could not launch this physical matrix because the workstation remained locked. The signed app and UI runner built and launched, but the two focused XCUITests failed only while discovering onboarding and Settings hierarchy: `loginwindow` was the frontmost process, the accessibility shield hid both windows, and neither test reached its semantic or keyboard assertion. Strict signature verification and the generated `LSUIElement = true` check passed. Automated semantic, layout, appearance-policy, and UI-bundle coverage is regression evidence only; VoiceOver speech/order, Accessibility Inspector, Full Keyboard Access traversal, maximum text size, and real system appearance toggles remain pending release evidence.
+
+## Privacy, Security, Entitlement, And Dependency Matrix
+
+The canonical pipeline runs `scripts/audit-privacy-security.sh` before every build. After the ordinary unit pass, it invokes the same complete built bundle through `scripts/test-offline.sh`, which applies a child-process sandbox containing `(deny network*)`. Both architecture jobs therefore verify the source audit and all unit behavior without network access.
+
+G22 local evidence includes:
+
+- 187/187 unit tests passing under the network-denied process sandbox, including real Vision fixtures and complete injected workflow coverage;
+- a tracked entitlement containing only App Sandbox and two locally signed products containing App Sandbox plus development-provisioning `get-task-allow`, with no network-client/server entitlement;
+- Hardened Runtime's CodeDirectory runtime flag on signed Debug and Release products;
+- one exact KeyboardShortcuts 3.0.1 package at revision `49c3fc04ea827f816df67843bfcc57286b47ff06`, no transitive package, matching MIT license/notice, no known GitHub advisory at audit time, and no embedded third-party Release framework; and
+- inspected Debug/Release containers containing only preference/window metadata, a small system crash-registration date, and zero-byte test coverage artifacts—not an image or recognized-text file.
+
+### Signed G22 Manual Matrix
+
+Use one stably signed Debug app, keep Screen Recording enabled, and avoid inspecting unrelated application containers:
+
+1. Quit CopyLasso. Record a recursive path, size, modification-time, and file-type inventory of only its Debug container plus CopyLasso-named temporary entries. Preserve a unique clipboard sentinel.
+2. Launch and complete ten real captures spanning success, no text, Escape, too-small selection, and one safely injected failure. Include long and sensitive-looking test strings, but no real secret.
+3. Quit CopyLasso and repeat the same inventories. Any new file capable of containing pixels, recognized text, clipboard text, or a feedback preview is release-blocking. Ordinary preference/window metadata must match the retained-state inventory in the security review.
+4. Search only changed/new CopyLasso files for the synthetic strings and inspect their types. Confirm no screenshot, image encoding, OCR history, preview cache, or content-bearing crash breadcrumb exists.
+5. Inspect Console entries for the CopyLasso process across idle, selection, cancellation, sleep/lock recovery, success, no text, failure, and termination. Only the four fixed lifecycle messages may originate from CopyLasso; no app name being captured, geometry, pixels, recognized text, clipboard text, preview, or raw error may appear.
+6. Run `scripts/test-offline.sh` against a freshly canonical-built bundle. Confirm 187/187 tests pass while the deny-network profile is active. Do not disable the workstation's network or interrupt other applications.
+7. Inspect the signed app entitlement and CodeDirectory flags. Confirm App Sandbox and Hardened Runtime, no network client/server, no device/file/group/temporary exception, and only development `get-task-allow`. Repeat on the final Developer ID archive in G26 and require `get-task-allow` to be absent there.
+8. Inspect the built Release executable and bundle. Confirm Universal 2, only system-linked frameworks, no embedded third-party dynamic binary, one exact package resolution, and the matching MIT acknowledgement.
+9. Inspect Privacy & Security after real use. Screen Recording must be the only core permission; Accessibility, Input Monitoring, Microphone, Full Disk Access, Files and Folders, and automation access must not be required.
+10. Paste the success result into TextEdit, then confirm cancellation/no-text/pre-output failures preserved the sentinel in separate runs. Remember that clipboard contents become a macOS/user trust boundary after a successful write.
+
+The unattended July 11, 2026 G22 run completed the source, dependency, signed-entitlement, container baseline, and full offline-unit evidence. It could not create a fresh before/after delta across real captures, inspect live Console output, or recheck the privacy pane because `loginwindow` remained frontmost and the workstation was locked. Those observations remain pending release evidence rather than inferred passes.

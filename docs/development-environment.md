@@ -131,7 +131,13 @@ The canonical local and GitHub Actions entrypoint is:
 ./scripts/ci.sh
 ```
 
-It selects clean DerivedData under `.build`, verifies Xcode 26.6, lints Swift sources, resolves packages, builds Debug, builds the unit and UI test bundles, runs unit tests, asserts the required build settings, builds Universal 2 Release, and verifies both binary slices. It disables code signing and never launches the unsigned UI-test runner.
+Run the source privacy, security, entitlement, dependency, and secret audit independently with:
+
+```sh
+./scripts/audit-privacy-security.sh
+```
+
+The canonical entrypoint runs that audit, selects clean DerivedData under `.build`, verifies Xcode 26.6, lints Swift sources, resolves packages, builds Debug, builds the unit and UI test bundles, runs unit tests, asserts the required build settings, builds Universal 2 Release, and verifies both binary slices. It disables code signing and never launches the unsigned UI-test runner.
 
 For interactive verification, open `CopyLasso.xcodeproj`, select the shared `CopyLasso` scheme and **My Mac**, then use:
 
@@ -145,7 +151,7 @@ Interactive Run and UI testing require runnable local signing. Keep any team or 
 
 The G05-G07 executable feasibility harnesses were retired after their evidence was recorded. Their former launch arguments are no longer supported. Both Debug and Release contain the production AppKit selection overlay, ScreenCaptureKit region capture, local Vision OCR, pure text assembly, write-only plain-text clipboard output, and nonactivating HUD feedback.
 
-The application target contains the dockless menu-bar shell, production-neutral models and service contracts, live permission and selection adapters, actor-isolated production region capture, production Vision OCR, deterministic text assembly, and the output adapters. Capture Text validates a selected display, captures only after overlays are absent, recognizes the in-memory image away from the main actor, produces a transient plain string, writes nonempty text to the general pasteboard, and presents bounded feedback without activation. See [Architecture Overview](architecture/overview.md) for dependency and actor boundaries, [Capture Workflow](architecture/capture-workflow.md) for the complete operation and lifetime contract, [Plain-Text Assembly](architecture/text-assembly.md) for ordering rules, [Clipboard and Feedback](architecture/clipboard-and-feedback.md) for output privacy/lifetime rules, [Testing](testing.md) for signed matrices, [ADR-001](architecture/ADR-001-vision-ocr.md) for OCR evidence, [ADR-002](architecture/ADR-002-screen-capture.md) for permission and capture evidence, and [ADR-003](architecture/ADR-003-selection-overlay.md) for selection and coordinate evidence.
+The application target contains the dockless menu-bar shell, production-neutral models and service contracts, live permission and selection adapters, actor-isolated production region capture, production Vision OCR, deterministic text assembly, and the output adapters. Capture Text validates a selected display, captures only after overlays are absent, recognizes the in-memory image away from the main actor, produces a transient plain string, writes nonempty text to the general pasteboard, and presents bounded feedback without activation. See [Architecture Overview](architecture/overview.md) for dependency and actor boundaries, [Capture Workflow](architecture/capture-workflow.md) for the complete operation and lifetime contract, [Plain-Text Assembly](architecture/text-assembly.md) for ordering rules, [Clipboard and Feedback](architecture/clipboard-and-feedback.md) for output privacy/lifetime rules, [Security and Privacy Review](security-and-privacy-review.md) for entitlements, trust boundaries, and dependency evidence, [Testing](testing.md) for signed matrices, [ADR-001](architecture/ADR-001-vision-ocr.md) for OCR evidence, [ADR-002](architecture/ADR-002-screen-capture.md) for permission and capture evidence, and [ADR-003](architecture/ADR-003-selection-overlay.md) for selection and coordinate evidence.
 
 ## GitHub Actions
 

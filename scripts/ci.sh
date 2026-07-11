@@ -40,6 +40,9 @@ xcrun swift-format lint --recursive --strict \
     CopyLassoTests \
     CopyLassoUITests
 
+echo "Auditing privacy, security, entitlements, and dependencies"
+./scripts/audit-privacy-security.sh
+
 readonly committed_development_team_pattern='^[[:space:]]*"?DEVELOPMENT_TEAM(\[[^]]+\])?"?[[:space:]]*=[[:space:]]*[A-Z0-9]{10};'
 
 if /usr/bin/grep -Eq "$committed_development_team_pattern" \
@@ -354,6 +357,10 @@ xcodebuild test-without-building \
     -resultBundlePath "$derived_data/UnitTests.xcresult" \
     "${probe_arguments[@]}"
 
+echo "Running the complete unit bundle with networking denied"
+COPYLASSO_OFFLINE_DERIVED_DATA_PATH="$derived_data" \
+    ./scripts/test-offline.sh
+
 echo "Inspecting required build settings"
 xcodebuild -showBuildSettings \
     -project "$project_path" \
@@ -385,10 +392,14 @@ assert_setting "$derived_data/debug-build-settings.txt" SWIFT_STRICT_CONCURRENCY
 assert_setting "$derived_data/debug-build-settings.txt" SWIFT_TREAT_WARNINGS_AS_ERRORS YES
 assert_setting "$derived_data/debug-build-settings.txt" GCC_TREAT_WARNINGS_AS_ERRORS YES
 assert_setting "$derived_data/debug-build-settings.txt" ENABLE_APP_SANDBOX YES
+assert_setting "$derived_data/debug-build-settings.txt" ENABLE_HARDENED_RUNTIME YES
+assert_setting "$derived_data/debug-build-settings.txt" CODE_SIGN_ENTITLEMENTS CopyLasso/CopyLasso.entitlements
 assert_setting "$derived_data/debug-build-settings.txt" PRODUCT_BUNDLE_IDENTIFIER io.github.bennetthilberg.copylasso.debug
 assert_setting "$derived_data/debug-build-settings.txt" INFOPLIST_KEY_LSUIElement YES
 assert_setting "$derived_data/release-build-settings.txt" PRODUCT_BUNDLE_IDENTIFIER io.github.bennetthilberg.copylasso
+assert_setting "$derived_data/release-build-settings.txt" ENABLE_APP_SANDBOX YES
 assert_setting "$derived_data/release-build-settings.txt" ENABLE_HARDENED_RUNTIME YES
+assert_setting "$derived_data/release-build-settings.txt" CODE_SIGN_ENTITLEMENTS CopyLasso/CopyLasso.entitlements
 assert_setting "$derived_data/release-build-settings.txt" INFOPLIST_KEY_LSUIElement YES
 assert_setting "$derived_data/release-build-settings.txt" ARCHS "arm64 x86_64"
 assert_setting "$derived_data/release-build-settings.txt" ONLY_ACTIVE_ARCH NO
@@ -418,6 +429,20 @@ fi
 readonly release_executable="$derived_data/Build/Products/Release/CopyLasso.app/Contents/MacOS/CopyLasso"
 if [[ ! -x "$release_executable" ]]; then
     echo "Release executable was not produced." >&2
+    exit 1
+fi
+
+linked_non_system="$({ /usr/bin/otool -L "$release_executable" | \
+    /usr/bin/awk '/^\t/{print $1}' | \
+    /usr/bin/grep -vE '^(/System/Library/|/usr/lib/)' || true; })"
+if [[ -n "$linked_non_system" ]]; then
+    echo "Release links an unexpected non-system dynamic library." >&2
+    exit 1
+fi
+
+if /usr/bin/nm -u "$release_executable" | \
+    /usr/bin/grep -qE 'NSURLSession|NWConnection|_nw_|CFHTTP|WebKit|_socket$'; then
+    echo "Release contains an unexpected network-client symbol." >&2
     exit 1
 fi
 
