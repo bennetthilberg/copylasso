@@ -1,5 +1,31 @@
 import SwiftUI
 
+#if DEBUG
+  struct DebugRuntimeOptions {
+    private let arguments: [String]
+
+    init(arguments: [String]) {
+      self.arguments = arguments
+    }
+
+    var isUITesting: Bool {
+      arguments.contains("--g10-g11-ui-testing")
+    }
+
+    var isLiveSelectionTesting: Bool {
+      arguments.contains("--g13-live-selection")
+    }
+
+    var isLiveCaptureTesting: Bool {
+      arguments.contains("--g14-live-capture")
+    }
+
+    var usesDebugCaptureService: Bool {
+      (isUITesting || isLiveSelectionTesting) && !isLiveCaptureTesting
+    }
+  }
+#endif
+
 @main
 @MainActor
 struct CopyLassoApp: App {
@@ -19,10 +45,8 @@ struct CopyLassoApp: App {
 
     #if DEBUG
       let arguments = ProcessInfo.processInfo.arguments
-      let isUITesting = arguments.contains("--g10-g11-ui-testing")
-      let isLiveSelectionTesting = arguments.contains("--g13-live-selection")
-      let isLiveCaptureTesting = arguments.contains("--g14-live-capture")
-      if isUITesting {
+      let runtimeOptions = DebugRuntimeOptions(arguments: arguments)
+      if runtimeOptions.isUITesting {
         launchAtLoginService = DebugLaunchAtLoginService(
           status: Self.debugLaunchAtLoginStatus(arguments: arguments)
         )
@@ -30,7 +54,7 @@ struct CopyLassoApp: App {
         launchAtLoginService = SystemLaunchAtLoginService()
       }
       if arguments.contains("--g10-g11-reset-settings") {
-        if !isUITesting {
+        if !runtimeOptions.isUITesting {
           try? launchAtLoginService.disable()
         }
         settingsStore.reset()
@@ -40,15 +64,15 @@ struct CopyLassoApp: App {
         settingsStore.completedOnboardingVersion = SettingsController.currentOnboardingVersion
       }
       permissionService =
-        isUITesting || isLiveSelectionTesting
+        runtimeOptions.isUITesting || runtimeOptions.isLiveSelectionTesting
         ? DebugScreenCapturePermissionService(arguments: arguments)
         : SystemScreenCapturePermissionService(historyStore: settingsStore)
       selectionService =
-        isUITesting && !isLiveSelectionTesting
+        runtimeOptions.isUITesting && !runtimeOptions.isLiveSelectionTesting
         ? DebugRegionSelectionService()
         : AppKitRegionSelectionService()
       screenCaptureService =
-        isUITesting && !isLiveCaptureTesting
+        runtimeOptions.usesDebugCaptureService
         ? DebugScreenCaptureService()
         : SystemScreenCaptureService()
     #else

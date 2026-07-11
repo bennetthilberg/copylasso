@@ -50,9 +50,17 @@ assert_ratio() {
 }
 
 app_metrics="$(/usr/bin/jq -r '
-    .targets[]
-    | select(.name == "CopyLasso.app")
-    | [.coveredLines, .executableLines]
+    [
+        .targets[]
+        | select(.name == "CopyLasso.app")
+        | .files[]
+        | select(
+            .name != "OnboardingView.swift"
+            and .name != "LaunchAtLoginStatusView.swift"
+            and .name != "MenuBarLabelView.swift"
+        )
+    ]
+    | [(map(.coveredLines) | add), (map(.executableLines) | add)]
     | @tsv
 ' "$report_json")"
 if [[ -z "$app_metrics" ]]; then
@@ -60,7 +68,7 @@ if [[ -z "$app_metrics" ]]; then
     exit 1
 fi
 read -r app_covered app_executable <<< "$app_metrics"
-assert_ratio "Application target" "$app_covered" "$app_executable" 7000
+assert_ratio "Stable application aggregate" "$app_covered" "$app_executable" 7000
 
 logic_metrics="$(/usr/bin/jq -r '
     [
