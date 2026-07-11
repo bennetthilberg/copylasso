@@ -26,10 +26,12 @@ The panel under the pointer becomes key and explicitly makes its overlay view fi
 
 Cursor setup follows panel setup rather than preceding it. After every panel is
 ordered and the input panel has made its overlay view first responder, each
-visible view discards and reinstalls its crosshair cursor rectangle. Only then
-does the controller push and set the crosshair cursor. This keeps AppKit's
-window-order and key-window cursor recalculation from restoring the arrow
-before mouse-down.
+visible view asks its owning window to invalidate and rebuild the crosshair
+cursor rectangle. Only then does the controller push and set the crosshair.
+Mouse-down repeats the window-level refresh for the clicked panel after making
+that panel input-ready. This gives AppKit an active window-owned cursor region
+for a stationary pointer before mouse-down and preserves it when another panel
+becomes key for the drag.
 
 The spike intentionally does not set `NSWindow.SharingType.none`. Apple now documents [`none`](https://developer.apple.com/documentation/appkit/nswindow/sharingtype-swift.enum/none) as a legacy value that should not be used to hide a window from screen capture.
 
@@ -105,6 +107,13 @@ rectangle to be refreshed before the crosshair is pushed. The same test proves
 a partial surface-construction failure does not mutate the cursor stack. A
 fresh signed manual run remains required to validate the WindowServer-visible
 pointer before and throughout a drag.
+
+A subsequent review found that directly discarding and adding a cursor rectangle
+on the view did not invalidate AppKit's active window cursor tracking when the
+stationary pointer was already over the newly ordered overlay. The regression
+now proves that refresh invalidates and rebuilds cursor rectangles through the
+owning window and that a clicked noninitial panel repeats that refresh before
+drag rendering. Signed WindowServer observation remains the final visual gate.
 
 The G13 production run on macOS 26.5.1 used the Dell primary display at 1920 × 1080 and 144 Hz: display ID `4`, matching AppKit and Core Graphics bounds `(0, 0, 1920, 1080)`, 1× backing scale, and a matching 100-point backing conversion. Menu and global-shortcut invocation each presented one accessible overlay without replacing frontmost TextEdit. Escape, click cancellation, a valid drag, full-screen TextEdit, and quitting during selection all removed every panel and left no CopyLasso window or process behind. The signed suite completed 20 mixed live sessions without changing the clipboard.
 
