@@ -1,3 +1,4 @@
+import AppKit
 import CoreGraphics
 import XCTest
 
@@ -91,6 +92,25 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(outcome, .cancelled(.escape))
   }
 
+  func testCursorRectRefreshInvalidatesAndRebuildsThroughOwningWindow() {
+    let window = RecordingCursorRectWindow(
+      contentRect: CGRect(x: 0, y: 0, width: 100, height: 100),
+      styleMask: .borderless,
+      backing: .buffered,
+      defer: false
+    )
+    let view = RegionSelectionView(frame: window.contentLayoutRect)
+    window.contentView = view
+    let invalidationCount = window.invalidatedViews.count
+    let resetCount = window.resetCursorRectsCallCount
+
+    view.refreshCrosshairCursorRects()
+
+    XCTAssertEqual(window.invalidatedViews.count, invalidationCount + 1)
+    XCTAssertTrue(window.invalidatedViews.last === view)
+    XCTAssertEqual(window.resetCursorRectsCallCount, resetCount + 1)
+  }
+
   func testMouseDownMakesClickedNonInitialSurfaceInputReadyBeforeDragHandling()
     async throws
   {
@@ -114,9 +134,11 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
       startupEvents.events,
       [
         .surfaceInputReady(2),
+        .surfaceCursorRectsRefreshed(2),
         .surfaceDragRendered(2),
       ]
     )
+    XCTAssertEqual(factory.surfaces.map(\.refreshCursorRectsCallCount), [1, 2])
 
     factory.surfaces[1].send(.escape)
     await context.scheduler.runNext()
@@ -640,6 +662,20 @@ private final class RecordingSelectionCursorManager: SelectionCursorManaging {
 
   func popCrosshair() {
     popCallCount += 1
+  }
+}
+
+@MainActor
+private final class RecordingCursorRectWindow: NSWindow {
+  private(set) var invalidatedViews: [NSView] = []
+  private(set) var resetCursorRectsCallCount = 0
+
+  override func invalidateCursorRects(for view: NSView) {
+    invalidatedViews.append(view)
+  }
+
+  override func resetCursorRects() {
+    resetCursorRectsCallCount += 1
   }
 }
 
