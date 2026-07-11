@@ -55,10 +55,10 @@ Run the canonical pipeline and inspect the result:
 ./scripts/audit-coverage.sh .build/ci-$(uname -m)/UnitTests.xcresult
 ```
 
-After a canonical build, prove local determinism with three fresh result bundles:
+Canonical CI already proves determinism with three fresh result bundles. Re-run that gate independently with:
 
 ```sh
 ./scripts/test-repeatability.sh
 ```
 
-CI runs the coverage gate on the macOS 26 arm64 and Intel jobs. A separate macOS 14 arm64 job downloads the exact Xcode 26.6 Release artifact, verifies deployment metadata, signs it ad hoc on that runner, and holds a live process for the smoke interval without invoking protected resources.
+CI runs the coverage and three-pass repeatability gates on the macOS 26 arm64 and Intel jobs. A separate macOS 14 arm64 job downloads the exact Xcode 26.6 Release artifact, verifies deployment metadata, signs it ad hoc on that runner, and holds a live process for the smoke interval without invoking protected resources.

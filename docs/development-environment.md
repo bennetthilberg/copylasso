@@ -137,14 +137,14 @@ Run the source privacy, security, entitlement, dependency, and secret audit inde
 ./scripts/audit-privacy-security.sh
 ```
 
-After a canonical run, inspect the reviewed behavioral-coverage gate or repeat the complete unit bundle three times with:
+The canonical run enforces the reviewed behavioral-coverage gate and repeats the already-built complete unit bundle three additional times. Re-run either check independently with:
 
 ```sh
 ./scripts/audit-coverage.sh .build/ci-$(uname -m)/UnitTests.xcresult
 ./scripts/test-repeatability.sh
 ```
 
-The canonical entrypoint runs the privacy/security and coverage audits, selects clean DerivedData under `.build`, verifies Xcode 26.6, lints Swift sources, resolves packages, builds Debug, builds the unit and UI test bundles, runs timeout-bounded nonparallel unit tests, repeats the unit bundle with networking denied, asserts required settings, builds Universal 2 Release, and verifies both binary slices. It disables code signing and never launches the unsigned UI-test runner. See [Automated Coverage Review](coverage-review.md) for the baseline, per-file floors, and every justified uncovered region.
+The canonical entrypoint verifies its own CI contract, runs the privacy/security and coverage audits, selects clean DerivedData under `.build`, verifies Xcode 26.6, lints Swift sources, resolves packages, builds Debug, builds the unit and UI test bundles, runs timeout-bounded nonparallel unit tests, repeats that already-built unit bundle with networking denied and then in three deterministic passes, asserts required settings, builds Universal 2 Release, and verifies both binary slices. It disables code signing and never launches the unsigned UI-test runner. See [Automated Coverage Review](coverage-review.md) for the baseline, per-file floors, and every justified uncovered region.
 
 For interactive verification, open `CopyLasso.xcodeproj`, select the shared `CopyLasso` scheme and **My Mac**, then use:
 
@@ -162,7 +162,7 @@ The application target contains the dockless menu-bar shell, production-neutral 
 
 ## GitHub Actions
 
-`.github/workflows/ci.yml` runs for pull requests targeting `main` and pushes to `main`. It explicitly selects Xcode 26.6 and executes `scripts/ci.sh` on GitHub-hosted macOS 26 Apple Silicon and Intel runner images. The arm64 job transfers its exact Universal 2 Release artifact to a separate GitHub-hosted macOS 14 arm64 job, which verifies macOS 14.0 deployment metadata, ad-hoc signs the app on that host, and proves a clean process launch without invoking protected resources. The workflow has read-only repository contents permission, persists no checkout credential, uses no secrets or cache, and bounds concurrent runs, artifact retention, and job duration.
+`.github/workflows/ci.yml` runs for pull requests targeting `main` and pushes to `main`. It explicitly selects Xcode 26.6 and executes `scripts/ci.sh`, including its three-pass repeatability gate, on GitHub-hosted macOS 26 Apple Silicon and Intel runner images. The arm64 job transfers its exact Universal 2 Release artifact to a separate GitHub-hosted macOS 14 arm64 job, which verifies macOS 14.0 deployment metadata, ad-hoc signs the app on that host, and proves a clean process launch without invoking protected resources. The workflow has read-only repository contents permission, persists no checkout credential, uses no secrets or cache, and bounds concurrent runs, artifact retention, and job duration.
 
 The matrix reports `build and test (arm64)`, `build and test (x86_64)`, and `minimum OS runtime (macOS 14 arm64)`. Branch protection must require the minimum-OS context after this workflow reaches `main`; adding it earlier would make predecessor PRs that cannot emit the new context unmergeable. Maintainers can apply the temporary `ci-failure-probe` label to a pull request to compile a controlled unit-test failure into both build jobs. Removing the label restores all checks at the same commit. Delete the temporary repository label after verifying both transitions.
 
