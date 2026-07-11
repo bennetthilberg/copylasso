@@ -41,6 +41,8 @@ struct OnboardingView: View {
             "Capture Text",
             shortcut: $draftShortcut
           )
+          .accessibilityLabel(AccessibilityAuditCopy.shortcutRecorderLabel)
+          .accessibilityHint(AccessibilityAuditCopy.shortcutRecorderHelp)
           .accessibilityIdentifier("copylasso.onboarding.shortcut")
           Text(
             "Suggested: Control–Shift–Command–2. Clear the recorder to use only the menu command."
@@ -51,6 +53,7 @@ struct OnboardingView: View {
 
         Section("Availability") {
           Toggle("Launch CopyLasso at Login", isOn: $launchAtLogin)
+            .accessibilityHint(AccessibilityAuditCopy.launchAtLoginHelp)
             .accessibilityIdentifier("copylasso.onboarding.launch-at-login")
           Text("This choice is applied only after you continue.")
             .font(.caption)
@@ -90,7 +93,7 @@ struct OnboardingView: View {
       }
     }
     .padding(28)
-    .frame(width: 560, height: 620)
+    .frame(minWidth: 560, idealWidth: 560, minHeight: 620, idealHeight: 620)
     .onAppear {
       prepareForPresentation()
     }

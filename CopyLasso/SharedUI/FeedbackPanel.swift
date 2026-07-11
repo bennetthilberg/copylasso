@@ -101,7 +101,7 @@ private struct FeedbackHUDView: View {
           Text(content.message)
             .font(.subheadline)
             .foregroundStyle(.secondary)
-            .lineLimit(2)
+            .fixedSize(horizontal: false, vertical: true)
             .accessibilityIdentifier("copylasso.feedback.message")
         }
 
@@ -109,7 +109,7 @@ private struct FeedbackHUDView: View {
       }
       .padding(.horizontal, 18)
       .padding(.vertical, 14)
-      .frame(width: 440, height: 104)
+      .frame(width: FeedbackPanelLayout.width, alignment: .leading)
       .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
       .overlay {
         RoundedRectangle(cornerRadius: 14)
@@ -125,10 +125,17 @@ private struct FeedbackHUDView: View {
 @MainActor
 private final class AppKitFeedbackPanelHost: FeedbackPanelHosting {
   private let panel: NonactivatingFeedbackPanel
+  private let hostingController: NSHostingController<FeedbackHUDView>
 
   init(model: FeedbackPresentationModel) {
+    hostingController = NSHostingController(rootView: FeedbackHUDView(model: model))
     panel = NonactivatingFeedbackPanel(
-      contentRect: NSRect(x: 0, y: 0, width: 440, height: 104),
+      contentRect: NSRect(
+        x: 0,
+        y: 0,
+        width: FeedbackPanelLayout.width,
+        height: FeedbackPanelLayout.minimumHeight
+      ),
       styleMask: [.borderless, .nonactivatingPanel],
       backing: .buffered,
       defer: false
@@ -143,11 +150,21 @@ private final class AppKitFeedbackPanelHost: FeedbackPanelHosting {
     panel.isOpaque = false
     panel.isReleasedWhenClosed = false
     panel.level = .statusBar
-    panel.animationBehavior = .utilityWindow
-    panel.contentViewController = NSHostingController(rootView: FeedbackHUDView(model: model))
+    panel.animationBehavior = .none
+    panel.contentViewController = hostingController
   }
 
   func show() {
+    hostingController.view.invalidateIntrinsicContentSize()
+    hostingController.view.layoutSubtreeIfNeeded()
+    panel.setContentSize(
+      NSSize(
+        width: FeedbackPanelLayout.width,
+        height: FeedbackPanelLayout.contentHeight(
+          fittingHeight: hostingController.view.fittingSize.height
+        )
+      )
+    )
     let pointer = NSEvent.mouseLocation
     let screen = NSScreen.screens.first(where: { $0.frame.contains(pointer) }) ?? NSScreen.main
     if let visibleFrame = screen?.visibleFrame {

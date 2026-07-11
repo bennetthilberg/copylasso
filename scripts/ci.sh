@@ -247,6 +247,39 @@ if [[ "$lifecycle_log_files" != "$lifecycle_logger" ]] || \
     exit 1
 fi
 
+readonly accessibility_appearance='CopyLasso/SharedUI/AccessibilityAppearance.swift'
+readonly accessibility_tests='CopyLassoTests/SharedUI/AccessibilityAppearanceTests.swift'
+readonly accessibility_documentation='docs/architecture/accessibility-and-appearance.md'
+if [[ ! -e "$accessibility_appearance" ]] || \
+    [[ ! -e "$accessibility_tests" ]] || \
+    [[ ! -e "$accessibility_documentation" ]] || \
+    ! /usr/bin/grep -q 'accessibilityDisplayShouldIncreaseContrast' "$accessibility_appearance" || \
+    ! /usr/bin/grep -q 'accessibilityDisplayShouldReduceMotion' "$accessibility_appearance" || \
+    ! /usr/bin/grep -q 'appearanceProvider.currentAppearance.selectionOverlayStyle' \
+      CopyLasso/Services/AppKitRegionSelectionService.swift || \
+    ! /usr/bin/grep -q 'style.outerBorderWidth' \
+      CopyLasso/Services/AppKitRegionSelectionService.swift || \
+    ! /usr/bin/grep -q 'FeedbackPanelLayout.contentHeight' \
+      CopyLasso/SharedUI/FeedbackPanel.swift || \
+    ! /usr/bin/grep -q 'animationBehavior = .none' CopyLasso/SharedUI/FeedbackPanel.swift || \
+    ! /usr/bin/grep -q 'animationBehavior = .none' \
+      CopyLasso/SharedUI/PermissionRecoveryPanel.swift || \
+    ! /usr/bin/grep -q 'AccessibilityAuditCopy.shortcutRecorderLabel' \
+      CopyLasso/SharedUI/OnboardingView.swift || \
+    ! /usr/bin/grep -q 'AccessibilityAuditCopy.shortcutRecorderLabel' \
+      CopyLasso/SharedUI/SettingsView.swift || \
+    ! /usr/bin/grep -q 'testProductionPanelExpandsVerticallyForWrappedPreviewInsteadOfClipping' \
+      CopyLassoTests/SharedUI/FeedbackPanelControllerTests.swift || \
+    ! /usr/bin/grep -q 'testOnboardingExposesCompoundControlNamesAndCompletesFromTheKeyboard' \
+      CopyLassoUITests/CopyLassoUITests.swift || \
+    /usr/bin/grep -R -q 'animationBehavior = .utilityWindow' CopyLasso/SharedUI || \
+    /usr/bin/grep -q 'lineLimit(2)' CopyLasso/SharedUI/FeedbackPanel.swift || \
+    /usr/bin/grep -q 'frame(width: 560, height: 620)' CopyLasso/SharedUI/OnboardingView.swift || \
+    /usr/bin/grep -q 'frame(width: 520, height: 560)' CopyLasso/SharedUI/SettingsView.swift; then
+    echo "G21 must retain accessible controls, adaptive text, contrast, and motion-free panels." >&2
+    exit 1
+fi
+
 if /usr/bin/grep -qE 'CGImage|RecognizedTextObservation|SelectionResult|CaptureFeedback' \
     "$capture_coordinator"; then
     echo "CaptureCoordinator must remain free of geometry, pixels, recognized text, and feedback payloads." >&2
@@ -409,7 +442,9 @@ if [[ ! -f "$debug_module" ]] || \
     ! /usr/bin/grep -a -q 'SettingsController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'GlobalShortcutController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'ApplicationLifecycleController' "$debug_module" || \
-    ! /usr/bin/grep -a -q 'SystemCaptureLifecycleLogger' "$debug_module"; then
+    ! /usr/bin/grep -a -q 'SystemCaptureLifecycleLogger' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'AccessibilityAppearance' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'SystemAccessibilityAppearanceProvider' "$debug_module"; then
     echo "Debug is missing the production-neutral workflow architecture." >&2
     exit 1
 fi
@@ -434,7 +469,9 @@ for release_architecture in arm64 x86_64; do
         ! /usr/bin/grep -a -q 'SettingsController' "$release_module" || \
         ! /usr/bin/grep -a -q 'GlobalShortcutController' "$release_module" || \
         ! /usr/bin/grep -a -q 'ApplicationLifecycleController' "$release_module" || \
-        ! /usr/bin/grep -a -q 'SystemCaptureLifecycleLogger' "$release_module"; then
+        ! /usr/bin/grep -a -q 'SystemCaptureLifecycleLogger' "$release_module" || \
+        ! /usr/bin/grep -a -q 'AccessibilityAppearance' "$release_module" || \
+        ! /usr/bin/grep -a -q 'SystemAccessibilityAppearanceProvider' "$release_module"; then
         echo "Release is missing the production-neutral workflow architecture for $release_architecture." >&2
         exit 1
     fi

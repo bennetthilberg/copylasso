@@ -159,6 +159,7 @@ final class FeedbackPanelControllerTests: XCTestCase {
     XCTAssertTrue(panel.collectionBehavior.contains(.canJoinAllSpaces))
     XCTAssertTrue(panel.collectionBehavior.contains(.fullScreenAuxiliary))
     XCTAssertTrue(panel.collectionBehavior.contains(.ignoresCycle))
+    XCTAssertEqual(panel.animationBehavior, .none)
     XCTAssertEqual(
       NSWorkspace.shared.frontmostApplication?.processIdentifier,
       frontmostProcess
@@ -168,6 +169,32 @@ final class FeedbackPanelControllerTests: XCTestCase {
     try await task.value
     XCTAssertFalse(panel.isVisible)
     XCTAssertNil(controller.model.feedback)
+  }
+
+  func testProductionPanelExpandsVerticallyForWrappedPreviewInsteadOfClipping() async throws {
+    let waiter = ManualFeedbackWaiter()
+    let controller = FeedbackPanelController(waitForDismissal: waiter.wait)
+    let preview = String(
+      repeating: "Readable enlarged preview content ",
+      count: 8
+    )
+    let task = Task { @MainActor in
+      try await controller.present(.success(preview: preview))
+    }
+    await waiter.waitUntilCallCount(1)
+
+    let panel = try XCTUnwrap(
+      NSApp.windows.first(where: { $0.identifier?.rawValue == "copylasso.feedback.panel" })
+        as? NSPanel
+    )
+    XCTAssertGreaterThan(panel.contentLayoutRect.height, FeedbackPanelLayout.minimumHeight)
+    XCTAssertGreaterThanOrEqual(
+      panel.contentLayoutRect.height,
+      try XCTUnwrap(panel.contentViewController?.view.fittingSize.height)
+    )
+
+    waiter.resumeCall(at: 0)
+    try await task.value
   }
 }
 

@@ -12,6 +12,7 @@ struct MenuBarLabelView: View {
       .accessibilityLabel(
         feedbackModel.content?.menuBarAccessibilityLabel ?? "CopyLasso"
       )
+      .accessibilityHint(AccessibilityAuditCopy.menuBarHelp)
       .task {
         await Task.yield()
         guard settingsController.takeInitialOnboardingPresentationRequest() else {

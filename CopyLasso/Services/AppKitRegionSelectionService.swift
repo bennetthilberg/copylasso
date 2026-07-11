@@ -368,8 +368,21 @@ final class SystemSelectionDisplayProvider: SelectionDisplayProviding {
 
 @MainActor
 final class AppKitSelectionOverlaySurfaceFactory: SelectionOverlaySurfaceMaking {
+  private let appearanceProvider: any AccessibilityAppearanceProviding
+
+  convenience init() {
+    self.init(appearanceProvider: SystemAccessibilityAppearanceProvider())
+  }
+
+  init(appearanceProvider: any AccessibilityAppearanceProviding) {
+    self.appearanceProvider = appearanceProvider
+  }
+
   func makeSurface(for display: DisplayGeometry) throws -> any SelectionOverlaySurface {
-    AppKitSelectionOverlaySurface(display: display)
+    AppKitSelectionOverlaySurface(
+      display: display,
+      style: appearanceProvider.currentAppearance.selectionOverlayStyle
+    )
   }
 }
 
@@ -390,7 +403,7 @@ private final class AppKitSelectionOverlaySurface: SelectionOverlaySurface {
   private let panel: RegionSelectionPanel
   private let contentView: RegionSelectionView
 
-  init(display: DisplayGeometry) {
+  init(display: DisplayGeometry, style: SelectionOverlayStyle) {
     displayID = display.displayID
     frame = display.appKitFrame
     panel = RegionSelectionPanel(
@@ -399,7 +412,10 @@ private final class AppKitSelectionOverlaySurface: SelectionOverlaySurface {
       backing: .buffered,
       defer: false
     )
-    contentView = RegionSelectionView(frame: CGRect(origin: .zero, size: display.appKitFrame.size))
+    contentView = RegionSelectionView(
+      frame: CGRect(origin: .zero, size: display.appKitFrame.size),
+      style: style
+    )
 
     panel.setFrame(display.appKitFrame, display: false)
     panel.level = .screenSaver
@@ -458,7 +474,10 @@ private final class RegionSelectionView: NSView {
 
   override var acceptsFirstResponder: Bool { true }
 
-  override init(frame frameRect: NSRect) {
+  private let style: SelectionOverlayStyle
+
+  init(frame frameRect: NSRect, style: SelectionOverlayStyle) {
+    self.style = style
     super.init(frame: frameRect)
     wantsLayer = true
     layer?.backgroundColor = NSColor.clear.cgColor
@@ -530,14 +549,14 @@ private final class RegionSelectionView: NSView {
     let outside = NSBezierPath(rect: bounds)
     outside.appendRect(localRect)
     outside.windingRule = .evenOdd
-    NSColor.black.withAlphaComponent(0.18).setFill()
+    NSColor.black.withAlphaComponent(style.dimOpacity).setFill()
     outside.fill()
 
     let border = NSBezierPath(rect: localRect)
-    border.lineWidth = 3
+    border.lineWidth = style.outerBorderWidth
     NSColor.black.setStroke()
     border.stroke()
-    border.lineWidth = 1
+    border.lineWidth = style.innerBorderWidth
     NSColor.white.setStroke()
     border.stroke()
     NSGraphicsContext.restoreGraphicsState()

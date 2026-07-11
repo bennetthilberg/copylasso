@@ -8,6 +8,7 @@ struct LaunchAtLoginStatusView: View {
   var body: some View {
     Label(statusMessage, systemImage: statusSymbol)
       .foregroundStyle(.secondary)
+      .accessibilityElement(children: .combine)
       .accessibilityIdentifier("copylasso.login.status")
 
     if let issue {
