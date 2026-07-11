@@ -4,7 +4,7 @@
 
 CopyLasso is a free, open-source macOS utility for copying visible text from anywhere on screen. Press a global shortcut, drag around text, and receive the recognized plain text on the clipboard.
 
-> **Project status:** CopyLasso is in early pre-release development. The dockless app now includes first-run setup, persistent native Settings, explicit Launch at Login control, a configurable global shortcut, accessibility-aware native presentation, and one lifecycle-hardened production workflow from Screen Recording permission through multi-display selection, display-snapshot-validated in-memory capture, local OCR, deterministic plain-text assembly, clipboard output, and nonactivating feedback. Physical sleep/lock/display, live VoiceOver and appearance checks, privacy, compatibility, and release qualification are still pending, and no public release is available.
+> **Project status:** CopyLasso is in early pre-release development. The dockless app now includes first-run setup, persistent native Settings, explicit Launch at Login control, a configurable global shortcut, accessibility-aware native presentation, and one lifecycle-hardened production workflow from Screen Recording permission through multi-display selection, display-snapshot-validated in-memory capture, local OCR, deterministic plain-text assembly, clipboard output, and nonactivating feedback. Automated privacy/security and behavioral-coverage audits are active; physical sleep/lock/display, live VoiceOver/appearance, signed privacy deltas, performance, compatibility, and release qualification are still pending. No public release is available.
 
 ## Planned v0.1 Experience
 
@@ -29,7 +29,7 @@ See the full [privacy policy](PRIVACY.md), [security and privacy review](docs/se
 - Swift 6 and the `swift-format` version bundled with that Xcode release
 - An Apple Development signing identity for signed local builds
 
-The current verified baseline is Xcode 26.6 with Swift 6.3.3. See [Architecture Overview](docs/architecture/overview.md), [Capture Workflow](docs/architecture/capture-workflow.md), and [Accessibility and Appearance](docs/architecture/accessibility-and-appearance.md) for component and presentation boundaries, [Development Environment](docs/development-environment.md) for setup and canonical commands, [Testing](docs/testing.md) for automated and signed matrices, and [Build Configuration](docs/architecture/build-configuration.md) for target and signing decisions.
+The current verified baseline is Xcode 26.6 with Swift 6.3.3. See [Architecture Overview](docs/architecture/overview.md), [Capture Workflow](docs/architecture/capture-workflow.md), and [Accessibility and Appearance](docs/architecture/accessibility-and-appearance.md) for component and presentation boundaries, [Development Environment](docs/development-environment.md) for setup and canonical commands, [Testing](docs/testing.md) for automated and signed matrices, [Automated Coverage Review](docs/coverage-review.md) for reviewed gaps and regression floors, and [Build Configuration](docs/architecture/build-configuration.md) for target and signing decisions.
 
 Run the same unsigned build and unit-test pipeline used by CI:
 

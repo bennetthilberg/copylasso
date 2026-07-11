@@ -343,12 +343,14 @@ echo "Building unit-test and UI-test bundles"
 xcodebuild build-for-testing \
     "${common_arguments[@]}" \
     -configuration Debug \
+    -enableCodeCoverage YES \
     "${probe_arguments[@]}"
 
 echo "Running unit tests"
 xcodebuild test-without-building \
     "${common_arguments[@]}" \
     -configuration Debug \
+    -enableCodeCoverage YES \
     -parallel-testing-enabled NO \
     -test-timeouts-enabled YES \
     -default-test-execution-time-allowance 60 \
@@ -356,6 +358,9 @@ xcodebuild test-without-building \
     -only-testing:CopyLassoTests \
     -resultBundlePath "$derived_data/UnitTests.xcresult" \
     "${probe_arguments[@]}"
+
+echo "Auditing behavioral coverage"
+./scripts/audit-coverage.sh "$derived_data/UnitTests.xcresult"
 
 echo "Running the complete unit bundle with networking denied"
 COPYLASSO_OFFLINE_DERIVED_DATA_PATH="$derived_data" \

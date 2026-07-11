@@ -164,6 +164,59 @@ final class TextAssemblerTests: XCTestCase {
     XCTAssertEqual(TextAssembler().assemble(observations), "upper\nlower")
   }
 
+  func testPositionedTieBreakersRemainDeterministic() {
+    let observations = [
+      observation("same-left-wide", x: 0.1, y: 0.80, width: 0.30, height: 0.10),
+      observation("same-left-narrow", x: 0.1, y: 0.80, width: 0.20, height: 0.10),
+      observation("same-top-tall", x: 0.1, y: 0.70, width: 0.20, height: 0.20),
+      observation("zeta", x: 0.1, y: 0.80, width: 0.20, height: 0.10),
+      observation("alpha", x: 0.1, y: 0.80, width: 0.20, height: 0.10),
+    ]
+    let assembler = TextAssembler()
+    let expected = "alpha same-left-narrow same-left-wide zeta same-top-tall"
+
+    XCTAssertEqual(assembler.assemble(observations), expected)
+    XCTAssertEqual(assembler.assemble(Array(observations.reversed())), expected)
+  }
+
+  func testUnpositionedTieBreakersPreserveEqualTextDeterministically() {
+    let observations = [
+      RecognizedTextObservation(
+        text: "same",
+        confidence: 0.1,
+        boundingBox: .zero
+      ),
+      RecognizedTextObservation(
+        text: "same",
+        confidence: 0.9,
+        boundingBox: CGRect(x: .nan, y: 0, width: 0.1, height: 0.1)
+      ),
+      RecognizedTextObservation(
+        text: "same",
+        confidence: 0.9,
+        boundingBox: CGRect(x: .infinity, y: 0, width: 0.1, height: 0.1)
+      ),
+    ]
+    let assembler = TextAssembler()
+
+    XCTAssertEqual(assembler.assemble(observations), "same\nsame\nsame")
+    XCTAssertEqual(
+      assembler.assemble(Array(observations.reversed())),
+      "same\nsame\nsame"
+    )
+  }
+
+  func testDuplicateRankingHandlesNaNConfidenceAndNegativeZeroGeometry() {
+    let positiveZero = CGRect(x: 0.0, y: 0.0, width: 0.2, height: 0.1)
+    let negativeZero = CGRect(x: -0.0, y: -0.0, width: 0.2, height: 0.1)
+    let observations = [
+      RecognizedTextObservation(text: "ranked", confidence: .nan, boundingBox: positiveZero),
+      RecognizedTextObservation(text: "ranked", confidence: 0.8, boundingBox: negativeZero),
+    ]
+
+    XCTAssertEqual(TextAssembler().assemble(observations), "ranked")
+  }
+
   func testProjectFixtureLayoutsProduceExpectedPlainTextWithoutVision() {
     let cleanFixture = [
       observation("Process all text offline", x: 0.1, y: 0.56),

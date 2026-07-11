@@ -275,3 +275,28 @@ Use one stably signed Debug app, keep Screen Recording enabled, and avoid inspec
 10. Paste the success result into TextEdit, then confirm cancellation/no-text/pre-output failures preserved the sentinel in separate runs. Remember that clipboard contents become a macOS/user trust boundary after a successful write.
 
 The unattended July 11, 2026 G22 run completed the source, dependency, signed-entitlement, container baseline, and full offline-unit evidence. It could not create a fresh before/after delta across real captures, inspect live Console output, or recheck the privacy pane because `loginwindow` remained frontmost and the workstation was locked. Those observations remain pending release evidence rather than inferred passes.
+
+## Automated Coverage, Repeatability, And OS Matrix
+
+G23 keeps behavior—not a percentage—as the test contract, then uses coverage to detect unreviewed gaps and regressions. The canonical Xcode 26.6 result contains 196 unit tests organized across geometry, coordinator transitions, permission and settings decisions, text assembly, clipboard and feedback decisions, lifecycle recovery, service-boundary orchestration, Vision fixtures, multi-display snapshots, and accessibility/appearance policy.
+
+`scripts/audit-coverage.sh` reads the canonical `UnitTests.xcresult`. The reviewed baseline is 2,763/3,858 application lines (71.61%) and 967/1,010 platform-neutral Models/CaptureWorkflow/Settings lines (95.74%). Critical per-file floors prevent the aggregate from hiding a regression. See [Automated Coverage Review](coverage-review.md) for each floor, the G22 comparison, the reachable branches added in G23, and the explicit signed/manual owner for every uncovered category.
+
+Run a local coverage and determinism check after the canonical build:
+
+```sh
+./scripts/audit-coverage.sh .build/ci-$(uname -m)/UnitTests.xcresult
+./scripts/test-repeatability.sh
+```
+
+The repeatability runner executes the same built unit bundle three consecutive times with parallel testing disabled, 60-second default/120-second maximum per-test allowances, and a separate result bundle per run. It has no retry path; any failure stops the command.
+
+GitHub's current matrix has three responsibilities:
+
+1. `build and test (arm64)` runs the complete gate with Xcode 26.6 on macOS 26 arm64 and packages the exact Universal 2 Release artifact.
+2. `build and test (x86_64)` runs the same compile/test/coverage/offline/Release gate with Xcode 26.6 on a macOS 26 Intel runner.
+3. `minimum OS runtime (macOS 14 arm64)` downloads the arm64 job's artifact onto an actual macOS 14 runner, verifies `LSMinimumSystemVersion` and Mach-O `minos` 14.0, ad-hoc signs the app with its reviewed sandbox entitlement, launches it directly, holds the process for two seconds, and terminates it. It does not request Screen Recording or claim real capture coverage.
+
+The minimum runner is a runtime check because KeyboardShortcuts 3.0.1 requires Swift tools 6.2 and the macOS 14 hosted image offers Xcode 16.2 at most. Re-resolving or compiling that package there is unsupported and would not test the shipped artifact. GitHub has announced macOS 14 image removal on November 2, 2026; migrate this smoke to a maintained macOS 14 VM/runner before then.
+
+Signed XCUITests remain focused on first-run, Settings, menu, recovery, and accessibility behavior. They contain no unconditional retry. Hosted CI builds the bundle but cannot truthfully execute the unsigned runner or automate TCC dialogs. A locked local session is recorded as infrastructure-blocked rather than a pass; the signed matrices earlier in this document remain required.

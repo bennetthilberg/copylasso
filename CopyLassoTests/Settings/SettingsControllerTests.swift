@@ -97,6 +97,56 @@ final class SettingsControllerTests: XCTestCase {
     XCTAssertEqual(context.store.completedOnboardingVersion, 1)
   }
 
+  func testAlreadyEnabledLoginItemCompletesWithoutRedundantRegistration() {
+    let context = makeContext()
+    context.login.status = .enabled
+
+    XCTAssertEqual(
+      context.controller.completeOnboarding(
+        shortcut: suggestedShortcut,
+        launchAtLogin: true
+      ),
+      .completed
+    )
+    XCTAssertEqual(context.login.enableCallCount, 0)
+    XCTAssertTrue(context.controller.isLaunchAtLoginEnabled)
+  }
+
+  func testPreexistingApprovalAndUnavailableStatesBlockEnableWithoutRegistration() {
+    for (status, issue) in [
+      (LaunchAtLoginStatus.requiresApproval, LaunchAtLoginIssue.requiresApproval),
+      (.unavailable, .unavailable),
+    ] {
+      let context = makeContext()
+      context.login.status = status
+
+      XCTAssertFalse(context.controller.setLaunchAtLoginEnabled(true))
+      XCTAssertEqual(context.controller.launchAtLoginIssue, issue)
+      XCTAssertEqual(context.login.enableCallCount, 0)
+    }
+  }
+
+  func testRegistrationMustReadBackEnabledBeforeOnboardingCanComplete() {
+    for (statusAfterEnable, expectedIssue) in [
+      (LaunchAtLoginStatus.disabled, LaunchAtLoginIssue.enableFailed),
+      (.unavailable, .unavailable),
+    ] {
+      let context = makeContext()
+      context.login.statusAfterEnable = statusAfterEnable
+
+      XCTAssertEqual(
+        context.controller.completeOnboarding(
+          shortcut: suggestedShortcut,
+          launchAtLogin: true
+        ),
+        .requiresRecovery
+      )
+      XCTAssertEqual(context.controller.launchAtLoginIssue, expectedIssue)
+      XCTAssertEqual(context.store.completedOnboardingVersion, 0)
+      XCTAssertNil(context.shortcutStore.captureShortcut)
+    }
+  }
+
   func testApprovalRequirementKeepsOnboardingOpenAndOpensSystemSettings() {
     let context = makeContext()
     context.login.statusAfterEnable = .requiresApproval
@@ -204,6 +254,43 @@ final class SettingsControllerTests: XCTestCase {
     XCTAssertTrue(context.controller.setLaunchAtLoginEnabled(false))
     XCTAssertEqual(context.login.disableCallCount, 1)
     XCTAssertEqual(context.controller.launchAtLoginStatus, .disabled)
+  }
+
+  func testAlreadyDisabledLoginItemStillVerifiesThePostcondition() {
+    let context = makeContext()
+    context.login.status = .disabled
+    context.login.statusAfterDisable = .enabled
+
+    XCTAssertFalse(context.controller.setLaunchAtLoginEnabled(false))
+    XCTAssertEqual(context.login.disableCallCount, 1)
+    XCTAssertEqual(context.controller.launchAtLoginStatus, .enabled)
+    XCTAssertEqual(context.controller.launchAtLoginIssue, .disableFailed)
+  }
+
+  func testEveryDisableFailureLeavesARecoverableIssue() {
+    let alreadyDisabled = makeContext()
+    alreadyDisabled.login.disableError = .injected
+    XCTAssertFalse(alreadyDisabled.controller.setLaunchAtLoginEnabled(false))
+    XCTAssertEqual(alreadyDisabled.controller.launchAtLoginIssue, .disableFailed)
+
+    let changedExternally = makeContext()
+    changedExternally.login.status = .enabled
+    changedExternally.login.statusAfterDisable = .requiresApproval
+    XCTAssertFalse(changedExternally.controller.setLaunchAtLoginEnabled(false))
+    XCTAssertEqual(changedExternally.controller.launchAtLoginIssue, .disableFailed)
+  }
+
+  func testUnavailableLoginItemCanBeExplicitlySkippedDuringOnboarding() {
+    let context = makeContext()
+    context.login.status = .unavailable
+
+    XCTAssertEqual(
+      context.controller.continueWithoutLaunchAtLogin(shortcut: nil),
+      .completed
+    )
+    XCTAssertEqual(context.login.disableCallCount, 0)
+    XCTAssertEqual(context.controller.launchAtLoginIssue, .unavailable)
+    XCTAssertEqual(context.store.completedOnboardingVersion, 1)
   }
 
   func testExternalStatusRefreshReconcilesTheDisplayedValue() {
