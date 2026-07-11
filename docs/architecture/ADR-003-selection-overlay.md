@@ -24,6 +24,13 @@ The AppKit approach is viable. CopyLasso will use one transparent, borderless `N
 
 The panel under the pointer becomes key and explicitly makes its overlay view first responder without activating CopyLasso. This gives Escape a deterministic path before or during a drag. A drag remains owned by its initiating display; moving the pointer onto another display clamps the endpoint to the initiating display edge. Unrelated display panels remain fully transparent.
 
+Cursor setup follows panel setup rather than preceding it. After every panel is
+ordered and the input panel has made its overlay view first responder, each
+visible view discards and reinstalls its crosshair cursor rectangle. Only then
+does the controller push and set the crosshair cursor. This keeps AppKit's
+window-order and key-window cursor recalculation from restoring the arrow
+before mouse-down.
+
 The spike intentionally does not set `NSWindow.SharingType.none`. Apple now documents [`none`](https://developer.apple.com/documentation/appkit/nswindow/sharingtype-swift.enum/none) as a legacy value that should not be used to hide a window from screen capture.
 
 ## Coordinate Conventions
@@ -89,6 +96,15 @@ With TextEdit in a separate full-screen Space, the five-second trigger left the 
 G13 replaces the temporary unavailable selection service with `AppKitRegionSelectionService`. Normal Debug and Release runs use it. A Debug-only deterministic selection double keeps unrelated signed UI tests from covering the desktop, while `--g13-live-selection` combines a controlled granted permission observation with the real accessible overlay. Both the argument and double are absent from Release.
 
 Automated coverage begins from an expected compile failure before the production service types exist and covers fresh enumeration, surface construction and partial failure, initiating-display-only rendering, clamping and conversion, every cancellation source, deferred cleanup, hidden-window verification, overlap rejection, controller reuse, no launch-time overlay, no-pixel command orchestration, and at least 20 sequential sessions. The signed live matrix and its exact workstation display evidence are recorded in `docs/testing.md` and the local roadmap when executed.
+
+A July 11 signed follow-up found that the production pointer could remain an
+arrow because the cursor was pushed before the AppKit panels were ordered. A
+focused regression test first reproduced that startup order and now requires
+all surfaces to be visible, the input surface to be ready, and every cursor
+rectangle to be refreshed before the crosshair is pushed. The same test proves
+a partial surface-construction failure does not mutate the cursor stack. A
+fresh signed manual run remains required to validate the WindowServer-visible
+pointer before and throughout a drag.
 
 The G13 production run on macOS 26.5.1 used the Dell primary display at 1920 × 1080 and 144 Hz: display ID `4`, matching AppKit and Core Graphics bounds `(0, 0, 1920, 1080)`, 1× backing scale, and a matching 100-point backing conversion. Menu and global-shortcut invocation each presented one accessible overlay without replacing frontmost TextEdit. Escape, click cancellation, a valid drag, full-screen TextEdit, and quitting during selection all removed every panel and left no CopyLasso window or process behind. The signed suite completed 20 mixed live sessions without changing the clipboard.
 

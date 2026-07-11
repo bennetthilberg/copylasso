@@ -75,8 +75,7 @@ final class CopyLassoUITests: XCTestCase {
     app.typeKey(XCUIKeyboardKey.escape, modifierFlags: [])
     XCTAssertTrue(overlay.waitForNonExistence(timeout: 5))
 
-    openMenu(in: app)
-    XCTAssertTrue(menuItem("Capture Text", in: app).isEnabled)
+    _ = openMenuAndWaitForCapture(in: app)
   }
 
   @MainActor
@@ -86,15 +85,13 @@ final class CopyLassoUITests: XCTestCase {
     defer { app.terminate() }
     let pasteboardChangeCount = NSPasteboard.general.changeCount
 
-    openMenu(in: app)
-    menuItem("Capture Text", in: app).click()
+    openMenuAndWaitForCapture(in: app).click()
     var overlay = selectionOverlay(in: app)
     XCTAssertTrue(overlay.waitForExistence(timeout: 5))
     overlay.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
     XCTAssertTrue(overlay.waitForNonExistence(timeout: 5))
 
-    openMenu(in: app)
-    menuItem("Capture Text", in: app).click()
+    openMenuAndWaitForCapture(in: app).click()
     overlay = selectionOverlay(in: app)
     XCTAssertTrue(overlay.waitForExistence(timeout: 5))
     let start = overlay.coordinate(withNormalizedOffset: CGVector(dx: 0.35, dy: 0.35))
@@ -103,8 +100,7 @@ final class CopyLassoUITests: XCTestCase {
 
     XCTAssertTrue(overlay.waitForNonExistence(timeout: 5))
     XCTAssertEqual(NSPasteboard.general.changeCount, pasteboardChangeCount)
-    openMenu(in: app)
-    XCTAssertTrue(menuItem("Capture Text", in: app).isEnabled)
+    _ = openMenuAndWaitForCapture(in: app)
   }
 
   @MainActor
@@ -115,9 +111,10 @@ final class CopyLassoUITests: XCTestCase {
     let pasteboardChangeCount = NSPasteboard.general.changeCount
 
     for index in 0..<20 {
-      openMenu(in: app)
-      let capture = menuItem("Capture Text", in: app)
-      XCTAssertTrue(capture.isEnabled, "Capture should be idle before session \(index + 1)")
+      let capture = openMenuAndWaitForCapture(
+        in: app,
+        message: "Capture should be idle before session \(index + 1)"
+      )
       capture.click()
 
       let overlay = selectionOverlay(in: app)
@@ -141,8 +138,7 @@ final class CopyLassoUITests: XCTestCase {
     }
 
     XCTAssertEqual(NSPasteboard.general.changeCount, pasteboardChangeCount)
-    openMenu(in: app)
-    XCTAssertTrue(menuItem("Capture Text", in: app).isEnabled)
+    _ = openMenuAndWaitForCapture(in: app)
   }
 
   @MainActor
@@ -158,8 +154,7 @@ final class CopyLassoUITests: XCTestCase {
     let pasteboardChangeCount = NSPasteboard.general.changeCount
 
     for indices in [(0, 1), (1, 0)] {
-      openMenu(in: app)
-      menuItem("Capture Text", in: app).click()
+      openMenuAndWaitForCapture(in: app).click()
 
       let overlays = app.dialogs.matching(identifier: "copylasso.selection.overlay")
       XCTAssertTrue(overlays.firstMatch.waitForExistence(timeout: 5))
@@ -177,8 +172,7 @@ final class CopyLassoUITests: XCTestCase {
     }
 
     XCTAssertEqual(NSPasteboard.general.changeCount, pasteboardChangeCount)
-    openMenu(in: app)
-    XCTAssertTrue(menuItem("Capture Text", in: app).isEnabled)
+    _ = openMenuAndWaitForCapture(in: app)
   }
 
   @MainActor
@@ -536,6 +530,21 @@ final class CopyLassoUITests: XCTestCase {
     XCTAssertTrue(item.waitForExistence(timeout: 5))
     item.click()
     XCTAssertTrue(menuItem("Capture Text", in: app).waitForExistence(timeout: 5))
+  }
+
+  @MainActor
+  private func openMenuAndWaitForCapture(
+    in app: XCUIApplication,
+    message: String = "Capture should return to idle"
+  ) -> XCUIElement {
+    openMenu(in: app)
+    let capture = menuItem("Capture Text", in: app)
+    let enabled = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "enabled == true"),
+      object: capture
+    )
+    XCTAssertEqual(XCTWaiter.wait(for: [enabled], timeout: 5), .completed, message)
+    return capture
   }
 
   @MainActor
