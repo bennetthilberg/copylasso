@@ -288,19 +288,19 @@ G23 keeps behavior—not a percentage—as the test contract, then uses coverage
 
 `scripts/audit-coverage.sh` reads the canonical `UnitTests.xcresult`. The reviewed stable baseline is 2,519/3,501 application lines (71.95%) after excluding three retained-state-dependent SwiftUI onboarding builders, and 968/1,011 platform-neutral Models/CaptureWorkflow/Settings lines (95.74%). The 70% aggregate floor is unchanged; every other application file remains included. Critical per-file floors prevent the aggregate from hiding a regression. See [Automated Coverage Review](coverage-review.md) for each floor, the G22 comparison, the reachable branches added in G23, and the explicit signed/manual owner for every uncovered category.
 
-Run a local coverage and determinism check after the canonical build:
+The canonical pipeline runs both gates. Re-run either check independently with:
 
 ```sh
 ./scripts/audit-coverage.sh .build/ci-$(uname -m)/UnitTests.xcresult
 ./scripts/test-repeatability.sh
 ```
 
-The repeatability runner executes the same built unit bundle three consecutive times with parallel testing disabled, 60-second default/120-second maximum per-test allowances, and a separate result bundle per run. It has no retry path; any failure stops the command.
+After the ordinary and offline unit passes, canonical CI invokes the repeatability runner against the same DerivedData on both architectures. It executes the already-built unit bundle three consecutive times with parallel testing disabled, 60-second default/120-second maximum per-test allowances, and a separate result bundle per run. It never builds again or launches the UI-test bundle, has no retry path, and stops on any failure.
 
 GitHub's current matrix has three responsibilities:
 
-1. `build and test (arm64)` runs the complete gate with Xcode 26.6 on macOS 26 arm64 and packages the exact Universal 2 Release artifact.
-2. `build and test (x86_64)` runs the same compile/test/coverage/offline/Release gate with Xcode 26.6 on a macOS 26 Intel runner.
+1. `build and test (arm64)` runs the complete compile/test/coverage/offline/repeatability/Release gate with Xcode 26.6 on macOS 26 arm64 and packages the exact Universal 2 Release artifact.
+2. `build and test (x86_64)` runs the same compile/test/coverage/offline/repeatability/Release gate with Xcode 26.6 on a macOS 26 Intel runner.
 3. `minimum OS runtime (macOS 14 arm64)` downloads the arm64 job's artifact onto an actual macOS 14 runner, verifies `LSMinimumSystemVersion` and Mach-O `minos` 14.0, ad-hoc signs the app with its reviewed sandbox entitlement, launches it directly, holds the process for two seconds, and terminates it. It does not request Screen Recording or claim real capture coverage.
 
 The minimum runner is a runtime check because KeyboardShortcuts 3.0.1 requires Swift tools 6.2 and the macOS 14 hosted image offers Xcode 16.2 at most. Re-resolving or compiling that package there is unsupported and would not test the shipped artifact. GitHub has announced macOS 14 image removal on November 2, 2026; migrate this smoke to a maintained macOS 14 VM/runner before then.

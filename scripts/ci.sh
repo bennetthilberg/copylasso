@@ -34,6 +34,9 @@ cd "$repository_root"
 rm -rf "$derived_data"
 mkdir -p "$derived_data"
 
+echo "Verifying canonical CI contract"
+./scripts/test-ci-contract.sh
+
 echo "Linting Swift sources"
 xcrun swift-format lint --recursive --strict \
     CopyLasso \
@@ -365,6 +368,12 @@ echo "Auditing behavioral coverage"
 echo "Running the complete unit bundle with networking denied"
 COPYLASSO_OFFLINE_DERIVED_DATA_PATH="$derived_data" \
     ./scripts/test-offline.sh
+
+echo "Running deterministic unit repeatability gate"
+COPYLASSO_CI_ARCH="$requested_architecture" \
+    COPYLASSO_REPEAT_DERIVED_DATA_PATH="$derived_data" \
+    COPYLASSO_REPEAT_COUNT=3 \
+    ./scripts/test-repeatability.sh
 
 echo "Inspecting required build settings"
 xcodebuild -showBuildSettings \
