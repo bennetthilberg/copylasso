@@ -41,7 +41,7 @@ Verify in this order:
 7. Repeat recovery while an ordinary full-screen application is frontmost. Confirm presenting or updating CopyLasso's nonactivating panel does not change the frontmost application. Only **Open System Settings** intentionally changes focus.
 8. Confirm macOS did not show the ScreenCaptureKit private-window-picker-bypass warning and that no Accessibility, Input Monitoring, Microphone, or clipboard access was introduced.
 
-Core Graphics preflight may remain positive inside a process after permission is disabled. G12 records revocation once preflight reflects it, normally after relaunch. The G14 capture path treats an actual ScreenCaptureKit denial as authoritative when preflight is stale. Ordinary capture requests retain that denial; an explicit **Try Again** permits one new attempt so restored access can recover without weakening the default guard.
+Core Graphics preflight may remain positive inside a process after permission is disabled. G12 records revocation once preflight reflects it, normally after relaunch. The G14 capture path treats an actual ScreenCaptureKit denial as authoritative when preflight is stale. Ordinary capture requests retain that denial; an explicit **Try Again** permits one fresh preflight observation. The denial remains authoritative after cancellation, a too-small selection, or capture failure and clears only after a successful ScreenCaptureKit capture.
 
 ### G12 Verified Result
 

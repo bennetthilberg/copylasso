@@ -15,6 +15,7 @@ final class StubScreenCapturePermissionService: ScreenCapturePermissionService {
   private(set) var currentObservationCallCount = 0
   private(set) var requestAccessCallCount = 0
   private(set) var recordCaptureDenialCallCount = 0
+  private(set) var recordCaptureSuccessCallCount = 0
   private(set) var beginUserInitiatedRetryCallCount = 0
   private(set) var openSystemSettingsCallCount = 0
 
@@ -39,6 +40,10 @@ final class StubScreenCapturePermissionService: ScreenCapturePermissionService {
   func recordCaptureDenial() -> ScreenCaptureAuthorizationObservation {
     recordCaptureDenialCallCount += 1
     return .notGrantedAfterPreviouslyGranted
+  }
+
+  func recordCaptureSuccess() {
+    recordCaptureSuccessCallCount += 1
   }
 
   func beginUserInitiatedRetry() {
