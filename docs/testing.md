@@ -41,7 +41,7 @@ Verify in this order:
 7. Repeat recovery while an ordinary full-screen application is frontmost. Confirm presenting or updating CopyLasso's nonactivating panel does not change the frontmost application. Only **Open System Settings** intentionally changes focus.
 8. Confirm macOS did not show the ScreenCaptureKit private-window-picker-bypass warning and that no Accessibility, Input Monitoring, Microphone, or clipboard access was introduced.
 
-Core Graphics preflight may remain positive inside a process after permission is disabled. G12 records revocation once preflight reflects it, normally after relaunch. The G14 capture path treats an actual ScreenCaptureKit denial as authoritative when preflight is stale.
+Core Graphics preflight may remain positive inside a process after permission is disabled. G12 records revocation once preflight reflects it, normally after relaunch. The G14 capture path treats an actual ScreenCaptureKit denial as authoritative when preflight is stale. Ordinary capture requests retain that denial; an explicit **Try Again** permits one new attempt so restored access can recover without weakening the default guard.
 
 ### G12 Verified Result
 
@@ -190,7 +190,7 @@ The unattended July 11, 2026 run completed the deterministic matrix but could no
 
 ## Multi-Display And Retina Hardening Matrix
 
-G19 adds a synthetic topology with primary, left, right, above, below, diagonal, portrait, and recorded Sidecar-style shapes across 1×, 1.5×, and 2× scales. For every fixture, tests drive global selection through display-local Core Graphics conversion and capture-request planning, preserve the initiating display identity, clamp every cross-display endpoint, validate outward-rounded pixels, and reject changed identity, full point size, scale, or derived pixel dimensions. AppKit tests also prove every mixed-scale display can initiate through a panel covering its complete `NSScreen.frame`.
+G19 adds a synthetic topology with primary, left, right, above, below, diagonal, portrait, and recorded Sidecar-style shapes across 1×, 1.5×, and 2× scales. For every fixture, tests drive global selection through display-local Core Graphics conversion and capture-request planning, preserve the initiating display identity, clamp every cross-display endpoint, validate outward-rounded pixels, and reject changed identity, full point size, scale, or derived pixel dimensions. A fractional-scale edge regression also proves the aligned source rectangle stays within the right and bottom display bounds while retaining the outward-rounded output pixels. AppKit tests prove every mixed-scale display can initiate through a panel covering its complete `NSScreen.frame`.
 
 The synthetic matrix is deterministic regression protection; it is not evidence that unavailable physical hardware or a particular menu-bar arrangement worked.
 

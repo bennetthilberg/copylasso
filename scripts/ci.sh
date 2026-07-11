@@ -394,10 +394,13 @@ assert_setting "$derived_data/debug-build-settings.txt" GCC_TREAT_WARNINGS_AS_ER
 assert_setting "$derived_data/debug-build-settings.txt" ENABLE_APP_SANDBOX YES
 assert_setting "$derived_data/debug-build-settings.txt" CODE_SIGN_ENTITLEMENTS CopyLasso/CopyLasso.entitlements
 assert_setting "$derived_data/debug-build-settings.txt" PRODUCT_BUNDLE_IDENTIFIER io.github.bennetthilberg.copylasso.debug
+assert_setting "$derived_data/debug-build-settings.txt" INFOPLIST_FILE Configuration/CopyLasso-Info.plist
 assert_setting "$derived_data/debug-build-settings.txt" INFOPLIST_KEY_LSUIElement YES
 assert_setting "$derived_data/release-build-settings.txt" PRODUCT_BUNDLE_IDENTIFIER io.github.bennetthilberg.copylasso
 assert_setting "$derived_data/release-build-settings.txt" ENABLE_APP_SANDBOX YES
 assert_setting "$derived_data/release-build-settings.txt" CODE_SIGN_ENTITLEMENTS CopyLasso/CopyLasso.entitlements
+assert_setting "$derived_data/release-build-settings.txt" ENABLE_HARDENED_RUNTIME YES
+assert_setting "$derived_data/release-build-settings.txt" INFOPLIST_FILE Configuration/CopyLasso-Info.plist
 assert_setting "$derived_data/release-build-settings.txt" INFOPLIST_KEY_LSUIElement YES
 assert_setting "$derived_data/release-build-settings.txt" ARCHS "arm64 x86_64"
 assert_setting "$derived_data/release-build-settings.txt" ONLY_ACTIVE_ARCH NO
@@ -405,6 +408,10 @@ assert_setting "$derived_data/release-build-settings.txt" ONLY_ACTIVE_ARCH NO
 readonly debug_info_plist="$derived_data/Build/Products/Debug/CopyLasso.app/Contents/Info.plist"
 if [[ "$(/usr/bin/plutil -extract LSUIElement raw -o - "$debug_info_plist")" != "true" ]]; then
     echo "The Debug application is not configured as a dockless agent." >&2
+    exit 1
+fi
+if [[ "$(/usr/bin/plutil -extract NSScreenCaptureUsageDescription raw -o - "$debug_info_plist")" != "CopyLasso captures the screen region you select to recognize text locally." ]]; then
+    echo "The Debug application is missing its screen-capture usage description." >&2
     exit 1
 fi
 
@@ -421,6 +428,10 @@ xcodebuild build \
 readonly release_info_plist="$derived_data/Build/Products/Release/CopyLasso.app/Contents/Info.plist"
 if [[ "$(/usr/bin/plutil -extract LSUIElement raw -o - "$release_info_plist")" != "true" ]]; then
     echo "The Release application is not configured as a dockless agent." >&2
+    exit 1
+fi
+if [[ "$(/usr/bin/plutil -extract NSScreenCaptureUsageDescription raw -o - "$release_info_plist")" != "CopyLasso captures the screen region you select to recognize text locally." ]]; then
+    echo "The Release application is missing its screen-capture usage description." >&2
     exit 1
 fi
 
