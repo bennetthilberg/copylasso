@@ -38,6 +38,7 @@ protocol SelectionOverlaySurface: AnyObject {
 
   func show()
   func makeInputReady()
+  func refreshCursorRects()
   func render(_ state: SelectionOverlayRenderState)
   func hide()
 }
@@ -191,8 +192,6 @@ private final class SelectionOverlayController {
 
   func start(completion: @escaping Completion) throws {
     self.completion = completion
-    cursorManager.pushCrosshair()
-    cursorPushed = true
     lifecycleObserver.start(
       displayChange: { [weak self] in self?.cancel(.displayChanged) },
       applicationTermination: { [weak self] in self?.cancel(.applicationTerminated) }
@@ -213,6 +212,11 @@ private final class SelectionOverlayController {
         surface.show()
       }
       inputSurface()?.makeInputReady()
+      for surface in surfaces {
+        surface.refreshCursorRects()
+      }
+      cursorManager.pushCrosshair()
+      cursorPushed = true
     } catch {
       _ = cleanup()
       self.completion = nil
@@ -448,6 +452,10 @@ private final class AppKitSelectionOverlaySurface: SelectionOverlaySurface {
     panel.makeFirstResponder(contentView)
   }
 
+  func refreshCursorRects() {
+    contentView.installCrosshairCursorRect()
+  }
+
   func render(_ state: SelectionOverlayRenderState) {
     contentView.renderState = state
   }
@@ -498,6 +506,15 @@ private final class RegionSelectionView: NSView {
   }
 
   override func resetCursorRects() {
+    addCrosshairCursorRect()
+  }
+
+  func installCrosshairCursorRect() {
+    discardCursorRects()
+    addCrosshairCursorRect()
+  }
+
+  private func addCrosshairCursorRect() {
     addCursorRect(bounds, cursor: .crosshair)
   }
 
