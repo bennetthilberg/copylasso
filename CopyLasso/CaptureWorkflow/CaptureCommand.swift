@@ -117,6 +117,7 @@ final class CaptureCommand: CaptureRequesting {
     let image: CGImage
     do {
       image = try await screenCaptureService.capture(selection)
+      permissionService.recordCaptureSuccess()
     } catch {
       if error as? ScreenCaptureError == .permissionDenied {
         recoveryPresenter.present(permissionService.recordCaptureDenial())
