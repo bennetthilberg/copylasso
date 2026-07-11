@@ -92,6 +92,73 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(outcome, .cancelled(.escape))
   }
 
+  func testCustomCrosshairStartsAtPointerAndFollowsMovementAcrossSurfaces() async throws {
+    let first = try makeDisplay(id: 1, origin: .zero)
+    let second = try makeDisplay(id: 2, origin: CGPoint(x: 100, y: 0))
+    let provider = StubSelectionDisplayProvider(results: [.success([first, second])])
+    let factory = RecordingSelectionOverlaySurfaceFactory()
+    let lifecycle = RecordingSelectionOverlayLifecycleObserver()
+    let cursor = RecordingSelectionCursorManager()
+    let completionScheduler = ManualSelectionCompletionScheduler()
+    let service = AppKitRegionSelectionService(
+      displayProvider: provider,
+      surfaceFactory: factory,
+      lifecycleObserver: lifecycle,
+      cursorManager: cursor,
+      pointerLocation: { CGPoint(x: 20, y: 30) },
+      scheduleCompletion: completionScheduler.schedule
+    )
+
+    let task = Task { try await service.selectRegion() }
+    await Task.yield()
+
+    XCTAssertEqual(factory.surfaces[0].renderedCrosshairPoints, [CGPoint(x: 20, y: 30)])
+    XCTAssertEqual(factory.surfaces[1].renderedCrosshairPoints, [nil])
+
+    factory.surfaces[1].send(.mouseMoved(CGPoint(x: 120, y: 35)))
+
+    XCTAssertNil(factory.surfaces[0].renderedCrosshairPoints.last!)
+    XCTAssertEqual(factory.surfaces[1].renderedCrosshairPoints.last!, CGPoint(x: 120, y: 35))
+
+    factory.surfaces[1].send(.mouseDown(CGPoint(x: 120, y: 35)))
+    factory.surfaces[1].send(.mouseDragged(CGPoint(x: 150, y: 65)))
+
+    XCTAssertEqual(factory.surfaces[1].renderedCrosshairPoints.last!, CGPoint(x: 150, y: 65))
+
+    factory.surfaces[1].send(.escape)
+    XCTAssertTrue(factory.surfaces.allSatisfy { $0.renderedCrosshairPoints.last! == nil })
+    await completionScheduler.runNext()
+    let outcome = try await task.value
+    XCTAssertEqual(outcome, .cancelled(.escape))
+  }
+
+  func testCustomCrosshairDrawsVisibleArmsWithoutDimmingAClearOverlay() {
+    let window = NSWindow(
+      contentRect: CGRect(x: 0, y: 0, width: 64, height: 64),
+      styleMask: .borderless,
+      backing: .buffered,
+      defer: false
+    )
+    let view = RegionSelectionView(frame: CGRect(x: 0, y: 0, width: 64, height: 64))
+    window.contentView = view
+    view.displayFrame = view.bounds
+    view.renderCrosshair(at: CGPoint(x: 32, y: 32))
+    guard let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else {
+      return XCTFail("Expected a bitmap representation")
+    }
+
+    view.cacheDisplay(in: view.bounds, to: bitmap)
+
+    for point in [(18, 32), (46, 32), (32, 18), (32, 46)] {
+      XCTAssertGreaterThan(
+        bitmap.colorAt(x: point.0, y: point.1)?.alphaComponent ?? 0,
+        0.2,
+        "Expected a visible crosshair arm at \(point)"
+      )
+    }
+    XCTAssertEqual(bitmap.colorAt(x: 4, y: 4)?.alphaComponent ?? 0, 0, accuracy: 0.01)
+  }
+
   func testCursorRectRefreshInvalidatesAndRebuildsThroughOwningWindow() {
     let window = RecordingCursorRectWindow(
       contentRect: CGRect(x: 0, y: 0, width: 100, height: 100),
@@ -567,6 +634,7 @@ private final class RecordingSelectionOverlaySurface: SelectionOverlaySurface {
   private(set) var renderedStates: [SelectionOverlayRenderState] = []
   private(set) var makeInputReadyCallCount = 0
   private(set) var refreshCursorRectsCallCount = 0
+  private(set) var renderedCrosshairPoints: [CGPoint?] = []
   private let startupEvents: RecordingSelectionStartupEvents?
 
   init(
@@ -594,6 +662,10 @@ private final class RecordingSelectionOverlaySurface: SelectionOverlaySurface {
   func refreshCursorRects() {
     refreshCursorRectsCallCount += 1
     startupEvents?.events.append(.surfaceCursorRectsRefreshed(displayID))
+  }
+
+  func renderCrosshair(at point: CGPoint?) {
+    renderedCrosshairPoints.append(point)
   }
 
   func render(_ state: SelectionOverlayRenderState) {
