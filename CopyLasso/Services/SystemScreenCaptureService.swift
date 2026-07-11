@@ -20,6 +20,7 @@ enum ScreenCaptureError: Error, Equatable, Sendable {
 
 struct ScreenCaptureRequest: Equatable, Sendable {
   let displayID: CGDirectDisplayID
+  let expectedDisplayPointSize: CGSize
   let sourceRect: CGRect
   let pixelWidth: Int
   let pixelHeight: Int
@@ -65,6 +66,7 @@ enum ScreenCaptureRequestPlanner {
 
     return ScreenCaptureRequest(
       displayID: selection.displayID,
+      expectedDisplayPointSize: selection.displayPointSize,
       sourceRect: sourceRect,
       pixelWidth: pixelWidth,
       pixelHeight: pixelHeight,
@@ -104,6 +106,7 @@ enum ScreenCaptureRequestValidator {
     guard display.displayID == request.displayID,
       size.width.isFinite, size.height.isFinite,
       size.width > 0, size.height > 0,
+      sizesMatch(size, request.expectedDisplayPointSize),
       display.pointPixelScale.isFinite,
       abs(display.pointPixelScale - request.backingScale) < 0.01,
       request.sourceRect.minX >= 0, request.sourceRect.minY >= 0,
@@ -112,6 +115,10 @@ enum ScreenCaptureRequestValidator {
     else {
       throw ScreenCaptureError.displayConfigurationChanged
     }
+  }
+
+  private static func sizesMatch(_ first: CGSize, _ second: CGSize) -> Bool {
+    abs(first.width - second.width) < 0.01 && abs(first.height - second.height) < 0.01
   }
 }
 
