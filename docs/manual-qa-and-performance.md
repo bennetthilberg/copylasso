@@ -47,17 +47,30 @@ If this preparation cannot complete, mark every dependent row **Blocked** and st
 ## Functional And Recovery Matrix
 
 Run each row at least three times unless a larger sample is specified.
+Replace each current **Blocked** entry with fresh signed-run evidence; do not
+carry forward a historical result. Evidence must name the tested commit and
+record the observed focus, clipboard, permission, display, and cleanup state
+where those properties apply.
 
-| Scenario | Expected result | July 11 unattended result |
+| Scenario | Expected result | Current result and evidence |
 | --- | --- | --- |
+| First launch from a clean installation | Onboarding appears once; no unexpected window, permission request, or Dock icon | **Blocked** — no quarantined release candidate exists before G27-G29 |
+| Ordinary relaunch after completed onboarding | One status item, no onboarding, Dock icon, or initial window | **Blocked** — shield prevents status-item/window observation |
 | Cold launch | One status item within 2 seconds; no Dock icon or initial app window after completed onboarding | **Blocked** — shield prevents status-item/window observation |
+| Shortcut setup and persistence | Confirm, replace, clear, and restore `⌃⇧⌘2`; relaunch and reboot preserve the stored choice | **Blocked** — Settings and disruptive relaunch/reboot interaction unavailable |
 | Suggested shortcut with Finder frontmost | Overlay begins without opening the menu or stealing focus | **Blocked** — no interactive input |
 | Shortcut with browser and TextEdit frontmost | Same command path and focus preservation | **Blocked** — no interactive input |
-| Menu fallback | Capture Text remains usable and matches shortcut behavior | **Blocked** — menu inaccessible behind shield |
+| Shortcut with another native app frontmost | Same command path and focus preservation outside the specifically tested apps | **Blocked** — no interactive input |
+| Menu fallback with shortcut cleared | Capture Text remains usable and matches shortcut behavior | **Blocked** — menu inaccessible behind shield |
+| Rapid repeated shortcut while active | One operation remains active; later requests are rejected without overlays, clipboard writes, or stuck state | **Blocked** — no interactive input |
 | Ordinary success | Selected text reaches plain-text clipboard; bounded success HUD appears without activation | **Blocked** — no real selection/capture/paste |
 | Reverse drag and every edge | Correct region, initiating-display clamp, no orphaned panel/cursor | **Blocked** — no pointer input |
+| Every connected display and backing scale | Correct display identity, point-to-pixel scale, crop, HUD placement, and focus preservation | **Blocked** — Sidecar is disconnected and no pointer input is available |
+| Cross-display drag | Initiating display alone dims; selection clamps at its edge and never spans displays | **Blocked** — Sidecar is disconnected and no pointer input is available |
+| Full-screen app and changed Space | Delayed selection appears over the intended full-screen Space without activating CopyLasso or switching Spaces | **Blocked** — no interactive Space/window control |
 | Escape before/during drag | Normal cancellation; clipboard sentinel unchanged; immediate reuse | **Blocked** — no keyboard/pointer input |
 | Click and sub-4-point drag | Too-small cancellation; sentinel unchanged | **Blocked** — no pointer input |
+| Quit during selection | All panels/cursor state disappear exactly once and the process terminates without a clipboard change | **Blocked** — no interactive input |
 | No recognizable text | No-text HUD; sentinel unchanged | **Blocked** — no real capture |
 | Permission first request: Deny | One system request, singleton recovery, no downstream work | **Blocked** — TCC dialog cannot be operated |
 | Permission approval/retry | Follow actual Later/Quit & Reopen behavior; no automatic retry | **Blocked** — TCC/System Settings inaccessible |
@@ -69,17 +82,27 @@ Run each row at least three times unless a larger sample is specified.
 | VoiceOver and Full Keyboard Access | Clear labels/order/actions across menu, onboarding, Settings, recovery, selection, and HUD | **Blocked** — accessibility shield prevents inspection |
 | Offline success | Core workflow succeeds with process networking denied | **Blocked** for real pixels; 196 injected/fixture tests passed under deny-network sandbox in G23 |
 | Protected content | Controlled blank/unavailable/no-text behavior; no bypass or invented text | **Blocked** — requires real protected surface |
+| Clipboard preservation sweep | Sentinel survives every cancellation, no-text, permission, capture, OCR, lifecycle, and feedback failure path | **Blocked** — real clipboard workflow unavailable |
+| Success feedback privacy | HUD shows the correct normalized, truncated preview; preserves focus; clears on time; leaves no preview in logs/preferences | **Blocked** — visible HUD and accessibility inspection unavailable |
+| Private-data residue | Before/after app-container and temporary-directory inventory contains no image/text output; unified log contains no selected content | **Blocked** — requires real private operations with synthetic fixtures |
+| Ordinary delete and reinstall | Onboarding remains complete when preferences remain; Launch at Login state is reconciled | **Blocked** — no installable release artifact exists yet |
+| Complete uninstall and reinstall | Login item, preferences, app-owned container data, and Screen Recording entry are removed; onboarding returns cleanly | **Blocked** — final uninstall procedure is a G25 deliverable and authoritative VM proof is G29 |
 
 ## OCR Content Matrix
 
 For each source, record the exact selected region, expected visible text, copied text, ordering errors, omissions, inventions, and elapsed time. Do not use real credentials or private content.
 
-| Source | Required observation | July 11 unattended result |
+| Source | Required observation | Current result and evidence |
 | --- | --- | --- |
 | Native-app text | Ordinary horizontal single-column copy | **Blocked** |
+| Dark text on a light background | Exact ordinary phrase with readable ordering | **Blocked** |
+| Light text on a dark background | Exact ordinary phrase with readable ordering | **Blocked** |
+| Multiline paragraph | Top-to-bottom lines and left-to-right words remain readable | **Blocked** |
+| Small text | Honest recognition or omission without invention or crash | **Blocked** |
 | Browser-rendered text | App-agnostic pixel recognition | **Blocked** |
 | PDF text in Preview | Works independently of PDF text layer | **Blocked** |
 | Raster image | Visible text recognized from pixels | **Blocked** |
+| Nonselectable raster text in an arbitrary app | OCR depends only on permitted screen pixels | **Blocked** |
 | Paused video | Visible subtitle/title recognized | **Blocked** |
 | macOS system UI | Menu/dialog/settings text recognized when permitted | **Blocked** |
 | Desktop wallpaper text | Arbitrary permitted screen pixels | **Blocked** |
@@ -96,6 +119,8 @@ Use an otherwise idle workstation. Preserve raw Instruments traces outside Git a
 - Run ten true cold launches after completed onboarding.
 - Measure from process launch request to the visible, interactive menu-bar item.
 - Record every sample and median/p95. Acceptance: every observed cold launch exposes the item within 2 seconds.
+- Record `cold_launch_ms: [s1, s2, ..., s10]`, median, nearest-rank p95,
+  minimum, and maximum. Do not retain only an aggregate.
 
 ### Capture To Clipboard
 
@@ -104,6 +129,33 @@ Use an otherwise idle workstation. Preserve raw Instruments traces outside Git a
 - Sort samples; use the median and nearest-rank p95.
 - Acceptance: median at most 1 second and p95 at most 2 seconds.
 - Repeat representative native, browser, PDF, raster, video, photograph, and difficult-text regions as qualitative signposts. Do not merge dissimilar content into the acceptance sample.
+- Record `capture_to_clipboard_ms: [s1, s2, ..., s30]`, median,
+  nearest-rank p95, minimum, and maximum. Record failed attempts separately;
+  never silently discard or replace an outlier.
+
+### Capture And OCR Stage Signposts
+
+- During at least ten successful ordinary-region captures, use a Time Profiler
+  trace to record the best directly observable boundaries for selection
+  completion, ScreenCaptureKit return, Vision return, clipboard change, and HUD
+  presentation.
+- Report capture and OCR stage medians/p95 separately when the trace exposes
+  defensible boundaries. Never infer a stage duration merely by subtracting
+  unrelated UI timestamps.
+- Do not add captured text, image dimensions tied to private content, or OCR
+  output to logs or signposts. Raw traces remain ignored because they may contain
+  local paths and process metadata.
+- If the production build exposes no reliable content-free boundary for an
+  individual stage, mark that stage **Blocked** and request a narrowly scoped
+  instrumentation amendment. End-to-end latency is still mandatory and cannot
+  substitute for the missing per-stage signpost.
+
+| Stage | Samples | Median | p95 | Evidence or blocker |
+| --- | ---: | ---: | ---: | --- |
+| Mouse-up to ScreenCaptureKit return | Pending | Pending | Pending | **Blocked** — interactive trace required |
+| ScreenCaptureKit return to Vision return | Pending | Pending | Pending | **Blocked** — interactive trace required |
+| Vision return to pasteboard change | Pending | Pending | Pending | **Blocked** — interactive trace required |
+| Mouse-up to HUD presentation | Pending | Pending | Pending | **Blocked** — interactive trace required |
 
 ### Idle CPU And Memory
 
@@ -118,6 +170,11 @@ Use an otherwise idle workstation. Preserve raw Instruments traces outside Git a
 - Sample after every ten cycles and again after a 30-second settle.
 - Use Allocations and Leaks plus a Time Profiler trace. Record peak, final settled memory, leak count, and any retained `CGImage`, recognized observation, unbounded string, overlay, or feedback controller.
 - Acceptance: no sustained growth trend attributable to CopyLasso and no retained private-operation payload.
+
+Record cycle number, outcome, private memory, RSS, and any retained-object or
+leak observation after each ten-cycle checkpoint. Keep all 11 checkpoints
+(baseline plus cycles 10 through 100) in the signed result rather than only the
+peak and final values.
 
 ## Noninteractive Process Context
 
