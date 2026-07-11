@@ -88,67 +88,84 @@ final class CaptureCommand: CaptureRequesting {
       let outcome = try await selectionService.selectRegion()
       switch outcome {
       case .selected(let selection):
-        await proceedToCapture(selection)
+        await completeSelection(selection)
       case .cancelled(let reason):
         _ = coordinator.handle(.cancel(reason.captureCancellationReason))
       }
     } catch {
-      _ = coordinator.handle(.fail(.selection))
+      await presentTerminalFailure(.selection)
     }
     resetTerminalState()
   }
 
-  private func proceedToCapture(_ selection: SelectionResult) async {
+  private func completeSelection(_ selection: SelectionResult) async {
     guard case .transitioned = coordinator.handle(.selectionCompleted) else {
       return
     }
 
+    do {
+      let feedback = try await runPrivateOperation(selection)
+      await presentCompletionFeedback(feedback)
+    } catch let interruption as CaptureOperationInterruption {
+      await handle(interruption)
+    } catch {
+      await presentTerminalFailure(.internal)
+    }
+  }
+
+  private func runPrivateOperation(_ selection: SelectionResult) async throws -> CaptureFeedback {
     let image: CGImage
     do {
       image = try await screenCaptureService.capture(selection)
     } catch {
       if error as? ScreenCaptureError == .permissionDenied {
         recoveryPresenter.present(permissionService.recordCaptureDenial())
+        throw CaptureOperationInterruption.permissionRecoveryPresented
       }
-      _ = coordinator.handle(.fail(.capture))
-      return
+      throw CaptureOperationInterruption.failure(.capture)
     }
 
     guard case .transitioned = coordinator.handle(.captureCompleted) else {
-      _ = coordinator.handle(.fail(.internal))
-      return
+      throw CaptureOperationInterruption.failure(.internal)
     }
 
+    let observations: [RecognizedTextObservation]
     do {
-      let observations = try await ocrService.recognizeText(in: image)
-      guard case .transitioned = coordinator.handle(.recognitionCompleted) else {
-        _ = coordinator.handle(.fail(.internal))
-        return
-      }
-      let text = textAssembler.assemble(observations)
-      await complete(with: text)
+      observations = try await ocrService.recognizeText(in: image)
     } catch VisionOCRError.cancelled {
-      _ = coordinator.handle(.cancel(.user))
+      throw CaptureOperationInterruption.cancelled(.user)
     } catch {
-      _ = coordinator.handle(.fail(.recognition))
+      throw CaptureOperationInterruption.failure(.recognition)
     }
-  }
 
-  private func complete(with text: String) async {
+    guard case .transitioned = coordinator.handle(.recognitionCompleted) else {
+      throw CaptureOperationInterruption.failure(.internal)
+    }
+
+    let text = textAssembler.assemble(observations)
     if text.isEmpty {
-      await presentCompletionFeedback(.noText)
-      return
+      return .noText
     }
 
     do {
       try clipboardService.writePlainText(text)
     } catch {
-      await presentCompletionFailure(.clipboard)
-      return
+      throw CaptureOperationInterruption.failure(.clipboard)
     }
 
     let preview = FeedbackPreview(text: text).text
-    await presentCompletionFeedback(.success(preview: preview))
+    return .success(preview: preview)
+  }
+
+  private func handle(_ interruption: CaptureOperationInterruption) async {
+    switch interruption {
+    case .cancelled(let reason):
+      _ = coordinator.handle(.cancel(reason))
+    case .failure(let stage):
+      await presentTerminalFailure(stage)
+    case .permissionRecoveryPresented:
+      _ = coordinator.handle(.fail(.capture))
+    }
   }
 
   private func presentCompletionFeedback(_ feedback: CaptureFeedback) async {
@@ -163,7 +180,7 @@ final class CaptureCommand: CaptureRequesting {
     }
   }
 
-  private func presentCompletionFailure(_ stage: CaptureFailureStage) async {
+  private func presentTerminalFailure(_ stage: CaptureFailureStage) async {
     do {
       try await feedbackService.present(.failure(stage))
       _ = coordinator.handle(.fail(stage))
@@ -195,6 +212,12 @@ final class CaptureCommand: CaptureRequesting {
       await work()
     }
   }
+}
+
+private enum CaptureOperationInterruption: Error {
+  case cancelled(CaptureCancellationReason)
+  case failure(CaptureFailureStage)
+  case permissionRecoveryPresented
 }
 
 extension SelectionCancellationReason {

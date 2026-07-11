@@ -202,6 +202,26 @@ if ! /usr/bin/grep -q 'clipboardService: SystemClipboardService()' CopyLasso/App
     exit 1
 fi
 
+readonly capture_command='CopyLasso/CaptureWorkflow/CaptureCommand.swift'
+readonly capture_coordinator='CopyLasso/CaptureWorkflow/CaptureCoordinator.swift'
+readonly workflow_integration_tests='CopyLassoTests/CaptureWorkflow/CaptureWorkflowIntegrationTests.swift'
+if [[ ! -e "$workflow_integration_tests" ]] || \
+    ! /usr/bin/grep -q 'runPrivateOperation' "$capture_command" || \
+    ! /usr/bin/grep -q 'CaptureOperationInterruption' "$capture_command" || \
+    ! /usr/bin/grep -q 'testTwentyFiveConsecutiveSuccessfulCapturesRemainReusable' "$workflow_integration_tests" || \
+    ! /usr/bin/grep -q 'testTwentyAlternatingSuccessAndCancellationCyclesPreserveClipboardOnCancellation' "$workflow_integration_tests" || \
+    ! /usr/bin/grep -q 'testPixelsAndUnboundedTextAreReleasedBeforeHeldFeedback' "$workflow_integration_tests" || \
+    ! /usr/bin/grep -q 'testMenuAndShortcutRouteThroughTheExactSameSuccessfulCommand' "$workflow_integration_tests"; then
+    echo "G18 must retain its private operation boundary and end-to-end stress integration suite." >&2
+    exit 1
+fi
+
+if /usr/bin/grep -qE 'CGImage|RecognizedTextObservation|SelectionResult|CaptureFeedback' \
+    "$capture_coordinator"; then
+    echo "CaptureCoordinator must remain free of geometry, pixels, recognized text, and feedback payloads." >&2
+    exit 1
+fi
+
 if /usr/bin/grep -nE 'print\(|debugPrint\(|NSLog\(|os_log|Logger\(|UserDefaults' \
     "$clipboard_service" "$feedback_panel" CopyLasso/Models/FeedbackPreview.swift \
     CopyLasso/Models/FeedbackPresentationContent.swift; then

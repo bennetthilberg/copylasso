@@ -27,4 +27,6 @@ The same observable model temporarily changes the menu-bar symbol and accessibil
 
 ## Current Workflow Boundary
 
-The G17 command slice writes nonempty assembled text, presents a bounded success preview, presents no-text without touching the clipboard, and presents a clipboard-failure result after a rejected write. It stays in the coordinator's completing phase until feedback disappears, rejects overlapping requests, and then returns to idle. G18 retains ownership of uniform feedback at every earlier failure boundary, explicit whole-operation resource cleanup, and end-to-end stress verification.
+The complete command writes nonempty assembled text, presents a bounded success preview, presents no-text without touching the clipboard, and presents a stage-specific failure after ordinary service errors. It stays busy until feedback disappears, rejects overlapping requests, and then returns to idle. Selection cancellation and OCR cancellation remain normal non-error outcomes and never touch the pasteboard.
+
+The image, recognized observations, and unbounded assembled string are local to one private async operation. That scope returns only bounded feedback after any write, so private pixels and full text are no longer retained while the HUD is visible. Integration tests hold both success and failure feedback open while proving the image has already been released.

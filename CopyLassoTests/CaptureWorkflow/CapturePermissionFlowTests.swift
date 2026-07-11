@@ -283,7 +283,7 @@ final class CapturePermissionFlowTests: XCTestCase {
     XCTAssertEqual(recognitionCallCount, 1)
     XCTAssertEqual(context.textAssembler.inputs, [])
     XCTAssertEqual(context.clipboard.writtenTexts, [])
-    XCTAssertEqual(context.feedback.presentedFeedback, [])
+    XCTAssertEqual(context.feedback.presentedFeedback, [.failure(.recognition)])
     XCTAssertEqual(context.coordinator.state, .idle)
     XCTAssertTrue(context.command.isEnabled)
   }
@@ -339,6 +339,7 @@ final class CapturePermissionFlowTests: XCTestCase {
     XCTAssertEqual(recognitionCallCount, 0)
     XCTAssertEqual(context.textAssembler.inputs, [])
     XCTAssertEqual(context.recovery.presentedObservations, [])
+    XCTAssertEqual(context.feedback.presentedFeedback, [.failure(.capture)])
     XCTAssertEqual(context.coordinator.state, .idle)
   }
 
@@ -389,6 +390,7 @@ final class CapturePermissionFlowTests: XCTestCase {
     XCTAssertEqual(capturedSelections, [])
     let recognitionCallCount = await context.ocr.recognitionCallCount
     XCTAssertEqual(recognitionCallCount, 0)
+    XCTAssertEqual(context.feedback.presentedFeedback, [])
     XCTAssertEqual(context.coordinator.state, .idle)
   }
 
@@ -402,6 +404,7 @@ final class CapturePermissionFlowTests: XCTestCase {
     XCTAssertEqual(capturedSelections, [])
     let recognitionCallCount = await context.ocr.recognitionCallCount
     XCTAssertEqual(recognitionCallCount, 0)
+    XCTAssertEqual(context.feedback.presentedFeedback, [.failure(.selection)])
     XCTAssertEqual(context.coordinator.state, .idle)
   }
 
