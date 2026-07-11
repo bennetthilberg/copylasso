@@ -72,7 +72,7 @@ Permission history contains only the two booleans needed for these neutral label
 
 Use the same stably signed Debug app after Screen Recording access is enabled. The current G13 workflow does not call ScreenCaptureKit, but retaining one stable app avoids mixing selection evidence with permission-identity churn.
 
-1. On the primary display, invoke Capture Text from both the menu and shortcut. Verify the overlay is clear before mouse-down, the cursor is a crosshair, and only the area outside the active rectangle dims after dragging begins.
+1. On the primary display, invoke Capture Text from both the menu and shortcut. Verify the overlay is clear before mouse-down except for the black-and-white crosshair reticle at the pointer, and only the area outside the active rectangle dims after dragging begins. The ordinary system arrow may remain visible inside the reticle.
 2. Exercise forward and reverse drags, a click, a sub-four-point drag, exactly four points, Escape before dragging, Escape during dragging, and every display-edge clamp.
 3. Connect an extended display and repeat a selection there, including invoking while the pointer is on one display and starting the drag on the other. Press Escape during that drag and confirm the clicked display receives it immediately. Record fresh display identifiers, AppKit frames, Core Graphics bounds, and backing scales; never hardcode runtime identifiers.
 4. Drag from each display toward the other. The rectangle must stop at the initiating display edge, and only that display may dim.
@@ -84,11 +84,12 @@ Use the same stably signed Debug app after Screen Recording access is enabled. T
 10. Confirm no pixel file, image retention, OCR, pasteboard write, Accessibility prompt, or Input Monitoring prompt occurs. The controlled UI path must stop at the intentional G15-unavailable boundary.
 
 The crosshair check begins with a stationary pointer before pressing the mouse
-button and continues through the drag. Seeing an arrow at either point is a
-failure. Automated tests prove that visible panels invalidate and rebuild their
-cursor rectangles through their owning windows only after the input view is
-ready, and repeat that refresh when a different panel receives mouse-down, but
-WindowServer cursor presentation still requires this signed manual observation.
+button and continues through the drag. The app-drawn two-tone reticle must be
+visible and remain centered on the pointer at both points; a system arrow inside
+it is acceptable. Automated tests prove initial placement, cross-display
+movement, drag tracking, cleanup, and visible rendering on an otherwise clear
+overlay. WindowServer composition still requires this signed manual
+observation.
 
 ### G13 Production Verification Record
 
