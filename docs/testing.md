@@ -190,7 +190,7 @@ The unattended July 11, 2026 run completed the deterministic matrix but could no
 
 ## Multi-Display And Retina Hardening Matrix
 
-G19 adds a synthetic topology with primary, left, right, above, below, diagonal, portrait, and recorded Sidecar-style shapes across 1×, 1.5×, and 2× scales. For every fixture, tests drive global selection through display-local Core Graphics conversion and capture-request planning, preserve the initiating display identity, clamp every cross-display endpoint, validate outward-rounded pixels, and reject changed identity, full point size, scale, or derived pixel dimensions. AppKit tests also prove every mixed-scale display can initiate through a panel covering its complete `NSScreen.frame`.
+G19 adds a synthetic topology with primary, left, right, above, below, diagonal, portrait, and recorded Sidecar-style shapes across 1×, 1.5×, and 2× scales. For every fixture, tests drive global selection through display-local Core Graphics conversion and capture-request planning, preserve the initiating display identity, clamp every cross-display endpoint, validate outward-rounded pixels, and reject changed identity, full point size, scale, or derived pixel dimensions. A fractional-scale edge regression also proves the aligned source rectangle stays within the right and bottom display bounds while retaining the outward-rounded output pixels. AppKit tests prove every mixed-scale display can initiate through a panel covering its complete `NSScreen.frame`.
 
 The synthetic matrix is deterministic regression protection; it is not evidence that unavailable physical hardware or a particular menu-bar arrangement worked.
 

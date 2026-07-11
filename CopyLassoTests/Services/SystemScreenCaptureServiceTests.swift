@@ -132,6 +132,34 @@ final class SystemScreenCaptureServiceTests: XCTestCase {
       try ScreenCaptureRequestValidator.validate(changedHeight, against: snapshot))
   }
 
+  func testFractionalScaleEdgeSelectionClampsTheSourceRectAndRemainsValid() throws {
+    let display = try DisplayGeometry(
+      displayID: 81,
+      appKitFrame: CGRect(x: 0, y: 0, width: 101, height: 81),
+      coreGraphicsBounds: CGRect(x: 0, y: 0, width: 101, height: 81),
+      backingScale: 1.5
+    )
+    let selection = try XCTUnwrap(
+      display.selectionResult(
+        from: CGPoint(x: 90.2, y: 0),
+        to: CGPoint(x: 101, y: 10.2)
+      )
+    )
+
+    let request = try ScreenCaptureRequestPlanner.request(for: selection)
+    let snapshot = ScreenCaptureDisplaySnapshot(
+      displayID: request.displayID,
+      pointSize: selection.displayPointSize,
+      pointPixelScale: selection.backingScale
+    )
+
+    XCTAssertEqual(request.sourceRect.maxX, 101, accuracy: 0.000_1)
+    XCTAssertEqual(request.sourceRect.maxY, 81, accuracy: 0.000_1)
+    XCTAssertEqual(request.pixelWidth, 17)
+    XCTAssertEqual(request.pixelHeight, 16)
+    XCTAssertNoThrow(try ScreenCaptureRequestValidator.validate(request, against: snapshot))
+  }
+
   func testCaptureReturnsExactInMemoryImageAndForwardsRequestOnce() async throws {
     let selection = try makeSelection()
     let image = try makeImage(width: 8, height: 6)
