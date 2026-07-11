@@ -49,6 +49,48 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(outcome, .cancelled(.escape))
   }
 
+  func testCrosshairIsAppliedAfterVisibleInputReadySurfacesRefreshTheirCursorRects()
+    async throws
+  {
+    let first = try makeDisplay(id: 1, origin: CGPoint(x: 50_000, y: 50_000))
+    let second = try makeDisplay(id: 2, origin: CGPoint(x: 50_100, y: 50_000))
+    let startupEvents = RecordingSelectionStartupEvents()
+    let provider = StubSelectionDisplayProvider(results: [.success([first, second])])
+    let factory = RecordingSelectionOverlaySurfaceFactory(startupEvents: startupEvents)
+    let lifecycle = RecordingSelectionOverlayLifecycleObserver()
+    let cursor = RecordingSelectionCursorManager(startupEvents: startupEvents)
+    let scheduler = ManualSelectionCompletionScheduler()
+    let service = AppKitRegionSelectionService(
+      displayProvider: provider,
+      surfaceFactory: factory,
+      lifecycleObserver: lifecycle,
+      cursorManager: cursor,
+      scheduleCompletion: scheduler.schedule
+    )
+
+    let task = Task { try await service.selectRegion() }
+    await Task.yield()
+
+    XCTAssertEqual(
+      startupEvents.events,
+      [
+        .surfaceShown(1),
+        .surfaceShown(2),
+        .surfaceInputReady(1),
+        .surfaceCursorRectsRefreshed(1),
+        .surfaceCursorRectsRefreshed(2),
+        .crosshairPushed,
+      ]
+    )
+    XCTAssertTrue(factory.surfaces.allSatisfy(\.isVisible))
+    XCTAssertEqual(factory.surfaces.map(\.refreshCursorRectsCallCount), [1, 1])
+
+    factory.surfaces[0].send(.escape)
+    await scheduler.runNext()
+    let outcome = try await task.value
+    XCTAssertEqual(outcome, .cancelled(.escape))
+  }
+
   func testOverlayStartsClearAndOnlyInitiatingDisplayDimsDuringDrag() async throws {
     let first = try makeDisplay(id: 1, origin: .zero)
     let second = try makeDisplay(id: 2, origin: CGPoint(x: 100, y: 0))
@@ -219,8 +261,8 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertFalse(factory.surfaces[0].isVisible)
     XCTAssertNil(factory.surfaces[0].eventHandler)
     XCTAssertEqual(context.lifecycle.stopCallCount, 1)
-    XCTAssertEqual(context.cursor.pushCallCount, 1)
-    XCTAssertEqual(context.cursor.popCallCount, 1)
+    XCTAssertEqual(context.cursor.pushCallCount, 0)
+    XCTAssertEqual(context.cursor.popCallCount, 0)
   }
 
   func testNoDisplaysAndDuplicateDisplayIdentifiersAreRejected() async throws {
@@ -430,12 +472,18 @@ private final class StubSelectionDisplayProvider: SelectionDisplayProviding {
 private final class RecordingSelectionOverlaySurfaceFactory: SelectionOverlaySurfaceMaking {
   let failingDisplayID: CGDirectDisplayID?
   let hideSucceeds: Bool
+  let startupEvents: RecordingSelectionStartupEvents?
   private(set) var requestedDisplayIDs: [CGDirectDisplayID] = []
   private(set) var surfaces: [RecordingSelectionOverlaySurface] = []
 
-  init(failingDisplayID: CGDirectDisplayID? = nil, hideSucceeds: Bool = true) {
+  init(
+    failingDisplayID: CGDirectDisplayID? = nil,
+    hideSucceeds: Bool = true,
+    startupEvents: RecordingSelectionStartupEvents? = nil
+  ) {
     self.failingDisplayID = failingDisplayID
     self.hideSucceeds = hideSucceeds
+    self.startupEvents = startupEvents
   }
 
   func makeSurface(for display: DisplayGeometry) throws -> any SelectionOverlaySurface {
@@ -446,7 +494,8 @@ private final class RecordingSelectionOverlaySurfaceFactory: SelectionOverlaySur
     let surface = RecordingSelectionOverlaySurface(
       displayID: display.displayID,
       frame: display.appKitFrame,
-      hideSucceeds: hideSucceeds
+      hideSucceeds: hideSucceeds,
+      startupEvents: startupEvents
     )
     surfaces.append(surface)
     return surface
@@ -462,19 +511,34 @@ private final class RecordingSelectionOverlaySurface: SelectionOverlaySurface {
   private(set) var isVisible = false
   private(set) var renderedStates: [SelectionOverlayRenderState] = []
   private(set) var makeInputReadyCallCount = 0
+  private(set) var refreshCursorRectsCallCount = 0
+  private let startupEvents: RecordingSelectionStartupEvents?
 
-  init(displayID: CGDirectDisplayID, frame: CGRect, hideSucceeds: Bool) {
+  init(
+    displayID: CGDirectDisplayID,
+    frame: CGRect,
+    hideSucceeds: Bool,
+    startupEvents: RecordingSelectionStartupEvents?
+  ) {
     self.displayID = displayID
     self.frame = frame
     self.hideSucceeds = hideSucceeds
+    self.startupEvents = startupEvents
   }
 
   func show() {
     isVisible = true
+    startupEvents?.events.append(.surfaceShown(displayID))
   }
 
   func makeInputReady() {
     makeInputReadyCallCount += 1
+    startupEvents?.events.append(.surfaceInputReady(displayID))
+  }
+
+  func refreshCursorRects() {
+    refreshCursorRectsCallCount += 1
+    startupEvents?.events.append(.surfaceCursorRectsRefreshed(displayID))
   }
 
   func render(_ state: SelectionOverlayRenderState) {
@@ -527,14 +591,32 @@ private final class RecordingSelectionOverlayLifecycleObserver: SelectionOverlay
 private final class RecordingSelectionCursorManager: SelectionCursorManaging {
   private(set) var pushCallCount = 0
   private(set) var popCallCount = 0
+  private let startupEvents: RecordingSelectionStartupEvents?
+
+  init(startupEvents: RecordingSelectionStartupEvents? = nil) {
+    self.startupEvents = startupEvents
+  }
 
   func pushCrosshair() {
     pushCallCount += 1
+    startupEvents?.events.append(.crosshairPushed)
   }
 
   func popCrosshair() {
     popCallCount += 1
   }
+}
+
+@MainActor
+private final class RecordingSelectionStartupEvents {
+  enum Event: Equatable {
+    case surfaceShown(CGDirectDisplayID)
+    case surfaceInputReady(CGDirectDisplayID)
+    case surfaceCursorRectsRefreshed(CGDirectDisplayID)
+    case crosshairPushed
+  }
+
+  var events: [Event] = []
 }
 
 @MainActor

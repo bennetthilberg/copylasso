@@ -83,6 +83,12 @@ Use the same stably signed Debug app after Screen Recording access is enabled. T
 9. Inspect light, dark, increased-contrast, and VoiceOver behavior. The black-and-white border and crosshair must remain distinguishable, and the overlay must expose its selection label and Escape help.
 10. Confirm no ScreenCaptureKit warning, pixel file, image retention, OCR, pasteboard write, Accessibility prompt, or Input Monitoring prompt occurs. Valid geometry must stop at the intentional G14-unavailable boundary.
 
+The crosshair check begins before pressing the mouse button and continues
+through the drag. Seeing an arrow at either point is a failure. Automated tests
+prove that visible panels refresh their cursor rectangles and apply the
+crosshair only after the input view is ready, but WindowServer cursor
+presentation still requires this signed manual observation.
+
 ### G13 Production Verification Record
 
 On July 10, 2026, the production adapter was exercised on macOS 26.5.1 with Xcode 26.6. Fresh enumeration reported the Dell primary as display ID `4`, AppKit and Core Graphics bounds `(0, 0, 1920, 1080)`, 1× backing scale, and a matching 100-point backing conversion; System Profiler reported 1920 × 1080 at 144 Hz.
