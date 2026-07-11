@@ -41,7 +41,7 @@ Verify in this order:
 7. Repeat recovery while an ordinary full-screen application is frontmost. Confirm presenting or updating CopyLasso's nonactivating panel does not change the frontmost application. Only **Open System Settings** intentionally changes focus.
 8. Confirm macOS did not show the ScreenCaptureKit private-window-picker-bypass warning and that no Accessibility, Input Monitoring, Microphone, or clipboard access was introduced.
 
-Core Graphics preflight may remain positive inside a process after permission is disabled. G12 records revocation once preflight reflects it, normally after relaunch. The G14 capture path treats an actual ScreenCaptureKit denial as authoritative when preflight is stale. Ordinary capture requests retain that denial; an explicit **Try Again** permits one new attempt so restored access can recover without weakening the default guard.
+Core Graphics preflight may remain positive inside a process after permission is disabled. G12 records revocation once preflight reflects it, normally after relaunch. The G14 capture path treats an actual ScreenCaptureKit denial as authoritative when preflight is stale. Ordinary capture requests retain that denial; an explicit **Try Again** permits one fresh preflight observation. The denial remains authoritative after cancellation, a too-small selection, or capture failure and clears only after a successful ScreenCaptureKit capture.
 
 ### G12 Verified Result
 
@@ -82,6 +82,12 @@ Use the same stably signed Debug app after Screen Recording access is enabled. F
 8. Terminate CopyLasso during selection and verify no panel, dim, cursor override, observer, controller, or continuation remains. Use Xcode's memory graph or debugger to confirm the completed controller and surfaces are released.
 9. Inspect light, dark, increased-contrast, and VoiceOver behavior. The black-and-white border and crosshair must remain distinguishable, and the overlay must expose its selection label and Escape help.
 10. Confirm no pixel file, retained image, pasteboard write, Accessibility prompt, or Input Monitoring prompt occurs. The controlled blank-image path should now produce distinct no-text feedback while preserving the clipboard; real successful clipboard output belongs to the separate G17 matrix below.
+
+The crosshair check begins before pressing the mouse button and continues
+through the drag. Seeing an arrow at either point is a failure. Automated tests
+prove that visible panels refresh their cursor rectangles and apply the
+crosshair only after the input view is ready, but WindowServer cursor
+presentation still requires this signed manual observation.
 
 ### G13 Production Verification Record
 
@@ -278,9 +284,9 @@ The unattended July 11, 2026 G22 run completed the source, dependency, signed-en
 
 ## Automated Coverage, Repeatability, And OS Matrix
 
-G23 keeps behavior—not a percentage—as the test contract, then uses coverage to detect unreviewed gaps and regressions. The canonical Xcode 26.6 result contains 202 unit tests organized across geometry, coordinator transitions, permission and settings decisions, text assembly, clipboard and feedback decisions, lifecycle recovery, service-boundary orchestration, Vision fixtures, multi-display snapshots, and accessibility/appearance policy.
+G23 keeps behavior—not a percentage—as the test contract, then uses coverage to detect unreviewed gaps and regressions. The canonical Xcode 26.6 result contains 204 unit tests organized across geometry, coordinator transitions, permission and settings decisions, text assembly, clipboard and feedback decisions, lifecycle recovery, service-boundary orchestration, Vision fixtures, multi-display snapshots, and accessibility/appearance policy.
 
-`scripts/audit-coverage.sh` reads the canonical `UnitTests.xcresult`. The reviewed stable baseline is 2,482/3,450 application lines (71.94%) after excluding three retained-state-dependent SwiftUI onboarding builders, and 967/1,010 platform-neutral Models/CaptureWorkflow/Settings lines (95.74%). The 70% aggregate floor is unchanged; every other application file remains included. Critical per-file floors prevent the aggregate from hiding a regression. See [Automated Coverage Review](coverage-review.md) for each floor, the G22 comparison, the reachable branches added in G23, and the explicit signed/manual owner for every uncovered category.
+`scripts/audit-coverage.sh` reads the canonical `UnitTests.xcresult`. The reviewed stable baseline is 2,498/3,477 application lines (71.84%) after excluding three retained-state-dependent SwiftUI onboarding builders, and 968/1,011 platform-neutral Models/CaptureWorkflow/Settings lines (95.74%). The 70% aggregate floor is unchanged; every other application file remains included. Critical per-file floors prevent the aggregate from hiding a regression. See [Automated Coverage Review](coverage-review.md) for each floor, the G22 comparison, the reachable branches added in G23, and the explicit signed/manual owner for every uncovered category.
 
 Run a local coverage and determinism check after the canonical build:
 

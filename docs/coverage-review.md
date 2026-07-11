@@ -8,9 +8,9 @@ The application target is measured from the nonparallel, timeout-bounded `CopyLa
 
 | Metric | G22 baseline | G23 reviewed baseline |
 | --- | ---: | ---: |
-| Unit tests | 187 | 202 |
-| Stable application aggregate | 2,382 / 3,396 (70.14%) | 2,482 / 3,450 (71.94%) |
-| Models, CaptureWorkflow, and Settings | 922 / 1,006 (91.65%) | 967 / 1,010 (95.74%) |
+| Unit tests | 187 | 204 |
+| Stable application aggregate | 2,382 / 3,396 (70.14%) | 2,498 / 3,477 (71.84%) |
+| Models, CaptureWorkflow, and Settings | 922 / 1,006 (91.65%) | 968 / 1,011 (95.74%) |
 | `SettingsController.swift` | 144 / 168 (85.71%) | 167 / 172 (97.09%) |
 | `TextAssembler.swift` | 164 / 203 (80.78%) | 186 / 203 (91.62%) |
 
