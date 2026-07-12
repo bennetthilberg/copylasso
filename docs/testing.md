@@ -88,10 +88,11 @@ button and continues through the drag. Exactly one normal-sized AppKit
 crosshair must replace the pointer; an ordinary arrow or a second app-drawn
 reticle is a failure. Automated tests prove selection-only activation is
 confirmed by AppKit before overlay presentation and that the pointer's exact
-panel becomes key before cursor rectangles or the crosshair are installed.
-Delayed activation or key confirmation leaves the cursor untouched,
-cancellation invalidates either late confirmation, and restoration occurs before
-deferred completion.
+panel becomes key before its active full-window crosshair cursor rectangle is
+refreshed. The global native crosshair is applied one main-actor turn after that
+refresh. Delayed activation or key confirmation leaves the cursor untouched,
+cancellation invalidates late confirmation or a scheduled push, and restoration
+occurs before deferred completion.
 WindowServer composition and real frontmost-application restoration still
 require this signed manual observation.
 

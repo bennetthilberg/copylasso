@@ -37,11 +37,13 @@ the endpoint to the initiating display edge. Unrelated display panels remain ful
 transparent.
 
 Cursor setup follows panel setup rather than preceding it. After every panel is
-ordered and the input panel has made its overlay view first responder, each
-visible view asks its owning window to invalidate and rebuild the crosshair
-cursor rectangle. Only then does the controller push and set the system
-crosshair. Mouse-down repeats the window-level refresh for the clicked panel
-after making that panel input-ready.
+ordered and the pointer panel has become key with its overlay view first
+responder, that view asks its owning window to invalidate and rebuild its
+full-window crosshair cursor rectangle. Cursor-rectangle management remains
+enabled so AppKit continues to apply that crosshair during movement. The
+controller waits one main-actor turn for the key-window refresh to settle, then
+pushes and sets the selection-wide system crosshair. Mouse-down repeats the
+window-level refresh after making a newly clicked panel key.
 
 AppKit does not reliably replace the WindowServer cursor while another
 application remains active. CopyLasso therefore requests foreground status for
@@ -161,6 +163,14 @@ reports a one-shot key-readiness callback. Only that callback rebuilds cursor
 rectangles and pushes the native crosshair. Cleanup cancels pending readiness,
 and direct tests cover delayed key status, cancellation, duplicate callbacks, and
 a mouse-down handoff that arrives before the initial panel reports key.
+
+A later signed run proved that disabling cursor-rectangle management to avoid a
+stationary overwrite instead made the pointer alternate between the arrow and
+crosshair during movement. The correction keeps native cursor rectangles active,
+refreshes the exact keyed surface, and defers the global crosshair push by one
+main-actor turn so AppKit's key-window refresh is established first. Focused
+tests prove the refresh through the owning window, the refresh-before-push order,
+and suppression of a scheduled push after cancellation.
 
 The G13 production run on macOS 26.5.1 used the Dell primary display at 1920 × 1080 and 144 Hz: display ID `4`, matching AppKit and Core Graphics bounds `(0, 0, 1920, 1080)`, 1× backing scale, and a matching 100-point backing conversion. Menu and global-shortcut invocation each presented one accessible overlay without replacing frontmost TextEdit. Escape, click cancellation, a valid drag, full-screen TextEdit, and quitting during selection all removed every panel and left no CopyLasso window or process behind. The signed suite completed 20 mixed live sessions without changing the clipboard.
 
