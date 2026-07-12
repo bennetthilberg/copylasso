@@ -104,7 +104,7 @@ where those properties apply.
 | Menu fallback with shortcut cleared | Capture Text remains usable and matches shortcut behavior | **Blocked** — a physical menu invocation reached the same production permission path, but it was not run while the shortcut was cleared |
 | Rapid repeated shortcut while active | One operation remains active; later requests are rejected without overlays, clipboard writes, or stuck state | **Blocked** — Computer Use cannot deliver the registered Carbon hotkey and no physical repeated-input run has completed |
 | Ordinary success | Selected text reaches plain-text clipboard; bounded success HUD appears without activation | **Pass** — four signed selections completed through real ScreenCaptureKit, Vision, and the plain-text pasteboard; the bounded success HUD appeared and cleared while the originating app remained visible |
-| Selection cursor and drag rendering | Clear before mouse-down; crosshair before and throughout the drag; initiating display dims outside the selection | **Fail** — on the bright browser fixture the pointer never became a crosshair before or during the drag; outside-selection dimming did work, OCR succeeded, and Computer Use confirmed that every overlay window cleaned up afterward |
+| Selection cursor and drag rendering | Clear before mouse-down; one normal-sized crosshair replaces the pointer before and throughout the drag; initiating display dims outside the selection | **Fail** — the signed app-drawn candidate left the ordinary arrow visible and added a second, slightly oversized reticle offset below it; outside-selection dimming and OCR still worked, but the duplicate pointer treatment is not acceptable |
 | Reverse drag and every edge | Correct region, initiating-display clamp, no orphaned panel/cursor | **Blocked** — ordinary forward drags cleaned up, but reverse and four-edge coverage remains pending |
 | Every connected display and backing scale | Correct display identity, point-to-pixel scale, crop, HUD placement, and focus preservation | **Blocked** — Dell 1× capture succeeded; physical Sidecar 2× capture remains pending |
 | Cross-display drag | Initiating display alone dims; selection clamps at its edge and never spans displays | **Blocked** — both physical displays are connected, but neither cross-display direction has been exercised in this run |
@@ -131,12 +131,13 @@ where those properties apply.
 
 ### Release-Blocking Stop
 
-The bright-background signed run makes the cursor result unambiguous: no
-crosshair appeared before mouse-down or at any point during the drag. This
-violates the v0.1 requirement that the pointer remain visible while dragging
-and the accepted overlay design's explicit crosshair cue. Dimming outside the
-selection worked, the selected browser text copied exactly, and Computer Use
-readback found no remaining CopyLasso overlay or HUD window after completion.
+The first bright-background signed run showed only the ordinary arrow. The
+follow-up signed candidate made its app-drawn reticle visible, but left the
+ordinary arrow in place and rendered a second, slightly oversized reticle
+offset below it. The required result is one normal-sized crosshair replacing
+the pointer before mouse-down and throughout the drag, so both observations are
+release-blocking failures. Dimming outside the selection worked and OCR copied
+the controlled browser text in both runs.
 
 Per G24's stop condition, the remaining interactive matrix and final numeric
 baselines are paused. Production behavior must not be changed inside G24. A
