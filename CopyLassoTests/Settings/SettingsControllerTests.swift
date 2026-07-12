@@ -238,7 +238,7 @@ final class SettingsControllerTests: XCTestCase {
   }
 
   private var suggestedShortcut: KeyboardShortcuts.Shortcut {
-    KeyboardShortcuts.Shortcut(.two, modifiers: [.control, .shift, .command])
+    KeyboardShortcuts.Shortcut(.two, modifiers: [.shift, .command])
   }
 
   private func makeContext(
