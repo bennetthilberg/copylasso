@@ -421,6 +421,123 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(readyCallCount, 0)
   }
 
+  func testDraggingUsesOneThinGrayDashedOutlineWithSteadyLinearMotion() throws {
+    let view = RegionSelectionView(
+      frame: CGRect(x: 0, y: 0, width: 200, height: 100),
+      style: SelectionOverlayStyle(
+        dimOpacity: 0.18,
+        outline: SelectionOutlineStyle(
+          lineWidth: 1,
+          grayWhiteComponent: 0.68,
+          dashLength: 6,
+          gapLength: 4,
+          phaseDuration: 0.6,
+          animates: true
+        )
+      )
+    )
+    view.displayFrame = CGRect(x: 1_000, y: 500, width: 200, height: 100)
+
+    view.renderState = .dragging(
+      rect: CGRect(x: 1_020, y: 530, width: 80, height: 40)
+    )
+
+    let outlineLayers = view.layer?.sublayers?.compactMap { $0 as? CAShapeLayer } ?? []
+    guard outlineLayers.count == 1 else {
+      return XCTFail("Expected one dedicated dashed outline layer")
+    }
+    let outline = outlineLayers[0]
+
+    XCTAssertEqual(outline.name, "copylasso.selection.outline")
+    XCTAssertEqual(outline.lineWidth, 1)
+    XCTAssertEqual(outline.lineDashPattern, [6, 4])
+    XCTAssertEqual(
+      outline.path?.boundingBoxOfPath,
+      CGRect(x: 20, y: 30, width: 80, height: 40)
+    )
+
+    let strokeColor = try XCTUnwrap(outline.strokeColor)
+    let grayColor = try XCTUnwrap(NSColor(cgColor: strokeColor))
+    XCTAssertEqual(grayColor.whiteComponent, 0.68, accuracy: 0.01)
+    XCTAssertEqual(grayColor.alphaComponent, 1, accuracy: 0.01)
+
+    XCTAssertEqual(outline.animationKeys(), ["selectionOutlinePhase"])
+    let animation = try XCTUnwrap(
+      outline.animation(forKey: "selectionOutlinePhase") as? CABasicAnimation
+    )
+    XCTAssertEqual(animation.keyPath, "lineDashPhase")
+    XCTAssertEqual((animation.fromValue as? NSNumber)?.doubleValue, 0)
+    XCTAssertEqual((animation.toValue as? NSNumber)?.doubleValue, -10)
+    XCTAssertEqual(animation.duration, 0.6)
+    XCTAssertEqual(animation.repeatCount, .infinity)
+
+    let timingFunction = try XCTUnwrap(animation.timingFunction)
+    var firstControlPoint = [Float](repeating: 0, count: 2)
+    timingFunction.getControlPoint(at: 1, values: &firstControlPoint)
+    var secondControlPoint = [Float](repeating: 0, count: 2)
+    timingFunction.getControlPoint(at: 2, values: &secondControlPoint)
+    XCTAssertEqual(firstControlPoint, [0, 0])
+    XCTAssertEqual(secondControlPoint, [1, 1])
+  }
+
+  func testDashedOutlineTracksDragWithoutImplicitPathAnimationAndClears() throws {
+    let appearance = AccessibilityAppearance(
+      increaseContrast: false,
+      differentiateWithoutColor: false,
+      reduceTransparency: false,
+      reduceMotion: false
+    )
+    let view = RegionSelectionView(
+      frame: CGRect(x: 0, y: 0, width: 200, height: 100),
+      style: appearance.selectionOverlayStyle
+    )
+    view.displayFrame = CGRect(x: 1_000, y: 500, width: 200, height: 100)
+
+    view.renderState = .dragging(
+      rect: CGRect(x: 1_020, y: 530, width: 80, height: 40)
+    )
+    let outline = try XCTUnwrap(
+      view.layer?.sublayers?.compactMap { $0 as? CAShapeLayer }.first
+    )
+
+    view.renderState = .dragging(
+      rect: CGRect(x: 1_040, y: 510, width: 120, height: 70)
+    )
+
+    XCTAssertEqual(
+      outline.path?.boundingBoxOfPath,
+      CGRect(x: 40, y: 10, width: 120, height: 70)
+    )
+    XCTAssertNil(outline.animation(forKey: "path"))
+    XCTAssertEqual(outline.animationKeys(), ["selectionOutlinePhase"])
+
+    view.renderState = .clear
+
+    XCTAssertNil(outline.path)
+    XCTAssertNil(outline.animationKeys())
+  }
+
+  func testReduceMotionUsesTheSameDashedOutlineWithoutPhaseAnimation() throws {
+    let appearance = AccessibilityAppearance(
+      increaseContrast: false,
+      differentiateWithoutColor: false,
+      reduceTransparency: false,
+      reduceMotion: true
+    )
+    let view = RegionSelectionView(
+      frame: CGRect(x: 0, y: 0, width: 200, height: 100),
+      style: appearance.selectionOverlayStyle
+    )
+    view.renderState = .dragging(rect: CGRect(x: 20, y: 30, width: 80, height: 40))
+
+    let outline = try XCTUnwrap(
+      view.layer?.sublayers?.compactMap { $0 as? CAShapeLayer }.first
+    )
+    XCTAssertEqual(outline.lineDashPattern, [6, 4])
+    XCTAssertNotNil(outline.path)
+    XCTAssertNil(outline.animationKeys())
+  }
+
   func testMouseDownMakesClickedNonInitialSurfaceInputReadyBeforeDragHandling()
     async throws
   {

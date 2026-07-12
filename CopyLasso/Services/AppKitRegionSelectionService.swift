@@ -575,21 +575,29 @@ final class RegionSelectionPanel: NSPanel {
 @MainActor
 final class RegionSelectionView: NSView {
   var eventHandler: ((SelectionOverlayEvent) -> Void)?
-  var displayFrame: CGRect = .zero
+  var displayFrame: CGRect = .zero {
+    didSet {
+      updateSelectionOutline()
+    }
+  }
   var renderState: SelectionOverlayRenderState = .clear {
     didSet {
+      updateSelectionOutline()
       needsDisplay = true
     }
   }
   override var acceptsFirstResponder: Bool { true }
 
   private let style: SelectionOverlayStyle
+  private let outlineLayer = CAShapeLayer()
+  private static let outlineAnimationKey = "selectionOutlinePhase"
 
   init(frame frameRect: NSRect, style: SelectionOverlayStyle) {
     self.style = style
     super.init(frame: frameRect)
     wantsLayer = true
     layer?.backgroundColor = NSColor.clear.cgColor
+    configureOutlineLayer()
     setAccessibilityElement(true)
     setAccessibilityIdentifier("copylasso.selection.overlay")
     setAccessibilityRole(.group)
@@ -604,6 +612,20 @@ final class RegionSelectionView: NSView {
 
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
     true
+  }
+
+  override func viewDidMoveToWindow() {
+    super.viewDidMoveToWindow()
+    outlineLayer.contentsScale = window?.backingScaleFactor ?? 1
+  }
+
+  override func layout() {
+    super.layout()
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    outlineLayer.frame = bounds
+    CATransaction.commit()
+    updateSelectionOutline()
   }
 
   override func resetCursorRects() {
@@ -656,11 +678,7 @@ final class RegionSelectionView: NSView {
   }
 
   private func drawSelection(_ globalRect: CGRect) {
-    let localRect =
-      globalRect
-      .offsetBy(dx: -displayFrame.minX, dy: -displayFrame.minY)
-      .intersection(bounds)
-    guard !localRect.isNull else { return }
+    guard let localRect = localSelectionRect(for: globalRect) else { return }
 
     NSGraphicsContext.saveGraphicsState()
     let outside = NSBezierPath(rect: bounds)
@@ -668,15 +686,70 @@ final class RegionSelectionView: NSView {
     outside.windingRule = .evenOdd
     NSColor.black.withAlphaComponent(style.dimOpacity).setFill()
     outside.fill()
-
-    let border = NSBezierPath(rect: localRect)
-    border.lineWidth = style.outerBorderWidth
-    NSColor.black.setStroke()
-    border.stroke()
-    border.lineWidth = style.innerBorderWidth
-    NSColor.white.setStroke()
-    border.stroke()
     NSGraphicsContext.restoreGraphicsState()
+  }
+
+  private func configureOutlineLayer() {
+    outlineLayer.name = "copylasso.selection.outline"
+    outlineLayer.fillColor = nil
+    outlineLayer.strokeColor =
+      NSColor(
+        calibratedWhite: style.outline.grayWhiteComponent,
+        alpha: 1
+      ).cgColor
+    outlineLayer.lineWidth = style.outline.lineWidth
+    outlineLayer.lineDashPattern = [
+      NSNumber(value: style.outline.dashLength),
+      NSNumber(value: style.outline.gapLength),
+    ]
+    outlineLayer.lineCap = .butt
+    outlineLayer.lineJoin = .miter
+    outlineLayer.lineDashPhase = 0
+    outlineLayer.actions = [
+      "bounds": NSNull(),
+      "path": NSNull(),
+      "position": NSNull(),
+    ]
+    outlineLayer.frame = bounds
+    layer?.addSublayer(outlineLayer)
+  }
+
+  private func updateSelectionOutline() {
+    let localRect: CGRect?
+    if case .dragging(let globalRect) = renderState {
+      localRect = localSelectionRect(for: globalRect)
+    } else {
+      localRect = nil
+    }
+
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    outlineLayer.path = localRect.map { CGPath(rect: $0, transform: nil) }
+    CATransaction.commit()
+
+    if localRect == nil || !style.outline.animates {
+      outlineLayer.removeAnimation(forKey: Self.outlineAnimationKey)
+    } else if outlineLayer.animation(forKey: Self.outlineAnimationKey) == nil {
+      outlineLayer.add(makeOutlineAnimation(), forKey: Self.outlineAnimationKey)
+    }
+  }
+
+  private func makeOutlineAnimation() -> CABasicAnimation {
+    let animation = CABasicAnimation(keyPath: "lineDashPhase")
+    animation.fromValue = 0
+    animation.toValue = -(style.outline.dashLength + style.outline.gapLength)
+    animation.duration = style.outline.phaseDuration
+    animation.repeatCount = .infinity
+    animation.timingFunction = CAMediaTimingFunction(name: .linear)
+    return animation
+  }
+
+  private func localSelectionRect(for globalRect: CGRect) -> CGRect? {
+    let localRect =
+      globalRect
+      .offsetBy(dx: -displayFrame.minX, dy: -displayFrame.minY)
+      .intersection(bounds)
+    return localRect.isNull ? nil : localRect
   }
 
   private func globalPoint(for event: NSEvent) -> CGPoint? {

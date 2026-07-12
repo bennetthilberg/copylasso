@@ -263,8 +263,11 @@ if [[ ! -e "$accessibility_appearance" ]] || \
     ! /usr/bin/grep -q 'accessibilityDisplayShouldReduceMotion' "$accessibility_appearance" || \
     ! /usr/bin/grep -q 'appearanceProvider.currentAppearance.selectionOverlayStyle' \
       CopyLasso/Services/AppKitRegionSelectionService.swift || \
-    ! /usr/bin/grep -q 'style.outerBorderWidth' \
+    ! /usr/bin/grep -q 'style.outline.lineWidth' \
       CopyLasso/Services/AppKitRegionSelectionService.swift || \
+    ! /usr/bin/grep -q 'CAMediaTimingFunction(name: .linear)' \
+      CopyLasso/Services/AppKitRegionSelectionService.swift || \
+    ! /usr/bin/grep -q 'animates: !reduceMotion' "$accessibility_appearance" || \
     ! /usr/bin/grep -q 'FeedbackPanelLayout.contentHeight' \
       CopyLasso/SharedUI/FeedbackPanel.swift || \
     ! /usr/bin/grep -q 'animationBehavior = .none' CopyLasso/SharedUI/FeedbackPanel.swift || \
@@ -282,7 +285,7 @@ if [[ ! -e "$accessibility_appearance" ]] || \
     /usr/bin/grep -q 'lineLimit(2)' CopyLasso/SharedUI/FeedbackPanel.swift || \
     /usr/bin/grep -q 'frame(width: 560, height: 620)' CopyLasso/SharedUI/OnboardingView.swift || \
     /usr/bin/grep -q 'frame(width: 520, height: 560)' CopyLasso/SharedUI/SettingsView.swift; then
-    echo "G21 must retain accessible controls, adaptive text, contrast, and motion-free panels." >&2
+    echo "G21 must retain accessible controls, adaptive text, contrast, motion-aware selection, and motion-free panels." >&2
     exit 1
 fi
 

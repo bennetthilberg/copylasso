@@ -20,7 +20,7 @@ The AppKit approach is viable. CopyLasso will use one transparent, borderless `N
 - sits at screen-saver level and does not enter normal window cycling;
 - is visually clear before mouse-down while the normal AppKit crosshair replaces the pointer;
 - while dragging, dims only the initiating display outside the selection with 18% black; and
-- draws a black-and-white selection border that remains visible over light and dark content.
+- draws one thin neutral-gray dashed selection outline whose phase moves linearly around the active rectangle, while Reduce Motion leaves the same dashed outline static.
 
 Before panels are shown, the activation manager records the frontmost application,
 requests selection-only activation, and waits for AppKit's
