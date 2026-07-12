@@ -91,12 +91,12 @@ final class ServiceContractTests: XCTestCase {
     XCTAssertEqual(service.writtenTexts, ["known test text"])
   }
 
-  func testFeedbackSpyRecordsConfiguredEventsAndSupportsFailure() async throws {
+  func testFeedbackSpyRecordsConfiguredEventsAndSupportsFailure() throws {
     let service = SpyFeedbackService()
 
-    try await service.present(.success(preview: "known preview"))
-    try await service.present(.noText)
-    try await service.present(.failure(.recognition))
+    try service.present(.success(preview: "known preview"))
+    try service.present(.noText)
+    try service.present(.failure(.recognition))
 
     XCTAssertEqual(
       service.presentedFeedback,
@@ -105,7 +105,7 @@ final class ServiceContractTests: XCTestCase {
 
     service.error = .injected
     do {
-      try await service.present(.failure(.feedback))
+      try service.present(.failure(.feedback))
       XCTFail("Expected feedback presentation to throw")
     } catch {
       XCTAssertEqual(error as? TestServiceError, .injected)
