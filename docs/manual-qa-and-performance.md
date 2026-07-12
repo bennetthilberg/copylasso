@@ -4,7 +4,7 @@
 
 **Goal:** G24
 
-**Execution state:** G24S key-ready native-cursor candidate pending signed rapid-reuse proof; complete clean G24 rerun pending
+**Execution state:** G24T signed standard-appearance cursor/outline follow-up passed; complete clean G24 rerun pending
 
 This is the release record for system behavior that unit tests and unsigned hosted runners cannot faithfully validate. A result is **Pass**, **Fail**, **Blocked**, or **Not applicable**. Historical spike screenshots and injected-service tests provide context but never replace a fresh G24 result.
 
@@ -128,6 +128,42 @@ It also changes the suggested/default shortcut to `Shift-Command-2` (`⇧⌘2`)
 without altering existing customized shortcuts. Automated evidence does not
 promote either behavior until a fresh exact-head signed run passes.
 
+### July 12, 2026 G24T Signed Dashed-Outline Run
+
+The initial animated-outline candidate used exact code head
+`f2ef0efc4f21156e0916982081568d8d8785716e`. Strict verification passed for
+the Debug bundle, version 0.1.0 build 1, arm64, Hardened Runtime, App Sandbox,
+development-only `get-task-allow`, and no network entitlement. Computer Use
+launched only the canonical signed artifact, invoked `⇧⌘2` over the controlled
+browser fixture, observed the selection surface, and verified Escape cleanup.
+
+The maintainer physically confirmed that the retired heavy two-tone border was
+replaced by exactly one thin gray dashed outline and that its dashes moved
+steadily. The same run exposed a movement-time cursor regression: moving the
+pointer could alternate repeatedly between arrow and crosshair. The outline
+therefore passed, but the combined selection treatment remained a signed
+**Fail** until the follow-up below.
+
+### July 12, 2026 G24T Cursor-And-Radius Follow-Up
+
+The follow-up used exact signed head
+`7c335aad174a8b7d79765f742b1383d4c75a65a1` from the canonical artifact path.
+Strict verification again passed for the expected Debug bundle, version/build,
+arm64 architecture, Hardened Runtime, App Sandbox, development-only Debug
+entitlement, and absence of network entitlements. Computer Use launched that
+artifact as the sole CopyLasso process, invoked `⇧⌘2` on the controlled browser
+fixture, observed the selection surface, and verified Escape cleanup.
+
+The correction keeps native full-window crosshair cursor rectangles active,
+refreshes the exact keyed surface through its owning window, waits one
+main-actor turn, and only then applies the selection-wide native crosshair. The
+outline retains its steady linear dash motion and adds a subtle two-point visual
+radius without changing square selection or capture geometry. The maintainer's
+physical follow-up confirmed that the cursor no longer alternated with the arrow
+during movement and accepted the updated treatment. This is a signed **Pass**
+for the G24T standard-appearance cursor, outline, radius, and Escape boundary;
+it does not promote the remaining full G24 matrix or accessibility-mode rows.
+
 ## Clean-State Preparation
 
 1. Build Debug with the stable Apple Development identity and verify its designated requirement.
@@ -173,9 +209,9 @@ where those properties apply.
 | Shortcut with browser and TextEdit frontmost | Same command path and originating-app restoration | **Blocked** — Chrome focus restoration passed on the exact signed cursor-fix head; fresh TextEdit restoration remains pending |
 | Shortcut with another native app frontmost | Same command path and restoration outside the specifically tested apps | **Blocked** — no fresh third-native-app result |
 | Menu fallback with shortcut cleared | Capture Text remains usable and matches shortcut behavior | **Blocked** — a physical menu invocation reached the same production permission path, but it was not run while the shortcut was cleared |
-| Rapid repeated shortcut while active | Requests during permission, selection, capture, or OCR are rejected; a request during feedback dismisses that HUD and immediately begins exactly one fresh selection | **Fail** — the first candidate intermittently failed around the third cycle; decoupled feedback removed that workflow race, but both it and the application-activation candidate still flickered. The key-ready panel candidate is green in automation and requires a fresh signed rerun |
+| Rapid repeated shortcut while active | Requests during permission, selection, capture, or OCR are rejected; a request during feedback dismisses that HUD and immediately begins exactly one fresh selection | **Blocked** for the complete matrix — historical candidates failed around the third cycle. The current G24T signed follow-up kept the crosshair stable during the maintainer's requested repeated movement/drag check, but the protocol's full rapid-state and ten-cycle sweep still requires a coherent clean run |
 | Ordinary success | Selected text reaches plain-text clipboard; bounded success HUD appears after originating-app restoration | **Pass** — five signed selections completed through real ScreenCaptureKit, Vision, and the plain-text pasteboard; the cursor-fix run restored Chrome focus before the bounded success HUD finished |
-| Selection cursor and drag rendering | Clear before mouse-down; one normal-sized crosshair replaces the pointer before and throughout the drag; initiating display dims outside the selection | **Fail** under rapid reuse — an isolated signed capture previously showed one correct native crosshair, but later exact signed rapid sequences flickered or retained the arrow until mouse-down; the key-ready panel candidate remains unproven physically |
+| Selection cursor and drag rendering | Clear before mouse-down; one normal-sized crosshair replaces the pointer before and throughout the drag; initiating display dims outside the selection; one thin gray dashed two-point-radius outline moves steadily | **Pass** for the current standard-appearance boundary at `7c335aa` — the maintainer confirmed the cursor remained a crosshair during movement and drag, accepted the subtle radius, and the already-approved dashes remained steady; Computer Use verified invocation and Escape cleanup |
 | Reverse drag and every edge | Correct region, initiating-display clamp, no orphaned panel/cursor | **Blocked** — ordinary forward drags cleaned up, but reverse and four-edge coverage remains pending |
 | Every connected display and backing scale | Correct display identity, point-to-pixel scale, crop, HUD placement, and focus restoration | **Blocked** — Dell 1× capture succeeded; physical Sidecar 2× capture remains pending |
 | Cross-display drag | Initiating display alone dims; selection clamps at its edge and never spans displays | **Blocked** — both physical displays are connected, but neither cross-display direction has been exercised in this run |
@@ -190,7 +226,7 @@ where those properties apply.
 | Sleep and wake during every active phase | One system-interruption cancellation, cleanup, no auto-resume, immediate reuse | **Blocked** — no active-phase sleep/wake sequence |
 | Lock and unlock during every active phase | Same lifecycle contract and no sensitive residue | **Blocked** — the session was successfully unlocked to resume G24, but no active-phase lock/unlock sequence ran |
 | Launch at Login enabled/disabled | Correct dockless presence after real logout/login or reboot | **Blocked** — onboarding enabled exactly one login item pointing to the signed artifact; the required enabled and disabled login cycles remain pending |
-| Light, dark, increased contrast, reduced motion, maximum text size | Legible native UI, two-tone selection, no app animation, no clipped text | **Blocked** — onboarding, Settings, recovery, and HUD were legible in the current dark appearance, and bright-background dimming passed; light mode, increased contrast, reduced motion, maximum text size, and border appearance remain pending after the cursor fix |
+| Light, dark, increased contrast, reduced motion, maximum text size | Legible native UI, one thin gray dashed two-point-radius selection outline, static dash phase under Reduce Motion, no clipped text | **Blocked** for the complete accessibility-mode sweep — the current standard bright-browser treatment passed physically, while Light/Dark system variation, Increased Contrast, Reduce Motion, and maximum text size still require a coherent signed run |
 | VoiceOver and Full Keyboard Access | Clear labels/order/actions across menu, onboarding, Settings, recovery, selection, and HUD | **Blocked** — Computer Use confirmed labels/help/order for onboarding, Settings, recovery, and the selection overlay; VoiceOver speech and Full Keyboard Access remain untested |
 | Offline success | Core workflow succeeds with process networking denied | **Blocked** for real pixels; 196 injected/fixture tests passed under deny-network sandbox in G23, but no signed interactive offline capture ran |
 | Protected content | Controlled blank/unavailable/no-text behavior; no bypass or invented text | **Blocked** — no fresh protected-surface result |
