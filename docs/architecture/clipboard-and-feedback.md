@@ -8,7 +8,7 @@ G17 implements the final output adapters without adding notification permission,
 
 The adapter deliberately never reads or snapshots the prior general pasteboard. Starting in macOS 15.4, programmatic general-pasteboard reads can trigger a separate access alert; avoiding that read preserves CopyLasso's Screen-Recording-only permission contract and avoids creating clipboard history in memory. Cancellation, no text, permission denial, selection failure, capture failure, OCR failure, and formatting failure do not call the adapter, so the existing clipboard is untouched.
 
-AppKit requires clearing before writing a replacement. The item is fully prepared before that clear, but if AppKit were to reject the subsequent `writeObjects` call, the old contents could not be restored without having performed the prohibited prior read. CopyLasso reports that exceptional clipboard-stage failure honestly. This platform tradeoff is preferred over prompting for read access on every ordinary capture.
+AppKit exposes no atomic replace operation: it requires clearing before the fallible replacement write. The item is fully prepared before that clear, but if AppKit rejects the subsequent `writeObjects` call, the old contents cannot be restored without having performed the prohibited prior read. CopyLasso reports that exceptional clipboard-stage failure honestly. The v0.1 contract explicitly chooses this privacy-first boundary over prompting for read access, transiently retaining arbitrary prior clipboard data, and attempting a restoration that can itself race or fail.
 
 ## Bounded Feedback
 
