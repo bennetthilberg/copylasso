@@ -143,7 +143,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     XCTAssertEqual(coordinator.state, .idle)
   }
 
-  func testRecognitionFailureReleasesPixelsBeforeHeldFailureFeedback() async throws {
+  func testRecognitionFailureFeedbackCanBeReplacedAfterPixelsAreReleased() async throws {
     let coordinator = CaptureCoordinator()
     let scheduler = IntegrationWorkScheduler()
     let capture = EphemeralScreenCaptureService()
@@ -181,13 +181,16 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     XCTAssertTrue(imageWasReleased)
     XCTAssertEqual(feedback.presentedFeedback, [.failure(.recognition)])
     XCTAssertEqual(clipboard.writtenTexts, [])
-    XCTAssertEqual(coordinator.state, .recognizing)
-    XCTAssertEqual(command.perform(), .rejectedBusy(currentState: .recognizing))
-
-    feedback.dismiss()
-    await flow.value
-    XCTAssertEqual(coordinator.state, .idle)
+    XCTAssertEqual(coordinator.state, .completing)
     XCTAssertTrue(command.isEnabled)
+    XCTAssertEqual(
+      command.perform(),
+      .transitioned(from: .completing, to: .requestingPermission)
+    )
+
+    await flow.value
+    XCTAssertEqual(coordinator.state, .requestingPermission)
+    XCTAssertEqual(scheduler.scheduledCount, 2)
   }
 
   func testMenuAndShortcutRouteThroughTheExactSameSuccessfulCommand() async throws {

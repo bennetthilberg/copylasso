@@ -43,6 +43,7 @@ final class FeedbackPanelController: FeedbackService {
   private let waitForDismissal: DismissalWaiter
   private var panel: (any FeedbackPanelHosting)?
   private var presentationGeneration: UInt = 0
+  private var dismissalTask: Task<Void, any Error>?
 
   init(
     displayDuration: Duration = .milliseconds(2500),
@@ -68,14 +69,26 @@ final class FeedbackPanelController: FeedbackService {
       backgroundStyle: appearanceProvider.currentAppearance.feedbackHUDBackgroundStyle
     )
     ensurePanel().show()
+    let task = Task { @MainActor [waitForDismissal] in
+      try await waitForDismissal()
+    }
+    dismissalTask = task
 
     do {
-      try await waitForDismissal()
+      try await task.value
     } catch {
       dismissIfCurrent(generation)
       throw error
     }
     dismissIfCurrent(generation)
+  }
+
+  func dismiss() {
+    presentationGeneration &+= 1
+    dismissalTask?.cancel()
+    dismissalTask = nil
+    model.dismiss()
+    panel?.hide()
   }
 
   private func ensurePanel() -> any FeedbackPanelHosting {
@@ -91,6 +104,7 @@ final class FeedbackPanelController: FeedbackService {
     guard generation == presentationGeneration else {
       return
     }
+    dismissalTask = nil
     model.dismiss()
     panel?.hide()
   }
