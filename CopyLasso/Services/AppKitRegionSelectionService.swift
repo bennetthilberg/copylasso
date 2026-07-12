@@ -64,6 +64,12 @@ protocol SelectionCursorManaging: AnyObject {
 }
 
 @MainActor
+protocol SelectionApplicationActivationManaging: AnyObject {
+  func activateForSelection()
+  func restorePreviousApplication()
+}
+
+@MainActor
 final class AppKitRegionSelectionService: RegionSelectionService {
   typealias CompletionWork = @MainActor @Sendable () -> Void
   typealias CompletionScheduler = @MainActor (@escaping CompletionWork) -> Void
@@ -72,6 +78,8 @@ final class AppKitRegionSelectionService: RegionSelectionService {
   private let surfaceFactory: any SelectionOverlaySurfaceMaking
   private let lifecycleObserver: any SelectionOverlayLifecycleObserving
   private let cursorManager: any SelectionCursorManaging
+  private let activationManager: any SelectionApplicationActivationManaging
+  private let pointerLocation: () -> CGPoint
   private let scheduleCompletion: CompletionScheduler
   private var activeController: SelectionOverlayController?
   private var hasPendingContinuation = false
@@ -85,7 +93,8 @@ final class AppKitRegionSelectionService: RegionSelectionService {
       displayProvider: SystemSelectionDisplayProvider(),
       surfaceFactory: AppKitSelectionOverlaySurfaceFactory(),
       lifecycleObserver: SystemSelectionOverlayLifecycleObserver(),
-      cursorManager: SystemSelectionCursorManager()
+      cursorManager: SystemSelectionCursorManager(),
+      activationManager: SystemSelectionApplicationActivationManager()
     )
   }
 
@@ -94,6 +103,8 @@ final class AppKitRegionSelectionService: RegionSelectionService {
     surfaceFactory: any SelectionOverlaySurfaceMaking,
     lifecycleObserver: any SelectionOverlayLifecycleObserving,
     cursorManager: any SelectionCursorManaging,
+    activationManager: any SelectionApplicationActivationManaging,
+    pointerLocation: @escaping () -> CGPoint = { NSEvent.mouseLocation },
     scheduleCompletion: @escaping CompletionScheduler = AppKitRegionSelectionService
       .scheduleOnNextMainActorTurn
   ) {
@@ -101,6 +112,8 @@ final class AppKitRegionSelectionService: RegionSelectionService {
     self.surfaceFactory = surfaceFactory
     self.lifecycleObserver = lifecycleObserver
     self.cursorManager = cursorManager
+    self.activationManager = activationManager
+    self.pointerLocation = pointerLocation
     self.scheduleCompletion = scheduleCompletion
   }
 
@@ -117,7 +130,9 @@ final class AppKitRegionSelectionService: RegionSelectionService {
         displays: displays,
         surfaceFactory: surfaceFactory,
         lifecycleObserver: lifecycleObserver,
-        cursorManager: cursorManager
+        cursorManager: cursorManager,
+        activationManager: activationManager,
+        pointerLocation: pointerLocation
       )
       activeController = controller
 
@@ -169,11 +184,14 @@ private final class SelectionOverlayController {
   private let surfaceFactory: any SelectionOverlaySurfaceMaking
   private let lifecycleObserver: any SelectionOverlayLifecycleObserving
   private let cursorManager: any SelectionCursorManaging
+  private let activationManager: any SelectionApplicationActivationManaging
+  private let pointerLocation: () -> CGPoint
   private var surfaces: [any SelectionOverlaySurface] = []
   private var completion: Completion?
   private var hasFinished = false
   private var lifecycleStarted = false
   private var cursorPushed = false
+  private var activationRequested = false
   private lazy var session = SelectionSession(displays: displays) { [weak self] outcome in
     self?.finish(.success(outcome))
   }
@@ -182,12 +200,16 @@ private final class SelectionOverlayController {
     displays: [DisplayGeometry],
     surfaceFactory: any SelectionOverlaySurfaceMaking,
     lifecycleObserver: any SelectionOverlayLifecycleObserving,
-    cursorManager: any SelectionCursorManaging
+    cursorManager: any SelectionCursorManaging,
+    activationManager: any SelectionApplicationActivationManaging,
+    pointerLocation: @escaping () -> CGPoint
   ) {
     self.displays = displays
     self.surfaceFactory = surfaceFactory
     self.lifecycleObserver = lifecycleObserver
     self.cursorManager = cursorManager
+    self.activationManager = activationManager
+    self.pointerLocation = pointerLocation
   }
 
   func start(completion: @escaping Completion) throws {
@@ -197,6 +219,8 @@ private final class SelectionOverlayController {
       applicationTermination: { [weak self] in self?.cancel(.applicationTerminated) }
     )
     lifecycleStarted = true
+    activationManager.activateForSelection()
+    activationRequested = true
 
     do {
       for display in displays {
@@ -211,7 +235,8 @@ private final class SelectionOverlayController {
       for surface in surfaces {
         surface.show()
       }
-      inputSurface()?.makeInputReady()
+      let pointer = pointerLocation()
+      inputSurface(at: pointer)?.makeInputReady()
       for surface in surfaces {
         surface.refreshCursorRects()
       }
@@ -234,6 +259,9 @@ private final class SelectionOverlayController {
 
     switch event {
     case .mouseDown(let point):
+      let inputSurface = surfaces.first(where: { $0.displayID == displayID })
+      inputSurface?.makeInputReady()
+      inputSurface?.refreshCursorRects()
       guard session.begin(on: displayID, at: point) else { return }
       renderCurrentDrag()
     case .mouseDragged(let point):
@@ -291,13 +319,16 @@ private final class SelectionOverlayController {
       cursorManager.popCrosshair()
       cursorPushed = false
     }
+    if activationRequested {
+      activationManager.restorePreviousApplication()
+      activationRequested = false
+    }
     let everySurfaceHidden = surfaces.allSatisfy { !$0.isVisible }
     surfaces.removeAll()
     return everySurfaceHidden
   }
 
-  private func inputSurface() -> (any SelectionOverlaySurface)? {
-    let pointer = NSEvent.mouseLocation
+  private func inputSurface(at pointer: CGPoint) -> (any SelectionOverlaySurface)? {
     return surfaces.first(where: { $0.frame.contains(pointer) }) ?? surfaces.first
   }
 }
@@ -437,7 +468,7 @@ private final class AppKitSelectionOverlaySurface: SelectionOverlaySurface {
   }
 
   func refreshCursorRects() {
-    contentView.installCrosshairCursorRect()
+    contentView.refreshCrosshairCursorRects()
   }
 
   func render(_ state: SelectionOverlayRenderState) {
@@ -455,7 +486,7 @@ private final class RegionSelectionPanel: NSPanel {
 }
 
 @MainActor
-private final class RegionSelectionView: NSView {
+final class RegionSelectionView: NSView {
   var eventHandler: ((SelectionOverlayEvent) -> Void)?
   var displayFrame: CGRect = .zero
   var renderState: SelectionOverlayRenderState = .clear {
@@ -463,7 +494,6 @@ private final class RegionSelectionView: NSView {
       needsDisplay = true
     }
   }
-
   override var acceptsFirstResponder: Bool { true }
 
   override init(frame frameRect: NSRect) {
@@ -490,9 +520,10 @@ private final class RegionSelectionView: NSView {
     addCrosshairCursorRect()
   }
 
-  func installCrosshairCursorRect() {
-    discardCursorRects()
-    addCrosshairCursorRect()
+  func refreshCrosshairCursorRects() {
+    guard let window else { return }
+    window.invalidateCursorRects(for: self)
+    window.resetCursorRects()
   }
 
   private func addCrosshairCursorRect() {
@@ -535,8 +566,12 @@ private final class RegionSelectionView: NSView {
 
   override func draw(_ dirtyRect: NSRect) {
     super.draw(dirtyRect)
-    guard case .dragging(let globalRect) = renderState else { return }
+    if case .dragging(let globalRect) = renderState {
+      drawSelection(globalRect)
+    }
+  }
 
+  private func drawSelection(_ globalRect: CGRect) {
     let localRect =
       globalRect
       .offsetBy(dx: -displayFrame.minX, dy: -displayFrame.minY)
@@ -574,6 +609,43 @@ final class SystemSelectionCursorManager: SelectionCursorManaging {
 
   func popCrosshair() {
     NSCursor.pop()
+  }
+}
+
+@MainActor
+final class SystemSelectionApplicationActivationManager:
+  SelectionApplicationActivationManaging
+{
+  private var previousApplication: NSRunningApplication?
+  private var hasActiveHandoff = false
+
+  func activateForSelection() {
+    guard !hasActiveHandoff else { return }
+    hasActiveHandoff = true
+
+    let currentApplication = NSRunningApplication.current
+    if let frontmostApplication = NSWorkspace.shared.frontmostApplication,
+      frontmostApplication.processIdentifier != currentApplication.processIdentifier
+    {
+      previousApplication = frontmostApplication
+    }
+
+    NSApp.activate(ignoringOtherApps: true)
+  }
+
+  func restorePreviousApplication() {
+    guard hasActiveHandoff else { return }
+    hasActiveHandoff = false
+
+    guard let previousApplication else { return }
+    self.previousApplication = nil
+    guard !previousApplication.isTerminated else {
+      NSApp.deactivate()
+      return
+    }
+
+    NSApp.yieldActivation(to: previousApplication)
+    _ = previousApplication.activate(from: .current, options: [])
   }
 }
 
