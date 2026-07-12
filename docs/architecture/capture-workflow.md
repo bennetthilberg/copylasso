@@ -29,7 +29,7 @@ Returning from that function ends the image, observations, and unbounded-text sc
 
 ## Completion, Cancellation, And Failure
 
-- Success and no-text stay in `completing` until feedback dismissal, then return directly to idle.
+- Success and no-text enter `completing` only while presenting feedback, then return immediately to idle while the feedback panel owns its independent dismissal timer. A new idle capture may therefore dismiss visible feedback and begin selection without waiting for that timer.
 - Escape, too-small selection, display change, application termination, and OCR cancellation are non-error cancellation outcomes. They never write the clipboard or show generic failure feedback.
 - Ordinary selection, capture, recognition, clipboard, and feedback errors are classified only by stage. Raw platform errors and content never enter observable state or user copy.
 - A real capture-time Screen Recording denial uses the specific permission-recovery panel rather than stacking a generic failure HUD.

@@ -84,6 +84,6 @@ Run the tracked source audit:
 
 The canonical CI entrypoint runs it before compiling. It validates the one-key entitlement, both build-configuration references, absence of network and content-persistence APIs, logger confinement, tracked-secret and local-path scans, the exact dependency inventory/notice/justification, and absence of prebuilt dependency binaries.
 
-The complete 187-test application unit bundle also passed when invoked directly under a process sandbox with `(deny network*)`. This exercises real Vision fixtures plus permission, selection, capture planning, formatting, clipboard, feedback, lifecycle, Settings, and end-to-end orchestration tests without disabling the workstation's network connection.
+The complete application unit bundle also passes when invoked directly under a process sandbox with `(deny network*)`. This exercises real Vision fixtures plus permission, selection, capture planning, formatting, clipboard, feedback, lifecycle, Settings, and end-to-end orchestration tests without disabling the workstation's network connection; the canonical verification record reports the exact current suite count.
 
 The signed manual privacy matrix in [Testing](testing.md) remains the release boundary for fresh real captures, container/temp-directory deltas, unified-log inspection, clipboard paste verification, and OS privacy-pane inspection. Static and injected tests are not substitutes for those observations.
