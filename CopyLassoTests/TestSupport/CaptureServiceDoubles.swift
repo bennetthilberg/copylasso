@@ -157,16 +157,20 @@ final class SpyFeedbackService: FeedbackService {
   var error: TestServiceError?
   private(set) var presentedFeedback: [CaptureFeedback] = []
   private(set) var dismissCallCount = 0
+  private(set) var isVisible = false
 
-  func present(_ feedback: CaptureFeedback) async throws {
+  func present(_ feedback: CaptureFeedback) throws {
     if let error {
       throw error
     }
     presentedFeedback.append(feedback)
+    isVisible = true
   }
 
   func dismiss() {
+    guard isVisible else { return }
     dismissCallCount += 1
+    isVisible = false
   }
 }
 
