@@ -73,13 +73,18 @@ final class CaptureCoordinator {
   func handle(_ event: CaptureEvent) -> CaptureTransitionResult {
     let previousState = state
 
-    if event == .requestCapture, previousState != .idle {
+    if event == .requestCapture,
+      previousState != .idle,
+      previousState != .completing
+    {
       return .rejectedBusy(currentState: previousState)
     }
 
     let nextState: CaptureState
     switch (previousState, event) {
     case (.idle, .requestCapture):
+      nextState = .requestingPermission
+    case (.completing, .requestCapture):
       nextState = .requestingPermission
     case (.requestingPermission, .permissionGranted):
       nextState = .selecting

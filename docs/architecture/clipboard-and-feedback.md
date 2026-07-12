@@ -25,6 +25,12 @@ AppKit exposes no atomic replace operation: it requires clearing before the fall
 
 The same observable model temporarily changes the menu-bar symbol and accessibility label. The HUD exposes its bounded message as one accessibility label. A newer presentation supersedes an older dismissal token so an earlier timer cannot hide current feedback.
 
+Feedback is the only interruptible phase of the capture workflow. A menu or global-shortcut request
+while the HUD is visible synchronously hides the panel, cancels its dismissal wait, and advances a
+request generation before scheduling a fresh permission check. The interrupted presentation observes
+that stale generation and cannot reset, fail, or otherwise mutate the replacement workflow. Requests
+during permission, selection, capture, and OCR remain busy-rejected so two workflows never overlap.
+
 ## Current Workflow Boundary
 
-The G17 command slice writes nonempty assembled text, presents a bounded success preview, presents no-text without touching the clipboard, and presents a clipboard-failure result after a rejected write. It stays in the coordinator's completing phase until feedback disappears, rejects overlapping requests, and then returns to idle. G18 retains ownership of uniform feedback at every earlier failure boundary, explicit whole-operation resource cleanup, and end-to-end stress verification.
+The G17 command slice writes nonempty assembled text, presents a bounded success preview, presents no-text without touching the clipboard, and presents a clipboard-failure result after a rejected write. It stays in the coordinator's completing phase until feedback disappears or a new request replaces it, rejects overlapping requests during every earlier phase, and otherwise returns to idle. G18 retains ownership of uniform feedback at every earlier failure boundary, explicit whole-operation resource cleanup, and end-to-end stress verification.

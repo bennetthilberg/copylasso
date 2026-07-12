@@ -148,11 +148,11 @@ The required policy is conservative: only exact same-text/same-bounds detections
 
 ## Clipboard and Feedback Matrix
 
-G17 unit coverage uses an isolated AppKit pasteboard plus a fault-injecting backend. It verifies one plain-string item and one change-count increment on success, rejection of empty text before pasteboard access, explicit prepared-write failure, no prior-pasteboard read in production source, and no rich-text representation. Source inspection verifies that the production backend prepares the local string item before the destructive clear. Workflow tests verify success writes once, no text never writes, clipboard failure never records a successful write, bounded preview derivation, feedback-failure recovery, repeated use, and busy rejection until HUD dismissal.
+G17 unit coverage uses an isolated AppKit pasteboard plus a fault-injecting backend. It verifies one plain-string item and one change-count increment on success, rejection of empty text before pasteboard access, explicit prepared-write failure, no prior-pasteboard read in production source, and no rich-text representation. Source inspection verifies that the production backend prepares the local string item before the destructive clear. Workflow tests verify success writes once, no text never writes, clipboard failure never records a successful write, bounded preview derivation, feedback-failure recovery, repeated use, busy rejection during permission/selection/capture/OCR, and immediate replacement when a new request arrives during visible feedback. Generation checks prove that the interrupted feedback task cannot mutate the replacement workflow.
 
 The preservation guarantee covers every cancellation and failure before clipboard replacement begins. AppKit has no atomic general-pasteboard replacement: if its required clear succeeds and `writeObjects` then rejects the prepared item, the prior clipboard may already be lost. CopyLasso reports that rare clipboard-stage failure and deliberately does not read or retain prior clipboard data to attempt a best-effort rollback.
 
-The app-hosted feedback suite orders the production panel front while another process is frontmost. It verifies that the panel is visible, borderless, nonactivating, unable to become key or main, mouse-transparent, status-bar level, compatible with Spaces/full-screen apps, and removed after dismissal without changing the frontmost process. Model tests verify distinct success/no-text/failure wording, 80-character grapheme-safe truncation, automatic preview release, singleton host reuse, and stale-timer protection.
+The app-hosted feedback suite orders the production panel front while another process is frontmost. It verifies that the panel is visible, borderless, nonactivating, unable to become key or main, mouse-transparent, status-bar level, compatible with Spaces/full-screen apps, and removed after dismissal without changing the frontmost process. Model tests verify distinct success/no-text/failure wording, 80-character grapheme-safe truncation, automatic preview release, singleton host reuse, stale-timer protection, and synchronous interruption of every feedback kind.
 
 ### Signed G17 Manual Matrix
 
@@ -163,6 +163,8 @@ This live matrix requires an unlocked graphical session and granted Screen Recor
 3. Select a region with no visible text. Confirm the no-text HUD is distinct and the prior clipboard remains.
 4. Keep Finder, TextEdit, and a full-screen application frontmost in separate runs. Confirm the HUD appears without activation, key-window change, sound, notification request, or menu opening.
 5. Confirm the menu symbol changes only for the HUD lifetime, the preview is readable with VoiceOver, long text is truncated with one ellipsis, and no preview remains after dismissal.
-6. Repeat success, no-text, and cancellation three times each and confirm Capture Text returns to enabled after every result.
+6. During each success, no-text, and failure HUD, invoke Capture Text again. Confirm the HUD closes
+   immediately, one fresh crosshair appears, and no stale panel or overlapping selection remains.
+7. Repeat success, no-text, and cancellation three times each and confirm Capture Text returns to enabled after every result.
 
 On the unattended July 11, 2026 run, the workstation was locked and no interactive user session was available. The deterministic app-hosted focus/panel checks ran, but the two-application paste and VoiceOver portions remain mandatory live evidence before release.
