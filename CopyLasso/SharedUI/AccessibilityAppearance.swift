@@ -5,6 +5,7 @@ struct SelectionOutlineStyle: Equatable, Sendable {
   let grayWhiteComponent: CGFloat
   let dashLength: CGFloat
   let gapLength: CGFloat
+  let cornerRadius: CGFloat
   let phaseDuration: TimeInterval
   let animates: Bool
 }
@@ -33,6 +34,7 @@ struct AccessibilityAppearance: Equatable, Sendable {
         grayWhiteComponent: 0.68,
         dashLength: 6,
         gapLength: 4,
+        cornerRadius: 2,
         phaseDuration: 0.6,
         animates: !reduceMotion
       )

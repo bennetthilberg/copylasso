@@ -724,7 +724,14 @@ final class RegionSelectionView: NSView {
 
     CATransaction.begin()
     CATransaction.setDisableActions(true)
-    outlineLayer.path = localRect.map { CGPath(rect: $0, transform: nil) }
+    outlineLayer.path = localRect.map {
+      CGPath(
+        roundedRect: $0,
+        cornerWidth: style.outline.cornerRadius,
+        cornerHeight: style.outline.cornerRadius,
+        transform: nil
+      )
+    }
     CATransaction.commit()
 
     if localRect == nil || !style.outline.animates {

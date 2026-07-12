@@ -431,6 +431,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
           grayWhiteComponent: 0.68,
           dashLength: 6,
           gapLength: 4,
+          cornerRadius: 2,
           phaseDuration: 0.6,
           animates: true
         )
@@ -455,6 +456,14 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
       outline.path?.boundingBoxOfPath,
       CGRect(x: 20, y: 30, width: 80, height: 40)
     )
+    let outlinePath = try XCTUnwrap(outline.path)
+    var curveCount = 0
+    outlinePath.applyWithBlock { element in
+      if element.pointee.type == .addCurveToPoint {
+        curveCount += 1
+      }
+    }
+    XCTAssertEqual(curveCount, 4)
 
     let strokeColor = try XCTUnwrap(outline.strokeColor)
     let grayColor = try XCTUnwrap(NSColor(cgColor: strokeColor))
