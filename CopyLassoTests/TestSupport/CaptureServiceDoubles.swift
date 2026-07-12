@@ -156,6 +156,7 @@ final class SpyClipboardService: ClipboardService {
 final class SpyFeedbackService: FeedbackService {
   var error: TestServiceError?
   private(set) var presentedFeedback: [CaptureFeedback] = []
+  private(set) var dismissCallCount = 0
 
   func present(_ feedback: CaptureFeedback) async throws {
     if let error {
@@ -163,12 +164,17 @@ final class SpyFeedbackService: FeedbackService {
     }
     presentedFeedback.append(feedback)
   }
+
+  func dismiss() {
+    dismissCallCount += 1
+  }
 }
 
 @MainActor
 func makeTestCaptureCommand(
   coordinator: CaptureCoordinator,
-  scheduleWork: @escaping CaptureCommand.WorkScheduler
+  scheduleWork: @escaping CaptureCommand.WorkScheduler,
+  feedbackService: any FeedbackService = SpyFeedbackService()
 ) -> CaptureCommand {
   CaptureCommand(
     coordinator: coordinator,
@@ -181,7 +187,7 @@ func makeTestCaptureCommand(
     ocrService: StubOCRService(result: .failure(.injected)),
     textAssembler: TextAssembler(),
     clipboardService: SpyClipboardService(),
-    feedbackService: SpyFeedbackService(),
+    feedbackService: feedbackService,
     recoveryPresenter: SpyPermissionRecoveryPresenter(),
     scheduleWork: scheduleWork
   )

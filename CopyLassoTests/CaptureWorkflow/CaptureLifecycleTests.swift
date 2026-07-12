@@ -133,6 +133,37 @@ final class CaptureLifecycleTests: XCTestCase {
     await waitForIdle(coordinator)
 
     XCTAssertFalse(feedback.isPresented)
+    XCTAssertEqual(feedback.dismissCallCount, 1)
+    XCTAssertTrue(command.isEnabled)
+  }
+
+  func testReplacingFeedbackKeepsReplacementCancellableAfterStaleTaskUnwinds() async throws {
+    let coordinator = CaptureCoordinator()
+    let feedback = CancellableHoldingLifecycleFeedbackService()
+    let clipboard = SpyClipboardService()
+    let command = makeCommand(
+      coordinator: coordinator,
+      clipboard: clipboard,
+      feedback: feedback
+    )
+
+    _ = command.perform()
+    await feedback.waitUntilPresentationCount(1)
+    XCTAssertEqual(coordinator.state, .completing)
+
+    XCTAssertEqual(
+      command.perform(),
+      .transitioned(from: .completing, to: .requestingPermission)
+    )
+    await feedback.waitUntilPresentationCount(2)
+    XCTAssertEqual(coordinator.state, .completing)
+    XCTAssertEqual(clipboard.writtenTexts, ["assembled", "assembled"])
+
+    XCTAssertTrue(command.cancelActiveOperation(reason: .systemInterrupted))
+    await waitForIdle(coordinator)
+
+    XCTAssertEqual(feedback.dismissCallCount, 2)
+    XCTAssertFalse(feedback.isPresented)
     XCTAssertTrue(command.isEnabled)
   }
 
@@ -319,8 +350,11 @@ private actor CancellableHoldingOCRService: OCRService {
 private final class CancellableHoldingLifecycleFeedbackService: FeedbackService {
   private var continuation: CheckedContinuation<Void, Error>?
   private(set) var isPresented = false
+  private(set) var presentationCount = 0
+  private(set) var dismissCallCount = 0
 
   func present(_ feedback: CaptureFeedback) async throws {
+    presentationCount += 1
     isPresented = true
     do {
       try await withTaskCancellationHandler {
@@ -341,6 +375,20 @@ private final class CancellableHoldingLifecycleFeedbackService: FeedbackService 
     while continuation == nil {
       await Task.yield()
     }
+  }
+
+  func waitUntilPresentationCount(_ count: Int) async {
+    while presentationCount < count || continuation == nil {
+      await Task.yield()
+    }
+  }
+
+  func dismiss() {
+    dismissCallCount += 1
+    isPresented = false
+    let continuation = continuation
+    self.continuation = nil
+    continuation?.resume()
   }
 
   private func cancel() {
