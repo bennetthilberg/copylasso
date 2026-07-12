@@ -72,7 +72,7 @@ Permission history contains only the two booleans needed for these neutral label
 
 Use the same stably signed Debug app after Screen Recording access is enabled. For the isolated overlay regression matrix, use the existing controlled UI boundary so downstream capture produces only its deterministic blank image; retaining one stable app avoids mixing selection evidence with permission-identity churn.
 
-1. On the primary display, invoke Capture Text from both the menu and shortcut. Verify the overlay is clear before mouse-down, the cursor is a crosshair, and only the area outside the active rectangle dims after dragging begins.
+1. On the primary display, invoke Capture Text from both the menu and shortcut. Verify the overlay is clear before mouse-down except for the black-and-white crosshair reticle at the pointer, and only the area outside the active rectangle dims after dragging begins. The ordinary system arrow may remain visible inside the reticle.
 2. Exercise forward and reverse drags, a click, a sub-four-point drag, exactly four points, Escape before dragging, Escape during dragging, and every display-edge clamp.
 3. Connect an extended display and repeat a selection there, including invoking while the pointer is on one display and starting the drag on the other. Press Escape during that drag and confirm the clicked display receives it immediately. Record fresh display identifiers, AppKit frames, Core Graphics bounds, and backing scales; never hardcode runtime identifiers.
 4. Drag from each display toward the other. The rectangle must stop at the initiating display edge, and only that display may dim.
@@ -84,11 +84,12 @@ Use the same stably signed Debug app after Screen Recording access is enabled. F
 10. Confirm no pixel file, retained image, pasteboard write, Accessibility prompt, or Input Monitoring prompt occurs. The controlled blank-image path should now produce distinct no-text feedback while preserving the clipboard; real successful clipboard output belongs to the separate G17 matrix below.
 
 The crosshair check begins with a stationary pointer before pressing the mouse
-button and continues through the drag. Seeing an arrow at either point is a
-failure. Automated tests prove that visible panels invalidate and rebuild their
-cursor rectangles through their owning windows only after the input view is
-ready, and repeat that refresh when a different panel receives mouse-down, but
-WindowServer cursor presentation still requires this signed manual observation.
+button and continues through the drag. The app-drawn two-tone reticle must be
+visible and remain centered on the pointer at both points; a system arrow inside
+it is acceptable. Automated tests prove initial placement, cross-display
+movement, drag tracking, cleanup, and visible rendering on an otherwise clear
+overlay. WindowServer composition still requires this signed manual
+observation.
 
 ### G13 Production Verification Record
 
@@ -247,7 +248,7 @@ Run this checklist with one stably signed Debug app and a normal unlocked graphi
 4. Trigger success, no-text, and each failure class. Confirm VoiceOver announces one bounded feedback element and the changing menu-bar state without moving focus. Confirm no feedback preview remains in app state after dismissal.
 5. Start selection. Confirm Accessibility Inspector reports one overlay group per display with the label `CopyLasso text selection overlay` and help `Drag to select text. Press Escape to cancel.` The visual drag itself is intentionally not replaced by a VoiceOver-driven workflow in v0.1.
 6. Test Light and Dark appearances. Inspect the template menu symbol, native forms, links, text, permission panel, success/no-text/failure HUD, clear pre-drag overlay, dim treatment, black/white border, and crosshair on bright and dark content.
-7. Enable Increased Contrast. Confirm the initiating-display dim strengthens from 18% to 28% and the two-tone border from 3/1 points to 5/2 points; unrelated displays stay clear. Repeat with Differentiate Without Color and verify every state remains named and symbol/text differentiated without hue.
+7. Enable Increased Contrast. Confirm the initiating-display dim strengthens from 18% to 28%, the two-tone border from 3/1 points to 5/2 points, and the reticle's outer stroke from 4 to 5 points while its white inner stroke remains 2 points; unrelated displays stay clear. Repeat with Differentiate Without Color and verify every state remains named and symbol/text differentiated without hue.
 8. Enable Reduce Transparency and confirm every newly presented or reused feedback HUD replaces its material with an opaque semantic window background while retaining readable text and borders. Inspect the remaining native materials and window backgrounds; no essential copy may become unreadable. Enable Reduce Motion and confirm selection, recovery, and feedback panels present and disappear without app-defined animation.
 9. Increase the system text size to its largest supported value. Confirm onboarding, Settings, About, permission guidance, login errors, and the longest bounded feedback preview wrap or grow without clipped labels or inaccessible controls.
 10. Repeat keyboard and VoiceOver checks after closing/reopening each singleton window and while another application or full-screen Space is frontmost. Explicit Settings/About actions may activate their windows; capture feedback and selection must preserve the other application's focus policy.
@@ -285,9 +286,9 @@ The unattended July 11, 2026 G22 run completed the source, dependency, signed-en
 
 ## Automated Coverage, Repeatability, And OS Matrix
 
-G23 keeps behavior—not a percentage—as the test contract, then uses coverage to detect unreviewed gaps and regressions. The canonical Xcode 26.6 result contains 208 unit tests organized across geometry, coordinator transitions, permission and settings decisions, text assembly, clipboard and feedback decisions, lifecycle recovery, service-boundary orchestration, Vision fixtures, multi-display snapshots, and accessibility/appearance policy.
+G23 keeps behavior—not a percentage—as the test contract, then uses coverage to detect unreviewed gaps and regressions. The canonical Xcode 26.6 result contains 210 unit tests organized across geometry, coordinator transitions, permission and settings decisions, text assembly, clipboard and feedback decisions, lifecycle recovery, service-boundary orchestration, Vision fixtures, multi-display snapshots, accessibility/appearance policy, and app-drawn reticle behavior.
 
-`scripts/audit-coverage.sh` reads the canonical `UnitTests.xcresult`. The reviewed stable baseline is 2,539/3,504 application lines (72.46%) after excluding three retained-state-dependent SwiftUI onboarding builders, and 968/1,011 platform-neutral Models/CaptureWorkflow/Settings lines (95.74%). The 70% aggregate floor is unchanged; every other application file remains included. Critical per-file floors prevent the aggregate from hiding a regression. See [Automated Coverage Review](coverage-review.md) for each floor, the G22 comparison, the reachable branches added in G23, and the explicit signed/manual owner for every uncovered category.
+`scripts/audit-coverage.sh` reads the canonical `UnitTests.xcresult`. The reviewed stable baseline is 2,609/3,580 application lines (72.87%) after excluding three retained-state-dependent SwiftUI onboarding builders, and 968/1,011 platform-neutral Models/CaptureWorkflow/Settings lines (95.74%). The 70% aggregate floor is unchanged; every other application file remains included. Critical per-file floors prevent the aggregate from hiding a regression. See [Automated Coverage Review](coverage-review.md) for each floor, the G22 comparison, the reachable branches added in G23, and the explicit signed/manual owner for every uncovered category.
 
 The canonical pipeline runs both gates. Re-run either check independently with:
 

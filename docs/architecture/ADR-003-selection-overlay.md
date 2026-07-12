@@ -18,8 +18,8 @@ The AppKit approach is viable. CopyLasso will use one transparent, borderless `N
 - covers the complete `NSScreen.frame`, including menu-bar and Dock regions;
 - uses `.canJoinAllSpaces`, `.fullScreenAuxiliary`, and `.ignoresCycle` [collection behaviors](https://developer.apple.com/documentation/appkit/nswindow/collectionbehavior-swift.struct);
 - sits at screen-saver level and does not enter normal window cycling;
-- is visually clear before mouse-down;
-- displays a crosshair and, while dragging, dims only the initiating display outside the selection with 18% black; and
+- is visually clear before mouse-down except for the pointer reticle;
+- draws a high-contrast black-and-white crosshair reticle at the pointer and, while dragging, dims only the initiating display outside the selection with 18% black; and
 - draws a black-and-white selection border that remains visible over light and dark content.
 
 The panel under the pointer becomes key and explicitly makes its overlay view first responder without activating CopyLasso. If mouse-down occurs on any other display, that clicked panel becomes key and its overlay view becomes first responder before drag handling begins. This gives Escape a deterministic path before or during a drag regardless of which display was initially under the pointer. A drag remains owned by its initiating display; moving the pointer onto another display clamps the endpoint to the initiating display edge. Unrelated display panels remain fully transparent.
@@ -27,11 +27,19 @@ The panel under the pointer becomes key and explicitly makes its overlay view fi
 Cursor setup follows panel setup rather than preceding it. After every panel is
 ordered and the input panel has made its overlay view first responder, each
 visible view asks its owning window to invalidate and rebuild the crosshair
-cursor rectangle. Only then does the controller push and set the crosshair.
-Mouse-down repeats the window-level refresh for the clicked panel after making
-that panel input-ready. This gives AppKit an active window-owned cursor region
-for a stationary pointer before mouse-down and preserves it when another panel
-becomes key for the drag.
+cursor rectangle. Only then does the controller push and set the system
+crosshair. Mouse-down repeats the window-level refresh for the clicked panel
+after making that panel input-ready.
+
+AppKit does not reliably replace the WindowServer cursor while CopyLasso's
+nonactivating overlay preserves another application's focus. The overlay
+therefore also draws its own two-tone reticle immediately at the current pointer
+location. Mouse-moved and drag events keep that reticle centered on the pointer,
+including when it crosses displays, and cleanup removes it before the deferred
+selection result is delivered. The ordinary system arrow may remain visible
+inside the reticle; the app-drawn cue is the authoritative selection indicator.
+Its black outer and white inner strokes use at least 4/2 points and adopt any
+stronger accessibility appearance widths.
 
 The spike intentionally does not set `NSWindow.SharingType.none`. Apple now documents [`none`](https://developer.apple.com/documentation/appkit/nswindow/sharingtype-swift.enum/none) as a legacy value that should not be used to hide a window from screen capture.
 
@@ -113,7 +121,17 @@ on the view did not invalidate AppKit's active window cursor tracking when the
 stationary pointer was already over the newly ordered overlay. The regression
 now proves that refresh invalidates and rebuilds cursor rectangles through the
 owning window and that a clicked noninitial panel repeats that refresh before
-drag rendering. Signed WindowServer observation remains the final visual gate.
+drag rendering.
+
+The follow-up signed run still showed the ordinary arrow before and during a
+drag. Reasserting `NSCursor.crosshair`, hiding `NSCursor`, and hiding the Core
+Graphics cursor did not provide a reliable visible replacement while the
+frontmost application remained active. The production overlay now draws the
+two-tone reticle itself while retaining the AppKit cursor request as a best
+effort. Focused controller coverage proves the reticle starts on the pointer's
+display, follows movement and dragging across surfaces, and clears on cleanup;
+an offscreen rendering test proves all four arms are visible without dimming the
+otherwise clear overlay. Signed human observation remains the final visual gate.
 
 The G13 production run on macOS 26.5.1 used the Dell primary display at 1920 × 1080 and 144 Hz: display ID `4`, matching AppKit and Core Graphics bounds `(0, 0, 1920, 1080)`, 1× backing scale, and a matching 100-point backing conversion. Menu and global-shortcut invocation each presented one accessible overlay without replacing frontmost TextEdit. Escape, click cancellation, a valid drag, full-screen TextEdit, and quitting during selection all removed every panel and left no CopyLasso window or process behind. The signed suite completed 20 mixed live sessions without changing the clipboard.
 

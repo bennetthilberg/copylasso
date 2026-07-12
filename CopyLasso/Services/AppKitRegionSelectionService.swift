@@ -13,6 +13,7 @@ enum AppKitRegionSelectionError: Error, Equatable, Sendable {
 }
 
 enum SelectionOverlayEvent: Equatable {
+  case mouseMoved(CGPoint)
   case mouseDown(CGPoint)
   case mouseDragged(CGPoint)
   case mouseUp(CGPoint)
@@ -39,6 +40,7 @@ protocol SelectionOverlaySurface: AnyObject {
   func show()
   func makeInputReady()
   func refreshCursorRects()
+  func renderCrosshair(at point: CGPoint?)
   func render(_ state: SelectionOverlayRenderState)
   func hide()
 }
@@ -72,6 +74,7 @@ final class AppKitRegionSelectionService: RegionSelectionService {
   private let surfaceFactory: any SelectionOverlaySurfaceMaking
   private let lifecycleObserver: any SelectionOverlayLifecycleObserving
   private let cursorManager: any SelectionCursorManaging
+  private let pointerLocation: () -> CGPoint
   private let scheduleCompletion: CompletionScheduler
   private var activeController: SelectionOverlayController?
   private var hasPendingContinuation = false
@@ -94,6 +97,7 @@ final class AppKitRegionSelectionService: RegionSelectionService {
     surfaceFactory: any SelectionOverlaySurfaceMaking,
     lifecycleObserver: any SelectionOverlayLifecycleObserving,
     cursorManager: any SelectionCursorManaging,
+    pointerLocation: @escaping () -> CGPoint = { NSEvent.mouseLocation },
     scheduleCompletion: @escaping CompletionScheduler = AppKitRegionSelectionService
       .scheduleOnNextMainActorTurn
   ) {
@@ -101,6 +105,7 @@ final class AppKitRegionSelectionService: RegionSelectionService {
     self.surfaceFactory = surfaceFactory
     self.lifecycleObserver = lifecycleObserver
     self.cursorManager = cursorManager
+    self.pointerLocation = pointerLocation
     self.scheduleCompletion = scheduleCompletion
   }
 
@@ -117,7 +122,8 @@ final class AppKitRegionSelectionService: RegionSelectionService {
         displays: displays,
         surfaceFactory: surfaceFactory,
         lifecycleObserver: lifecycleObserver,
-        cursorManager: cursorManager
+        cursorManager: cursorManager,
+        pointerLocation: pointerLocation
       )
       activeController = controller
 
@@ -169,6 +175,7 @@ private final class SelectionOverlayController {
   private let surfaceFactory: any SelectionOverlaySurfaceMaking
   private let lifecycleObserver: any SelectionOverlayLifecycleObserving
   private let cursorManager: any SelectionCursorManaging
+  private let pointerLocation: () -> CGPoint
   private var surfaces: [any SelectionOverlaySurface] = []
   private var completion: Completion?
   private var hasFinished = false
@@ -182,12 +189,14 @@ private final class SelectionOverlayController {
     displays: [DisplayGeometry],
     surfaceFactory: any SelectionOverlaySurfaceMaking,
     lifecycleObserver: any SelectionOverlayLifecycleObserving,
-    cursorManager: any SelectionCursorManaging
+    cursorManager: any SelectionCursorManaging,
+    pointerLocation: @escaping () -> CGPoint
   ) {
     self.displays = displays
     self.surfaceFactory = surfaceFactory
     self.lifecycleObserver = lifecycleObserver
     self.cursorManager = cursorManager
+    self.pointerLocation = pointerLocation
   }
 
   func start(completion: @escaping Completion) throws {
@@ -211,10 +220,12 @@ private final class SelectionOverlayController {
       for surface in surfaces {
         surface.show()
       }
-      inputSurface()?.makeInputReady()
+      let pointer = pointerLocation()
+      inputSurface(at: pointer)?.makeInputReady()
       for surface in surfaces {
         surface.refreshCursorRects()
       }
+      renderCrosshair(at: pointer)
       cursorManager.pushCrosshair()
       cursorPushed = true
     } catch {
@@ -233,17 +244,22 @@ private final class SelectionOverlayController {
     guard !hasFinished else { return }
 
     switch event {
+    case .mouseMoved(let point):
+      renderCrosshair(at: point)
     case .mouseDown(let point):
+      renderCrosshair(at: point)
       let inputSurface = surfaces.first(where: { $0.displayID == displayID })
       inputSurface?.makeInputReady()
       inputSurface?.refreshCursorRects()
       guard session.begin(on: displayID, at: point) else { return }
       renderCurrentDrag()
     case .mouseDragged(let point):
+      renderCrosshair(at: point)
       guard session.currentDisplayID != nil else { return }
       session.update(to: point)
       renderCurrentDrag()
     case .mouseUp(let point):
+      renderCrosshair(at: point)
       session.finish(at: point)
     case .escape:
       session.cancel(.escape)
@@ -263,6 +279,12 @@ private final class SelectionOverlayController {
       } else {
         surface.render(.clear)
       }
+    }
+  }
+
+  private func renderCrosshair(at point: CGPoint) {
+    for surface in surfaces {
+      surface.renderCrosshair(at: surface.frame.contains(point) ? point : nil)
     }
   }
 
@@ -286,6 +308,7 @@ private final class SelectionOverlayController {
 
     for surface in surfaces {
       surface.eventHandler = nil
+      surface.renderCrosshair(at: nil)
       surface.render(.clear)
       surface.hide()
     }
@@ -299,8 +322,7 @@ private final class SelectionOverlayController {
     return everySurfaceHidden
   }
 
-  private func inputSurface() -> (any SelectionOverlaySurface)? {
-    let pointer = NSEvent.mouseLocation
+  private func inputSurface(at pointer: CGPoint) -> (any SelectionOverlaySurface)? {
     return surfaces.first(where: { $0.frame.contains(pointer) }) ?? surfaces.first
   }
 }
@@ -459,6 +481,10 @@ private final class AppKitSelectionOverlaySurface: SelectionOverlaySurface {
     contentView.refreshCrosshairCursorRects()
   }
 
+  func renderCrosshair(at point: CGPoint?) {
+    contentView.renderCrosshair(at: point)
+  }
+
   func render(_ state: SelectionOverlayRenderState) {
     contentView.renderState = state
   }
@@ -475,6 +501,10 @@ private final class RegionSelectionPanel: NSPanel {
 
 @MainActor
 final class RegionSelectionView: NSView {
+  private static let crosshairRadius: CGFloat = 18
+  private static let crosshairGap: CGFloat = 4
+  private static let crosshairDirtyPadding: CGFloat = 3
+
   var eventHandler: ((SelectionOverlayEvent) -> Void)?
   var displayFrame: CGRect = .zero
   var renderState: SelectionOverlayRenderState = .clear {
@@ -482,6 +512,7 @@ final class RegionSelectionView: NSView {
       needsDisplay = true
     }
   }
+  private var crosshairPoint: CGPoint?
 
   override var acceptsFirstResponder: Bool { true }
 
@@ -518,6 +549,20 @@ final class RegionSelectionView: NSView {
     window.resetCursorRects()
   }
 
+  func renderCrosshair(at screenPoint: CGPoint?) {
+    let previousPoint = crosshairPoint
+    crosshairPoint = screenPoint.map {
+      CGPoint(x: $0.x - displayFrame.minX, y: $0.y - displayFrame.minY)
+    }
+
+    if let previousPoint {
+      setNeedsDisplay(Self.crosshairDirtyRect(around: previousPoint))
+    }
+    if let crosshairPoint {
+      setNeedsDisplay(Self.crosshairDirtyRect(around: crosshairPoint))
+    }
+  }
+
   private func addCrosshairCursorRect() {
     addCursorRect(bounds, cursor: .crosshair)
   }
@@ -528,6 +573,8 @@ final class RegionSelectionView: NSView {
 
   override func mouseMoved(with event: NSEvent) {
     NSCursor.crosshair.set()
+    guard let point = globalPoint(for: event) else { return }
+    eventHandler?(.mouseMoved(point))
   }
 
   override func mouseDown(with event: NSEvent) {
@@ -558,8 +605,15 @@ final class RegionSelectionView: NSView {
 
   override func draw(_ dirtyRect: NSRect) {
     super.draw(dirtyRect)
-    guard case .dragging(let globalRect) = renderState else { return }
+    if case .dragging(let globalRect) = renderState {
+      drawSelection(globalRect)
+    }
+    if let crosshairPoint {
+      drawCrosshair(at: crosshairPoint)
+    }
+  }
 
+  private func drawSelection(_ globalRect: CGRect) {
     let localRect =
       globalRect
       .offsetBy(dx: -displayFrame.minX, dy: -displayFrame.minY)
@@ -581,6 +635,40 @@ final class RegionSelectionView: NSView {
     NSColor.white.setStroke()
     border.stroke()
     NSGraphicsContext.restoreGraphicsState()
+  }
+
+  private func drawCrosshair(at point: CGPoint) {
+    let radius = Self.crosshairRadius
+    let gap = Self.crosshairGap
+    let path = NSBezierPath()
+    path.move(to: CGPoint(x: point.x - radius, y: point.y))
+    path.line(to: CGPoint(x: point.x - gap, y: point.y))
+    path.move(to: CGPoint(x: point.x + gap, y: point.y))
+    path.line(to: CGPoint(x: point.x + radius, y: point.y))
+    path.move(to: CGPoint(x: point.x, y: point.y - radius))
+    path.line(to: CGPoint(x: point.x, y: point.y - gap))
+    path.move(to: CGPoint(x: point.x, y: point.y + gap))
+    path.line(to: CGPoint(x: point.x, y: point.y + radius))
+    path.lineCapStyle = .square
+
+    NSGraphicsContext.saveGraphicsState()
+    path.lineWidth = max(4, style.outerBorderWidth)
+    NSColor.black.setStroke()
+    path.stroke()
+    path.lineWidth = max(2, style.innerBorderWidth)
+    NSColor.white.setStroke()
+    path.stroke()
+    NSGraphicsContext.restoreGraphicsState()
+  }
+
+  private static func crosshairDirtyRect(around point: CGPoint) -> CGRect {
+    let extent = crosshairRadius + crosshairDirtyPadding
+    return CGRect(
+      x: point.x - extent,
+      y: point.y - extent,
+      width: extent * 2,
+      height: extent * 2
+    )
   }
 
   private func globalPoint(for event: NSEvent) -> CGPoint? {

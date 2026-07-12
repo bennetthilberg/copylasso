@@ -6,17 +6,17 @@ This review records the G23 behavioral coverage audit. Coverage is diagnostic ev
 
 The application target is measured from the nonparallel, timeout-bounded `CopyLassoTests` result produced by Xcode 26.6. Xcode's `xccov` reports executable-line, function, and subrange execution. It does not expose a stable source-level Swift branch percentage, so branch review combines those subranges with direct inspection of every condition and its behavioral tests.
 
-| Metric | G22 baseline | G23 reviewed baseline |
+| Metric | G22 baseline | Current reviewed baseline |
 | --- | ---: | ---: |
-| Unit tests | 187 | 208 |
-| Stable application aggregate | 2,382 / 3,396 (70.14%) | 2,539 / 3,504 (72.46%) |
+| Unit tests | 187 | 210 |
+| Stable application aggregate | 2,382 / 3,396 (70.14%) | 2,609 / 3,580 (72.87%) |
 | Models, CaptureWorkflow, and Settings | 922 / 1,006 (91.65%) | 968 / 1,011 (95.74%) |
 | `SettingsController.swift` | 144 / 168 (85.71%) | 167 / 172 (97.09%) |
 | `TextAssembler.swift` | 164 / 203 (80.78%) | 186 / 203 (91.62%) |
 
 The stable application aggregate excludes `OnboardingView.swift`, `LaunchAtLoginStatusView.swift`, and `MenuBarLabelView.swift`. Those app-hosted SwiftUI builders execute incidentally only while the Debug preference domain says onboarding is incomplete; signed QA legitimately changes that retained state. Their layout, focus, accessibility, and first-run behavior remain owned by the signed UI and manual checks below. The 70% floor is unchanged, and every other application file remains in the aggregate.
 
-The G23 tests exercise idempotent Launch at Login state, approval/unavailable states, failed postcondition readback, every disable failure, explicit continuation without login, deterministic positioned and unpositioned text-order ties, NaN confidence, and signed-zero geometry. Review propagation adds direct configuration, permission-retry, display-size, fractional-edge, and Debug runtime-option regressions. The postcondition test found and fixed one real state-reporting defect: an external re-enable after an idempotent disable now reports a recoverable disable failure instead of returning false with no issue.
+The G23 tests exercise idempotent Launch at Login state, approval/unavailable states, failed postcondition readback, every disable failure, explicit continuation without login, deterministic positioned and unpositioned text-order ties, NaN confidence, and signed-zero geometry. Review propagation adds direct configuration, permission-retry, display-size, fractional-edge, Debug runtime-option, and app-drawn reticle placement, movement, rendering, cleanup, and appearance-width regressions. The postcondition test found and fixed one real state-reporting defect: an external re-enable after an idempotent disable now reports a recoverable disable failure instead of returning false with no issue.
 
 ## Enforced Gate
 
