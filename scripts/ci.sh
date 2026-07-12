@@ -221,7 +221,7 @@ if [[ ! -e "$workflow_integration_tests" ]] || \
     ! /usr/bin/grep -q 'CaptureOperationInterruption' "$capture_command" || \
     ! /usr/bin/grep -q 'testTwentyFiveConsecutiveSuccessfulCapturesRemainReusable' "$workflow_integration_tests" || \
     ! /usr/bin/grep -q 'testTwentyAlternatingSuccessAndCancellationCyclesPreserveClipboardOnCancellation' "$workflow_integration_tests" || \
-    ! /usr/bin/grep -q 'testPixelsAndUnboundedTextAreReleasedBeforeHeldFeedback' "$workflow_integration_tests" || \
+    ! /usr/bin/grep -q 'testPixelsAndUnboundedTextAreReleasedBeforeVisibleFeedbackReturnsIdle' "$workflow_integration_tests" || \
     ! /usr/bin/grep -q 'testMenuAndShortcutRouteThroughTheExactSameSuccessfulCommand' "$workflow_integration_tests"; then
     echo "G18 must retain its private operation boundary and end-to-end stress integration suite." >&2
     exit 1
