@@ -8,8 +8,10 @@ extension KeyboardShortcuts.Name {
 enum CaptureShortcutDefaults {
   static let suggested = KeyboardShortcuts.Shortcut(
     .two,
-    modifiers: [.control, .shift, .command]
+    modifiers: [.shift, .command]
   )
+  static let suggestedDescription =
+    "Suggested: Shift–Command–2. Clear the recorder to use only the menu command."
 }
 
 @MainActor

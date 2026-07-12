@@ -42,11 +42,9 @@ struct OnboardingView: View {
             shortcut: $draftShortcut
           )
           .accessibilityIdentifier("copylasso.onboarding.shortcut")
-          Text(
-            "Suggested: Control–Shift–Command–2. Clear the recorder to use only the menu command."
-          )
-          .font(.caption)
-          .foregroundStyle(.secondary)
+          Text(CaptureShortcutDefaults.suggestedDescription)
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
 
         Section("Availability") {

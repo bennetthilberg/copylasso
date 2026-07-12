@@ -6,6 +6,17 @@ import XCTest
 
 @MainActor
 final class GlobalShortcutStoreTests: XCTestCase {
+  func testSuggestedShortcutIsShiftCommandTwo() {
+    XCTAssertEqual(
+      CaptureShortcutDefaults.suggested,
+      KeyboardShortcuts.Shortcut(.two, modifiers: [.shift, .command])
+    )
+    XCTAssertEqual(
+      CaptureShortcutDefaults.suggestedDescription,
+      "Suggested: Shift–Command–2. Clear the recorder to use only the menu command."
+    )
+  }
+
   func testShortcutPersistsAcrossStoreReconstructionAndCanBeCleared() {
     let originalShortcut = KeyboardShortcuts.getShortcut(for: .captureText)
     defer {
@@ -13,7 +24,7 @@ final class GlobalShortcutStoreTests: XCTestCase {
     }
     let suggested = KeyboardShortcuts.Shortcut(
       .two,
-      modifiers: [.control, .shift, .command]
+      modifiers: [.shift, .command]
     )
 
     var store = KeyboardShortcutsStore()
