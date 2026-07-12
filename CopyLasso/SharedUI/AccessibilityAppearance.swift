@@ -79,7 +79,7 @@ enum AccessibilityAuditCopy {
   static let launchAtLoginHelp =
     "Choose whether CopyLasso starts automatically when you log in."
   static let suggestedShortcutHelp =
-    "Restore the suggested Control-Shift-Command-2 shortcut."
+    "Restore the suggested Shift-Command-2 shortcut."
   static let openScreenRecordingSettingsHelp =
     "Open the Screen Recording privacy pane in System Settings."
   static let retryPermissionHelp =
