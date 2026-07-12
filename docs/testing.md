@@ -36,7 +36,7 @@ Verify in this order:
 2. With another application frontmost, invoke **Capture Text**, choose **Deny** in the macOS dialog, and confirm one CopyLasso recovery panel appears. Selection must not begin, and the clipboard must remain unchanged.
 3. Invoke Capture Text again from both the menu and shortcut. Confirm macOS does not stack request dialogs, CopyLasso reuses one recovery panel, and each attempt returns the coordinator to idle.
 4. Choose **Open System Settings**. Confirm the Screen & System Audio Recording pane opens. Enable CopyLasso and follow the actual macOS **Quit & Reopen** prompt if one appears; otherwise return to CopyLasso and explicitly choose **Try Again**. CopyLasso must not retry automatically. If **Later** was chosen and access is still unavailable, **Try Again** reports that CopyLasso must be quit and reopened rather than appearing inert.
-5. After any required relaunch, invoke Capture Text. Confirm authorization presents the production selection overlay. Cancel with Escape and verify the overlay disappears, the frontmost application remains unchanged, the clipboard is unchanged, and the command returns to idle.
+5. After any required relaunch, invoke Capture Text. Confirm authorization presents the production selection overlay and temporarily activates CopyLasso. Cancel with Escape and verify the overlay disappears, the previously frontmost application is restored before completion, the clipboard is unchanged, and the command returns to idle.
 6. Disable CopyLasso in Screen & System Audio Recording and relaunch it. Invoke Capture Text and confirm the recovery copy says access was previously available and may have been turned off; it must not claim definitive revocation.
 7. Repeat recovery while an ordinary full-screen application is frontmost. Confirm presenting or updating CopyLasso's nonactivating panel does not change the frontmost application. Only **Open System Settings** intentionally changes focus.
 8. Confirm macOS did not show the ScreenCaptureKit private-window-picker-bypass warning and that no Accessibility, Input Monitoring, Microphone, or clipboard access was introduced.
@@ -72,24 +72,24 @@ Permission history contains only the two booleans needed for these neutral label
 
 Use the same stably signed Debug app after Screen Recording access is enabled. The current G13 workflow does not call ScreenCaptureKit, but retaining one stable app avoids mixing selection evidence with permission-identity churn.
 
-1. On the primary display, invoke Capture Text from both the menu and shortcut. Verify the overlay is clear before mouse-down except for the black-and-white crosshair reticle at the pointer, and only the area outside the active rectangle dims after dragging begins. The ordinary system arrow may remain visible inside the reticle.
+1. On the primary display, invoke Capture Text from both the menu and shortcut. Verify CopyLasso temporarily becomes active, the normal-sized system crosshair replaces the pointer before mouse-down and remains throughout the drag, no second pointer is drawn, and only the area outside the active rectangle dims after dragging begins.
 2. Exercise forward and reverse drags, a click, a sub-four-point drag, exactly four points, Escape before dragging, Escape during dragging, and every display-edge clamp.
 3. Connect an extended display and repeat a selection there, including invoking while the pointer is on one display and starting the drag on the other. Press Escape during that drag and confirm the clicked display receives it immediately. Record fresh display identifiers, AppKit frames, Core Graphics bounds, and backing scales; never hardcode runtime identifiers.
 4. Drag from each display toward the other. The rectangle must stop at the initiating display edge, and only that display may dim.
 5. Repeat menu and shortcut selection at least 20 times across valid, click, and Escape outcomes. Every outcome must remove all panels, restore the cursor, leave the command reusable, and leave the clipboard unchanged.
-6. Repeat with Finder, a browser, TextEdit, another Space, and a full-screen Space frontmost. Starting and cancelling selection must not activate CopyLasso or switch Spaces.
+6. Repeat with Finder, a browser, TextEdit, another Space, and a full-screen Space frontmost. CopyLasso may become active only while selection is visible; every success, click, Escape, and failure must restore the originating app before downstream capture or feedback and must not switch Spaces.
 7. Change a display resolution or disconnect an extended display during selection. The active operation must cancel once, remove all panels, and rebuild fresh descriptors on the next request.
 8. Terminate CopyLasso during selection and verify no panel, dim, cursor override, observer, controller, or continuation remains. Use Xcode's memory graph or debugger to confirm the completed controller and surfaces are released.
 9. Inspect light, dark, increased-contrast, and VoiceOver behavior. The black-and-white border and crosshair must remain distinguishable, and the overlay must expose its selection label and Escape help.
 10. Confirm no pixel file, image retention, OCR, pasteboard write, Accessibility prompt, or Input Monitoring prompt occurs. The controlled UI path must stop at the intentional G15-unavailable boundary.
 
 The crosshair check begins with a stationary pointer before pressing the mouse
-button and continues through the drag. The app-drawn two-tone reticle must be
-visible and remain centered on the pointer at both points; a system arrow inside
-it is acceptable. Automated tests prove initial placement, cross-display
-movement, drag tracking, cleanup, and visible rendering on an otherwise clear
-overlay. WindowServer composition still requires this signed manual
-observation.
+button and continues through the drag. Exactly one normal-sized AppKit
+crosshair must replace the pointer; an ordinary arrow or a second app-drawn
+reticle is a failure. Automated tests prove selection-only activation occurs
+before overlay presentation and restoration occurs before deferred completion.
+WindowServer composition and real frontmost-application restoration still
+require this signed manual observation.
 
 ### G13 Production Verification Record
 
