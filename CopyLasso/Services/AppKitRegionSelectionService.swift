@@ -65,7 +65,7 @@ protocol SelectionCursorManaging: AnyObject {
 
 @MainActor
 protocol SelectionApplicationActivationManaging: AnyObject {
-  func activateForSelection()
+  func activateForSelection(whenActive: @escaping @MainActor @Sendable () -> Void)
   func restorePreviousApplication()
 }
 
@@ -136,18 +136,12 @@ final class AppKitRegionSelectionService: RegionSelectionService {
       )
       activeController = controller
 
-      do {
-        try controller.start { [self] result in
-          activeController = nil
-          scheduleCompletion {
-            self.hasPendingContinuation = false
-            continuation.resume(with: result)
-          }
-        }
-      } catch {
+      controller.start { [self] result in
         activeController = nil
-        hasPendingContinuation = false
-        continuation.resume(throwing: error)
+        scheduleCompletion {
+          self.hasPendingContinuation = false
+          continuation.resume(with: result)
+        }
       }
     }
   }
@@ -212,15 +206,21 @@ private final class SelectionOverlayController {
     self.pointerLocation = pointerLocation
   }
 
-  func start(completion: @escaping Completion) throws {
+  func start(completion: @escaping Completion) {
     self.completion = completion
     lifecycleObserver.start(
       displayChange: { [weak self] in self?.cancel(.displayChanged) },
       applicationTermination: { [weak self] in self?.cancel(.applicationTerminated) }
     )
     lifecycleStarted = true
-    activationManager.activateForSelection()
     activationRequested = true
+    activationManager.activateForSelection { [weak self] in
+      self?.applicationDidBecomeActive()
+    }
+  }
+
+  private func applicationDidBecomeActive() {
+    guard !hasFinished, activationRequested, surfaces.isEmpty else { return }
 
     do {
       for display in displays {
@@ -243,9 +243,9 @@ private final class SelectionOverlayController {
       cursorManager.pushCrosshair()
       cursorPushed = true
     } catch {
-      _ = cleanup()
-      self.completion = nil
-      throw (error as? AppKitRegionSelectionError) ?? .surfaceCreationFailed
+      finish(
+        .failure((error as? AppKitRegionSelectionError) ?? .surfaceCreationFailed)
+      )
     }
   }
 
@@ -632,13 +632,41 @@ final class SystemSelectionCursorManager: SelectionCursorManaging {
 }
 
 @MainActor
-final class SystemSelectionApplicationActivationManager:
+final class SystemSelectionApplicationActivationManager: NSObject,
   SelectionApplicationActivationManaging
 {
+  private let notificationCenter: NotificationCenter
+  private let observedApplication: AnyObject?
+  private let isApplicationActive: () -> Bool
+  private let activateApplication: () -> Void
   private var previousApplication: NSRunningApplication?
   private var hasActiveHandoff = false
+  private var isObservingActivation = false
+  private var activationReady: (@MainActor @Sendable () -> Void)?
 
-  func activateForSelection() {
+  override convenience init() {
+    self.init(
+      notificationCenter: .default,
+      observedApplication: NSApp,
+      isApplicationActive: { NSApp.isActive },
+      activateApplication: { NSApp.activate(ignoringOtherApps: true) }
+    )
+  }
+
+  init(
+    notificationCenter: NotificationCenter,
+    observedApplication: AnyObject?,
+    isApplicationActive: @escaping () -> Bool,
+    activateApplication: @escaping () -> Void
+  ) {
+    self.notificationCenter = notificationCenter
+    self.observedApplication = observedApplication
+    self.isApplicationActive = isApplicationActive
+    self.activateApplication = activateApplication
+    super.init()
+  }
+
+  func activateForSelection(whenActive: @escaping @MainActor @Sendable () -> Void) {
     guard !hasActiveHandoff else { return }
     hasActiveHandoff = true
 
@@ -649,12 +677,27 @@ final class SystemSelectionApplicationActivationManager:
       previousApplication = frontmostApplication
     }
 
-    NSApp.activate(ignoringOtherApps: true)
+    activationReady = whenActive
+    if isApplicationActive() {
+      completeActivation()
+      return
+    }
+
+    notificationCenter.addObserver(
+      self,
+      selector: #selector(applicationDidBecomeActive),
+      name: NSApplication.didBecomeActiveNotification,
+      object: observedApplication
+    )
+    isObservingActivation = true
+    activateApplication()
   }
 
   func restorePreviousApplication() {
     guard hasActiveHandoff else { return }
     hasActiveHandoff = false
+    stopObservingActivation()
+    activationReady = nil
 
     guard let previousApplication else { return }
     self.previousApplication = nil
@@ -665,6 +708,32 @@ final class SystemSelectionApplicationActivationManager:
 
     NSApp.yieldActivation(to: previousApplication)
     _ = previousApplication.activate(from: .current, options: [])
+  }
+
+  @objc private func applicationDidBecomeActive() {
+    completeActivation()
+  }
+
+  private func completeActivation() {
+    guard hasActiveHandoff else { return }
+    stopObservingActivation()
+    let activationReady = activationReady
+    self.activationReady = nil
+    activationReady?()
+  }
+
+  private func stopObservingActivation() {
+    guard isObservingActivation else { return }
+    notificationCenter.removeObserver(
+      self,
+      name: NSApplication.didBecomeActiveNotification,
+      object: observedApplication
+    )
+    isObservingActivation = false
+  }
+
+  deinit {
+    notificationCenter.removeObserver(self)
   }
 }
 

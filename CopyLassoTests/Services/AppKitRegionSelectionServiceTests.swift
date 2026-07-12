@@ -88,6 +88,83 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(outcome, .cancelled(.escape))
   }
 
+  func testSelectionWaitsForApplicationActivationBeforeShowingSurfacesOrCrosshair()
+    async throws
+  {
+    let display = try makeDisplay()
+    let provider = StubSelectionDisplayProvider(results: [.success([display])])
+    let factory = RecordingSelectionOverlaySurfaceFactory()
+    let activation = RecordingSelectionApplicationActivationManager(
+      automaticallyCompletesActivation: false
+    )
+    let lifecycle = RecordingSelectionOverlayLifecycleObserver()
+    let cursor = RecordingSelectionCursorManager()
+    let scheduler = ManualSelectionCompletionScheduler()
+    let service = AppKitRegionSelectionService(
+      displayProvider: provider,
+      surfaceFactory: factory,
+      lifecycleObserver: lifecycle,
+      cursorManager: cursor,
+      activationManager: activation,
+      scheduleCompletion: scheduler.schedule
+    )
+
+    let task = Task { try await service.selectRegion() }
+    await Task.yield()
+
+    XCTAssertEqual(activation.activateCallCount, 1)
+    XCTAssertEqual(factory.requestedDisplayIDs, [])
+    XCTAssertTrue(factory.surfaces.isEmpty)
+    XCTAssertEqual(cursor.pushCallCount, 0)
+
+    activation.completeActivation()
+
+    XCTAssertEqual(factory.requestedDisplayIDs, [display.displayID])
+    XCTAssertTrue(factory.surfaces[0].isVisible)
+    XCTAssertEqual(factory.surfaces[0].makeInputReadyCallCount, 1)
+    XCTAssertEqual(factory.surfaces[0].refreshCursorRectsCallCount, 1)
+    XCTAssertEqual(cursor.pushCallCount, 1)
+
+    factory.surfaces[0].send(.escape)
+    await scheduler.runNext()
+    let outcome = try await task.value
+    XCTAssertEqual(outcome, .cancelled(.escape))
+  }
+
+  func testCancellationBeforeActivationIgnoresLateActivationReadiness() async throws {
+    let display = try makeDisplay()
+    let provider = StubSelectionDisplayProvider(results: [.success([display])])
+    let factory = RecordingSelectionOverlaySurfaceFactory()
+    let activation = RecordingSelectionApplicationActivationManager(
+      automaticallyCompletesActivation: false
+    )
+    let lifecycle = RecordingSelectionOverlayLifecycleObserver()
+    let cursor = RecordingSelectionCursorManager()
+    let scheduler = ManualSelectionCompletionScheduler()
+    let service = AppKitRegionSelectionService(
+      displayProvider: provider,
+      surfaceFactory: factory,
+      lifecycleObserver: lifecycle,
+      cursorManager: cursor,
+      activationManager: activation,
+      scheduleCompletion: scheduler.schedule
+    )
+
+    let task = Task { try await service.selectRegion() }
+    await Task.yield()
+
+    service.cancelSelection()
+    XCTAssertEqual(activation.restoreCallCount, 1)
+    activation.completeActivation()
+
+    XCTAssertEqual(factory.requestedDisplayIDs, [])
+    XCTAssertEqual(cursor.pushCallCount, 0)
+
+    await scheduler.runNext()
+    let outcome = try await task.value
+    XCTAssertEqual(outcome, .cancelled(.applicationTerminated))
+  }
+
   func testCrosshairIsAppliedAfterVisibleInputReadySurfacesRefreshTheirCursorRects()
     async throws
   {
@@ -133,6 +210,59 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     await scheduler.runNext()
     let outcome = try await task.value
     XCTAssertEqual(outcome, .cancelled(.escape))
+  }
+
+  func testSystemActivationManagerWaitsForDidBecomeActiveNotification() {
+    let notificationCenter = NotificationCenter()
+    let observedApplication = NSObject()
+    var isActive = false
+    var activateCallCount = 0
+    var readyCallCount = 0
+    let manager = SystemSelectionApplicationActivationManager(
+      notificationCenter: notificationCenter,
+      observedApplication: observedApplication,
+      isApplicationActive: { isActive },
+      activateApplication: { activateCallCount += 1 }
+    )
+
+    manager.activateForSelection {
+      readyCallCount += 1
+    }
+
+    XCTAssertEqual(activateCallCount, 1)
+    XCTAssertEqual(readyCallCount, 0)
+
+    isActive = true
+    notificationCenter.post(
+      name: NSApplication.didBecomeActiveNotification,
+      object: observedApplication
+    )
+    notificationCenter.post(
+      name: NSApplication.didBecomeActiveNotification,
+      object: observedApplication
+    )
+
+    XCTAssertEqual(readyCallCount, 1)
+  }
+
+  func testSystemActivationManagerCompletesImmediatelyWhenApplicationIsAlreadyActive() {
+    let notificationCenter = NotificationCenter()
+    let observedApplication = NSObject()
+    var activateCallCount = 0
+    var readyCallCount = 0
+    let manager = SystemSelectionApplicationActivationManager(
+      notificationCenter: notificationCenter,
+      observedApplication: observedApplication,
+      isApplicationActive: { true },
+      activateApplication: { activateCallCount += 1 }
+    )
+
+    manager.activateForSelection {
+      readyCallCount += 1
+    }
+
+    XCTAssertEqual(activateCallCount, 0)
+    XCTAssertEqual(readyCallCount, 1)
   }
 
   func testCursorRectRefreshInvalidatesAndRebuildsThroughOwningWindow() {
@@ -398,8 +528,12 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
       factory: factory
     )
 
+    let task = Task { try await context.service.selectRegion() }
+    await Task.yield()
+    await context.scheduler.runNext()
+
     do {
-      _ = try await context.service.selectRegion()
+      _ = try await task.value
       XCTFail("Expected construction failure")
     } catch {
       XCTAssertEqual(error as? AppKitRegionSelectionError, .surfaceCreationFailed)
@@ -785,17 +919,34 @@ private final class RecordingSelectionApplicationActivationManager:
   private(set) var activateCallCount = 0
   private(set) var restoreCallCount = 0
   private let startupEvents: RecordingSelectionStartupEvents?
+  private let automaticallyCompletesActivation: Bool
+  private var activationReady: (@MainActor @Sendable () -> Void)?
 
-  init(startupEvents: RecordingSelectionStartupEvents? = nil) {
+  init(
+    startupEvents: RecordingSelectionStartupEvents? = nil,
+    automaticallyCompletesActivation: Bool = true
+  ) {
     self.startupEvents = startupEvents
+    self.automaticallyCompletesActivation = automaticallyCompletesActivation
   }
 
-  func activateForSelection() {
+  func activateForSelection(whenActive: @escaping @MainActor @Sendable () -> Void) {
     activateCallCount += 1
     startupEvents?.events.append(.applicationActivationRequested)
+    activationReady = whenActive
+    if automaticallyCompletesActivation {
+      completeActivation()
+    }
+  }
+
+  func completeActivation() {
+    let activationReady = activationReady
+    self.activationReady = nil
+    activationReady?()
   }
 
   func restorePreviousApplication() {
+    activationReady = nil
     restoreCallCount += 1
     startupEvents?.events.append(.previousApplicationRestored)
   }
