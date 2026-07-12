@@ -44,6 +44,7 @@ enum CaptureEvent: Equatable, Sendable {
   case selectionCompleted
   case captureCompleted
   case recognitionCompleted
+  case feedbackBegan
   case completionFinished
   case cancel(CaptureCancellationReason)
   case fail(CaptureFailureStage)
@@ -73,13 +74,18 @@ final class CaptureCoordinator {
   func handle(_ event: CaptureEvent) -> CaptureTransitionResult {
     let previousState = state
 
-    if event == .requestCapture, previousState != .idle {
+    if event == .requestCapture,
+      previousState != .idle,
+      previousState != .completing
+    {
       return .rejectedBusy(currentState: previousState)
     }
 
     let nextState: CaptureState
     switch (previousState, event) {
     case (.idle, .requestCapture):
+      nextState = .requestingPermission
+    case (.completing, .requestCapture):
       nextState = .requestingPermission
     case (.requestingPermission, .permissionGranted):
       nextState = .selecting
@@ -88,6 +94,10 @@ final class CaptureCoordinator {
     case (.capturing, .captureCompleted):
       nextState = .recognizing
     case (.recognizing, .recognitionCompleted):
+      nextState = .completing
+    case (.selecting, .feedbackBegan),
+      (.capturing, .feedbackBegan),
+      (.recognizing, .feedbackBegan):
       nextState = .completing
     case (.completing, .completionFinished):
       nextState = .idle

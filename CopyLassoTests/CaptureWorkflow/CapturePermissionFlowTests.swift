@@ -226,7 +226,9 @@ final class CapturePermissionFlowTests: XCTestCase {
     XCTAssertTrue(context.command.isEnabled)
   }
 
-  func testCommandRemainsBusyUntilSuccessFeedbackDismisses() async throws {
+  func testNewRequestDismissesSuccessFeedbackWithoutStaleCompletionMutatingReplacement()
+    async throws
+  {
     let coordinator = CaptureCoordinator()
     let scheduler = ManualCaptureWorkScheduler()
     let clipboard = SpyClipboardService()
@@ -256,14 +258,18 @@ final class CapturePermissionFlowTests: XCTestCase {
     await feedback.waitUntilPresented()
 
     XCTAssertEqual(coordinator.state, .completing)
-    XCTAssertEqual(command.perform(), .rejectedBusy(currentState: .completing))
+    XCTAssertTrue(command.isEnabled)
+    XCTAssertEqual(
+      command.perform(),
+      .transitioned(from: .completing, to: .requestingPermission)
+    )
     XCTAssertEqual(clipboard.writtenTexts, ["copied"])
     XCTAssertEqual(feedback.presentedFeedback, [.success(preview: "copied")])
+    XCTAssertEqual(feedback.dismissCallCount, 1)
 
-    feedback.dismiss()
     await flow.value
-    XCTAssertEqual(coordinator.state, .idle)
-    XCTAssertTrue(command.isEnabled)
+    XCTAssertEqual(coordinator.state, .requestingPermission)
+    XCTAssertEqual(scheduler.pendingWorkCount, 1)
   }
 
   func testRecognitionFailureReturnsIdleWithoutRetryingCapture() async throws {
@@ -568,6 +574,7 @@ private actor CancelledOCRService: OCRService {
 private final class HoldingFeedbackService: FeedbackService {
   private var continuation: CheckedContinuation<Void, Error>?
   private(set) var presentedFeedback: [CaptureFeedback] = []
+  private(set) var dismissCallCount = 0
 
   func present(_ feedback: CaptureFeedback) async throws {
     presentedFeedback.append(feedback)
@@ -583,6 +590,7 @@ private final class HoldingFeedbackService: FeedbackService {
   }
 
   func dismiss() {
+    dismissCallCount += 1
     continuation?.resume()
     continuation = nil
   }
