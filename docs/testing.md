@@ -36,7 +36,7 @@ Verify in this order:
 2. With another application frontmost, invoke **Capture Text**, choose **Deny** in the macOS dialog, and confirm one CopyLasso recovery panel appears. Selection must not begin, and the clipboard must remain unchanged.
 3. Invoke Capture Text again from both the menu and shortcut. Confirm macOS does not stack request dialogs, CopyLasso reuses one recovery panel, and each attempt returns the coordinator to idle.
 4. Choose **Open System Settings**. Confirm the Screen & System Audio Recording pane opens. Enable CopyLasso and follow the actual macOS **Quit & Reopen** prompt if one appears; otherwise return to CopyLasso and explicitly choose **Try Again**. CopyLasso must not retry automatically. If **Later** was chosen and access is still unavailable, **Try Again** reports that CopyLasso must be quit and reopened rather than appearing inert.
-5. After any required relaunch, invoke Capture Text. Confirm authorization presents the production selection overlay. Cancel with Escape and verify the overlay disappears, the frontmost application remains unchanged, the clipboard is unchanged, and the command returns to idle.
+5. After any required relaunch, invoke Capture Text. Confirm authorization presents the production selection overlay and temporarily activates CopyLasso. Cancel with Escape and verify the overlay disappears, the previously frontmost application is restored before completion, the clipboard is unchanged, and the command returns to idle.
 6. Disable CopyLasso in Screen & System Audio Recording and relaunch it. Invoke Capture Text and confirm the recovery copy says access was previously available and may have been turned off; it must not claim definitive revocation.
 7. Repeat recovery while an ordinary full-screen application is frontmost. Confirm presenting or updating CopyLasso's nonactivating panel does not change the frontmost application. Only **Open System Settings** intentionally changes focus.
 8. Confirm macOS did not show the ScreenCaptureKit private-window-picker-bypass warning and that no Accessibility, Input Monitoring, Microphone, or clipboard access was introduced.
@@ -72,22 +72,28 @@ Permission history contains only the two booleans needed for these neutral label
 
 Use the same stably signed Debug app after Screen Recording access is enabled. For the isolated overlay regression matrix, use the existing controlled UI boundary so downstream capture produces only its deterministic blank image; retaining one stable app avoids mixing selection evidence with permission-identity churn.
 
-1. On the primary display, invoke Capture Text from both the menu and shortcut. Verify the overlay is clear before mouse-down, the cursor is a crosshair, and only the area outside the active rectangle dims after dragging begins.
+1. On the primary display, invoke Capture Text from both the menu and shortcut. Verify CopyLasso temporarily becomes active, the normal-sized system crosshair replaces the pointer before mouse-down and remains throughout the drag, no second pointer is drawn, and only the area outside the active rectangle dims after dragging begins.
 2. Exercise forward and reverse drags, a click, a sub-four-point drag, exactly four points, Escape before dragging, Escape during dragging, and every display-edge clamp.
-3. Connect an extended display and repeat a selection there. Record fresh display identifiers, AppKit frames, Core Graphics bounds, and backing scales; never hardcode runtime identifiers.
+3. Connect an extended display and repeat a selection there, including invoking while the pointer is on one display and starting the drag on the other. Press Escape during that drag and confirm the clicked display receives it immediately. Record fresh display identifiers, AppKit frames, Core Graphics bounds, and backing scales; never hardcode runtime identifiers.
 4. Drag from each display toward the other. The rectangle must stop at the initiating display edge, and only that display may dim.
 5. Repeat menu and shortcut selection at least 20 times across valid, click, and Escape outcomes. Every outcome must remove all panels, restore the cursor, leave the command reusable, and leave the clipboard unchanged.
-6. Repeat with Finder, a browser, TextEdit, another Space, and a full-screen Space frontmost. Starting and cancelling selection must not activate CopyLasso or switch Spaces.
+6. Repeat with Finder, a browser, TextEdit, another Space, and a full-screen Space frontmost. CopyLasso may become active only while selection is visible; every success, click, Escape, and failure must restore the originating app before downstream capture or feedback and must not switch Spaces.
 7. Change a display resolution or disconnect an extended display during selection. The active operation must cancel once, remove all panels, and rebuild fresh descriptors on the next request.
 8. Terminate CopyLasso during selection and verify no panel, dim, cursor override, observer, controller, or continuation remains. Use Xcode's memory graph or debugger to confirm the completed controller and surfaces are released.
-9. Inspect light, dark, increased-contrast, and VoiceOver behavior. The black-and-white border and crosshair must remain distinguishable, and the overlay must expose its selection label and Escape help.
+9. Inspect light, dark, increased-contrast, Reduce Motion, and VoiceOver behavior. The thin gray dashed outline and crosshair must remain distinguishable, the dashes must move steadily unless Reduce Motion is enabled, and the overlay must expose its selection label and Escape help.
 10. Confirm no pixel file, retained image, pasteboard write, Accessibility prompt, or Input Monitoring prompt occurs. The controlled blank-image path should now produce distinct no-text feedback while preserving the clipboard; real successful clipboard output belongs to the separate G17 matrix below.
 
-The crosshair check begins before pressing the mouse button and continues
-through the drag. Seeing an arrow at either point is a failure. Automated tests
-prove that visible panels refresh their cursor rectangles and apply the
-crosshair only after the input view is ready, but WindowServer cursor
-presentation still requires this signed manual observation.
+The crosshair check begins with a stationary pointer before pressing the mouse
+button and continues through the drag. Exactly one normal-sized AppKit
+crosshair must replace the pointer; an ordinary arrow or a second app-drawn
+reticle is a failure. Automated tests prove selection-only activation is
+confirmed by AppKit before overlay presentation and that the pointer's exact
+panel becomes key before cursor rectangles or the crosshair are installed.
+Delayed activation or key confirmation leaves the cursor untouched,
+cancellation invalidates either late confirmation, and restoration occurs before
+deferred completion.
+WindowServer composition and real frontmost-application restoration still
+require this signed manual observation.
 
 ### G13 Production Verification Record
 
@@ -148,9 +154,11 @@ The required policy is conservative: only exact same-text/same-bounds detections
 
 ## Clipboard and Feedback Matrix
 
-G17 unit coverage uses an isolated AppKit pasteboard plus a fault-injecting backend. It verifies one plain-string item and one change-count increment on success, rejection of empty text before pasteboard access, explicit prepared-write failure, no prior-pasteboard read in production source, and no rich-text representation. Workflow tests verify success writes once, no text never writes, clipboard failure never records a successful write, bounded preview derivation, feedback-failure recovery, repeated use, and busy rejection until HUD dismissal.
+G17 unit coverage uses an isolated AppKit pasteboard plus a fault-injecting backend. It verifies one plain-string item and one change-count increment on success, rejection of empty text before pasteboard access, explicit prepared-write failure, no prior-pasteboard read in production source, and no rich-text representation. Source inspection verifies that the production backend prepares the local string item before the destructive clear. Workflow tests verify success writes once, no text never writes, clipboard failure never records a successful write, bounded preview derivation, feedback-failure recovery, busy rejection during permission/selection/capture/OCR, and ten immediate capture cycles while each prior HUD remains visible. The coordinator is idle after synchronous presentation; panel-generation checks prove an older dismissal timer cannot hide newer feedback.
 
-The app-hosted feedback suite orders the production panel front while another process is frontmost. It verifies that the panel is visible, borderless, nonactivating, unable to become key or main, mouse-transparent, status-bar level, compatible with Spaces/full-screen apps, and removed after dismissal without changing the frontmost process. Model tests verify distinct success/no-text/failure wording, 80-character grapheme-safe truncation, automatic preview release, singleton host reuse, and stale-timer protection.
+The preservation guarantee covers every cancellation and failure before clipboard replacement begins. AppKit has no atomic general-pasteboard replacement: if its required clear succeeds and `writeObjects` then rejects the prepared item, the prior clipboard may already be lost. CopyLasso reports that rare clipboard-stage failure and deliberately does not read or retain prior clipboard data to attempt a best-effort rollback.
+
+The app-hosted feedback suite orders the production panel front while another process is frontmost. It verifies that the panel is visible, borderless, nonactivating, unable to become key or main, mouse-transparent, status-bar level, compatible with Spaces/full-screen apps, and removed after dismissal without changing the frontmost process. Model tests verify distinct success/no-text/failure wording, 80-character grapheme-safe truncation, automatic preview release, singleton host reuse, stale-timer protection, and synchronous interruption of every feedback kind.
 
 ### Signed G17 Manual Matrix
 
@@ -161,7 +169,9 @@ This live matrix requires an unlocked graphical session and granted Screen Recor
 3. Select a region with no visible text. Confirm the no-text HUD is distinct and the prior clipboard remains.
 4. Keep Finder, TextEdit, and a full-screen application frontmost in separate runs. Confirm the HUD appears without activation, key-window change, sound, notification request, or menu opening.
 5. Confirm the menu symbol changes only for the HUD lifetime, the preview is readable with VoiceOver, long text is truncated with one ellipsis, and no preview remains after dismissal.
-6. Repeat success, no-text, and cancellation three times each and confirm Capture Text returns to enabled after every result.
+6. During each success, no-text, and failure HUD, invoke Capture Text again. Confirm the HUD closes
+   immediately, one fresh crosshair appears, and no stale panel or overlapping selection remains.
+7. Repeat success, no-text, and cancellation three times each and confirm Capture Text returns to enabled after every result.
 
 On the unattended July 11, 2026 run, the workstation was locked and no interactive user session was available. The deterministic app-hosted focus/panel checks ran, but the two-application paste and VoiceOver portions remain mandatory live evidence before release.
 
@@ -236,7 +246,7 @@ The unattended July 11, 2026 run could not perform real sleep/wake, lock/unlock,
 
 ## Accessibility And Appearance Checklist
 
-G21 unit coverage reads every supported `NSWorkspace` accessibility-display flag, verifies standard and Increased Contrast overlay styles, prohibits app-defined feedback/recovery animation, proves a real hosted HUD expands for wrapped text, and retains textual states for success, no text, failure, login status, and permission recovery. Signed UI tests retain light/dark launches and add named compound-control plus keyboard default/close actions.
+G21 unit coverage reads every supported `NSWorkspace` accessibility-display flag, verifies standard and Increased Contrast overlay styles, proves the HUD uses regular material normally and an opaque semantic background under Reduce Transparency even when its host is reused, prohibits app-defined feedback/recovery animation, proves a real hosted HUD expands for wrapped text, and retains textual states for success, no text, failure, login status, and permission recovery. Signed UI tests retain light/dark launches and add named compound-control plus keyboard default/close actions.
 
 Run this checklist with one stably signed Debug app and a normal unlocked graphical session:
 
@@ -245,9 +255,9 @@ Run this checklist with one stably signed Debug app and a normal unlocked graphi
 3. With VoiceOver, inspect the menu-bar item and menu order/state; onboarding privacy explanation and shortcut/login controls; every Settings name, value, status, issue, and link; About name/version/status; and permission recovery title, neutral status, instructions, retry update, and three buttons.
 4. Trigger success, no-text, and each failure class. Confirm VoiceOver announces one bounded feedback element and the changing menu-bar state without moving focus. Confirm no feedback preview remains in app state after dismissal.
 5. Start selection. Confirm Accessibility Inspector reports one overlay group per display with the label `CopyLasso text selection overlay` and help `Drag to select text. Press Escape to cancel.` The visual drag itself is intentionally not replaced by a VoiceOver-driven workflow in v0.1.
-6. Test Light and Dark appearances. Inspect the template menu symbol, native forms, links, text, permission panel, success/no-text/failure HUD, clear pre-drag overlay, dim treatment, black/white border, and crosshair on bright and dark content.
-7. Enable Increased Contrast. Confirm the initiating-display dim strengthens from 18% to 28% and the two-tone border from 3/1 points to 5/2 points; unrelated displays stay clear. Repeat with Differentiate Without Color and verify every state remains named and symbol/text differentiated without hue.
-8. Enable Reduce Transparency and inspect native materials, text, borders, and window backgrounds. No essential copy may become unreadable. Enable Reduce Motion and confirm selection, recovery, and feedback panels present and disappear without app-defined animation.
+6. Test Light and Dark appearances. Inspect the template menu symbol, native forms, links, text, permission panel, success/no-text/failure HUD, clear pre-drag overlay, dim treatment, single thin gray dashed outline, and crosshair on bright and dark content. Confirm the dash phase moves steadily around the rectangle without pulsing, easing, or lagging behind drag geometry.
+7. Enable Increased Contrast. Confirm the initiating-display dim strengthens from 18% to 28% and the single gray outline strengthens from 1 to 1.5 points without restoring stacked strokes; unrelated displays stay clear. Repeat with Differentiate Without Color and verify every state remains named and symbol/text differentiated without hue.
+8. Enable Reduce Transparency and confirm every newly presented or reused feedback HUD replaces its material with an opaque semantic window background while retaining readable text and borders. Inspect the remaining native materials and window backgrounds; no essential copy may become unreadable. Enable Reduce Motion and confirm the gray selection outline remains dashed but its phase is static, while selection, recovery, and feedback panels still present and disappear without app-defined window animation.
 9. Increase the system text size to its largest supported value. Confirm onboarding, Settings, About, permission guidance, login errors, and the longest bounded feedback preview wrap or grow without clipped labels or inaccessible controls.
 10. Repeat keyboard and VoiceOver checks after closing/reopening each singleton window and while another application or full-screen Space is frontmost. Explicit Settings/About actions may activate their windows; capture feedback and selection must preserve the other application's focus policy.
 

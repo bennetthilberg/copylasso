@@ -115,9 +115,9 @@ final class CaptureLifecycleTests: XCTestCase {
     XCTAssertTrue(command.isEnabled)
   }
 
-  func testSystemInterruptionDismissesPendingFeedbackAndReturnsIdle() async throws {
+  func testSystemInterruptionDismissesVisibleFeedbackWhileWorkflowIsIdle() async throws {
     let coordinator = CaptureCoordinator()
-    let feedback = CancellableHoldingLifecycleFeedbackService()
+    let feedback = VisibleLifecycleFeedbackService()
     let clipboard = SpyClipboardService()
     let command = makeCommand(
       coordinator: coordinator,
@@ -126,12 +126,40 @@ final class CaptureLifecycleTests: XCTestCase {
     )
 
     _ = command.perform()
-    await feedback.waitUntilPresented()
-    XCTAssertEqual(coordinator.state, .completing)
+    await feedback.waitUntilPresentationCount(1)
+    XCTAssertEqual(coordinator.state, .idle)
     XCTAssertEqual(clipboard.writtenTexts, ["assembled"])
-    XCTAssertTrue(command.cancelActiveOperation(reason: .systemInterrupted))
-    await waitForIdle(coordinator)
+    XCTAssertFalse(command.cancelActiveOperation(reason: .systemInterrupted))
 
+    XCTAssertFalse(feedback.isPresented)
+    XCTAssertEqual(feedback.dismissCallCount, 1)
+    XCTAssertTrue(command.isEnabled)
+  }
+
+  func testThreeVisibleFeedbackCyclesRemainDismissibleBySystemInterruption() async throws {
+    let coordinator = CaptureCoordinator()
+    let feedback = VisibleLifecycleFeedbackService()
+    let clipboard = SpyClipboardService()
+    let command = makeCommand(
+      coordinator: coordinator,
+      clipboard: clipboard,
+      feedback: feedback
+    )
+
+    for attempt in 1...3 {
+      XCTAssertEqual(
+        command.perform(),
+        .transitioned(from: .idle, to: .requestingPermission),
+        "Attempt \(attempt)"
+      )
+      await feedback.waitUntilPresentationCount(attempt)
+      XCTAssertEqual(coordinator.state, .idle, "Attempt \(attempt)")
+    }
+
+    XCTAssertEqual(clipboard.writtenTexts, ["assembled", "assembled", "assembled"])
+    XCTAssertFalse(command.cancelActiveOperation(reason: .systemInterrupted))
+
+    XCTAssertEqual(feedback.dismissCallCount, 3)
     XCTAssertFalse(feedback.isPresented)
     XCTAssertTrue(command.isEnabled)
   }
@@ -316,36 +344,25 @@ private actor CancellableHoldingOCRService: OCRService {
 }
 
 @MainActor
-private final class CancellableHoldingLifecycleFeedbackService: FeedbackService {
-  private var continuation: CheckedContinuation<Void, Error>?
+private final class VisibleLifecycleFeedbackService: FeedbackService {
   private(set) var isPresented = false
+  private(set) var presentationCount = 0
+  private(set) var dismissCallCount = 0
 
-  func present(_ feedback: CaptureFeedback) async throws {
+  func present(_ feedback: CaptureFeedback) throws {
+    presentationCount += 1
     isPresented = true
-    do {
-      try await withTaskCancellationHandler {
-        try await withCheckedThrowingContinuation { continuation in
-          self.continuation = continuation
-        }
-      } onCancel: {
-        Task { @MainActor [weak self] in self?.cancel() }
-      }
-    } catch {
-      isPresented = false
-      throw error
-    }
-    isPresented = false
   }
 
-  func waitUntilPresented() async {
-    while continuation == nil {
+  func waitUntilPresentationCount(_ count: Int) async {
+    while presentationCount < count {
       await Task.yield()
     }
   }
 
-  private func cancel() {
-    let continuation = continuation
-    self.continuation = nil
-    continuation?.resume(throwing: CancellationError())
+  func dismiss() {
+    guard isPresented else { return }
+    dismissCallCount += 1
+    isPresented = false
   }
 }

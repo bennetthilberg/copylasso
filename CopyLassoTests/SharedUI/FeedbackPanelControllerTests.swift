@@ -63,9 +63,7 @@ final class FeedbackPanelControllerTests: XCTestCase {
       makePanel: { _ in host },
       waitForDismissal: waiter.wait
     )
-    let task = Task { @MainActor in
-      try await controller.present(.success(preview: "private transient preview"))
-    }
+    try controller.present(.success(preview: "private transient preview"))
     await waiter.waitUntilCallCount(1)
 
     XCTAssertEqual(host.showCallCount, 1)
@@ -73,20 +71,68 @@ final class FeedbackPanelControllerTests: XCTestCase {
     XCTAssertEqual(controller.model.content?.message, "private transient preview")
 
     waiter.resumeCall(at: 0)
-    try await task.value
+    await waitUntilDismissed(controller)
 
     XCTAssertEqual(host.hideCallCount, 1)
     XCTAssertNil(controller.model.feedback)
     XCTAssertNil(controller.model.content)
 
-    let second = Task { @MainActor in
-      try await controller.present(.noText)
-    }
+    try controller.present(.noText)
     await waiter.waitUntilCallCount(2)
     XCTAssertEqual(host.showCallCount, 2)
     waiter.resumeCall(at: 1)
-    try await second.value
+    await waitUntilDismissed(controller)
     XCTAssertEqual(host.hideCallCount, 2)
+  }
+
+  func testReusedHostRefreshesBackgroundStyleFromCurrentAccessibilityAppearance()
+    async throws
+  {
+    let appearanceProvider = MutableAccessibilityAppearanceProvider(
+      currentAppearance: AccessibilityAppearance(
+        increaseContrast: false,
+        differentiateWithoutColor: false,
+        reduceTransparency: false,
+        reduceMotion: false
+      )
+    )
+    let host = SpyFeedbackPanelHost()
+    let waiter = ManualFeedbackWaiter()
+    var makePanelCallCount = 0
+    let controller = FeedbackPanelController(
+      appearanceProvider: appearanceProvider,
+      makePanel: { _ in
+        makePanelCallCount += 1
+        return host
+      },
+      waitForDismissal: waiter.wait
+    )
+
+    try controller.present(.noText)
+    await waiter.waitUntilCallCount(1)
+    XCTAssertEqual(controller.model.feedbackHUDBackgroundStyle, .regularMaterial)
+    XCTAssertEqual(makePanelCallCount, 1)
+    waiter.resumeCall(at: 0)
+    await waitUntilDismissed(controller)
+
+    appearanceProvider.currentAppearance = AccessibilityAppearance(
+      increaseContrast: false,
+      differentiateWithoutColor: false,
+      reduceTransparency: true,
+      reduceMotion: false
+    )
+    try controller.present(.failure(.feedback))
+    await waiter.waitUntilCallCount(2)
+
+    XCTAssertEqual(
+      controller.model.feedbackHUDBackgroundStyle,
+      .opaqueWindowBackground
+    )
+    XCTAssertEqual(makePanelCallCount, 1)
+    XCTAssertEqual(host.showCallCount, 2)
+
+    waiter.resumeCall(at: 1)
+    await waitUntilDismissed(controller)
   }
 
   func testOlderDismissalCannotHideANewerPresentation() async throws {
@@ -96,22 +142,17 @@ final class FeedbackPanelControllerTests: XCTestCase {
       makePanel: { _ in host },
       waitForDismissal: waiter.wait
     )
-    let first = Task { @MainActor in
-      try await controller.present(.success(preview: "first"))
-    }
+    try controller.present(.success(preview: "first"))
     await waiter.waitUntilCallCount(1)
-    let second = Task { @MainActor in
-      try await controller.present(.noText)
-    }
+    try controller.present(.noText)
     await waiter.waitUntilCallCount(2)
 
-    waiter.resumeCall(at: 0)
-    try await first.value
+    await Task.yield()
     XCTAssertEqual(controller.model.feedback, .noText)
     XCTAssertEqual(host.hideCallCount, 0)
 
     waiter.resumeCall(at: 1)
-    try await second.value
+    await waitUntilDismissed(controller)
     XCTAssertNil(controller.model.feedback)
     XCTAssertEqual(host.hideCallCount, 1)
     XCTAssertEqual(host.showCallCount, 2)
@@ -124,15 +165,36 @@ final class FeedbackPanelControllerTests: XCTestCase {
       waitForDismissal: { throw TestServiceError.injected }
     )
 
-    do {
-      try await controller.present(.failure(.clipboard))
-      XCTFail("Expected feedback wait to fail")
-    } catch {
-      XCTAssertEqual(error as? TestServiceError, .injected)
-    }
+    XCTAssertNoThrow(try controller.present(.failure(.clipboard)))
+    await waitUntilDismissed(controller)
     XCTAssertNil(controller.model.feedback)
     XCTAssertEqual(host.showCallCount, 1)
     XCTAssertEqual(host.hideCallCount, 1)
+  }
+
+  func testExplicitDismissHidesEveryFeedbackKindImmediatelyAndCancelsTheActiveWait() async {
+    let feedbackCases: [CaptureFeedback] = [
+      .success(preview: "first"),
+      .noText,
+      .failure(.recognition),
+    ]
+
+    for feedback in feedbackCases {
+      let host = SpyFeedbackPanelHost()
+      let waiter = ManualFeedbackWaiter()
+      let controller = FeedbackPanelController(
+        makePanel: { _ in host },
+        waitForDismissal: waiter.wait
+      )
+      XCTAssertNoThrow(try controller.present(feedback))
+      await waiter.waitUntilCallCount(1)
+
+      controller.dismiss()
+
+      XCTAssertNil(controller.model.feedback)
+      XCTAssertEqual(host.hideCallCount, 1)
+      await Task.yield()
+    }
   }
 
   func testProductionPanelIsVisibleNonactivatingAndMouseTransparentWithoutChangingFocus()
@@ -141,9 +203,7 @@ final class FeedbackPanelControllerTests: XCTestCase {
     let frontmostProcess = NSWorkspace.shared.frontmostApplication?.processIdentifier
     let waiter = ManualFeedbackWaiter()
     let controller = FeedbackPanelController(waitForDismissal: waiter.wait)
-    let task = Task { @MainActor in
-      try await controller.present(.success(preview: "accessible preview"))
-    }
+    try controller.present(.success(preview: "accessible preview"))
     await waiter.waitUntilCallCount(1)
 
     let panel = try XCTUnwrap(
@@ -166,7 +226,7 @@ final class FeedbackPanelControllerTests: XCTestCase {
     )
 
     waiter.resumeCall(at: 0)
-    try await task.value
+    await waitUntilDismissed(controller)
     XCTAssertFalse(panel.isVisible)
     XCTAssertNil(controller.model.feedback)
   }
@@ -178,9 +238,7 @@ final class FeedbackPanelControllerTests: XCTestCase {
       repeating: "Readable enlarged preview content ",
       count: 8
     )
-    let task = Task { @MainActor in
-      try await controller.present(.success(preview: preview))
-    }
+    try controller.present(.success(preview: preview))
     await waiter.waitUntilCallCount(1)
 
     let panel = try XCTUnwrap(
@@ -194,7 +252,14 @@ final class FeedbackPanelControllerTests: XCTestCase {
     )
 
     waiter.resumeCall(at: 0)
-    try await task.value
+    await waitUntilDismissed(controller)
+  }
+
+  private func waitUntilDismissed(_ controller: FeedbackPanelController) async {
+    for _ in 0..<100 where controller.model.feedback != nil {
+      await Task.yield()
+    }
+    XCTAssertNil(controller.model.feedback)
   }
 }
 
@@ -213,14 +278,30 @@ private final class SpyFeedbackPanelHost: FeedbackPanelHosting {
 }
 
 @MainActor
+private final class MutableAccessibilityAppearanceProvider: AccessibilityAppearanceProviding {
+  var currentAppearance: AccessibilityAppearance
+
+  init(currentAppearance: AccessibilityAppearance) {
+    self.currentAppearance = currentAppearance
+  }
+}
+
+@MainActor
 private final class ManualFeedbackWaiter {
   private var continuations: [CheckedContinuation<Void, Error>] = []
 
   var wait: FeedbackPanelController.DismissalWaiter {
     { [weak self] in
       guard let self else { return }
-      try await withCheckedThrowingContinuation { continuation in
-        continuations.append(continuation)
+      let index = continuations.count
+      try await withTaskCancellationHandler {
+        try await withCheckedThrowingContinuation { continuation in
+          continuations.append(continuation)
+        }
+      } onCancel: {
+        Task { @MainActor [weak self] in
+          self?.cancelCall(at: index)
+        }
       }
     }
   }
@@ -233,5 +314,10 @@ private final class ManualFeedbackWaiter {
 
   func resumeCall(at index: Int) {
     continuations[index].resume()
+  }
+
+  private func cancelCall(at index: Int) {
+    guard continuations.indices.contains(index) else { return }
+    continuations[index].resume(throwing: CancellationError())
   }
 }

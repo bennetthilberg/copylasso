@@ -1,9 +1,22 @@
 import AppKit
 
+struct SelectionOutlineStyle: Equatable, Sendable {
+  let lineWidth: CGFloat
+  let grayWhiteComponent: CGFloat
+  let dashLength: CGFloat
+  let gapLength: CGFloat
+  let phaseDuration: TimeInterval
+  let animates: Bool
+}
+
 struct SelectionOverlayStyle: Equatable, Sendable {
   let dimOpacity: CGFloat
-  let outerBorderWidth: CGFloat
-  let innerBorderWidth: CGFloat
+  let outline: SelectionOutlineStyle
+}
+
+enum FeedbackHUDBackgroundStyle: Equatable, Sendable {
+  case regularMaterial
+  case opaqueWindowBackground
 }
 
 struct AccessibilityAppearance: Equatable, Sendable {
@@ -13,19 +26,21 @@ struct AccessibilityAppearance: Equatable, Sendable {
   let reduceMotion: Bool
 
   var selectionOverlayStyle: SelectionOverlayStyle {
-    if increaseContrast {
-      SelectionOverlayStyle(
-        dimOpacity: 0.28,
-        outerBorderWidth: 5,
-        innerBorderWidth: 2
+    SelectionOverlayStyle(
+      dimOpacity: increaseContrast ? 0.28 : 0.18,
+      outline: SelectionOutlineStyle(
+        lineWidth: increaseContrast ? 1.5 : 1,
+        grayWhiteComponent: 0.68,
+        dashLength: 6,
+        gapLength: 4,
+        phaseDuration: 0.6,
+        animates: !reduceMotion
       )
-    } else {
-      SelectionOverlayStyle(
-        dimOpacity: 0.18,
-        outerBorderWidth: 3,
-        innerBorderWidth: 1
-      )
-    }
+    )
+  }
+
+  var feedbackHUDBackgroundStyle: FeedbackHUDBackgroundStyle {
+    reduceTransparency ? .opaqueWindowBackground : .regularMaterial
   }
 }
 
@@ -70,7 +85,7 @@ enum AccessibilityAuditCopy {
   static let launchAtLoginHelp =
     "Choose whether CopyLasso starts automatically when you log in."
   static let suggestedShortcutHelp =
-    "Restore the suggested Control-Shift-Command-2 shortcut."
+    "Restore the suggested Shift-Command-2 shortcut."
   static let openScreenRecordingSettingsHelp =
     "Open the Screen Recording privacy pane in System Settings."
   static let retryPermissionHelp =
