@@ -366,7 +366,8 @@ echo "Auditing behavioral coverage"
 ./scripts/audit-coverage.sh "$derived_data/UnitTests.xcresult"
 
 echo "Running the complete unit bundle with networking denied"
-COPYLASSO_OFFLINE_DERIVED_DATA_PATH="$derived_data" \
+COPYLASSO_CI_ARCH="$requested_architecture" \
+    COPYLASSO_OFFLINE_DERIVED_DATA_PATH="$derived_data" \
     ./scripts/test-offline.sh
 
 echo "Running deterministic unit repeatability gate"

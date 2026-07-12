@@ -39,10 +39,21 @@ build_for_testing_line="$(/usr/bin/grep -n '^xcodebuild build-for-testing' "$ci_
 repeatability_line="$(/usr/bin/grep -nE \
     '^[[:space:]]*\./scripts/test-repeatability\.sh[[:space:]]*$' "$ci_script" | \
     /usr/bin/cut -d: -f1)"
+offline_line="$(/usr/bin/grep -nE \
+    '^[[:space:]]*\./scripts/test-offline\.sh[[:space:]]*$' "$ci_script" | \
+    /usr/bin/cut -d: -f1)"
 release_line="$(/usr/bin/grep -n '^echo "Building Universal 2 Release"' "$ci_script" | \
     /usr/bin/cut -d: -f1)"
 if ((repeatability_line <= build_for_testing_line || repeatability_line >= release_line)); then
     fail "Repeatability must reuse the built unit bundle before the Release build."
+fi
+
+offline_block="$(/usr/bin/sed -n "$((offline_line - 2)),${offline_line}p" "$ci_script")"
+if ! /usr/bin/grep -Fq 'COPYLASSO_CI_ARCH="$requested_architecture" \' \
+    <<< "$offline_block" || \
+    ! /usr/bin/grep -Fq 'COPYLASSO_OFFLINE_DERIVED_DATA_PATH="$derived_data" \' \
+        <<< "$offline_block"; then
+    fail "Canonical offline tests must receive the requested architecture and existing DerivedData."
 fi
 
 if ! /usr/bin/grep -Fq '/usr/bin/xcodebuild test-without-building \' \
