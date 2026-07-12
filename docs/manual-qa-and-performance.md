@@ -4,7 +4,7 @@
 
 **Goal:** G24
 
-**Execution state:** blocked by a release-blocking selection-cursor failure
+**Execution state:** G24R signed rapid-reuse proof pending; complete clean G24 rerun pending
 
 This is the release record for system behavior that unit tests and unsigned hosted runners cannot faithfully validate. A result is **Pass**, **Fail**, **Blocked**, or **Not applicable**. Historical spike screenshots and injected-service tests provide context but never replace a fresh G24 result.
 
@@ -57,6 +57,27 @@ but only the Dell was online and the graphical session was behind the login-
 window shield. Its measurements remain historical context rather than signed
 interactive results.
 
+### July 12, 2026 G24C Signed Cursor-Fix Run
+
+The cursor fix uses exact commit
+`64f28f5d76ee6faabb2d64e85707c1cd3856a1e4` from the same exact artifact path.
+Strict verification passed for version 0.1.0 build 1, arm64 Debug, Hardened
+Runtime, App Sandbox, development-only `get-task-allow`, and no network
+entitlement. A duplicate `.build/ci-arm64` app with the same Debug bundle
+identifier initially reopened and produced a false permission failure; it was
+terminated, and executable-path readback confirmed the exact signed artifact
+before testing continued.
+
+With Chrome's controlled bright fixture frontmost, the physical shortcut
+immediately produced exactly one normal-sized system crosshair. A real drag
+completed ScreenCaptureKit, Vision, clipboard output, and the success HUD.
+Computer Use then found Chrome's fixture content focused again, proving the
+selection-only focus handoff restored the originating app before feedback
+finished. An immediate second shortcut while the success HUD remained visible
+produced no overlapping selection under the then-current `.completing`
+busy-state contract. That historical result motivated the approved G24R
+amendment; it is not evidence for the new immediate-replacement behavior.
+
 ## Clean-State Preparation
 
 1. Build Debug with the stable Apple Development identity and verify its designated requirement.
@@ -98,17 +119,17 @@ where those properties apply.
 | Ordinary relaunch after completed onboarding | One status item, no onboarding, Dock icon, or initial window | **Pass** — ordinary signed relaunch preserved completed onboarding and `⌃⇧⌘2`, exposed one status item, and opened no app window or Dock item |
 | Cold launch | One status item within 2 seconds; no Dock icon or initial app window after completed onboarding | **Blocked** — one observed signed launch became process-visible in 99 ms and exposed the status item, but the required ten visible samples and p95 remain pending |
 | Shortcut setup and persistence | Confirm, replace, clear, and restore `⌃⇧⌘2`; relaunch and reboot preserve the stored choice | **Blocked** — confirm, conflict rejection, replacement with `⌃⇧⌘K`, clearing, default restoration, and ordinary-relaunch persistence passed; post-configuration reboot persistence remains untested |
-| Suggested shortcut with Finder frontmost | Overlay begins without opening the menu or stealing focus | **Blocked** — real shortcut delivery reached the overlay with other apps frontmost, but the Finder-specific focus observation remains pending |
-| Shortcut with browser and TextEdit frontmost | Same command path and focus preservation | **Blocked** — TextEdit- and Chrome-frontmost shortcuts both completed through the real workflow, but exact before/after focus identity was not captured |
-| Shortcut with another native app frontmost | Same command path and focus preservation outside the specifically tested apps | **Blocked** — no fresh third-native-app result |
+| Suggested shortcut with Finder frontmost | Selection-only activation presents the crosshair, then restores Finder before downstream work | **Blocked** — the Chrome restoration path passed, but the Finder-specific observation remains pending |
+| Shortcut with browser and TextEdit frontmost | Same command path and originating-app restoration | **Blocked** — Chrome focus restoration passed on the exact signed cursor-fix head; fresh TextEdit restoration remains pending |
+| Shortcut with another native app frontmost | Same command path and restoration outside the specifically tested apps | **Blocked** — no fresh third-native-app result |
 | Menu fallback with shortcut cleared | Capture Text remains usable and matches shortcut behavior | **Blocked** — a physical menu invocation reached the same production permission path, but it was not run while the shortcut was cleared |
-| Rapid repeated shortcut while active | One operation remains active; later requests are rejected without overlays, clipboard writes, or stuck state | **Blocked** — Computer Use cannot deliver the registered Carbon hotkey and no physical repeated-input run has completed |
-| Ordinary success | Selected text reaches plain-text clipboard; bounded success HUD appears without activation | **Pass** — four signed selections completed through real ScreenCaptureKit, Vision, and the plain-text pasteboard; the bounded success HUD appeared and cleared while the originating app remained visible |
-| Selection cursor and drag rendering | Clear before mouse-down; one normal-sized crosshair replaces the pointer before and throughout the drag; initiating display dims outside the selection | **Fail** — the signed app-drawn candidate left the ordinary arrow visible and added a second, slightly oversized reticle offset below it; outside-selection dimming and OCR still worked, but the duplicate pointer treatment is not acceptable |
+| Rapid repeated shortcut while active | Requests during permission, selection, capture, or OCR are rejected; a request during feedback dismisses that HUD and immediately begins exactly one fresh selection | **Blocked** — the pre-G24R signed build safely rejected the second shortcut during feedback; automated G24R coverage now proves immediate replacement and stale-task isolation, but the replacement crosshair still requires a fresh exact-head signed physical run |
+| Ordinary success | Selected text reaches plain-text clipboard; bounded success HUD appears after originating-app restoration | **Pass** — five signed selections completed through real ScreenCaptureKit, Vision, and the plain-text pasteboard; the cursor-fix run restored Chrome focus before the bounded success HUD finished |
+| Selection cursor and drag rendering | Clear before mouse-down; one normal-sized crosshair replaces the pointer before and throughout the drag; initiating display dims outside the selection | **Pass** — on the exact signed cursor-fix head, one normal-sized crosshair appeared immediately and remained usable for a successful drag; no ordinary arrow or second reticle appeared |
 | Reverse drag and every edge | Correct region, initiating-display clamp, no orphaned panel/cursor | **Blocked** — ordinary forward drags cleaned up, but reverse and four-edge coverage remains pending |
-| Every connected display and backing scale | Correct display identity, point-to-pixel scale, crop, HUD placement, and focus preservation | **Blocked** — Dell 1× capture succeeded; physical Sidecar 2× capture remains pending |
+| Every connected display and backing scale | Correct display identity, point-to-pixel scale, crop, HUD placement, and focus restoration | **Blocked** — Dell 1× capture succeeded; physical Sidecar 2× capture remains pending |
 | Cross-display drag | Initiating display alone dims; selection clamps at its edge and never spans displays | **Blocked** — both physical displays are connected, but neither cross-display direction has been exercised in this run |
-| Full-screen app and changed Space | Delayed selection appears over the intended full-screen Space without activating CopyLasso or switching Spaces | **Blocked** — no fresh full-screen/Space result |
+| Full-screen app and changed Space | Selection-only activation appears over the intended full-screen Space, does not switch Spaces, and restores the originating app | **Blocked** — no fresh full-screen/Space result |
 | Escape before/during drag | Normal cancellation; clipboard sentinel unchanged; immediate reuse | **Blocked** — no fresh physical Escape sequence |
 | Click and sub-4-point drag | Too-small cancellation; sentinel unchanged | **Blocked** — no fresh tiny-drag sequence |
 | Quit during selection | All panels/cursor state disappear exactly once and the process terminates without a clipboard change | **Blocked** — no fresh quit-during-selection sequence |
@@ -129,20 +150,18 @@ where those properties apply.
 | Ordinary delete and reinstall | Onboarding remains complete when preferences remain; Launch at Login state is reconciled | **Blocked** — no installable release artifact exists yet |
 | Complete uninstall and reinstall | Login item, preferences, app-owned container data, and Screen Recording entry are removed; onboarding returns cleanly | **Blocked** — final uninstall procedure is a G25 deliverable and authoritative VM proof is G29 |
 
-### Release-Blocking Stop
+### Resolved Cursor Block And Rerun Boundary
 
-The first bright-background signed run showed only the ordinary arrow. The
-follow-up signed candidate made its app-drawn reticle visible, but left the
-ordinary arrow in place and rendered a second, slightly oversized reticle
-offset below it. The required result is one normal-sized crosshair replacing
-the pointer before mouse-down and throughout the drag, so both observations are
-release-blocking failures. Dimming outside the selection worked and OCR copied
-the controlled browser text in both runs.
+The first bright-background signed run showed only the ordinary arrow, and the
+follow-up drawn-reticle candidate produced two pointers. The approved G24C fix
+temporarily activates CopyLasso during selection, uses the normal system
+crosshair, removes the drawn reticle, and restores the originating app before
+completion. Exact-head signed testing passed that visual and focus-restoration
+gate on July 12.
 
-Per G24's stop condition, the remaining interactive matrix and final numeric
-baselines are paused. Production behavior must not be changed inside G24. A
-narrowly scoped fix goal and a complete clean G24 rerun are required before the
-goal can return to in-progress status.
+Per G24's stop condition, the earlier partial run is not promoted into a
+complete result. After G24C's final review signal, G24 must restart its coherent
+clean-state matrix and numeric baselines from the beginning.
 
 ## OCR Content Matrix
 

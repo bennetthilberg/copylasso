@@ -8,15 +8,15 @@ The application target is measured from the nonparallel, timeout-bounded `CopyLa
 
 | Metric | G22 baseline | Current reviewed baseline |
 | --- | ---: | ---: |
-| Unit tests | 187 | 209 |
-| Stable application aggregate | 2,382 / 3,396 (70.14%) | 2,557 / 3,552 (71.98%) |
-| Models, CaptureWorkflow, and Settings | 922 / 1,006 (91.65%) | 968 / 1,011 (95.74%) |
+| Unit tests | 187 | 214 |
+| Stable application aggregate | 2,382 / 3,396 (70.14%) | 2,615 / 3,612 (72.39%) |
+| Models, CaptureWorkflow, and Settings | 922 / 1,006 (91.65%) | 1,011 / 1,056 (95.73%) |
 | `SettingsController.swift` | 144 / 168 (85.71%) | 167 / 172 (97.09%) |
 | `TextAssembler.swift` | 164 / 203 (80.78%) | 186 / 203 (91.62%) |
 
 The stable application aggregate excludes `OnboardingView.swift`, `LaunchAtLoginStatusView.swift`, and `MenuBarLabelView.swift`. Those app-hosted SwiftUI builders execute incidentally only while the Debug preference domain says onboarding is incomplete; signed QA legitimately changes that retained state. Their layout, focus, accessibility, and first-run behavior remain owned by the signed UI and manual checks below. The 70% floor is unchanged, and every other application file remains in the aggregate.
 
-The G23 tests exercise idempotent Launch at Login state, approval/unavailable states, failed postcondition readback, every disable failure, explicit continuation without login, deterministic positioned and unpositioned text-order ties, NaN confidence, and signed-zero geometry. Review propagation adds direct configuration, permission-retry, display-size, fractional-edge, Debug runtime-option, and app-drawn reticle placement, movement, rendering, cleanup, and appearance-width regressions. The postcondition test found and fixed one real state-reporting defect: an external re-enable after an idempotent disable now reports a recoverable disable failure instead of returning false with no issue.
+The G23 tests exercise idempotent Launch at Login state, approval/unavailable states, failed postcondition readback, every disable failure, explicit continuation without login, deterministic positioned and unpositioned text-order ties, NaN confidence, and signed-zero geometry. Review propagation adds direct configuration, permission-retry, display-size, fractional-edge, Debug runtime-option, cursor activation/restoration, and appearance regressions. G24R adds direct feedback interruption, stale-generation isolation, failure-feedback phase, and replacement-lifecycle cancellation coverage. The postcondition test found and fixed one real state-reporting defect: an external re-enable after an idempotent disable now reports a recoverable disable failure instead of returning false with no issue.
 
 ## Enforced Gate
 
