@@ -5,7 +5,7 @@ import XCTest
 
 @MainActor
 final class AccessibilityAppearanceTests: XCTestCase {
-  func testStandardSelectionStyleRetainsSubtleDimAndTwoToneBorder() {
+  func testStandardSelectionStyleUsesSubtleDimAndThinAnimatedGrayDashes() {
     let appearance = AccessibilityAppearance(
       increaseContrast: false,
       differentiateWithoutColor: false,
@@ -17,27 +17,73 @@ final class AccessibilityAppearanceTests: XCTestCase {
       appearance.selectionOverlayStyle,
       SelectionOverlayStyle(
         dimOpacity: 0.18,
-        outerBorderWidth: 3,
-        innerBorderWidth: 1
+        outline: SelectionOutlineStyle(
+          lineWidth: 1,
+          grayWhiteComponent: 0.68,
+          dashLength: 6,
+          gapLength: 4,
+          phaseDuration: 0.6,
+          animates: true
+        )
       )
     )
   }
 
-  func testIncreasedContrastStrengthensDimAndBothBorderStrokes() {
+  func testIncreasedContrastStrengthensDimAndSingleOutlineWithoutChangingPattern() {
     let appearance = AccessibilityAppearance(
       increaseContrast: true,
       differentiateWithoutColor: true,
       reduceTransparency: true,
-      reduceMotion: true
+      reduceMotion: false
     )
 
     XCTAssertEqual(
       appearance.selectionOverlayStyle,
       SelectionOverlayStyle(
         dimOpacity: 0.28,
-        outerBorderWidth: 5,
-        innerBorderWidth: 2
+        outline: SelectionOutlineStyle(
+          lineWidth: 1.5,
+          grayWhiteComponent: 0.68,
+          dashLength: 6,
+          gapLength: 4,
+          phaseDuration: 0.6,
+          animates: true
+        )
       )
+    )
+  }
+
+  func testReduceMotionKeepsTheDashedSelectionOutlineStatic() {
+    let appearance = AccessibilityAppearance(
+      increaseContrast: false,
+      differentiateWithoutColor: false,
+      reduceTransparency: false,
+      reduceMotion: true
+    )
+
+    XCTAssertFalse(appearance.selectionOverlayStyle.outline.animates)
+    XCTAssertEqual(appearance.selectionOverlayStyle.outline.dashLength, 6)
+    XCTAssertEqual(appearance.selectionOverlayStyle.outline.gapLength, 4)
+  }
+
+  func testFeedbackHUDUsesMaterialUnlessReduceTransparencyRequiresOpaqueBackground() {
+    let standard = AccessibilityAppearance(
+      increaseContrast: false,
+      differentiateWithoutColor: false,
+      reduceTransparency: false,
+      reduceMotion: false
+    )
+    let reducedTransparency = AccessibilityAppearance(
+      increaseContrast: false,
+      differentiateWithoutColor: false,
+      reduceTransparency: true,
+      reduceMotion: false
+    )
+
+    XCTAssertEqual(standard.feedbackHUDBackgroundStyle, .regularMaterial)
+    XCTAssertEqual(
+      reducedTransparency.feedbackHUDBackgroundStyle,
+      .opaqueWindowBackground
     )
   }
 
@@ -57,6 +103,10 @@ final class AccessibilityAppearanceTests: XCTestCase {
       "Capture Text keyboard shortcut"
     )
     XCTAssertTrue(AccessibilityAuditCopy.shortcutRecorderHelp.contains("clear"))
+    XCTAssertEqual(
+      AccessibilityAuditCopy.suggestedShortcutHelp,
+      "Restore the suggested Shift-Command-2 shortcut."
+    )
     XCTAssertTrue(AccessibilityAuditCopy.launchAtLoginHelp.contains("starts automatically"))
     XCTAssertTrue(
       AccessibilityAuditCopy.openScreenRecordingSettingsHelp.contains("System Settings")

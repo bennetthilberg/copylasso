@@ -25,7 +25,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
   private var requestedCancellationReason: CaptureCancellationReason?
 
   var isEnabled: Bool {
-    !coordinator.isBusy
+    coordinator.state == .idle || coordinator.state == .completing
   }
 
   init(
@@ -59,6 +59,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
       return result
     }
 
+    feedbackService.dismiss()
     let work: Work = { [weak self] in
       await self?.runScheduledOperation()
     }
@@ -75,6 +76,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
 
   @discardableResult
   func cancelActiveOperation(reason: CaptureCancellationReason) -> Bool {
+    feedbackService.dismiss()
     guard requestedCancellationReason == nil else { return false }
     switch coordinator.state {
     case .requestingPermission, .selecting, .capturing, .recognizing, .completing:
@@ -155,7 +157,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
       }
     } catch {
       if !transitionToRequestedCancellationIfNeeded() {
-        await presentTerminalFailure(.selection)
+        presentTerminalFailure(.selection)
       }
     }
     resetTerminalState()
@@ -168,11 +170,11 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
 
     do {
       let feedback = try await runPrivateOperation(selection)
-      await presentCompletionFeedback(feedback)
+      presentCompletionFeedback(feedback)
     } catch let interruption as CaptureOperationInterruption {
-      await handle(interruption)
+      handle(interruption)
     } catch {
-      await presentTerminalFailure(.internal)
+      presentTerminalFailure(.internal)
     }
   }
 
@@ -232,20 +234,20 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     return .success(preview: preview)
   }
 
-  private func handle(_ interruption: CaptureOperationInterruption) async {
+  private func handle(_ interruption: CaptureOperationInterruption) {
     switch interruption {
     case .cancelled(let reason):
       _ = coordinator.handle(.cancel(reason))
     case .failure(let stage):
-      await presentTerminalFailure(stage)
+      presentTerminalFailure(stage)
     case .permissionRecoveryPresented:
       _ = coordinator.handle(.fail(.capture))
     }
   }
 
-  private func presentCompletionFeedback(_ feedback: CaptureFeedback) async {
+  private func presentCompletionFeedback(_ feedback: CaptureFeedback) {
     do {
-      try await feedbackService.present(feedback)
+      try feedbackService.present(feedback)
       if transitionToRequestedCancellationIfNeeded() {
         return
       }
@@ -260,9 +262,16 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     }
   }
 
-  private func presentTerminalFailure(_ stage: CaptureFailureStage) async {
+  private func presentTerminalFailure(_ stage: CaptureFailureStage) {
+    if coordinator.state != .completing {
+      guard case .transitioned = coordinator.handle(.feedbackBegan) else {
+        _ = coordinator.handle(.fail(.internal))
+        return
+      }
+    }
+
     do {
-      try await feedbackService.present(.failure(stage))
+      try feedbackService.present(.failure(stage))
       if !transitionToRequestedCancellationIfNeeded() {
         _ = coordinator.handle(.fail(stage))
       }
@@ -273,9 +282,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     }
   }
 
-  private func finishPermissionFailure(
-    _ observation: ScreenCaptureAuthorizationObservation
-  ) {
+  private func finishPermissionFailure(_ observation: ScreenCaptureAuthorizationObservation) {
     _ = coordinator.handle(.fail(.permission))
     recoveryPresenter.present(observation)
     resetTerminalState()
@@ -304,7 +311,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
   }
 
   private func transitionToRequestedCancellationIfNeeded() -> Bool {
-    guard let reason = cancellationReasonIfRequested else { return false }
+    guard let reason = requestedCancellationReason else { return false }
     _ = coordinator.handle(.cancel(reason))
     return true
   }

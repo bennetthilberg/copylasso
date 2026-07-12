@@ -47,8 +47,8 @@ final class CaptureCommandTests: XCTestCase {
     XCTAssertEqual(scheduler.scheduledCompletionCount, 1)
   }
 
-  func testEveryNonIdleStateIsDisabledAndRejectedWithoutMutation() {
-    for state in CaptureState.nonIdleCaptureCommandTestCases {
+  func testEveryNonInterruptibleStateIsDisabledAndRejectedWithoutMutation() {
+    for state in CaptureState.nonInterruptibleCaptureCommandTestCases {
       let coordinator = CaptureCoordinator(initialState: state)
       let scheduler = ManualCaptureCompletionScheduler()
       let command = makeTestCaptureCommand(
@@ -61,6 +61,27 @@ final class CaptureCommandTests: XCTestCase {
       XCTAssertEqual(coordinator.state, state)
       XCTAssertEqual(scheduler.scheduledCompletionCount, 0)
     }
+  }
+
+  func testCompletingFeedbackIsDismissedBeforeReplacementWorkIsScheduled() {
+    let coordinator = CaptureCoordinator(initialState: .completing)
+    let scheduler = ManualCaptureCompletionScheduler()
+    let feedback = SpyFeedbackService()
+    let command = makeTestCaptureCommand(
+      coordinator: coordinator,
+      scheduleWork: scheduler.schedule,
+      feedbackService: feedback
+    )
+    XCTAssertNoThrow(try feedback.present(.noText))
+
+    XCTAssertTrue(command.isEnabled)
+    XCTAssertEqual(
+      command.perform(),
+      .transitioned(from: .completing, to: .requestingPermission)
+    )
+    XCTAssertEqual(feedback.dismissCallCount, 1)
+    XCTAssertEqual(coordinator.state, .requestingPermission)
+    XCTAssertEqual(scheduler.scheduledCompletionCount, 1)
   }
 
   func testCaptureCommandCanCompleteThreeSequentialRequests() async {
@@ -125,12 +146,11 @@ private final class ManualCaptureCompletionScheduler {
 }
 
 extension CaptureState {
-  fileprivate static let nonIdleCaptureCommandTestCases: [CaptureState] = [
+  fileprivate static let nonInterruptibleCaptureCommandTestCases: [CaptureState] = [
     .requestingPermission,
     .selecting,
     .capturing,
     .recognizing,
-    .completing,
     .cancelled(.user),
     .failed(.internal),
   ]

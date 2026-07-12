@@ -1,3 +1,4 @@
+import AppKit
 import CoreGraphics
 import XCTest
 
@@ -49,7 +50,240 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(outcome, .cancelled(.escape))
   }
 
-  func testCrosshairIsAppliedAfterVisibleInputReadySurfacesRefreshTheirCursorRects()
+  func testSelectionActivatesBeforeShowingSurfacesAndRestoresBeforeCompletion() async throws {
+    let display = try makeDisplay()
+    let startupEvents = RecordingSelectionStartupEvents()
+    let provider = StubSelectionDisplayProvider(results: [.success([display])])
+    let factory = RecordingSelectionOverlaySurfaceFactory(startupEvents: startupEvents)
+    let lifecycle = RecordingSelectionOverlayLifecycleObserver()
+    let cursor = RecordingSelectionCursorManager(startupEvents: startupEvents)
+    let activation = RecordingSelectionApplicationActivationManager(
+      startupEvents: startupEvents
+    )
+    let scheduler = ManualSelectionCompletionScheduler()
+    let service = AppKitRegionSelectionService(
+      displayProvider: provider,
+      surfaceFactory: factory,
+      lifecycleObserver: lifecycle,
+      cursorManager: cursor,
+      activationManager: activation,
+      scheduleCompletion: scheduler.schedule
+    )
+
+    let task = Task { try await service.selectRegion() }
+    await Task.yield()
+
+    XCTAssertEqual(startupEvents.events.first, .applicationActivationRequested)
+    XCTAssertEqual(activation.activateCallCount, 1)
+    XCTAssertEqual(activation.restoreCallCount, 0)
+
+    factory.surfaces[0].send(.escape)
+
+    XCTAssertEqual(activation.restoreCallCount, 1)
+    XCTAssertEqual(startupEvents.events.last, .previousApplicationRestored)
+    XCTAssertEqual(scheduler.pendingCount, 1)
+
+    await scheduler.runNext()
+    let outcome = try await task.value
+    XCTAssertEqual(outcome, .cancelled(.escape))
+  }
+
+  func testSelectionWaitsForApplicationActivationBeforeShowingSurfacesOrCrosshair()
+    async throws
+  {
+    let display = try makeDisplay()
+    let provider = StubSelectionDisplayProvider(results: [.success([display])])
+    let factory = RecordingSelectionOverlaySurfaceFactory()
+    let activation = RecordingSelectionApplicationActivationManager(
+      automaticallyCompletesActivation: false
+    )
+    let lifecycle = RecordingSelectionOverlayLifecycleObserver()
+    let cursor = RecordingSelectionCursorManager()
+    let scheduler = ManualSelectionCompletionScheduler()
+    let service = AppKitRegionSelectionService(
+      displayProvider: provider,
+      surfaceFactory: factory,
+      lifecycleObserver: lifecycle,
+      cursorManager: cursor,
+      activationManager: activation,
+      scheduleCompletion: scheduler.schedule
+    )
+
+    let task = Task { try await service.selectRegion() }
+    await Task.yield()
+
+    XCTAssertEqual(activation.activateCallCount, 1)
+    XCTAssertEqual(factory.requestedDisplayIDs, [])
+    XCTAssertTrue(factory.surfaces.isEmpty)
+    XCTAssertEqual(cursor.pushCallCount, 0)
+
+    activation.completeActivation()
+
+    XCTAssertEqual(factory.requestedDisplayIDs, [display.displayID])
+    XCTAssertTrue(factory.surfaces[0].isVisible)
+    XCTAssertEqual(factory.surfaces[0].suspendCursorRectManagementCallCount, 1)
+    XCTAssertEqual(factory.surfaces[0].makeInputReadyCallCount, 1)
+    XCTAssertEqual(cursor.pushCallCount, 1)
+
+    factory.surfaces[0].send(.escape)
+    await scheduler.runNext()
+    let outcome = try await task.value
+    XCTAssertEqual(outcome, .cancelled(.escape))
+  }
+
+  func testCancellationBeforeActivationIgnoresLateActivationReadiness() async throws {
+    let display = try makeDisplay()
+    let provider = StubSelectionDisplayProvider(results: [.success([display])])
+    let factory = RecordingSelectionOverlaySurfaceFactory()
+    let activation = RecordingSelectionApplicationActivationManager(
+      automaticallyCompletesActivation: false
+    )
+    let lifecycle = RecordingSelectionOverlayLifecycleObserver()
+    let cursor = RecordingSelectionCursorManager()
+    let scheduler = ManualSelectionCompletionScheduler()
+    let service = AppKitRegionSelectionService(
+      displayProvider: provider,
+      surfaceFactory: factory,
+      lifecycleObserver: lifecycle,
+      cursorManager: cursor,
+      activationManager: activation,
+      scheduleCompletion: scheduler.schedule
+    )
+
+    let task = Task { try await service.selectRegion() }
+    await Task.yield()
+
+    service.cancelSelection()
+    XCTAssertEqual(activation.restoreCallCount, 1)
+    activation.completeActivation()
+
+    XCTAssertEqual(factory.requestedDisplayIDs, [])
+    XCTAssertEqual(cursor.pushCallCount, 0)
+
+    await scheduler.runNext()
+    let outcome = try await task.value
+    XCTAssertEqual(outcome, .cancelled(.applicationTerminated))
+  }
+
+  func testSelectionWaitsForPointerSurfaceToBecomeKeyBeforeInstallingCrosshair()
+    async throws
+  {
+    let first = try makeDisplay(id: 1, origin: CGPoint(x: 50_000, y: 50_000))
+    let second = try makeDisplay(id: 2, origin: CGPoint(x: 50_100, y: 50_000))
+    let provider = StubSelectionDisplayProvider(results: [.success([first, second])])
+    let factory = RecordingSelectionOverlaySurfaceFactory(
+      automaticallyCompletesInputReadiness: false
+    )
+    let context = makeContext(provider: provider, factory: factory)
+
+    let task = Task { try await context.service.selectRegion() }
+    await Task.yield()
+
+    XCTAssertTrue(factory.surfaces.allSatisfy(\.isVisible))
+    XCTAssertEqual(factory.surfaces.map(\.makeInputReadyCallCount), [1, 0])
+    XCTAssertEqual(factory.surfaces.map(\.suspendCursorRectManagementCallCount), [1, 1])
+    XCTAssertEqual(context.cursor.pushCallCount, 0)
+
+    factory.surfaces[0].completeInputReadiness()
+    factory.surfaces[0].completeInputReadiness()
+
+    XCTAssertEqual(context.cursor.pushCallCount, 1)
+
+    factory.surfaces[0].send(.escape)
+    await context.scheduler.runNext()
+    let outcome = try await task.value
+    XCTAssertEqual(outcome, .cancelled(.escape))
+  }
+
+  func testCursorRectManagementIsSuspendedBeforeKeyHandoffAndRestoredAfterHide()
+    async throws
+  {
+    let first = try makeDisplay(id: 1, origin: CGPoint(x: 50_000, y: 50_000))
+    let second = try makeDisplay(id: 2, origin: CGPoint(x: 50_100, y: 50_000))
+    let provider = StubSelectionDisplayProvider(results: [.success([first, second])])
+    let factory = RecordingSelectionOverlaySurfaceFactory(
+      automaticallyCompletesInputReadiness: false
+    )
+    let context = makeContext(provider: provider, factory: factory)
+
+    let task = Task { try await context.service.selectRegion() }
+    await Task.yield()
+
+    XCTAssertTrue(factory.surfaces.allSatisfy(\.isVisible))
+    XCTAssertEqual(factory.surfaces.map(\.suspendCursorRectManagementCallCount), [1, 1])
+    XCTAssertEqual(factory.surfaces.map(\.restoreCursorRectManagementCallCount), [0, 0])
+    XCTAssertEqual(context.cursor.pushCallCount, 0)
+
+    factory.surfaces[0].completeInputReadiness()
+    XCTAssertEqual(context.cursor.pushCallCount, 1)
+
+    factory.surfaces[0].send(.escape)
+
+    XCTAssertTrue(factory.surfaces.allSatisfy { !$0.isVisible })
+    XCTAssertEqual(factory.surfaces.map(\.restoreCursorRectManagementCallCount), [1, 1])
+    XCTAssertEqual(factory.surfaces.map(\.restoreWhileVisibleCallCount), [0, 0])
+    XCTAssertEqual(context.cursor.popCallCount, 1)
+
+    await context.scheduler.runNext()
+    let outcome = try await task.value
+    XCTAssertEqual(outcome, .cancelled(.escape))
+  }
+
+  func testCancellationBeforePointerSurfaceBecomesKeySuppressesLateReadiness()
+    async throws
+  {
+    let display = try makeDisplay()
+    let provider = StubSelectionDisplayProvider(results: [.success([display])])
+    let factory = RecordingSelectionOverlaySurfaceFactory(
+      automaticallyCompletesInputReadiness: false
+    )
+    let context = makeContext(provider: provider, factory: factory)
+
+    let task = Task { try await context.service.selectRegion() }
+    await Task.yield()
+
+    context.service.cancelSelection()
+    factory.surfaces[0].completeInputReadiness()
+
+    XCTAssertEqual(factory.surfaces[0].cancelInputReadinessCallCount, 1)
+    XCTAssertEqual(factory.surfaces[0].suspendCursorRectManagementCallCount, 1)
+    XCTAssertEqual(factory.surfaces[0].restoreCursorRectManagementCallCount, 1)
+    XCTAssertEqual(context.cursor.pushCallCount, 0)
+    XCTAssertEqual(context.cursor.popCallCount, 0)
+
+    await context.scheduler.runNext()
+    let outcome = try await task.value
+    XCTAssertEqual(outcome, .cancelled(.applicationTerminated))
+  }
+
+  func testMouseDownKeyHandoffBeforeInitialReadinessStillInstallsCrosshairOnce()
+    async throws
+  {
+    let first = try makeDisplay(id: 1, origin: CGPoint(x: 50_000, y: 50_000))
+    let second = try makeDisplay(id: 2, origin: CGPoint(x: 50_100, y: 50_000))
+    let provider = StubSelectionDisplayProvider(results: [.success([first, second])])
+    let factory = RecordingSelectionOverlaySurfaceFactory(
+      automaticallyCompletesInputReadiness: false
+    )
+    let context = makeContext(provider: provider, factory: factory)
+
+    let task = Task { try await context.service.selectRegion() }
+    await Task.yield()
+
+    factory.surfaces[1].send(.mouseDown(CGPoint(x: 50_110, y: 50_010)))
+    factory.surfaces[1].completeInputReadiness()
+    factory.surfaces[0].completeInputReadiness()
+
+    XCTAssertEqual(factory.surfaces.map(\.suspendCursorRectManagementCallCount), [1, 1])
+    XCTAssertEqual(context.cursor.pushCallCount, 1)
+
+    factory.surfaces[1].send(.escape)
+    await context.scheduler.runNext()
+    let outcome = try await task.value
+    XCTAssertEqual(outcome, .cancelled(.escape))
+  }
+
+  func testCrosshairIsAppliedAfterVisibleSurfacesSuspendCursorRectsAndBecomeInputReady()
     async throws
   {
     let first = try makeDisplay(id: 1, origin: CGPoint(x: 50_000, y: 50_000))
@@ -59,12 +293,16 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     let factory = RecordingSelectionOverlaySurfaceFactory(startupEvents: startupEvents)
     let lifecycle = RecordingSelectionOverlayLifecycleObserver()
     let cursor = RecordingSelectionCursorManager(startupEvents: startupEvents)
+    let activation = RecordingSelectionApplicationActivationManager(
+      startupEvents: startupEvents
+    )
     let scheduler = ManualSelectionCompletionScheduler()
     let service = AppKitRegionSelectionService(
       displayProvider: provider,
       surfaceFactory: factory,
       lifecycleObserver: lifecycle,
       cursorManager: cursor,
+      activationManager: activation,
       scheduleCompletion: scheduler.schedule
     )
 
@@ -74,19 +312,262 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(
       startupEvents.events,
       [
+        .applicationActivationRequested,
+        .surfaceCursorRectsSuspended(1),
+        .surfaceCursorRectsSuspended(2),
         .surfaceShown(1),
         .surfaceShown(2),
         .surfaceInputReady(1),
-        .surfaceCursorRectsRefreshed(1),
-        .surfaceCursorRectsRefreshed(2),
+        .surfaceBecameKey(1),
         .crosshairPushed,
       ]
     )
     XCTAssertTrue(factory.surfaces.allSatisfy(\.isVisible))
-    XCTAssertEqual(factory.surfaces.map(\.refreshCursorRectsCallCount), [1, 1])
 
     factory.surfaces[0].send(.escape)
     await scheduler.runNext()
+    let outcome = try await task.value
+    XCTAssertEqual(outcome, .cancelled(.escape))
+  }
+
+  func testSystemActivationManagerWaitsForDidBecomeActiveNotification() {
+    let notificationCenter = NotificationCenter()
+    let observedApplication = NSObject()
+    var isActive = false
+    var activateCallCount = 0
+    var readyCallCount = 0
+    let manager = SystemSelectionApplicationActivationManager(
+      notificationCenter: notificationCenter,
+      observedApplication: observedApplication,
+      isApplicationActive: { isActive },
+      activateApplication: { activateCallCount += 1 }
+    )
+
+    manager.activateForSelection {
+      readyCallCount += 1
+    }
+
+    XCTAssertEqual(activateCallCount, 1)
+    XCTAssertEqual(readyCallCount, 0)
+
+    isActive = true
+    notificationCenter.post(
+      name: NSApplication.didBecomeActiveNotification,
+      object: observedApplication
+    )
+    notificationCenter.post(
+      name: NSApplication.didBecomeActiveNotification,
+      object: observedApplication
+    )
+
+    XCTAssertEqual(readyCallCount, 1)
+  }
+
+  func testSystemActivationManagerCompletesImmediatelyWhenApplicationIsAlreadyActive() {
+    let notificationCenter = NotificationCenter()
+    let observedApplication = NSObject()
+    var activateCallCount = 0
+    var readyCallCount = 0
+    let manager = SystemSelectionApplicationActivationManager(
+      notificationCenter: notificationCenter,
+      observedApplication: observedApplication,
+      isApplicationActive: { true },
+      activateApplication: { activateCallCount += 1 }
+    )
+
+    manager.activateForSelection {
+      readyCallCount += 1
+    }
+
+    XCTAssertEqual(activateCallCount, 0)
+    XCTAssertEqual(readyCallCount, 1)
+  }
+
+  func testRegionSelectionPanelCompletesKeyReadinessOnceAfterBecomingKey() {
+    let panel = RegionSelectionPanel(
+      contentRect: CGRect(x: 0, y: 0, width: 100, height: 100),
+      styleMask: [.borderless, .nonactivatingPanel],
+      backing: .buffered,
+      defer: false
+    )
+    var readyCallCount = 0
+
+    panel.whenKey {
+      readyCallCount += 1
+    }
+    XCTAssertEqual(readyCallCount, 0)
+
+    panel.becomeKey()
+    panel.becomeKey()
+
+    XCTAssertEqual(readyCallCount, 1)
+  }
+
+  func testRegionSelectionPanelCanCancelPendingKeyReadiness() {
+    let panel = RegionSelectionPanel(
+      contentRect: CGRect(x: 0, y: 0, width: 100, height: 100),
+      styleMask: [.borderless, .nonactivatingPanel],
+      backing: .buffered,
+      defer: false
+    )
+    var readyCallCount = 0
+
+    panel.whenKey {
+      readyCallCount += 1
+    }
+    panel.cancelKeyReadiness()
+    panel.becomeKey()
+
+    XCTAssertEqual(readyCallCount, 0)
+  }
+
+  func testDraggingUsesOneThinGrayDashedOutlineWithSteadyLinearMotion() throws {
+    let view = RegionSelectionView(
+      frame: CGRect(x: 0, y: 0, width: 200, height: 100),
+      style: SelectionOverlayStyle(
+        dimOpacity: 0.18,
+        outline: SelectionOutlineStyle(
+          lineWidth: 1,
+          grayWhiteComponent: 0.68,
+          dashLength: 6,
+          gapLength: 4,
+          phaseDuration: 0.6,
+          animates: true
+        )
+      )
+    )
+    view.displayFrame = CGRect(x: 1_000, y: 500, width: 200, height: 100)
+
+    view.renderState = .dragging(
+      rect: CGRect(x: 1_020, y: 530, width: 80, height: 40)
+    )
+
+    let outlineLayers = view.layer?.sublayers?.compactMap { $0 as? CAShapeLayer } ?? []
+    guard outlineLayers.count == 1 else {
+      return XCTFail("Expected one dedicated dashed outline layer")
+    }
+    let outline = outlineLayers[0]
+
+    XCTAssertEqual(outline.name, "copylasso.selection.outline")
+    XCTAssertEqual(outline.lineWidth, 1)
+    XCTAssertEqual(outline.lineDashPattern, [6, 4])
+    XCTAssertEqual(
+      outline.path?.boundingBoxOfPath,
+      CGRect(x: 20, y: 30, width: 80, height: 40)
+    )
+
+    let strokeColor = try XCTUnwrap(outline.strokeColor)
+    let grayColor = try XCTUnwrap(NSColor(cgColor: strokeColor))
+    XCTAssertEqual(grayColor.whiteComponent, 0.68, accuracy: 0.01)
+    XCTAssertEqual(grayColor.alphaComponent, 1, accuracy: 0.01)
+
+    XCTAssertEqual(outline.animationKeys(), ["selectionOutlinePhase"])
+    let animation = try XCTUnwrap(
+      outline.animation(forKey: "selectionOutlinePhase") as? CABasicAnimation
+    )
+    XCTAssertEqual(animation.keyPath, "lineDashPhase")
+    XCTAssertEqual((animation.fromValue as? NSNumber)?.doubleValue, 0)
+    XCTAssertEqual((animation.toValue as? NSNumber)?.doubleValue, -10)
+    XCTAssertEqual(animation.duration, 0.6)
+    XCTAssertEqual(animation.repeatCount, .infinity)
+
+    let timingFunction = try XCTUnwrap(animation.timingFunction)
+    var firstControlPoint = [Float](repeating: 0, count: 2)
+    timingFunction.getControlPoint(at: 1, values: &firstControlPoint)
+    var secondControlPoint = [Float](repeating: 0, count: 2)
+    timingFunction.getControlPoint(at: 2, values: &secondControlPoint)
+    XCTAssertEqual(firstControlPoint, [0, 0])
+    XCTAssertEqual(secondControlPoint, [1, 1])
+  }
+
+  func testDashedOutlineTracksDragWithoutImplicitPathAnimationAndClears() throws {
+    let appearance = AccessibilityAppearance(
+      increaseContrast: false,
+      differentiateWithoutColor: false,
+      reduceTransparency: false,
+      reduceMotion: false
+    )
+    let view = RegionSelectionView(
+      frame: CGRect(x: 0, y: 0, width: 200, height: 100),
+      style: appearance.selectionOverlayStyle
+    )
+    view.displayFrame = CGRect(x: 1_000, y: 500, width: 200, height: 100)
+
+    view.renderState = .dragging(
+      rect: CGRect(x: 1_020, y: 530, width: 80, height: 40)
+    )
+    let outline = try XCTUnwrap(
+      view.layer?.sublayers?.compactMap { $0 as? CAShapeLayer }.first
+    )
+
+    view.renderState = .dragging(
+      rect: CGRect(x: 1_040, y: 510, width: 120, height: 70)
+    )
+
+    XCTAssertEqual(
+      outline.path?.boundingBoxOfPath,
+      CGRect(x: 40, y: 10, width: 120, height: 70)
+    )
+    XCTAssertNil(outline.animation(forKey: "path"))
+    XCTAssertEqual(outline.animationKeys(), ["selectionOutlinePhase"])
+
+    view.renderState = .clear
+
+    XCTAssertNil(outline.path)
+    XCTAssertNil(outline.animationKeys())
+  }
+
+  func testReduceMotionUsesTheSameDashedOutlineWithoutPhaseAnimation() throws {
+    let appearance = AccessibilityAppearance(
+      increaseContrast: false,
+      differentiateWithoutColor: false,
+      reduceTransparency: false,
+      reduceMotion: true
+    )
+    let view = RegionSelectionView(
+      frame: CGRect(x: 0, y: 0, width: 200, height: 100),
+      style: appearance.selectionOverlayStyle
+    )
+    view.renderState = .dragging(rect: CGRect(x: 20, y: 30, width: 80, height: 40))
+
+    let outline = try XCTUnwrap(
+      view.layer?.sublayers?.compactMap { $0 as? CAShapeLayer }.first
+    )
+    XCTAssertEqual(outline.lineDashPattern, [6, 4])
+    XCTAssertNotNil(outline.path)
+    XCTAssertNil(outline.animationKeys())
+  }
+
+  func testMouseDownMakesClickedNonInitialSurfaceInputReadyBeforeDragHandling()
+    async throws
+  {
+    let first = try makeDisplay(id: 1, origin: CGPoint(x: 50_000, y: 50_000))
+    let second = try makeDisplay(id: 2, origin: CGPoint(x: 50_100, y: 50_000))
+    let startupEvents = RecordingSelectionStartupEvents()
+    let provider = StubSelectionDisplayProvider(results: [.success([first, second])])
+    let factory = RecordingSelectionOverlaySurfaceFactory(startupEvents: startupEvents)
+    let context = makeContext(provider: provider, factory: factory)
+
+    let task = Task { try await context.service.selectRegion() }
+    await Task.yield()
+
+    XCTAssertEqual(factory.surfaces.map(\.makeInputReadyCallCount), [1, 0])
+    startupEvents.events.removeAll()
+
+    factory.surfaces[1].send(.mouseDown(CGPoint(x: 50_110, y: 50_010)))
+
+    XCTAssertEqual(factory.surfaces.map(\.makeInputReadyCallCount), [1, 1])
+    XCTAssertEqual(
+      startupEvents.events,
+      [
+        .surfaceInputReady(2),
+        .surfaceBecameKey(2),
+        .surfaceDragRendered(2),
+      ]
+    )
+
+    factory.surfaces[1].send(.escape)
+    await context.scheduler.runNext()
     let outcome = try await task.value
     XCTAssertEqual(outcome, .cancelled(.escape))
   }
@@ -122,6 +603,8 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     }
     XCTAssertEqual(result.displayID, 1)
     XCTAssertEqual(result.appKitGlobalRect, CGRect(x: 10, y: 10, width: 90, height: 50))
+    XCTAssertEqual(context.activation.activateCallCount, 1)
+    XCTAssertEqual(context.activation.restoreCallCount, 1)
   }
 
   func testEveryMixedScaleDisplayCanInitiateUsingItsCompleteFrameAndIdentity() async throws {
@@ -229,6 +712,8 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     } catch {
       XCTAssertEqual(error as? AppKitRegionSelectionError, .overlayFailedToHide)
     }
+    XCTAssertEqual(context.activation.activateCallCount, 1)
+    XCTAssertEqual(context.activation.restoreCallCount, 1)
   }
 
   func testDisplayChangeAndApplicationTerminationCancelExactlyOnce() async throws {
@@ -289,8 +774,12 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
       factory: factory
     )
 
+    let task = Task { try await context.service.selectRegion() }
+    await Task.yield()
+    await context.scheduler.runNext()
+
     do {
-      _ = try await context.service.selectRegion()
+      _ = try await task.value
       XCTFail("Expected construction failure")
     } catch {
       XCTAssertEqual(error as? AppKitRegionSelectionError, .surfaceCreationFailed)
@@ -302,6 +791,8 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(context.lifecycle.stopCallCount, 1)
     XCTAssertEqual(context.cursor.pushCallCount, 0)
     XCTAssertEqual(context.cursor.popCallCount, 0)
+    XCTAssertEqual(context.activation.activateCallCount, 1)
+    XCTAssertEqual(context.activation.restoreCallCount, 1)
   }
 
   func testNoDisplaysAndDuplicateDisplayIdentifiersAreRejected() async throws {
@@ -323,6 +814,8 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
         XCTAssertEqual(error as? AppKitRegionSelectionError, expectedError)
       }
       XCTAssertEqual(context.cursor.pushCallCount, 0)
+      XCTAssertEqual(context.activation.activateCallCount, 0)
+      XCTAssertEqual(context.activation.restoreCallCount, 0)
     }
   }
 
@@ -453,6 +946,8 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(context.lifecycle.stopCallCount, 20)
     XCTAssertEqual(context.cursor.pushCallCount, 20)
     XCTAssertEqual(context.cursor.popCallCount, 20)
+    XCTAssertEqual(context.activation.activateCallCount, 20)
+    XCTAssertEqual(context.activation.restoreCallCount, 20)
     XCTAssertTrue(factory.surfaces.allSatisfy { !$0.isVisible && $0.eventHandler == nil })
   }
 
@@ -462,18 +957,21 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
   ) -> Context {
     let lifecycle = RecordingSelectionOverlayLifecycleObserver()
     let cursor = RecordingSelectionCursorManager()
+    let activation = RecordingSelectionApplicationActivationManager()
     let scheduler = ManualSelectionCompletionScheduler()
     let service = AppKitRegionSelectionService(
       displayProvider: provider,
       surfaceFactory: factory,
       lifecycleObserver: lifecycle,
       cursorManager: cursor,
+      activationManager: activation,
       scheduleCompletion: scheduler.schedule
     )
     return Context(
       service: service,
       lifecycle: lifecycle,
       cursor: cursor,
+      activation: activation,
       scheduler: scheduler
     )
   }
@@ -495,6 +993,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     let service: AppKitRegionSelectionService
     let lifecycle: RecordingSelectionOverlayLifecycleObserver
     let cursor: RecordingSelectionCursorManager
+    let activation: RecordingSelectionApplicationActivationManager
     let scheduler: ManualSelectionCompletionScheduler
   }
 }
@@ -522,17 +1021,20 @@ private final class RecordingSelectionOverlaySurfaceFactory: SelectionOverlaySur
   let failingDisplayID: CGDirectDisplayID?
   let hideSucceeds: Bool
   let startupEvents: RecordingSelectionStartupEvents?
+  let automaticallyCompletesInputReadiness: Bool
   private(set) var requestedDisplayIDs: [CGDirectDisplayID] = []
   private(set) var surfaces: [RecordingSelectionOverlaySurface] = []
 
   init(
     failingDisplayID: CGDirectDisplayID? = nil,
     hideSucceeds: Bool = true,
-    startupEvents: RecordingSelectionStartupEvents? = nil
+    startupEvents: RecordingSelectionStartupEvents? = nil,
+    automaticallyCompletesInputReadiness: Bool = true
   ) {
     self.failingDisplayID = failingDisplayID
     self.hideSucceeds = hideSucceeds
     self.startupEvents = startupEvents
+    self.automaticallyCompletesInputReadiness = automaticallyCompletesInputReadiness
   }
 
   func makeSurface(for display: DisplayGeometry) throws -> any SelectionOverlaySurface {
@@ -544,7 +1046,8 @@ private final class RecordingSelectionOverlaySurfaceFactory: SelectionOverlaySur
       displayID: display.displayID,
       frame: display.appKitFrame,
       hideSucceeds: hideSucceeds,
-      startupEvents: startupEvents
+      startupEvents: startupEvents,
+      automaticallyCompletesInputReadiness: automaticallyCompletesInputReadiness
     )
     surfaces.append(surface)
     return surface
@@ -560,19 +1063,26 @@ private final class RecordingSelectionOverlaySurface: SelectionOverlaySurface {
   private(set) var isVisible = false
   private(set) var renderedStates: [SelectionOverlayRenderState] = []
   private(set) var makeInputReadyCallCount = 0
-  private(set) var refreshCursorRectsCallCount = 0
+  private(set) var cancelInputReadinessCallCount = 0
+  private(set) var suspendCursorRectManagementCallCount = 0
+  private(set) var restoreCursorRectManagementCallCount = 0
+  private(set) var restoreWhileVisibleCallCount = 0
   private let startupEvents: RecordingSelectionStartupEvents?
+  private let automaticallyCompletesInputReadiness: Bool
+  private var inputReadiness: (@MainActor @Sendable () -> Void)?
 
   init(
     displayID: CGDirectDisplayID,
     frame: CGRect,
     hideSucceeds: Bool,
-    startupEvents: RecordingSelectionStartupEvents?
+    startupEvents: RecordingSelectionStartupEvents?,
+    automaticallyCompletesInputReadiness: Bool
   ) {
     self.displayID = displayID
     self.frame = frame
     self.hideSucceeds = hideSucceeds
     self.startupEvents = startupEvents
+    self.automaticallyCompletesInputReadiness = automaticallyCompletesInputReadiness
   }
 
   func show() {
@@ -580,18 +1090,46 @@ private final class RecordingSelectionOverlaySurface: SelectionOverlaySurface {
     startupEvents?.events.append(.surfaceShown(displayID))
   }
 
-  func makeInputReady() {
+  func makeInputReady(whenKey: @escaping @MainActor @Sendable () -> Void) {
     makeInputReadyCallCount += 1
     startupEvents?.events.append(.surfaceInputReady(displayID))
+    inputReadiness = whenKey
+    if automaticallyCompletesInputReadiness {
+      completeInputReadiness()
+    }
   }
 
-  func refreshCursorRects() {
-    refreshCursorRectsCallCount += 1
-    startupEvents?.events.append(.surfaceCursorRectsRefreshed(displayID))
+  func cancelInputReadiness() {
+    cancelInputReadinessCallCount += 1
+    inputReadiness = nil
+  }
+
+  func completeInputReadiness() {
+    let inputReadiness = inputReadiness
+    self.inputReadiness = nil
+    guard inputReadiness != nil else { return }
+    startupEvents?.events.append(.surfaceBecameKey(displayID))
+    inputReadiness?()
+  }
+
+  func suspendCursorRectManagement() {
+    suspendCursorRectManagementCallCount += 1
+    startupEvents?.events.append(.surfaceCursorRectsSuspended(displayID))
+  }
+
+  func restoreCursorRectManagement() {
+    restoreCursorRectManagementCallCount += 1
+    startupEvents?.events.append(.surfaceCursorRectsRestored(displayID))
+    if isVisible {
+      restoreWhileVisibleCallCount += 1
+    }
   }
 
   func render(_ state: SelectionOverlayRenderState) {
     renderedStates.append(state)
+    if case .dragging = state {
+      startupEvents?.events.append(.surfaceDragRendered(displayID))
+    }
   }
 
   func hide() {
@@ -657,12 +1195,57 @@ private final class RecordingSelectionCursorManager: SelectionCursorManaging {
 }
 
 @MainActor
+private final class RecordingSelectionApplicationActivationManager:
+  SelectionApplicationActivationManaging
+{
+  private(set) var activateCallCount = 0
+  private(set) var restoreCallCount = 0
+  private let startupEvents: RecordingSelectionStartupEvents?
+  private let automaticallyCompletesActivation: Bool
+  private var activationReady: (@MainActor @Sendable () -> Void)?
+
+  init(
+    startupEvents: RecordingSelectionStartupEvents? = nil,
+    automaticallyCompletesActivation: Bool = true
+  ) {
+    self.startupEvents = startupEvents
+    self.automaticallyCompletesActivation = automaticallyCompletesActivation
+  }
+
+  func activateForSelection(whenActive: @escaping @MainActor @Sendable () -> Void) {
+    activateCallCount += 1
+    startupEvents?.events.append(.applicationActivationRequested)
+    activationReady = whenActive
+    if automaticallyCompletesActivation {
+      completeActivation()
+    }
+  }
+
+  func completeActivation() {
+    let activationReady = activationReady
+    self.activationReady = nil
+    activationReady?()
+  }
+
+  func restorePreviousApplication() {
+    activationReady = nil
+    restoreCallCount += 1
+    startupEvents?.events.append(.previousApplicationRestored)
+  }
+}
+
+@MainActor
 private final class RecordingSelectionStartupEvents {
   enum Event: Equatable {
+    case applicationActivationRequested
     case surfaceShown(CGDirectDisplayID)
     case surfaceInputReady(CGDirectDisplayID)
-    case surfaceCursorRectsRefreshed(CGDirectDisplayID)
+    case surfaceBecameKey(CGDirectDisplayID)
+    case surfaceCursorRectsSuspended(CGDirectDisplayID)
+    case surfaceCursorRectsRestored(CGDirectDisplayID)
+    case surfaceDragRendered(CGDirectDisplayID)
     case crosshairPushed
+    case previousApplicationRestored
   }
 
   var events: [Event] = []
