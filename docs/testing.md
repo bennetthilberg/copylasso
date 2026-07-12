@@ -86,8 +86,10 @@ Use the same stably signed Debug app after Screen Recording access is enabled. T
 The crosshair check begins with a stationary pointer before pressing the mouse
 button and continues through the drag. Exactly one normal-sized AppKit
 crosshair must replace the pointer; an ordinary arrow or a second app-drawn
-reticle is a failure. Automated tests prove selection-only activation occurs
-before overlay presentation and restoration occurs before deferred completion.
+reticle is a failure. Automated tests prove selection-only activation is
+confirmed by AppKit before overlay presentation, a delayed confirmation leaves
+the desktop untouched, cancellation invalidates a late confirmation, and
+restoration occurs before deferred completion.
 WindowServer composition and real frontmost-application restoration still
 require this signed manual observation.
 
