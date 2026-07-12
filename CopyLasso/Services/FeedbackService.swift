@@ -1,5 +1,5 @@
 @MainActor
 protocol FeedbackService: AnyObject {
-  func present(_ feedback: CaptureFeedback) async throws
+  func present(_ feedback: CaptureFeedback) throws
   func dismiss()
 }

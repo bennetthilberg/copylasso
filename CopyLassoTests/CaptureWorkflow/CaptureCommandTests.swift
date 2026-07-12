@@ -72,6 +72,7 @@ final class CaptureCommandTests: XCTestCase {
       scheduleWork: scheduler.schedule,
       feedbackService: feedback
     )
+    XCTAssertNoThrow(try feedback.present(.noText))
 
     XCTAssertTrue(command.isEnabled)
     XCTAssertEqual(

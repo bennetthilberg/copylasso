@@ -91,11 +91,11 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     }
   }
 
-  func testPixelsAndUnboundedTextAreReleasedBeforeHeldFeedback() async throws {
+  func testPixelsAndUnboundedTextAreReleasedBeforeVisibleFeedbackReturnsIdle() async throws {
     let coordinator = CaptureCoordinator()
     let scheduler = IntegrationWorkScheduler()
     let capture = EphemeralScreenCaptureService()
-    let feedback = IntegrationHoldingFeedbackService()
+    let feedback = IntegrationVisibleFeedbackService()
     let clipboard = SpyClipboardService()
     let privateSuffix = "private suffix outside bounded feedback"
     let assembled = String(repeating: "visible ", count: 30) + privateSuffix
@@ -118,8 +118,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     )
 
     _ = command.perform()
-    let flow = Task { @MainActor in await scheduler.runNext() }
-    await feedback.waitUntilPresented()
+    await scheduler.runNext()
 
     for _ in 0..<100 {
       if await capture.imageWasReleased() {
@@ -136,18 +135,15 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     }
     XCTAssertEqual(preview.count, FeedbackPreview.maximumCharacterCount)
     XCTAssertFalse(preview.contains(privateSuffix))
-    XCTAssertEqual(coordinator.state, .completing)
-
-    feedback.dismiss()
-    await flow.value
     XCTAssertEqual(coordinator.state, .idle)
+    XCTAssertTrue(feedback.isVisible)
   }
 
   func testRecognitionFailureFeedbackCanBeReplacedAfterPixelsAreReleased() async throws {
     let coordinator = CaptureCoordinator()
     let scheduler = IntegrationWorkScheduler()
     let capture = EphemeralScreenCaptureService()
-    let feedback = IntegrationHoldingFeedbackService()
+    let feedback = IntegrationVisibleFeedbackService()
     let clipboard = SpyClipboardService()
     let command = CaptureCommand(
       coordinator: coordinator,
@@ -168,8 +164,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     )
 
     _ = command.perform()
-    let flow = Task { @MainActor in await scheduler.runNext() }
-    await feedback.waitUntilPresented()
+    await scheduler.runNext()
 
     for _ in 0..<100 {
       if await capture.imageWasReleased() {
@@ -181,16 +176,17 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     XCTAssertTrue(imageWasReleased)
     XCTAssertEqual(feedback.presentedFeedback, [.failure(.recognition)])
     XCTAssertEqual(clipboard.writtenTexts, [])
-    XCTAssertEqual(coordinator.state, .completing)
+    XCTAssertEqual(coordinator.state, .idle)
+    XCTAssertTrue(feedback.isVisible)
     XCTAssertTrue(command.isEnabled)
     XCTAssertEqual(
       command.perform(),
-      .transitioned(from: .completing, to: .requestingPermission)
+      .transitioned(from: .idle, to: .requestingPermission)
     )
 
-    await flow.value
     XCTAssertEqual(coordinator.state, .requestingPermission)
     XCTAssertEqual(scheduler.scheduledCount, 2)
+    XCTAssertEqual(feedback.dismissCallCount, 1)
   }
 
   func testMenuAndShortcutRouteThroughTheExactSameSuccessfulCommand() async throws {
@@ -364,26 +360,20 @@ private final class IntegrationWorkScheduler {
 }
 
 @MainActor
-private final class IntegrationHoldingFeedbackService: FeedbackService {
-  private var continuation: CheckedContinuation<Void, Error>?
+private final class IntegrationVisibleFeedbackService: FeedbackService {
   private(set) var presentedFeedback: [CaptureFeedback] = []
+  private(set) var isVisible = false
+  private(set) var dismissCallCount = 0
 
-  func present(_ feedback: CaptureFeedback) async throws {
+  func present(_ feedback: CaptureFeedback) throws {
     presentedFeedback.append(feedback)
-    try await withCheckedThrowingContinuation { continuation in
-      self.continuation = continuation
-    }
-  }
-
-  func waitUntilPresented() async {
-    while continuation == nil {
-      await Task.yield()
-    }
+    isVisible = true
   }
 
   func dismiss() {
-    continuation?.resume()
-    continuation = nil
+    guard isVisible else { return }
+    isVisible = false
+    dismissCallCount += 1
   }
 }
 
