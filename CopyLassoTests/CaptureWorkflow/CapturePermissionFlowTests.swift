@@ -226,13 +226,11 @@ final class CapturePermissionFlowTests: XCTestCase {
     XCTAssertTrue(context.command.isEnabled)
   }
 
-  func testNewRequestDismissesSuccessFeedbackWithoutStaleCompletionMutatingReplacement()
-    async throws
-  {
+  func testTenRapidCaptureCyclesDismissPriorFeedbackWithoutHoldingTheWorkflow() async throws {
     let coordinator = CaptureCoordinator()
     let scheduler = ManualCaptureWorkScheduler()
     let clipboard = SpyClipboardService()
-    let feedback = HoldingFeedbackService()
+    let feedback = SpyFeedbackService()
     let command = CaptureCommand(
       coordinator: coordinator,
       permissionService: StubScreenCapturePermissionService(
@@ -253,23 +251,25 @@ final class CapturePermissionFlowTests: XCTestCase {
       scheduleWork: scheduler.schedule
     )
 
-    XCTAssertEqual(command.perform(), .transitioned(from: .idle, to: .requestingPermission))
-    let flow = Task { @MainActor in await scheduler.runNext() }
-    await feedback.waitUntilPresented()
+    for attempt in 1...10 {
+      XCTAssertEqual(
+        command.perform(),
+        .transitioned(from: .idle, to: .requestingPermission),
+        "Attempt \(attempt)"
+      )
+      await scheduler.runNext()
+      XCTAssertEqual(coordinator.state, .idle, "Attempt \(attempt)")
+      XCTAssertTrue(command.isEnabled, "Attempt \(attempt)")
+      XCTAssertTrue(feedback.isVisible, "Attempt \(attempt)")
+    }
 
-    XCTAssertEqual(coordinator.state, .completing)
-    XCTAssertTrue(command.isEnabled)
+    XCTAssertEqual(clipboard.writtenTexts, Array(repeating: "copied", count: 10))
     XCTAssertEqual(
-      command.perform(),
-      .transitioned(from: .completing, to: .requestingPermission)
+      feedback.presentedFeedback,
+      Array(repeating: .success(preview: "copied"), count: 10)
     )
-    XCTAssertEqual(clipboard.writtenTexts, ["copied"])
-    XCTAssertEqual(feedback.presentedFeedback, [.success(preview: "copied")])
-    XCTAssertEqual(feedback.dismissCallCount, 1)
-
-    await flow.value
-    XCTAssertEqual(coordinator.state, .requestingPermission)
-    XCTAssertEqual(scheduler.pendingWorkCount, 1)
+    XCTAssertEqual(feedback.dismissCallCount, 9)
+    XCTAssertEqual(scheduler.pendingWorkCount, 0)
   }
 
   func testRecognitionFailureReturnsIdleWithoutRetryingCapture() async throws {
@@ -564,32 +564,6 @@ private actor PermissionDeniedScreenCaptureService: ScreenCaptureService {
 private actor CancelledOCRService: OCRService {
   func recognizeText(in image: CGImage) async throws -> [RecognizedTextObservation] {
     throw VisionOCRError.cancelled
-  }
-}
-
-@MainActor
-private final class HoldingFeedbackService: FeedbackService {
-  private var continuation: CheckedContinuation<Void, Error>?
-  private(set) var presentedFeedback: [CaptureFeedback] = []
-  private(set) var dismissCallCount = 0
-
-  func present(_ feedback: CaptureFeedback) async throws {
-    presentedFeedback.append(feedback)
-    try await withCheckedThrowingContinuation { continuation in
-      self.continuation = continuation
-    }
-  }
-
-  func waitUntilPresented() async {
-    while continuation == nil {
-      await Task.yield()
-    }
-  }
-
-  func dismiss() {
-    dismissCallCount += 1
-    continuation?.resume()
-    continuation = nil
   }
 }
 

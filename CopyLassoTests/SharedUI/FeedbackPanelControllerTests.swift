@@ -63,9 +63,7 @@ final class FeedbackPanelControllerTests: XCTestCase {
       makePanel: { _ in host },
       waitForDismissal: waiter.wait
     )
-    let task = Task { @MainActor in
-      try await controller.present(.success(preview: "private transient preview"))
-    }
+    try controller.present(.success(preview: "private transient preview"))
     await waiter.waitUntilCallCount(1)
 
     XCTAssertEqual(host.showCallCount, 1)
@@ -73,19 +71,17 @@ final class FeedbackPanelControllerTests: XCTestCase {
     XCTAssertEqual(controller.model.content?.message, "private transient preview")
 
     waiter.resumeCall(at: 0)
-    try await task.value
+    await waitUntilDismissed(controller)
 
     XCTAssertEqual(host.hideCallCount, 1)
     XCTAssertNil(controller.model.feedback)
     XCTAssertNil(controller.model.content)
 
-    let second = Task { @MainActor in
-      try await controller.present(.noText)
-    }
+    try controller.present(.noText)
     await waiter.waitUntilCallCount(2)
     XCTAssertEqual(host.showCallCount, 2)
     waiter.resumeCall(at: 1)
-    try await second.value
+    await waitUntilDismissed(controller)
     XCTAssertEqual(host.hideCallCount, 2)
   }
 
@@ -96,22 +92,17 @@ final class FeedbackPanelControllerTests: XCTestCase {
       makePanel: { _ in host },
       waitForDismissal: waiter.wait
     )
-    let first = Task { @MainActor in
-      try await controller.present(.success(preview: "first"))
-    }
+    try controller.present(.success(preview: "first"))
     await waiter.waitUntilCallCount(1)
-    let second = Task { @MainActor in
-      try await controller.present(.noText)
-    }
+    try controller.present(.noText)
     await waiter.waitUntilCallCount(2)
 
-    waiter.resumeCall(at: 0)
-    try await first.value
+    await Task.yield()
     XCTAssertEqual(controller.model.feedback, .noText)
     XCTAssertEqual(host.hideCallCount, 0)
 
     waiter.resumeCall(at: 1)
-    try await second.value
+    await waitUntilDismissed(controller)
     XCTAssertNil(controller.model.feedback)
     XCTAssertEqual(host.hideCallCount, 1)
     XCTAssertEqual(host.showCallCount, 2)
@@ -124,12 +115,8 @@ final class FeedbackPanelControllerTests: XCTestCase {
       waitForDismissal: { throw TestServiceError.injected }
     )
 
-    do {
-      try await controller.present(.failure(.clipboard))
-      XCTFail("Expected feedback wait to fail")
-    } catch {
-      XCTAssertEqual(error as? TestServiceError, .injected)
-    }
+    XCTAssertNoThrow(try controller.present(.failure(.clipboard)))
+    await waitUntilDismissed(controller)
     XCTAssertNil(controller.model.feedback)
     XCTAssertEqual(host.showCallCount, 1)
     XCTAssertEqual(host.hideCallCount, 1)
@@ -149,22 +136,14 @@ final class FeedbackPanelControllerTests: XCTestCase {
         makePanel: { _ in host },
         waitForDismissal: waiter.wait
       )
-      let task = Task { @MainActor in
-        try await controller.present(feedback)
-      }
+      XCTAssertNoThrow(try controller.present(feedback))
       await waiter.waitUntilCallCount(1)
 
       controller.dismiss()
 
       XCTAssertNil(controller.model.feedback)
       XCTAssertEqual(host.hideCallCount, 1)
-      do {
-        try await task.value
-        XCTFail("Expected the interrupted presentation to cancel")
-      } catch is CancellationError {
-      } catch {
-        XCTFail("Expected CancellationError, received \(error)")
-      }
+      await Task.yield()
     }
   }
 
@@ -174,9 +153,7 @@ final class FeedbackPanelControllerTests: XCTestCase {
     let frontmostProcess = NSWorkspace.shared.frontmostApplication?.processIdentifier
     let waiter = ManualFeedbackWaiter()
     let controller = FeedbackPanelController(waitForDismissal: waiter.wait)
-    let task = Task { @MainActor in
-      try await controller.present(.success(preview: "accessible preview"))
-    }
+    try controller.present(.success(preview: "accessible preview"))
     await waiter.waitUntilCallCount(1)
 
     let panel = try XCTUnwrap(
@@ -198,8 +175,15 @@ final class FeedbackPanelControllerTests: XCTestCase {
     )
 
     waiter.resumeCall(at: 0)
-    try await task.value
+    await waitUntilDismissed(controller)
     XCTAssertFalse(panel.isVisible)
+    XCTAssertNil(controller.model.feedback)
+  }
+
+  private func waitUntilDismissed(_ controller: FeedbackPanelController) async {
+    for _ in 0..<100 where controller.model.feedback != nil {
+      await Task.yield()
+    }
     XCTAssertNil(controller.model.feedback)
   }
 }

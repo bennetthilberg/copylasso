@@ -15,7 +15,6 @@ final class CaptureCommand: CaptureRequesting {
   private let feedbackService: any FeedbackService
   private let recoveryPresenter: any PermissionRecoveryPresenting
   private let scheduleWork: WorkScheduler
-  private var requestGeneration: UInt = 0
 
   var isEnabled: Bool {
     coordinator.state == .idle || coordinator.state == .completing
@@ -48,47 +47,40 @@ final class CaptureCommand: CaptureRequesting {
   @discardableResult
   func perform() -> CaptureTransitionResult {
     let result = coordinator.handle(.requestCapture)
-    guard case .transitioned(let previousState, _) = result else {
+    guard case .transitioned = result else {
       return result
     }
 
-    requestGeneration &+= 1
-    let generation = requestGeneration
-    if previousState == .completing {
-      feedbackService.dismiss()
-    }
+    feedbackService.dismiss()
 
     scheduleWork { [weak self] in
-      await self?.runPermissionFlowIfStillRequested(generation: generation)
+      await self?.runPermissionFlowIfStillRequested()
     }
     return result
   }
 
-  private func runPermissionFlowIfStillRequested(generation: UInt) async {
-    guard generation == requestGeneration,
-      coordinator.state == .requestingPermission
-    else {
+  private func runPermissionFlowIfStillRequested() async {
+    guard coordinator.state == .requestingPermission else {
       return
     }
 
     let observation = permissionService.currentObservation()
     switch observation {
     case .granted:
-      await proceedToSelection(generation: generation)
+      await proceedToSelection()
     case .notGrantedNeverRequested:
       let requestObservation = permissionService.requestAccess()
       if requestObservation == .granted {
-        await proceedToSelection(generation: generation)
+        await proceedToSelection()
       } else {
-        finishPermissionFailure(requestObservation, generation: generation)
+        finishPermissionFailure(requestObservation)
       }
     case .notGrantedAfterRequest, .notGrantedAfterPreviouslyGranted:
-      finishPermissionFailure(observation, generation: generation)
+      finishPermissionFailure(observation)
     }
   }
 
-  private func proceedToSelection(generation: UInt) async {
-    guard generation == requestGeneration else { return }
+  private func proceedToSelection() async {
     recoveryPresenter.dismiss()
     guard case .transitioned = coordinator.handle(.permissionGranted) else {
       return
@@ -98,18 +90,17 @@ final class CaptureCommand: CaptureRequesting {
       let outcome = try await selectionService.selectRegion()
       switch outcome {
       case .selected(let selection):
-        await proceedToCapture(selection, generation: generation)
+        await proceedToCapture(selection)
       case .cancelled(let reason):
         _ = coordinator.handle(.cancel(reason.captureCancellationReason))
       }
     } catch {
       _ = coordinator.handle(.fail(.selection))
     }
-    resetTerminalState(generation: generation)
+    resetTerminalState()
   }
 
-  private func proceedToCapture(_ selection: SelectionResult, generation: UInt) async {
-    guard generation == requestGeneration else { return }
+  private func proceedToCapture(_ selection: SelectionResult) async {
     guard case .transitioned = coordinator.handle(.selectionCompleted) else {
       return
     }
@@ -133,13 +124,12 @@ final class CaptureCommand: CaptureRequesting {
 
     do {
       let observations = try await ocrService.recognizeText(in: image)
-      guard generation == requestGeneration else { return }
       guard case .transitioned = coordinator.handle(.recognitionCompleted) else {
         _ = coordinator.handle(.fail(.internal))
         return
       }
       let text = textAssembler.assemble(observations)
-      await complete(with: text, generation: generation)
+      complete(with: text)
     } catch VisionOCRError.cancelled {
       _ = coordinator.handle(.cancel(.user))
     } catch {
@@ -147,60 +137,51 @@ final class CaptureCommand: CaptureRequesting {
     }
   }
 
-  private func complete(with text: String, generation: UInt) async {
+  private func complete(with text: String) {
     if text.isEmpty {
-      await presentCompletionFeedback(.noText, generation: generation)
+      presentCompletionFeedback(.noText)
       return
     }
 
     do {
       try clipboardService.writePlainText(text)
     } catch {
-      await presentCompletionFailure(.clipboard, generation: generation)
+      presentCompletionFailure(.clipboard)
       return
     }
 
     let preview = FeedbackPreview(text: text).text
-    await presentCompletionFeedback(.success(preview: preview), generation: generation)
+    presentCompletionFeedback(.success(preview: preview))
   }
 
-  private func presentCompletionFeedback(_ feedback: CaptureFeedback, generation: UInt) async {
+  private func presentCompletionFeedback(_ feedback: CaptureFeedback) {
     do {
-      try await feedbackService.present(feedback)
-      guard generation == requestGeneration else { return }
+      try feedbackService.present(feedback)
       guard case .transitioned = coordinator.handle(.completionFinished) else {
         _ = coordinator.handle(.fail(.internal))
         return
       }
     } catch {
-      guard generation == requestGeneration else { return }
       _ = coordinator.handle(.fail(.feedback))
     }
   }
 
-  private func presentCompletionFailure(_ stage: CaptureFailureStage, generation: UInt) async {
+  private func presentCompletionFailure(_ stage: CaptureFailureStage) {
     do {
-      try await feedbackService.present(.failure(stage))
-      guard generation == requestGeneration else { return }
+      try feedbackService.present(.failure(stage))
       _ = coordinator.handle(.fail(stage))
     } catch {
-      guard generation == requestGeneration else { return }
       _ = coordinator.handle(.fail(.feedback))
     }
   }
 
-  private func finishPermissionFailure(
-    _ observation: ScreenCaptureAuthorizationObservation,
-    generation: UInt
-  ) {
-    guard generation == requestGeneration else { return }
+  private func finishPermissionFailure(_ observation: ScreenCaptureAuthorizationObservation) {
     _ = coordinator.handle(.fail(.permission))
     recoveryPresenter.present(observation)
-    resetTerminalState(generation: generation)
+    resetTerminalState()
   }
 
-  private func resetTerminalState(generation: UInt) {
-    guard generation == requestGeneration else { return }
+  private func resetTerminalState() {
     switch coordinator.state {
     case .cancelled, .failed:
       _ = coordinator.handle(.reset)
