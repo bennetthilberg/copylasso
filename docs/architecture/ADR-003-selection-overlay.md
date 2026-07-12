@@ -22,7 +22,17 @@ The AppKit approach is viable. CopyLasso will use one transparent, borderless `N
 - while dragging, dims only the initiating display outside the selection with 18% black; and
 - draws a black-and-white selection border that remains visible over light and dark content.
 
-Before panels are shown, the activation manager records the frontmost application and activates CopyLasso for selection. The panel under the pointer becomes key and explicitly makes its overlay view first responder. If mouse-down occurs on any other display, that clicked panel becomes key and its overlay view becomes first responder before drag handling begins. This gives Escape a deterministic path before or during a drag regardless of which display was initially under the pointer. A drag remains owned by its initiating display; moving the pointer onto another display clamps the endpoint to the initiating display edge. Unrelated display panels remain fully transparent.
+Before panels are shown, the activation manager records the frontmost application,
+requests selection-only activation, and waits for AppKit's
+`didBecomeActiveNotification`. Only that confirmed-active callback may construct
+and present the panels. The panel under the pointer becomes key and explicitly
+makes its overlay view first responder. If mouse-down occurs on any other display,
+that clicked panel becomes key and its overlay view becomes first responder before
+drag handling begins. This gives Escape a deterministic path before or during a
+drag regardless of which display was initially under the pointer. A drag remains
+owned by its initiating display; moving the pointer onto another display clamps
+the endpoint to the initiating display edge. Unrelated display panels remain fully
+transparent.
 
 Cursor setup follows panel setup rather than preceding it. After every panel is
 ordered and the input panel has made its overlay view first responder, each
@@ -129,6 +139,16 @@ handoff. Focused controller coverage proves activation precedes panel
 presentation, the rejected drawn-reticle path is absent, and restoration
 precedes deferred completion. Signed human observation remains the final visual
 and focus-restoration gate.
+
+A July 12 repeated-capture run found a narrower activation race: invoking again
+while success feedback remained visible could leave the arrow in place until
+mouse-down, even though the selection request had already called `activate`.
+Calling `activate` is only a request, so the controller now waits for the actual
+application-active notification before it creates an input-ready surface,
+refreshes cursor rectangles, or pushes the crosshair. Regression tests hold that
+notification to prove no surface or cursor appears early, prove the notification
+releases startup exactly once, cover the already-active path, and prove
+cancellation invalidates a late callback.
 
 The G13 production run on macOS 26.5.1 used the Dell primary display at 1920 × 1080 and 144 Hz: display ID `4`, matching AppKit and Core Graphics bounds `(0, 0, 1920, 1080)`, 1× backing scale, and a matching 100-point backing conversion. Menu and global-shortcut invocation each presented one accessible overlay without replacing frontmost TextEdit. Escape, click cancellation, a valid drag, full-screen TextEdit, and quitting during selection all removed every panel and left no CopyLasso window or process behind. The signed suite completed 20 mixed live sessions without changing the clipboard.
 
