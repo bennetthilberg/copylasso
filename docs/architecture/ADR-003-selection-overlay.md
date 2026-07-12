@@ -25,8 +25,10 @@ The AppKit approach is viable. CopyLasso will use one transparent, borderless `N
 Before panels are shown, the activation manager records the frontmost application,
 requests selection-only activation, and waits for AppKit's
 `didBecomeActiveNotification`. Only that confirmed-active callback may construct
-and present the panels. The panel under the pointer becomes key and explicitly
-makes its overlay view first responder. If mouse-down occurs on any other display,
+and present the panels. The panel under the pointer then requests key status, but
+cursor setup waits for that exact panel's `didBecomeKey` callback rather than
+treating `makeKey()` as synchronous. Once key, the panel explicitly makes its
+overlay view first responder. If mouse-down occurs on any other display,
 that clicked panel becomes key and its overlay view becomes first responder before
 drag handling begins. This gives Escape a deterministic path before or during a
 drag regardless of which display was initially under the pointer. A drag remains
@@ -149,6 +151,16 @@ refreshes cursor rectangles, or pushes the crosshair. Regression tests hold that
 notification to prove no surface or cursor appears early, prove the notification
 releases startup exactly once, cover the already-active path, and prove
 cancellation invalidates a late callback.
+
+The corresponding signed candidate proved application activation was still not
+the final WindowServer-visible boundary: rapid reuse could flicker or leave the
+arrow until mouse-down. The controller had requested `makeKey()` on the pointer's
+panel and immediately rebuilt cursor rectangles. AppKit establishes invalidated
+cursor rectangles when their window becomes key, so the production surface now
+reports a one-shot key-readiness callback. Only that callback rebuilds cursor
+rectangles and pushes the native crosshair. Cleanup cancels pending readiness,
+and direct tests cover delayed key status, cancellation, duplicate callbacks, and
+a mouse-down handoff that arrives before the initial panel reports key.
 
 The G13 production run on macOS 26.5.1 used the Dell primary display at 1920 × 1080 and 144 Hz: display ID `4`, matching AppKit and Core Graphics bounds `(0, 0, 1920, 1080)`, 1× backing scale, and a matching 100-point backing conversion. Menu and global-shortcut invocation each presented one accessible overlay without replacing frontmost TextEdit. Escape, click cancellation, a valid drag, full-screen TextEdit, and quitting during selection all removed every panel and left no CopyLasso window or process behind. The signed suite completed 20 mixed live sessions without changing the clipboard.
 
