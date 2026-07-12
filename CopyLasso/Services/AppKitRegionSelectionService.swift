@@ -39,8 +39,7 @@ protocol SelectionOverlaySurface: AnyObject {
   func show()
   func makeInputReady(whenKey: @escaping @MainActor @Sendable () -> Void)
   func cancelInputReadiness()
-  func suspendCursorRectManagement()
-  func restoreCursorRectManagement()
+  func refreshCursorRects()
   func render(_ state: SelectionOverlayRenderState)
   func hide()
 }
@@ -75,6 +74,11 @@ protocol SelectionApplicationActivationManaging: AnyObject {
 final class AppKitRegionSelectionService: RegionSelectionService {
   typealias CompletionWork = @MainActor @Sendable () -> Void
   typealias CompletionScheduler = @MainActor (@escaping CompletionWork) -> Void
+  typealias CursorInstallationWork = @MainActor @Sendable () -> Void
+  typealias CursorInstallationScheduler =
+    @MainActor (
+      @escaping CursorInstallationWork
+    ) -> Void
 
   private let displayProvider: any SelectionDisplayProviding
   private let surfaceFactory: any SelectionOverlaySurfaceMaking
@@ -82,6 +86,7 @@ final class AppKitRegionSelectionService: RegionSelectionService {
   private let cursorManager: any SelectionCursorManaging
   private let activationManager: any SelectionApplicationActivationManaging
   private let pointerLocation: () -> CGPoint
+  private let scheduleCursorInstallation: CursorInstallationScheduler
   private let scheduleCompletion: CompletionScheduler
   private var activeController: SelectionOverlayController?
   private var hasPendingContinuation = false
@@ -107,6 +112,8 @@ final class AppKitRegionSelectionService: RegionSelectionService {
     cursorManager: any SelectionCursorManaging,
     activationManager: any SelectionApplicationActivationManaging,
     pointerLocation: @escaping () -> CGPoint = { NSEvent.mouseLocation },
+    scheduleCursorInstallation: @escaping CursorInstallationScheduler = AppKitRegionSelectionService
+      .scheduleOnNextMainActorTurn,
     scheduleCompletion: @escaping CompletionScheduler = AppKitRegionSelectionService
       .scheduleOnNextMainActorTurn
   ) {
@@ -116,6 +123,7 @@ final class AppKitRegionSelectionService: RegionSelectionService {
     self.cursorManager = cursorManager
     self.activationManager = activationManager
     self.pointerLocation = pointerLocation
+    self.scheduleCursorInstallation = scheduleCursorInstallation
     self.scheduleCompletion = scheduleCompletion
   }
 
@@ -134,7 +142,8 @@ final class AppKitRegionSelectionService: RegionSelectionService {
         lifecycleObserver: lifecycleObserver,
         cursorManager: cursorManager,
         activationManager: activationManager,
-        pointerLocation: pointerLocation
+        pointerLocation: pointerLocation,
+        scheduleCursorInstallation: scheduleCursorInstallation
       )
       activeController = controller
 
@@ -182,12 +191,15 @@ private final class SelectionOverlayController {
   private let cursorManager: any SelectionCursorManaging
   private let activationManager: any SelectionApplicationActivationManaging
   private let pointerLocation: () -> CGPoint
+  private let scheduleCursorInstallation:
+    AppKitRegionSelectionService
+      .CursorInstallationScheduler
   private var surfaces: [any SelectionOverlaySurface] = []
   private var completion: Completion?
   private var hasFinished = false
   private var lifecycleStarted = false
   private var cursorPushed = false
-  private var cursorRectManagementSuspended = false
+  private var cursorInstallationScheduled = false
   private var activationRequested = false
   private lazy var session = SelectionSession(displays: displays) { [weak self] outcome in
     self?.finish(.success(outcome))
@@ -199,7 +211,10 @@ private final class SelectionOverlayController {
     lifecycleObserver: any SelectionOverlayLifecycleObserving,
     cursorManager: any SelectionCursorManaging,
     activationManager: any SelectionApplicationActivationManaging,
-    pointerLocation: @escaping () -> CGPoint
+    pointerLocation: @escaping () -> CGPoint,
+    scheduleCursorInstallation:
+      @escaping AppKitRegionSelectionService
+      .CursorInstallationScheduler
   ) {
     self.displays = displays
     self.surfaceFactory = surfaceFactory
@@ -207,6 +222,7 @@ private final class SelectionOverlayController {
     self.cursorManager = cursorManager
     self.activationManager = activationManager
     self.pointerLocation = pointerLocation
+    self.scheduleCursorInstallation = scheduleCursorInstallation
   }
 
   func start(completion: @escaping Completion) {
@@ -236,15 +252,13 @@ private final class SelectionOverlayController {
       }
 
       for surface in surfaces {
-        surface.suspendCursorRectManagement()
-      }
-      cursorRectManagementSuspended = true
-      for surface in surfaces {
         surface.show()
       }
       let pointer = pointerLocation()
-      inputSurface(at: pointer)?.makeInputReady { [weak self] in
-        self?.initialInputSurfaceBecameKey()
+      let inputSurface = inputSurface(at: pointer)
+      let inputSurfaceID = inputSurface?.displayID
+      inputSurface?.makeInputReady { [weak self] in
+        self?.inputSurfaceBecameKey(inputSurfaceID)
       }
     } catch {
       finish(
@@ -253,11 +267,22 @@ private final class SelectionOverlayController {
     }
   }
 
-  private func initialInputSurfaceBecameKey() {
-    guard !hasFinished, !cursorPushed else { return }
+  private func inputSurfaceBecameKey(_ displayID: CGDirectDisplayID?) {
+    guard !hasFinished else { return }
     for surface in surfaces {
       surface.cancelInputReadiness()
     }
+    surfaces.first(where: { $0.displayID == displayID })?.refreshCursorRects()
+    guard !cursorPushed, !cursorInstallationScheduled else { return }
+    cursorInstallationScheduled = true
+    scheduleCursorInstallation { [weak self] in
+      self?.installCrosshairAfterCursorRectsSettle()
+    }
+  }
+
+  private func installCrosshairAfterCursorRectsSettle() {
+    cursorInstallationScheduled = false
+    guard !hasFinished, !cursorPushed else { return }
     cursorManager.pushCrosshair()
     cursorPushed = true
   }
@@ -274,7 +299,7 @@ private final class SelectionOverlayController {
     case .mouseDown(let point):
       let inputSurface = surfaces.first(where: { $0.displayID == displayID })
       inputSurface?.makeInputReady { [weak self] in
-        self?.inputSurfaceBecameKeyDuringMouseDown()
+        self?.inputSurfaceBecameKey(displayID)
       }
       guard session.begin(on: displayID, at: point) else { return }
       renderCurrentDrag()
@@ -286,13 +311,6 @@ private final class SelectionOverlayController {
       session.finish(at: point)
     case .escape:
       session.cancel(.escape)
-    }
-  }
-
-  private func inputSurfaceBecameKeyDuringMouseDown() {
-    guard !hasFinished else { return }
-    if !cursorPushed {
-      initialInputSurfaceBecameKey()
     }
   }
 
@@ -335,13 +353,6 @@ private final class SelectionOverlayController {
       surface.eventHandler = nil
       surface.render(.clear)
       surface.hide()
-    }
-
-    if cursorRectManagementSuspended {
-      for surface in surfaces {
-        surface.restoreCursorRectManagement()
-      }
-      cursorRectManagementSuspended = false
     }
 
     if cursorPushed {
@@ -466,7 +477,6 @@ private final class AppKitSelectionOverlaySurface: SelectionOverlaySurface {
 
   private let panel: RegionSelectionPanel
   private let contentView: RegionSelectionView
-  private var cursorRectManagementSuspended = false
 
   init(display: DisplayGeometry, style: SelectionOverlayStyle) {
     displayID = display.displayID
@@ -521,16 +531,8 @@ private final class AppKitSelectionOverlaySurface: SelectionOverlaySurface {
     panel.cancelKeyReadiness()
   }
 
-  func suspendCursorRectManagement() {
-    guard !cursorRectManagementSuspended else { return }
-    panel.disableCursorRects()
-    cursorRectManagementSuspended = true
-  }
-
-  func restoreCursorRectManagement() {
-    guard cursorRectManagementSuspended else { return }
-    panel.enableCursorRects()
-    cursorRectManagementSuspended = false
+  func refreshCursorRects() {
+    contentView.refreshCrosshairCursorRects()
   }
 
   func render(_ state: SelectionOverlayRenderState) {
@@ -632,6 +634,12 @@ final class RegionSelectionView: NSView {
     addCrosshairCursorRect()
   }
 
+  func refreshCrosshairCursorRects() {
+    guard let window else { return }
+    window.invalidateCursorRects(for: self)
+    window.resetCursorRects()
+  }
+
   private func addCrosshairCursorRect() {
     addCursorRect(bounds, cursor: .crosshair)
   }
@@ -724,7 +732,14 @@ final class RegionSelectionView: NSView {
 
     CATransaction.begin()
     CATransaction.setDisableActions(true)
-    outlineLayer.path = localRect.map { CGPath(rect: $0, transform: nil) }
+    outlineLayer.path = localRect.map {
+      CGPath(
+        roundedRect: $0,
+        cornerWidth: style.outline.cornerRadius,
+        cornerHeight: style.outline.cornerRadius,
+        transform: nil
+      )
+    }
     CATransaction.commit()
 
     if localRect == nil || !style.outline.animates {

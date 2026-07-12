@@ -67,6 +67,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
       lifecycleObserver: lifecycle,
       cursorManager: cursor,
       activationManager: activation,
+      scheduleCursorInstallation: { work in work() },
       scheduleCompletion: scheduler.schedule
     )
 
@@ -106,6 +107,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
       lifecycleObserver: lifecycle,
       cursorManager: cursor,
       activationManager: activation,
+      scheduleCursorInstallation: { work in work() },
       scheduleCompletion: scheduler.schedule
     )
 
@@ -121,7 +123,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
 
     XCTAssertEqual(factory.requestedDisplayIDs, [display.displayID])
     XCTAssertTrue(factory.surfaces[0].isVisible)
-    XCTAssertEqual(factory.surfaces[0].suspendCursorRectManagementCallCount, 1)
+    XCTAssertEqual(factory.surfaces[0].refreshCursorRectsCallCount, 1)
     XCTAssertEqual(factory.surfaces[0].makeInputReadyCallCount, 1)
     XCTAssertEqual(cursor.pushCallCount, 1)
 
@@ -147,6 +149,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
       lifecycleObserver: lifecycle,
       cursorManager: cursor,
       activationManager: activation,
+      scheduleCursorInstallation: { work in work() },
       scheduleCompletion: scheduler.schedule
     )
 
@@ -181,12 +184,13 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
 
     XCTAssertTrue(factory.surfaces.allSatisfy(\.isVisible))
     XCTAssertEqual(factory.surfaces.map(\.makeInputReadyCallCount), [1, 0])
-    XCTAssertEqual(factory.surfaces.map(\.suspendCursorRectManagementCallCount), [1, 1])
+    XCTAssertEqual(factory.surfaces.map(\.refreshCursorRectsCallCount), [0, 0])
     XCTAssertEqual(context.cursor.pushCallCount, 0)
 
     factory.surfaces[0].completeInputReadiness()
     factory.surfaces[0].completeInputReadiness()
 
+    XCTAssertEqual(factory.surfaces.map(\.refreshCursorRectsCallCount), [1, 0])
     XCTAssertEqual(context.cursor.pushCallCount, 1)
 
     factory.surfaces[0].send(.escape)
@@ -195,38 +199,90 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(outcome, .cancelled(.escape))
   }
 
-  func testCursorRectManagementIsSuspendedBeforeKeyHandoffAndRestoredAfterHide()
-    async throws
-  {
+  func testCrosshairWaitsOneScheduledTurnAfterRefreshingActiveCursorRects() async throws {
     let first = try makeDisplay(id: 1, origin: CGPoint(x: 50_000, y: 50_000))
     let second = try makeDisplay(id: 2, origin: CGPoint(x: 50_100, y: 50_000))
     let provider = StubSelectionDisplayProvider(results: [.success([first, second])])
     let factory = RecordingSelectionOverlaySurfaceFactory(
       automaticallyCompletesInputReadiness: false
     )
-    let context = makeContext(provider: provider, factory: factory)
+    let lifecycle = RecordingSelectionOverlayLifecycleObserver()
+    let cursor = RecordingSelectionCursorManager()
+    let activation = RecordingSelectionApplicationActivationManager()
+    let cursorScheduler = ManualSelectionCompletionScheduler()
+    let completionScheduler = ManualSelectionCompletionScheduler()
+    let service = AppKitRegionSelectionService(
+      displayProvider: provider,
+      surfaceFactory: factory,
+      lifecycleObserver: lifecycle,
+      cursorManager: cursor,
+      activationManager: activation,
+      scheduleCursorInstallation: cursorScheduler.schedule,
+      scheduleCompletion: completionScheduler.schedule
+    )
 
-    let task = Task { try await context.service.selectRegion() }
+    let task = Task { try await service.selectRegion() }
     await Task.yield()
 
     XCTAssertTrue(factory.surfaces.allSatisfy(\.isVisible))
-    XCTAssertEqual(factory.surfaces.map(\.suspendCursorRectManagementCallCount), [1, 1])
-    XCTAssertEqual(factory.surfaces.map(\.restoreCursorRectManagementCallCount), [0, 0])
-    XCTAssertEqual(context.cursor.pushCallCount, 0)
+    XCTAssertEqual(factory.surfaces.map(\.refreshCursorRectsCallCount), [0, 0])
+    XCTAssertEqual(cursor.pushCallCount, 0)
 
     factory.surfaces[0].completeInputReadiness()
-    XCTAssertEqual(context.cursor.pushCallCount, 1)
+    XCTAssertEqual(factory.surfaces.map(\.refreshCursorRectsCallCount), [1, 0])
+    XCTAssertEqual(cursorScheduler.pendingCount, 1)
+    XCTAssertEqual(cursor.pushCallCount, 0)
+
+    await cursorScheduler.runNext()
+    XCTAssertEqual(cursor.pushCallCount, 1)
 
     factory.surfaces[0].send(.escape)
 
     XCTAssertTrue(factory.surfaces.allSatisfy { !$0.isVisible })
-    XCTAssertEqual(factory.surfaces.map(\.restoreCursorRectManagementCallCount), [1, 1])
-    XCTAssertEqual(factory.surfaces.map(\.restoreWhileVisibleCallCount), [0, 0])
-    XCTAssertEqual(context.cursor.popCallCount, 1)
+    XCTAssertEqual(cursor.popCallCount, 1)
 
-    await context.scheduler.runNext()
+    await completionScheduler.runNext()
     let outcome = try await task.value
     XCTAssertEqual(outcome, .cancelled(.escape))
+  }
+
+  func testCancellationAfterCursorRefreshSuppressesLateCrosshairInstallation() async throws {
+    let first = try makeDisplay(id: 1, origin: CGPoint(x: 50_000, y: 50_000))
+    let second = try makeDisplay(id: 2, origin: CGPoint(x: 50_100, y: 50_000))
+    let provider = StubSelectionDisplayProvider(results: [.success([first, second])])
+    let factory = RecordingSelectionOverlaySurfaceFactory(
+      automaticallyCompletesInputReadiness: false
+    )
+    let lifecycle = RecordingSelectionOverlayLifecycleObserver()
+    let cursor = RecordingSelectionCursorManager()
+    let activation = RecordingSelectionApplicationActivationManager()
+    let cursorScheduler = ManualSelectionCompletionScheduler()
+    let completionScheduler = ManualSelectionCompletionScheduler()
+    let service = AppKitRegionSelectionService(
+      displayProvider: provider,
+      surfaceFactory: factory,
+      lifecycleObserver: lifecycle,
+      cursorManager: cursor,
+      activationManager: activation,
+      scheduleCursorInstallation: cursorScheduler.schedule,
+      scheduleCompletion: completionScheduler.schedule
+    )
+
+    let task = Task { try await service.selectRegion() }
+    await Task.yield()
+
+    factory.surfaces[0].completeInputReadiness()
+    XCTAssertEqual(factory.surfaces.map(\.refreshCursorRectsCallCount), [1, 0])
+    XCTAssertEqual(cursorScheduler.pendingCount, 1)
+
+    service.cancelSelection()
+    await cursorScheduler.runNext()
+    XCTAssertEqual(cursor.pushCallCount, 0)
+    XCTAssertEqual(cursor.popCallCount, 0)
+
+    await completionScheduler.runNext()
+    let outcome = try await task.value
+    XCTAssertEqual(outcome, .cancelled(.applicationTerminated))
   }
 
   func testCancellationBeforePointerSurfaceBecomesKeySuppressesLateReadiness()
@@ -246,8 +302,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     factory.surfaces[0].completeInputReadiness()
 
     XCTAssertEqual(factory.surfaces[0].cancelInputReadinessCallCount, 1)
-    XCTAssertEqual(factory.surfaces[0].suspendCursorRectManagementCallCount, 1)
-    XCTAssertEqual(factory.surfaces[0].restoreCursorRectManagementCallCount, 1)
+    XCTAssertEqual(factory.surfaces[0].refreshCursorRectsCallCount, 0)
     XCTAssertEqual(context.cursor.pushCallCount, 0)
     XCTAssertEqual(context.cursor.popCallCount, 0)
 
@@ -274,7 +329,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     factory.surfaces[1].completeInputReadiness()
     factory.surfaces[0].completeInputReadiness()
 
-    XCTAssertEqual(factory.surfaces.map(\.suspendCursorRectManagementCallCount), [1, 1])
+    XCTAssertEqual(factory.surfaces.map(\.refreshCursorRectsCallCount), [0, 1])
     XCTAssertEqual(context.cursor.pushCallCount, 1)
 
     factory.surfaces[1].send(.escape)
@@ -283,7 +338,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(outcome, .cancelled(.escape))
   }
 
-  func testCrosshairIsAppliedAfterVisibleSurfacesSuspendCursorRectsAndBecomeInputReady()
+  func testCrosshairIsAppliedAfterTheKeySurfaceRefreshesActiveCursorRects()
     async throws
   {
     let first = try makeDisplay(id: 1, origin: CGPoint(x: 50_000, y: 50_000))
@@ -303,6 +358,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
       lifecycleObserver: lifecycle,
       cursorManager: cursor,
       activationManager: activation,
+      scheduleCursorInstallation: { work in work() },
       scheduleCompletion: scheduler.schedule
     )
 
@@ -313,12 +369,11 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
       startupEvents.events,
       [
         .applicationActivationRequested,
-        .surfaceCursorRectsSuspended(1),
-        .surfaceCursorRectsSuspended(2),
         .surfaceShown(1),
         .surfaceShown(2),
         .surfaceInputReady(1),
         .surfaceBecameKey(1),
+        .surfaceCursorRectsRefreshed(1),
         .crosshairPushed,
       ]
     )
@@ -431,6 +486,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
           grayWhiteComponent: 0.68,
           dashLength: 6,
           gapLength: 4,
+          cornerRadius: 2,
           phaseDuration: 0.6,
           animates: true
         )
@@ -455,6 +511,14 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
       outline.path?.boundingBoxOfPath,
       CGRect(x: 20, y: 30, width: 80, height: 40)
     )
+    let outlinePath = try XCTUnwrap(outline.path)
+    var curveCount = 0
+    outlinePath.applyWithBlock { element in
+      if element.pointee.type == .addCurveToPoint {
+        curveCount += 1
+      }
+    }
+    XCTAssertEqual(curveCount, 4)
 
     let strokeColor = try XCTUnwrap(outline.strokeColor)
     let grayColor = try XCTUnwrap(NSColor(cgColor: strokeColor))
@@ -538,6 +602,34 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertNil(outline.animationKeys())
   }
 
+  func testCursorRectRefreshInvalidatesAndRebuildsThroughOwningWindow() {
+    let window = RecordingCursorRectWindow(
+      contentRect: CGRect(x: 0, y: 0, width: 100, height: 100),
+      styleMask: .borderless,
+      backing: .buffered,
+      defer: false
+    )
+    let appearance = AccessibilityAppearance(
+      increaseContrast: false,
+      differentiateWithoutColor: false,
+      reduceTransparency: false,
+      reduceMotion: false
+    )
+    let view = RegionSelectionView(
+      frame: window.contentLayoutRect,
+      style: appearance.selectionOverlayStyle
+    )
+    window.contentView = view
+    let invalidationCount = window.invalidatedViews.count
+    let resetCount = window.resetCursorRectsCallCount
+
+    view.refreshCrosshairCursorRects()
+
+    XCTAssertEqual(window.invalidatedViews.count, invalidationCount + 1)
+    XCTAssertTrue(window.invalidatedViews.last === view)
+    XCTAssertEqual(window.resetCursorRectsCallCount, resetCount + 1)
+  }
+
   func testMouseDownMakesClickedNonInitialSurfaceInputReadyBeforeDragHandling()
     async throws
   {
@@ -562,6 +654,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
       [
         .surfaceInputReady(2),
         .surfaceBecameKey(2),
+        .surfaceCursorRectsRefreshed(2),
         .surfaceDragRendered(2),
       ]
     )
@@ -965,6 +1058,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
       lifecycleObserver: lifecycle,
       cursorManager: cursor,
       activationManager: activation,
+      scheduleCursorInstallation: { work in work() },
       scheduleCompletion: scheduler.schedule
     )
     return Context(
@@ -1064,9 +1158,7 @@ private final class RecordingSelectionOverlaySurface: SelectionOverlaySurface {
   private(set) var renderedStates: [SelectionOverlayRenderState] = []
   private(set) var makeInputReadyCallCount = 0
   private(set) var cancelInputReadinessCallCount = 0
-  private(set) var suspendCursorRectManagementCallCount = 0
-  private(set) var restoreCursorRectManagementCallCount = 0
-  private(set) var restoreWhileVisibleCallCount = 0
+  private(set) var refreshCursorRectsCallCount = 0
   private let startupEvents: RecordingSelectionStartupEvents?
   private let automaticallyCompletesInputReadiness: Bool
   private var inputReadiness: (@MainActor @Sendable () -> Void)?
@@ -1112,17 +1204,9 @@ private final class RecordingSelectionOverlaySurface: SelectionOverlaySurface {
     inputReadiness?()
   }
 
-  func suspendCursorRectManagement() {
-    suspendCursorRectManagementCallCount += 1
-    startupEvents?.events.append(.surfaceCursorRectsSuspended(displayID))
-  }
-
-  func restoreCursorRectManagement() {
-    restoreCursorRectManagementCallCount += 1
-    startupEvents?.events.append(.surfaceCursorRectsRestored(displayID))
-    if isVisible {
-      restoreWhileVisibleCallCount += 1
-    }
+  func refreshCursorRects() {
+    refreshCursorRectsCallCount += 1
+    startupEvents?.events.append(.surfaceCursorRectsRefreshed(displayID))
   }
 
   func render(_ state: SelectionOverlayRenderState) {
@@ -1195,6 +1279,20 @@ private final class RecordingSelectionCursorManager: SelectionCursorManaging {
 }
 
 @MainActor
+private final class RecordingCursorRectWindow: NSWindow {
+  private(set) var invalidatedViews: [NSView] = []
+  private(set) var resetCursorRectsCallCount = 0
+
+  override func invalidateCursorRects(for view: NSView) {
+    invalidatedViews.append(view)
+  }
+
+  override func resetCursorRects() {
+    resetCursorRectsCallCount += 1
+  }
+}
+
+@MainActor
 private final class RecordingSelectionApplicationActivationManager:
   SelectionApplicationActivationManaging
 {
@@ -1241,8 +1339,7 @@ private final class RecordingSelectionStartupEvents {
     case surfaceShown(CGDirectDisplayID)
     case surfaceInputReady(CGDirectDisplayID)
     case surfaceBecameKey(CGDirectDisplayID)
-    case surfaceCursorRectsSuspended(CGDirectDisplayID)
-    case surfaceCursorRectsRestored(CGDirectDisplayID)
+    case surfaceCursorRectsRefreshed(CGDirectDisplayID)
     case surfaceDragRendered(CGDirectDisplayID)
     case crosshairPushed
     case previousApplicationRestored

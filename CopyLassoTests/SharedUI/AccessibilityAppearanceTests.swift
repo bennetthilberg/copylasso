@@ -22,6 +22,7 @@ final class AccessibilityAppearanceTests: XCTestCase {
           grayWhiteComponent: 0.68,
           dashLength: 6,
           gapLength: 4,
+          cornerRadius: 2,
           phaseDuration: 0.6,
           animates: true
         )
@@ -46,6 +47,7 @@ final class AccessibilityAppearanceTests: XCTestCase {
           grayWhiteComponent: 0.68,
           dashLength: 6,
           gapLength: 4,
+          cornerRadius: 2,
           phaseDuration: 0.6,
           animates: true
         )
