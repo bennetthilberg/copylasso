@@ -78,6 +78,21 @@ produced no overlapping selection under the then-current `.completing`
 busy-state contract. That historical result motivated the approved G24R
 amendment; it is not evidence for the new immediate-replacement behavior.
 
+### July 12, 2026 G24R First Signed Candidate
+
+The first interruptible-feedback candidate used exact commit
+`fdf420a535ba80921a91150d1b4076a9ae4fe1c8`. Strict signature, bundle,
+Hardened Runtime, App Sandbox, Debug entitlement, arm64, and no-network checks
+passed. The first shortcut during a success HUD dismissed it and produced one
+fresh normal-sized crosshair immediately. Repeating the full capture/HUD/
+shortcut cycle around a third time produced visible flicker and intermittently
+failed to enter selection. This is a signed **Fail**, not a partial pass.
+
+The replacement implementation removes the cause instead of tuning the race:
+feedback presentation now returns synchronously, the coordinator reaches idle,
+and the panel alone owns its cancellable 2.5-second timer. Ten-cycle automated
+coverage passes, but a fresh exact-head signed physical run is still required.
+
 ## Clean-State Preparation
 
 1. Build Debug with the stable Apple Development identity and verify its designated requirement.
@@ -123,7 +138,7 @@ where those properties apply.
 | Shortcut with browser and TextEdit frontmost | Same command path and originating-app restoration | **Blocked** — Chrome focus restoration passed on the exact signed cursor-fix head; fresh TextEdit restoration remains pending |
 | Shortcut with another native app frontmost | Same command path and restoration outside the specifically tested apps | **Blocked** — no fresh third-native-app result |
 | Menu fallback with shortcut cleared | Capture Text remains usable and matches shortcut behavior | **Blocked** — a physical menu invocation reached the same production permission path, but it was not run while the shortcut was cleared |
-| Rapid repeated shortcut while active | Requests during permission, selection, capture, or OCR are rejected; a request during feedback dismisses that HUD and immediately begins exactly one fresh selection | **Blocked** — the pre-G24R signed build safely rejected the second shortcut during feedback; automated G24R coverage now proves immediate replacement and stale-task isolation, but the replacement crosshair still requires a fresh exact-head signed physical run |
+| Rapid repeated shortcut while active | Requests during permission, selection, capture, or OCR are rejected; a request during feedback dismisses that HUD and immediately begins exactly one fresh selection | **Fail** on the first G24R candidate — the second cycle entered selection immediately, but around the third cycle the cursor flickered and selection intermittently failed. The workflow/HUD decoupling replacement passes ten-cycle automation and now requires a fresh signed rerun |
 | Ordinary success | Selected text reaches plain-text clipboard; bounded success HUD appears after originating-app restoration | **Pass** — five signed selections completed through real ScreenCaptureKit, Vision, and the plain-text pasteboard; the cursor-fix run restored Chrome focus before the bounded success HUD finished |
 | Selection cursor and drag rendering | Clear before mouse-down; one normal-sized crosshair replaces the pointer before and throughout the drag; initiating display dims outside the selection | **Pass** — on the exact signed cursor-fix head, one normal-sized crosshair appeared immediately and remained usable for a successful drag; no ordinary arrow or second reticle appeared |
 | Reverse drag and every edge | Correct region, initiating-display clamp, no orphaned panel/cursor | **Blocked** — ordinary forward drags cleaned up, but reverse and four-edge coverage remains pending |
