@@ -37,7 +37,8 @@ protocol SelectionOverlaySurface: AnyObject {
   var eventHandler: ((SelectionOverlayEvent) -> Void)? { get set }
 
   func show()
-  func makeInputReady()
+  func makeInputReady(whenKey: @escaping @MainActor @Sendable () -> Void)
+  func cancelInputReadiness()
   func refreshCursorRects()
   func render(_ state: SelectionOverlayRenderState)
   func hide()
@@ -236,17 +237,24 @@ private final class SelectionOverlayController {
         surface.show()
       }
       let pointer = pointerLocation()
-      inputSurface(at: pointer)?.makeInputReady()
-      for surface in surfaces {
-        surface.refreshCursorRects()
+      inputSurface(at: pointer)?.makeInputReady { [weak self] in
+        self?.initialInputSurfaceBecameKey()
       }
-      cursorManager.pushCrosshair()
-      cursorPushed = true
     } catch {
       finish(
         .failure((error as? AppKitRegionSelectionError) ?? .surfaceCreationFailed)
       )
     }
+  }
+
+  private func initialInputSurfaceBecameKey() {
+    guard !hasFinished, !cursorPushed else { return }
+    for surface in surfaces {
+      surface.cancelInputReadiness()
+      surface.refreshCursorRects()
+    }
+    cursorManager.pushCrosshair()
+    cursorPushed = true
   }
 
   func cancel(_ reason: SelectionCancellationReason) {
@@ -260,8 +268,9 @@ private final class SelectionOverlayController {
     switch event {
     case .mouseDown(let point):
       let inputSurface = surfaces.first(where: { $0.displayID == displayID })
-      inputSurface?.makeInputReady()
-      inputSurface?.refreshCursorRects()
+      inputSurface?.makeInputReady { [weak self] in
+        self?.inputSurfaceBecameKeyDuringMouseDown(displayID: displayID)
+      }
       guard session.begin(on: displayID, at: point) else { return }
       renderCurrentDrag()
     case .mouseDragged(let point):
@@ -273,6 +282,20 @@ private final class SelectionOverlayController {
     case .escape:
       session.cancel(.escape)
     }
+  }
+
+  private func inputSurfaceBecameKeyDuringMouseDown(displayID: CGDirectDisplayID) {
+    guard !hasFinished else { return }
+    if cursorPushed {
+      refreshCursorRects(for: displayID)
+    } else {
+      initialInputSurfaceBecameKey()
+    }
+  }
+
+  private func refreshCursorRects(for displayID: CGDirectDisplayID) {
+    guard !hasFinished else { return }
+    surfaces.first(where: { $0.displayID == displayID })?.refreshCursorRects()
   }
 
   private func renderCurrentDrag() {
@@ -310,6 +333,7 @@ private final class SelectionOverlayController {
     }
 
     for surface in surfaces {
+      surface.cancelInputReadiness()
       surface.eventHandler = nil
       surface.render(.clear)
       surface.hide()
@@ -462,9 +486,17 @@ private final class AppKitSelectionOverlaySurface: SelectionOverlaySurface {
     panel.orderFrontRegardless()
   }
 
-  func makeInputReady() {
+  func makeInputReady(whenKey: @escaping @MainActor @Sendable () -> Void) {
+    panel.whenKey { [weak self] in
+      guard let self else { return }
+      panel.makeFirstResponder(contentView)
+      whenKey()
+    }
     panel.makeKey()
-    panel.makeFirstResponder(contentView)
+  }
+
+  func cancelInputReadiness() {
+    panel.cancelKeyReadiness()
   }
 
   func refreshCursorRects() {
@@ -476,13 +508,38 @@ private final class AppKitSelectionOverlaySurface: SelectionOverlaySurface {
   }
 
   func hide() {
+    cancelInputReadiness()
     panel.orderOut(nil)
   }
 }
 
-private final class RegionSelectionPanel: NSPanel {
+final class RegionSelectionPanel: NSPanel {
+  private var keyReadiness: (@MainActor @Sendable () -> Void)?
+
   override var canBecomeKey: Bool { true }
   override var canBecomeMain: Bool { false }
+
+  func whenKey(_ readiness: @escaping @MainActor @Sendable () -> Void) {
+    keyReadiness = readiness
+    if isKeyWindow {
+      completeKeyReadiness()
+    }
+  }
+
+  func cancelKeyReadiness() {
+    keyReadiness = nil
+  }
+
+  override func becomeKey() {
+    super.becomeKey()
+    completeKeyReadiness()
+  }
+
+  private func completeKeyReadiness() {
+    let keyReadiness = keyReadiness
+    self.keyReadiness = nil
+    keyReadiness?()
+  }
 }
 
 @MainActor
