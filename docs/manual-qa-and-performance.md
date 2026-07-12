@@ -4,7 +4,7 @@
 
 **Goal:** G24
 
-**Execution state:** G24R activation-handshake candidate pending signed rapid-reuse proof; complete clean G24 rerun pending
+**Execution state:** G24S key-ready native-cursor candidate pending signed rapid-reuse proof; complete clean G24 rerun pending
 
 This is the release record for system behavior that unit tests and unsigned hosted runners cannot faithfully validate. A result is **Pass**, **Fail**, **Blocked**, or **Not applicable**. Historical spike screenshots and injected-service tests provide context but never replace a fresh G24 result.
 
@@ -113,6 +113,21 @@ input-ready surface, rebuilding cursor rectangles, or pushing the crosshair.
 Automated coverage holds and cancels that activation callback, but the exact
 signed repeated-capture sequence must be rerun.
 
+### July 12, 2026 G24R Activation-Handshake Candidate
+
+The application-activation candidate used exact commit
+`ab4e6a263c52164d9cadc7a28a5bde0cf38c0548`. It passed the full local and
+hosted gates plus strict signed-artifact verification. The maintainer's physical
+rapid-reuse run still showed cursor flicker. Waiting for CopyLasso itself to
+become active therefore did not prove that the pointer display's selection panel
+had become key and owned AppKit's cursor rectangles. This is a signed **Fail**.
+
+The approved G24S replacement waits for the exact input panel's one-shot key
+callback before rebuilding cursor rectangles or pushing the native crosshair.
+It also changes the suggested/default shortcut to `Shift-Command-2` (`⇧⌘2`)
+without altering existing customized shortcuts. Automated evidence does not
+promote either behavior until a fresh exact-head signed run passes.
+
 ## Clean-State Preparation
 
 1. Build Debug with the stable Apple Development identity and verify its designated requirement.
@@ -151,16 +166,16 @@ where those properties apply.
 | Scenario | Expected result | Current result and evidence |
 | --- | --- | --- |
 | First launch from a clean installation | Onboarding appears once; no unexpected window, permission request, or Dock icon | **Blocked** — the app-local Debug reset reproduced onboarding without a launch-time permission request, but no quarantined release candidate exists before G27-G29 |
-| Ordinary relaunch after completed onboarding | One status item, no onboarding, Dock icon, or initial window | **Pass** — ordinary signed relaunch preserved completed onboarding and `⌃⇧⌘2`, exposed one status item, and opened no app window or Dock item |
+| Ordinary relaunch after completed onboarding | One status item, no onboarding, Dock icon, or initial window | **Pass** for shell behavior — ordinary signed relaunch exposed one status item and no app window or Dock item; the historical run preserved the retired `⌃⇧⌘2`, so fresh `⇧⌘2` persistence remains pending |
 | Cold launch | One status item within 2 seconds; no Dock icon or initial app window after completed onboarding | **Blocked** — one observed signed launch became process-visible in 99 ms and exposed the status item, but the required ten visible samples and p95 remain pending |
-| Shortcut setup and persistence | Confirm, replace, clear, and restore `⌃⇧⌘2`; relaunch and reboot preserve the stored choice | **Blocked** — confirm, conflict rejection, replacement with `⌃⇧⌘K`, clearing, default restoration, and ordinary-relaunch persistence passed; post-configuration reboot persistence remains untested |
+| Shortcut setup and persistence | Confirm, replace, clear, and restore `⇧⌘2`; relaunch and reboot preserve the stored choice | **Blocked** — the historical retired-shortcut matrix passed through ordinary relaunch, but the new `⇧⌘2` onboarding/default/reset behavior and reboot persistence require a fresh signed run |
 | Suggested shortcut with Finder frontmost | Selection-only activation presents the crosshair, then restores Finder before downstream work | **Blocked** — the Chrome restoration path passed, but the Finder-specific observation remains pending |
 | Shortcut with browser and TextEdit frontmost | Same command path and originating-app restoration | **Blocked** — Chrome focus restoration passed on the exact signed cursor-fix head; fresh TextEdit restoration remains pending |
 | Shortcut with another native app frontmost | Same command path and restoration outside the specifically tested apps | **Blocked** — no fresh third-native-app result |
 | Menu fallback with shortcut cleared | Capture Text remains usable and matches shortcut behavior | **Blocked** — a physical menu invocation reached the same production permission path, but it was not run while the shortcut was cleared |
-| Rapid repeated shortcut while active | Requests during permission, selection, capture, or OCR are rejected; a request during feedback dismisses that HUD and immediately begins exactly one fresh selection | **Fail** — the first candidate intermittently failed around the third cycle; the decoupled-feedback candidate removed that workflow race but still sometimes left the arrow until mouse-down while a prior HUD was visible. The activation-handshake candidate is green in automation and requires a fresh signed rerun |
+| Rapid repeated shortcut while active | Requests during permission, selection, capture, or OCR are rejected; a request during feedback dismisses that HUD and immediately begins exactly one fresh selection | **Fail** — the first candidate intermittently failed around the third cycle; decoupled feedback removed that workflow race, but both it and the application-activation candidate still flickered. The key-ready panel candidate is green in automation and requires a fresh signed rerun |
 | Ordinary success | Selected text reaches plain-text clipboard; bounded success HUD appears after originating-app restoration | **Pass** — five signed selections completed through real ScreenCaptureKit, Vision, and the plain-text pasteboard; the cursor-fix run restored Chrome focus before the bounded success HUD finished |
-| Selection cursor and drag rendering | Clear before mouse-down; one normal-sized crosshair replaces the pointer before and throughout the drag; initiating display dims outside the selection | **Pass** — on the exact signed cursor-fix head, one normal-sized crosshair appeared immediately and remained usable for a successful drag; no ordinary arrow or second reticle appeared |
+| Selection cursor and drag rendering | Clear before mouse-down; one normal-sized crosshair replaces the pointer before and throughout the drag; initiating display dims outside the selection | **Fail** under rapid reuse — an isolated signed capture previously showed one correct native crosshair, but later exact signed rapid sequences flickered or retained the arrow until mouse-down; the key-ready panel candidate remains unproven physically |
 | Reverse drag and every edge | Correct region, initiating-display clamp, no orphaned panel/cursor | **Blocked** — ordinary forward drags cleaned up, but reverse and four-edge coverage remains pending |
 | Every connected display and backing scale | Correct display identity, point-to-pixel scale, crop, HUD placement, and focus restoration | **Blocked** — Dell 1× capture succeeded; physical Sidecar 2× capture remains pending |
 | Cross-display drag | Initiating display alone dims; selection clamps at its edge and never spans displays | **Blocked** — both physical displays are connected, but neither cross-display direction has been exercised in this run |

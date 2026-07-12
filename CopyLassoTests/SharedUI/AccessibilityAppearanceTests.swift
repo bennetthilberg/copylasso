@@ -78,6 +78,10 @@ final class AccessibilityAppearanceTests: XCTestCase {
       "Capture Text keyboard shortcut"
     )
     XCTAssertTrue(AccessibilityAuditCopy.shortcutRecorderHelp.contains("clear"))
+    XCTAssertEqual(
+      AccessibilityAuditCopy.suggestedShortcutHelp,
+      "Restore the suggested Shift-Command-2 shortcut."
+    )
     XCTAssertTrue(AccessibilityAuditCopy.launchAtLoginHelp.contains("starts automatically"))
     XCTAssertTrue(
       AccessibilityAuditCopy.openScreenRecordingSettingsHelp.contains("System Settings")
