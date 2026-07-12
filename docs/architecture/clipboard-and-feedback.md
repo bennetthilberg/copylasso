@@ -25,8 +25,14 @@ AppKit exposes no atomic replace operation: it requires clearing before the fall
 
 The same observable model temporarily changes the menu-bar symbol and accessibility label. The HUD exposes its bounded message as one accessibility label. A newer presentation supersedes an older dismissal token so an earlier timer cannot hide current feedback.
 
+Feedback is the only interruptible phase of the capture workflow. A menu or global-shortcut request
+while the HUD is visible synchronously hides the panel, cancels its dismissal wait, and advances a
+request generation before scheduling a fresh permission check. The interrupted presentation observes
+that stale generation and cannot reset, fail, or otherwise mutate the replacement workflow. Requests
+during permission, selection, capture, and OCR remain busy-rejected so two workflows never overlap.
+
 ## Current Workflow Boundary
 
-The complete command writes nonempty assembled text, presents a bounded success preview, presents no-text without touching the clipboard, and presents a stage-specific failure after ordinary service errors. It stays busy until feedback disappears, rejects overlapping requests, and then returns to idle. Selection cancellation and OCR cancellation remain normal non-error outcomes and never touch the pasteboard.
+The complete command writes nonempty assembled text, presents a bounded success preview, presents no-text without touching the clipboard, and presents a stage-specific failure after ordinary service errors. It stays busy until feedback disappears or a new request replaces it, rejects overlapping requests during earlier work, and otherwise returns to idle. Selection cancellation and OCR cancellation remain normal non-error outcomes and never touch the pasteboard.
 
 The image, recognized observations, and unbounded assembled string are local to one private async operation. That scope returns only bounded feedback after any write, so private pixels and full text are no longer retained while the HUD is visible. Integration tests hold both success and failure feedback open while proving the image has already been released.
