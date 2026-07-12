@@ -135,6 +135,39 @@ final class FeedbackPanelControllerTests: XCTestCase {
     XCTAssertEqual(host.hideCallCount, 1)
   }
 
+  func testExplicitDismissHidesEveryFeedbackKindImmediatelyAndCancelsTheActiveWait() async {
+    let feedbackCases: [CaptureFeedback] = [
+      .success(preview: "first"),
+      .noText,
+      .failure(.recognition),
+    ]
+
+    for feedback in feedbackCases {
+      let host = SpyFeedbackPanelHost()
+      let waiter = ManualFeedbackWaiter()
+      let controller = FeedbackPanelController(
+        makePanel: { _ in host },
+        waitForDismissal: waiter.wait
+      )
+      let task = Task { @MainActor in
+        try await controller.present(feedback)
+      }
+      await waiter.waitUntilCallCount(1)
+
+      controller.dismiss()
+
+      XCTAssertNil(controller.model.feedback)
+      XCTAssertEqual(host.hideCallCount, 1)
+      do {
+        try await task.value
+        XCTFail("Expected the interrupted presentation to cancel")
+      } catch is CancellationError {
+      } catch {
+        XCTFail("Expected CancellationError, received \(error)")
+      }
+    }
+  }
+
   func testProductionPanelIsVisibleNonactivatingAndMouseTransparentWithoutChangingFocus()
     async throws
   {
@@ -192,8 +225,15 @@ private final class ManualFeedbackWaiter {
   var wait: FeedbackPanelController.DismissalWaiter {
     { [weak self] in
       guard let self else { return }
-      try await withCheckedThrowingContinuation { continuation in
-        continuations.append(continuation)
+      let index = continuations.count
+      try await withTaskCancellationHandler {
+        try await withCheckedThrowingContinuation { continuation in
+          continuations.append(continuation)
+        }
+      } onCancel: {
+        Task { @MainActor [weak self] in
+          self?.cancelCall(at: index)
+        }
       }
     }
   }
@@ -206,5 +246,10 @@ private final class ManualFeedbackWaiter {
 
   func resumeCall(at index: Int) {
     continuations[index].resume()
+  }
+
+  private func cancelCall(at index: Int) {
+    guard continuations.indices.contains(index) else { return }
+    continuations[index].resume(throwing: CancellationError())
   }
 }
