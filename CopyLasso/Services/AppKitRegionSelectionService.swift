@@ -39,7 +39,8 @@ protocol SelectionOverlaySurface: AnyObject {
   func show()
   func makeInputReady(whenKey: @escaping @MainActor @Sendable () -> Void)
   func cancelInputReadiness()
-  func refreshCursorRects()
+  func suspendCursorRectManagement()
+  func restoreCursorRectManagement()
   func render(_ state: SelectionOverlayRenderState)
   func hide()
 }
@@ -186,6 +187,7 @@ private final class SelectionOverlayController {
   private var hasFinished = false
   private var lifecycleStarted = false
   private var cursorPushed = false
+  private var cursorRectManagementSuspended = false
   private var activationRequested = false
   private lazy var session = SelectionSession(displays: displays) { [weak self] outcome in
     self?.finish(.success(outcome))
@@ -234,6 +236,10 @@ private final class SelectionOverlayController {
       }
 
       for surface in surfaces {
+        surface.suspendCursorRectManagement()
+      }
+      cursorRectManagementSuspended = true
+      for surface in surfaces {
         surface.show()
       }
       let pointer = pointerLocation()
@@ -251,7 +257,6 @@ private final class SelectionOverlayController {
     guard !hasFinished, !cursorPushed else { return }
     for surface in surfaces {
       surface.cancelInputReadiness()
-      surface.refreshCursorRects()
     }
     cursorManager.pushCrosshair()
     cursorPushed = true
@@ -269,7 +274,7 @@ private final class SelectionOverlayController {
     case .mouseDown(let point):
       let inputSurface = surfaces.first(where: { $0.displayID == displayID })
       inputSurface?.makeInputReady { [weak self] in
-        self?.inputSurfaceBecameKeyDuringMouseDown(displayID: displayID)
+        self?.inputSurfaceBecameKeyDuringMouseDown()
       }
       guard session.begin(on: displayID, at: point) else { return }
       renderCurrentDrag()
@@ -284,18 +289,11 @@ private final class SelectionOverlayController {
     }
   }
 
-  private func inputSurfaceBecameKeyDuringMouseDown(displayID: CGDirectDisplayID) {
+  private func inputSurfaceBecameKeyDuringMouseDown() {
     guard !hasFinished else { return }
-    if cursorPushed {
-      refreshCursorRects(for: displayID)
-    } else {
+    if !cursorPushed {
       initialInputSurfaceBecameKey()
     }
-  }
-
-  private func refreshCursorRects(for displayID: CGDirectDisplayID) {
-    guard !hasFinished else { return }
-    surfaces.first(where: { $0.displayID == displayID })?.refreshCursorRects()
   }
 
   private func renderCurrentDrag() {
@@ -337,6 +335,13 @@ private final class SelectionOverlayController {
       surface.eventHandler = nil
       surface.render(.clear)
       surface.hide()
+    }
+
+    if cursorRectManagementSuspended {
+      for surface in surfaces {
+        surface.restoreCursorRectManagement()
+      }
+      cursorRectManagementSuspended = false
     }
 
     if cursorPushed {
@@ -461,6 +466,7 @@ private final class AppKitSelectionOverlaySurface: SelectionOverlaySurface {
 
   private let panel: RegionSelectionPanel
   private let contentView: RegionSelectionView
+  private var cursorRectManagementSuspended = false
 
   init(display: DisplayGeometry, style: SelectionOverlayStyle) {
     displayID = display.displayID
@@ -515,8 +521,16 @@ private final class AppKitSelectionOverlaySurface: SelectionOverlaySurface {
     panel.cancelKeyReadiness()
   }
 
-  func refreshCursorRects() {
-    contentView.refreshCrosshairCursorRects()
+  func suspendCursorRectManagement() {
+    guard !cursorRectManagementSuspended else { return }
+    panel.disableCursorRects()
+    cursorRectManagementSuspended = true
+  }
+
+  func restoreCursorRectManagement() {
+    guard cursorRectManagementSuspended else { return }
+    panel.enableCursorRects()
+    cursorRectManagementSuspended = false
   }
 
   func render(_ state: SelectionOverlayRenderState) {
@@ -594,12 +608,6 @@ final class RegionSelectionView: NSView {
 
   override func resetCursorRects() {
     addCrosshairCursorRect()
-  }
-
-  func refreshCrosshairCursorRects() {
-    guard let window else { return }
-    window.invalidateCursorRects(for: self)
-    window.resetCursorRects()
   }
 
   private func addCrosshairCursorRect() {
