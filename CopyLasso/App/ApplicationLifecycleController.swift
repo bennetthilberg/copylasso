@@ -98,7 +98,7 @@ final class SystemApplicationLifecycleEventSource: NSObject,
     ] {
       workspaceCenter.addObserver(
         self,
-        selector: #selector(systemInterrupted),
+        selector: #selector(systemInterrupted(_:)),
         name: name,
         object: nil
       )
@@ -110,14 +110,14 @@ final class SystemApplicationLifecycleEventSource: NSObject,
     ] {
       workspaceCenter.addObserver(
         self,
-        selector: #selector(systemResumed),
+        selector: #selector(systemResumed(_:)),
         name: name,
         object: nil
       )
     }
     applicationCenter.addObserver(
       self,
-      selector: #selector(applicationWillTerminate),
+      selector: #selector(applicationWillTerminate(_:)),
       name: NSApplication.willTerminateNotification,
       object: nil
     )
@@ -132,15 +132,15 @@ final class SystemApplicationLifecycleEventSource: NSObject,
     isObserving = false
   }
 
-  @objc private func systemInterrupted() {
+  @objc private func systemInterrupted(_ notification: Notification) {
     handler?(.systemInterrupted)
   }
 
-  @objc private func systemResumed() {
+  @objc private func systemResumed(_ notification: Notification) {
     handler?(.systemResumed)
   }
 
-  @objc private func applicationWillTerminate() {
+  @objc private func applicationWillTerminate(_ notification: Notification) {
     handler?(.applicationWillTerminate)
   }
 }

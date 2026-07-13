@@ -229,6 +229,15 @@ The July 11, 2026 unattended G19 run could not execute this physical matrix beca
 
 G20 unit coverage posts every registered application/workspace notification through isolated centers and injects cancellable selection, capture, OCR, and feedback gates. It verifies duplicate interruption coalescing, resume without automatic capture, observer teardown, recovery-panel dismissal, shortcut shutdown on termination, cancellation before scheduled work, 100 rapid busy requests, downstream call suppression, terminal reset, and a successful capture immediately after cancellation. The centralized stage-only failure copy remains covered separately for every failure stage.
 
+G24U adds direct selection-adapter coverage for public workspace will-sleep,
+screen-sleep, and session-resign notifications. Focused tests interrupt before
+activation and after cursor refresh, deliver duplicates, replay stale overlay
+events, verify exactly-once cleanup and clipboard/downstream suppression, and
+start a second selection. Selector-conformance tests require one
+`Notification` argument. These deterministic checks still do not establish
+that an ordinary screen lock emits a workspace session-switch notification;
+lock/unlock remains a distinct signed row below.
+
 ### Signed G20 Manual Matrix
 
 Use one stably signed Debug app and keep a clipboard sentinel before every pre-output interruption:

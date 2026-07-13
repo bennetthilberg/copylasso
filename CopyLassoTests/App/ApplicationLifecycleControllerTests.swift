@@ -117,6 +117,28 @@ final class ApplicationLifecycleControllerTests: XCTestCase {
     workspaceCenter.post(name: NSWorkspace.willSleepNotification, object: nil)
     XCTAssertEqual(events.count, 7)
   }
+
+  func testSystemEventSourceUsesOneNotificationArgumentSelectors() {
+    let source = SystemApplicationLifecycleEventSource(
+      applicationCenter: NotificationCenter(),
+      workspaceCenter: NotificationCenter()
+    )
+
+    for name in [
+      "systemInterrupted:",
+      "systemResumed:",
+      "applicationWillTerminate:",
+    ] {
+      XCTAssertTrue(source.responds(to: NSSelectorFromString(name)), name)
+    }
+    for name in [
+      "systemInterrupted",
+      "systemResumed",
+      "applicationWillTerminate",
+    ] {
+      XCTAssertFalse(source.responds(to: NSSelectorFromString(name)), name)
+    }
+  }
 }
 
 @MainActor
