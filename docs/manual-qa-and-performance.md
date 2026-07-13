@@ -285,7 +285,7 @@ where those properties apply.
 | --- | --- | --- |
 | First launch from a clean installation | Onboarding appears once; no unexpected window, permission request, or Dock icon | **Blocked** — app-local Debug reset reproduced onboarding without a launch-time permission request, but clean quarantined installation remains owned by G27-G29 |
 | Ordinary relaunch after completed onboarding | One status item, no onboarding, Dock icon, or initial window | **Pass** — repeated exact signed relaunches exposed one status item, no onboarding/window/Dock item, and preserved `⇧⌘2` |
-| Cold launch | One status item within 2 seconds; no Dock icon or initial app window after completed onboarding | **Pass** — ten launches were physically observed; process-visible samples were `[72, 70, 72, 68, 59, 74, 69, 73, 73, 68]` ms, median 71 ms and p95 74 ms, with no unexpected window or Dock item |
+| Cold launch | One status item within 2 seconds; no Dock icon or initial app window after completed onboarding | **Blocked** — the maintainer watched the status item disappear and reappear for ten launches with no unexpected window or Dock item, but the recorded timestamps measured process visibility rather than the visible, interactive status item required by this protocol |
 | Shortcut setup and persistence | Confirm, replace, clear, and restore `⇧⌘2`; relaunch and reboot preserve the stored choice | **Blocked** for reboot persistence — Settings recorded `⇧⌘K`, cleared the shortcut, and restored `⇧⌘2` through **Default**. Cleared `⇧⌘2` was a physical no-op; final readback was key code 19/modifiers 768. Ordinary relaunch and real logout/login preserved the default, but no reboot followed the final default restoration |
 | Suggested shortcut with Finder frontmost | Selection-only activation presents the crosshair, then restores Finder before downstream work | **Pass** — the controlled Finder filename `CONTROLLED FINDER PIXELS.txt` copied exactly with a HUD; Computer Use readback confirmed the same Finder list regained focus |
 | Shortcut with browser and TextEdit frontmost | Same command path and originating-app restoration | **Pass** — browser pixels copied through the same path, and controlled TextEdit text copied exactly with HUD feedback; the maintainer observed TextEdit remain frontmost before returning to the test conversation |
@@ -396,10 +396,10 @@ Use an otherwise idle workstation. Preserve raw Instruments traces outside Git a
 
 | Stage | Samples | Median | p95 | Evidence or blocker |
 | --- | ---: | ---: | ---: | --- |
-| Mouse-up to ScreenCaptureKit return | 30 | 102.276 ms | 112.303 ms | **Context only** — content-free LLDB entry/async-resume boundaries for the small-text line |
-| ScreenCaptureKit return to Vision return | 30 | 42.229 ms | 144.185 ms | **Context only** — capture async-resume to Vision async-resume boundaries for the small-text line |
-| Vision return to pasteboard change | 30 | 6.612 ms | 8.111 ms | **Context only** — Vision async-resume to write-only clipboard entry for the small-text line |
-| Mouse-up to HUD presentation | 30 | 159.710 ms | 263.869 ms | **Context only** — selection mouse-up to feedback presentation entry for the small-text line |
+| Mouse-up to ScreenCaptureKit return | 30 | 102.276 ms | 112.303 ms | **Blocked** — the required ordinary-region trace did not run; content-free LLDB entry/async-resume timings for the small-text line remain diagnostic context |
+| ScreenCaptureKit return to Vision return | 30 | 42.229 ms | 144.185 ms | **Blocked** — the required ordinary-region trace did not run; capture async-resume to Vision async-resume timings for the small-text line remain diagnostic context |
+| Vision return to pasteboard change | 30 | 6.612 ms | 8.111 ms | **Blocked** — the required ordinary-region trace did not run; Vision async-resume to write-only clipboard timings for the small-text line remain diagnostic context |
+| Mouse-up to HUD presentation | 30 | 159.710 ms | 263.869 ms | **Blocked** — the required ordinary-region trace did not run; selection mouse-up to feedback presentation timings for the small-text line remain diagnostic context |
 
 ### Idle CPU And Memory
 
@@ -428,14 +428,15 @@ remain ignored at `.build/g24-interactive-current`.
 #### Cold Launch Result
 
 The maintainer watched the menu-bar icon disappear and reappear during ten
-exact-artifact launches. No app window or Dock item appeared. Process-visible
-samples were:
+exact-artifact launches. No app window or Dock item appeared. The recorded
+timestamps measured process visibility, not status-item visibility or
+interactivity, and therefore remain diagnostic context:
 
 `cold_launch_ms: [72, 70, 72, 68, 59, 74, 69, 73, 73, 68]`
 
-Median was 71 ms; nearest-rank p95 was 74 ms; minimum was 59 ms and maximum was
-74 ms. Every visible launch was comfortably below the two-second acceptance
-threshold, so cold launch **Passes**.
+Median process visibility was 71 ms; nearest-rank p95 was 74 ms; minimum was 59
+ms and maximum was 74 ms. Because those samples do not time the protocol's
+visible, interactive menu-bar item, cold launch remains **Blocked**.
 
 #### Capture-To-Clipboard Result
 
@@ -534,9 +535,10 @@ The raw `.trace`, XML, logs, and samples remain ignored build artifacts and must
 
 G24 is complete only when every row above has a fresh Pass, Fail, Blocked, or Not-applicable result from one coherent signed run **and** the four numeric acceptance criteria have actual interactive measurements. Any product failure becomes a narrowly scoped defect goal; do not modify production behavior inside G24. After that fix merges, restart this protocol from clean state.
 
-The July 13 run has passing cold-launch and idle-CPU measurements plus useful
-small-line latency and 100-cycle memory context. The official ordinary-region
-latency series and the 100-cycle Time Profiler requirement remain **Blocked**.
+The July 13 run has a passing idle-CPU measurement plus useful process-launch,
+small-line latency, and 100-cycle memory context. Interactive status-item cold
+launch, the official ordinary-region latency series, and the 100-cycle Time
+Profiler requirement remain **Blocked**.
 Every matrix row has an explicit state. G24 remains **Blocked**, not complete,
 because the signed sleep/wake and clipboard-preservation rows failed; Sidecar-
 only and other rows deferred by the mandatory stop also remain blocked and may

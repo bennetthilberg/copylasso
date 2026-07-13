@@ -321,11 +321,12 @@ Signed XCUITests remain focused on first-run, Settings, menu, recovery, and acce
 The versioned release checklist and performance result sheet are maintained in [Manual QA and Performance](manual-qa-and-performance.md). G24 must execute that complete document from one clean, stably signed Debug state; partial or historical evidence must not be promoted into a release pass.
 
 The July 13, 2026 signed run completed many functional, permission, and OCR rows,
-passed cold-launch and idle-CPU thresholds, and produced useful latency and
+passed the idle-CPU threshold, and produced useful process-launch, latency, and
 100-cycle memory context. It then failed pre-drag sleep/wake cleanup: after wake,
 the arrow was visible but an invisible selection session still accepted a drag,
 changed the clipboard, and showed success feedback. G24 is blocked at its
 mandatory stop condition pending a separately approved lifecycle fix and clean
 rerun. Sidecar-only checks, wallpaper and protected-content sources, complete
-accessibility/appearance coverage, ordinary-region latency, 100-cycle Time
-Profiler, and several phase-specific or privacy rows remain explicitly blocked.
+accessibility/appearance coverage, interactive status-item cold-launch timing,
+ordinary-region latency, 100-cycle Time Profiler, and several phase-specific or
+privacy rows remain explicitly blocked.
