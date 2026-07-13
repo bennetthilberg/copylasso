@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** July 9, 2026
-- **Scope:** G05 feasibility spike; production integration remains deferred to G15
+- **Scope:** G05 feasibility decision, adopted by the G15 production service
 
 ## Context
 
@@ -21,7 +21,9 @@ Vision is viable for CopyLasso v0.1. The experimental adapter:
 - performs recognition away from the main actor at user-initiated priority; and
 - returns only recognized text, confidence, and normalized bounding boxes.
 
-The adapter does not write images or recognized text to disk, log recognized content, or make network requests. This narrow implementation is evidence for the production service planned in G15, not a public product API.
+The adapter does not write images or recognized text to disk, log recognized content, or make network requests. G15 adopts the same configuration behind the internal `OCRService` contract; it is not a public product API.
+
+The production service wraps synchronous Vision execution in a user-initiated detached task. A thread-safe cancellation owner installs the active `VNRequest`, calls `cancel()` when the awaiting task is cancelled, and clears the request on every exit. It returns neutral observations or typed cancellation/recognition failures; an empty observation array is a successful no-text result.
 
 ## Evidence
 
@@ -38,6 +40,8 @@ On macOS 26.5.1 (build 25F80), Xcode 26.6, and an Apple M5 Pro:
 
 The same quality suite passes for both arm64 and x86_64 through the canonical CI entrypoint. The five deterministic fixtures also regenerate byte-for-byte identically. A direct run of the already-built XCTest bundle under a process sandbox with all network operations denied passed all seven substantive OCR checks; only the two intentionally opt-in benchmark and language-comparison methods skipped. This proves offline execution without changing the workstation's Wi-Fi state.
 
+G15 repeated the quality contract through the production service. Both canonical architectures passed all 129 repository tests with zero skips; the focused service suite passed 13 fixtures, configuration, concurrency, failure, and cancellation tests. The same production suite passed with all network operations denied. A direct thread probe observed the injected performer off the main thread, and cancellation returned in milliseconds while releasing a 4000 x 2000 input image.
+
 ## Quality Contract
 
 Deterministic clean fixtures require exact normalized text. The low-contrast fixture requires at least 90% character similarity, every expected token, and at most one unexpected token. The photograph requires its exact phrase, every expected token, and at most one unexpected token. Nonempty output alone is never sufficient.
@@ -50,8 +54,8 @@ Test failure messages identify fixtures and metrics without printing recognized 
 - The test normalization establishes reading order for simple single-column fixtures only. It does not promise formatting preservation or correct ordering for complex layouts.
 - Recognition quality still depends on resolution, contrast, source appearance, and the Vision implementation shipped with the operating system.
 - Revision 3 is intentionally pinned for macOS 14 compatibility. A later production goal should re-evaluate newer APIs only if the minimum system requirement changes.
-- This experiment does not implement screen capture, region selection, clipboard output, feedback, or any user-facing OCR flow.
+- G15 does not define observation ordering, text formatting, clipboard output, feedback, or the final end-to-end workflow.
 
 ## Consequences
 
-G06 may proceed with screen-capture feasibility after G05 is merged. G08 retired the executable adapter while preserving the fixtures, generator, this evidence, and a framework-neutral observation model. G15 should implement the production OCR service behind the architecture interface while preserving the in-memory, local-only boundary and the explicit fixture thresholds.
+G06 proceeded with screen-capture feasibility after G05. G08 retired the executable adapter while preserving the fixtures, generator, this evidence, and a framework-neutral observation model. G15 now provides the production OCR service behind that architecture interface while preserving the in-memory, local-only boundary and explicit fixture thresholds. G16 consumes only the neutral observations and now owns deterministic plain-text assembly; its exact rules and limitations are documented in [Plain-Text Assembly](text-assembly.md).

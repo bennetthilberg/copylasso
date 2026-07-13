@@ -31,7 +31,7 @@ After approval, CopyLasso creates temporary transparent AppKit panels so the use
 
 Core Graphics preflight can remain stale inside a running process after access changes. CopyLasso therefore treats an actual ScreenCaptureKit denial as authoritative and returns to permission recovery even if preflight had just reported access.
 
-After the overlay is absent, the production capture service obtains one `CGImage` for the selected display-local rectangle. It disables cursor and audio capture, does not encode the image, and does not create a file-system intermediate. The current workflow passes that image directly to a temporary unavailable OCR boundary and then releases it; no image enters observable state, preferences, logs, caches, history, or feedback.
+After the overlay is absent, the production capture service obtains one `CGImage` for the selected display-local rectangle. It disables cursor and audio capture, does not encode the image, and does not create a file-system intermediate. The production Vision service consumes that image locally at user-initiated priority, returns only neutral text, confidence, and normalized bounds, and releases the image on completion or cancellation. A pure formatter turns those transient observations into a plain `String` without logging or persisting it. Neither pixels nor recognized content enters observable state, preferences, logs, caches, history, or feedback. The current workflow discards the final string before the unimplemented clipboard boundary.
 
 The v0.1 core workflow does not require Accessibility or Input Monitoring permission. macOS may prevent protected or DRM-restricted content from being captured, and CopyLasso does not attempt to bypass those protections.
 

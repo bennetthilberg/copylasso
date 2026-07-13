@@ -1,4 +1,5 @@
 import CoreGraphics
+import Foundation
 
 @testable import CopyLasso
 
@@ -119,6 +120,25 @@ actor StubOCRService: OCRService {
   }
 }
 
+final class SpyTextAssembler: TextAssembling, @unchecked Sendable {
+  private let lock = NSLock()
+  private let result: String
+  private var storedInputs: [[RecognizedTextObservation]] = []
+
+  init(result: String) {
+    self.result = result
+  }
+
+  var inputs: [[RecognizedTextObservation]] {
+    lock.withLock { storedInputs }
+  }
+
+  func assemble(_ observations: [RecognizedTextObservation]) -> String {
+    lock.withLock { storedInputs.append(observations) }
+    return result
+  }
+}
+
 @MainActor
 final class SpyClipboardService: ClipboardService {
   var error: TestServiceError?
@@ -159,6 +179,7 @@ func makeTestCaptureCommand(
     selectionService: StubRegionSelectionService(result: .failure(.injected)),
     screenCaptureService: StubScreenCaptureService(result: .failure(.injected)),
     ocrService: StubOCRService(result: .failure(.injected)),
+    textAssembler: TextAssembler(),
     recoveryPresenter: SpyPermissionRecoveryPresenter(),
     scheduleWork: scheduleWork
   )

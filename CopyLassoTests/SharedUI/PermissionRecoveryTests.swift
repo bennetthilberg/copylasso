@@ -120,7 +120,7 @@ final class PermissionRecoveryTests: XCTestCase {
     )
   }
 
-  func testRejectedRetryDoesNotPermitAOneShotPermissionObservation() {
+  func testRejectedRetryDoesNotClearTheAuthoritativeDenial() {
     let permission = StubScreenCapturePermissionService(
       currentResult: .notGrantedAfterPreviouslyGranted,
       requestResult: .notGrantedAfterPreviouslyGranted
