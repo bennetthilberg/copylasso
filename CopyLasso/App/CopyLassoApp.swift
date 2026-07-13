@@ -1,5 +1,31 @@
 import SwiftUI
 
+#if DEBUG
+  struct DebugRuntimeOptions {
+    private let arguments: [String]
+
+    init(arguments: [String]) {
+      self.arguments = arguments
+    }
+
+    var isUITesting: Bool {
+      arguments.contains("--g10-g11-ui-testing")
+    }
+
+    var isLiveSelectionTesting: Bool {
+      arguments.contains("--g13-live-selection")
+    }
+
+    var isLiveCaptureTesting: Bool {
+      arguments.contains("--g14-live-capture")
+    }
+
+    var usesDebugCaptureService: Bool {
+      (isUITesting || isLiveSelectionTesting) && !isLiveCaptureTesting
+    }
+  }
+#endif
+
 @main
 @MainActor
 struct CopyLassoApp: App {
@@ -13,12 +39,12 @@ struct CopyLassoApp: App {
     let launchAtLoginService: any LaunchAtLoginServicing
     let permissionService: any ScreenCapturePermissionService
     let selectionService: any RegionSelectionService
+    let screenCaptureService: any ScreenCaptureService
 
     #if DEBUG
       let arguments = ProcessInfo.processInfo.arguments
-      let isUITesting = arguments.contains("--g10-g11-ui-testing")
-      let isLiveSelectionTesting = arguments.contains("--g13-live-selection")
-      if isUITesting {
+      let runtimeOptions = DebugRuntimeOptions(arguments: arguments)
+      if runtimeOptions.isUITesting {
         launchAtLoginService = DebugLaunchAtLoginService(
           status: Self.debugLaunchAtLoginStatus(arguments: arguments)
         )
@@ -26,7 +52,7 @@ struct CopyLassoApp: App {
         launchAtLoginService = SystemLaunchAtLoginService()
       }
       if arguments.contains("--g10-g11-reset-settings") {
-        if !isUITesting {
+        if !runtimeOptions.isUITesting {
           try? launchAtLoginService.disable()
         }
         settingsStore.reset()
@@ -36,17 +62,22 @@ struct CopyLassoApp: App {
         settingsStore.completedOnboardingVersion = SettingsController.currentOnboardingVersion
       }
       permissionService =
-        isUITesting || isLiveSelectionTesting
+        runtimeOptions.isUITesting || runtimeOptions.isLiveSelectionTesting
         ? DebugScreenCapturePermissionService(arguments: arguments)
         : SystemScreenCapturePermissionService(historyStore: settingsStore)
       selectionService =
-        isUITesting && !isLiveSelectionTesting
+        runtimeOptions.isUITesting && !runtimeOptions.isLiveSelectionTesting
         ? DebugRegionSelectionService()
         : AppKitRegionSelectionService()
+      screenCaptureService =
+        runtimeOptions.usesDebugCaptureService
+        ? DebugScreenCaptureService()
+        : SystemScreenCaptureService()
     #else
       launchAtLoginService = SystemLaunchAtLoginService()
       permissionService = SystemScreenCapturePermissionService(historyStore: settingsStore)
       selectionService = AppKitRegionSelectionService()
+      screenCaptureService = SystemScreenCaptureService()
     #endif
 
     settingsController = SettingsController(
@@ -62,7 +93,8 @@ struct CopyLassoApp: App {
       coordinator: coordinator,
       permissionService: permissionService,
       selectionService: selectionService,
-      screenCaptureService: PendingScreenCaptureService(),
+      screenCaptureService: screenCaptureService,
+      ocrService: PendingOCRService(),
       recoveryPresenter: recoveryController
     )
     recoveryController.captureRequester = captureCommand

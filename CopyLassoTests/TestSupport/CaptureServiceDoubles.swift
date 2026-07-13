@@ -13,6 +13,9 @@ final class StubScreenCapturePermissionService: ScreenCapturePermissionService {
   var openSystemSettingsResult = true
   private(set) var currentObservationCallCount = 0
   private(set) var requestAccessCallCount = 0
+  private(set) var recordCaptureDenialCallCount = 0
+  private(set) var recordCaptureSuccessCallCount = 0
+  private(set) var beginUserInitiatedRetryCallCount = 0
   private(set) var openSystemSettingsCallCount = 0
 
   init(
@@ -31,6 +34,19 @@ final class StubScreenCapturePermissionService: ScreenCapturePermissionService {
   func requestAccess() -> ScreenCaptureAuthorizationObservation {
     requestAccessCallCount += 1
     return requestResult
+  }
+
+  func recordCaptureDenial() -> ScreenCaptureAuthorizationObservation {
+    recordCaptureDenialCallCount += 1
+    return .notGrantedAfterPreviouslyGranted
+  }
+
+  func recordCaptureSuccess() {
+    recordCaptureSuccessCallCount += 1
+  }
+
+  func beginUserInitiatedRetry() {
+    beginUserInitiatedRetryCallCount += 1
   }
 
   func openSystemSettings() -> Bool {
@@ -90,6 +106,7 @@ actor StubScreenCaptureService: ScreenCaptureService {
 actor StubOCRService: OCRService {
   var result: Result<[RecognizedTextObservation], TestServiceError>
   private(set) var recognitionCallCount = 0
+  private(set) var recognizedImageSizes: [CGSize] = []
 
   init(result: Result<[RecognizedTextObservation], TestServiceError>) {
     self.result = result
@@ -97,6 +114,7 @@ actor StubOCRService: OCRService {
 
   func recognizeText(in image: CGImage) async throws -> [RecognizedTextObservation] {
     recognitionCallCount += 1
+    recognizedImageSizes.append(CGSize(width: image.width, height: image.height))
     return try result.get()
   }
 }
@@ -140,6 +158,7 @@ func makeTestCaptureCommand(
     ),
     selectionService: StubRegionSelectionService(result: .failure(.injected)),
     screenCaptureService: StubScreenCaptureService(result: .failure(.injected)),
+    ocrService: StubOCRService(result: .failure(.injected)),
     recoveryPresenter: SpyPermissionRecoveryPresenter(),
     scheduleWork: scheduleWork
   )

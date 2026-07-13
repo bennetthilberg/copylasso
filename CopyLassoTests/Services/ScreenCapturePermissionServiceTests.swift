@@ -86,6 +86,61 @@ final class ScreenCapturePermissionServiceTests: XCTestCase {
     XCTAssertEqual(context.client.requestCallCount, 1)
   }
 
+  func testAuthoritativeCaptureDenialRecordsLikelyRevokedWithoutAnotherSystemCall() {
+    let context = makeContext(
+      history: ScreenCapturePermissionHistory(hasObservedGranted: true),
+      preflight: true,
+      request: true
+    )
+
+    XCTAssertEqual(
+      context.service.recordCaptureDenial(),
+      .notGrantedAfterPreviouslyGranted
+    )
+    XCTAssertEqual(
+      context.history.history,
+      ScreenCapturePermissionHistory(
+        hasRequested: true,
+        hasObservedGranted: true
+      )
+    )
+    XCTAssertEqual(
+      context.service.currentObservation(),
+      .notGrantedAfterPreviouslyGranted
+    )
+    XCTAssertEqual(context.client.preflightCallCount, 0)
+    XCTAssertEqual(context.client.requestCallCount, 0)
+  }
+
+  func testExplicitUserRetryAllowsOneObservationUntilCaptureSucceeds() {
+    let context = makeContext(
+      history: ScreenCapturePermissionHistory(hasObservedGranted: true),
+      preflight: true
+    )
+    _ = context.service.recordCaptureDenial()
+
+    XCTAssertEqual(
+      context.service.currentObservation(),
+      .notGrantedAfterPreviouslyGranted
+    )
+    XCTAssertEqual(context.client.preflightCallCount, 0)
+
+    context.service.beginUserInitiatedRetry()
+
+    XCTAssertEqual(context.service.currentObservation(), .granted)
+    XCTAssertEqual(context.client.preflightCallCount, 1)
+    XCTAssertEqual(
+      context.service.currentObservation(),
+      .notGrantedAfterPreviouslyGranted
+    )
+    XCTAssertEqual(context.client.preflightCallCount, 1)
+
+    context.service.recordCaptureSuccess()
+
+    XCTAssertEqual(context.service.currentObservation(), .granted)
+    XCTAssertEqual(context.client.preflightCallCount, 2)
+  }
+
   func testOpenSystemSettingsUsesTheScreenRecordingPrivacyPaneAndReportsFailure() {
     let success = makeContext(openSettings: true)
     XCTAssertTrue(success.service.openSystemSettings())

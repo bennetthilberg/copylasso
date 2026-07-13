@@ -73,11 +73,13 @@ struct DisplayGeometry: Equatable, Sendable {
 
     return SelectionResult(
       displayID: displayID,
+      displayPointSize: appKitFrame.size,
       appKitGlobalRect: appKitGlobalRect,
       displayLocalRect: displayLocalRect,
       coreGraphicsGlobalRect: coreGraphicsGlobalRect,
       coreGraphicsDisplayLocalRect: coreGraphicsDisplayLocalRect,
-      backingPixelRect: backingPixelRect
+      backingPixelRect: backingPixelRect,
+      backingScale: backingScale
     )
   }
 
@@ -123,11 +125,13 @@ struct DisplayGeometry: Equatable, Sendable {
 
 struct SelectionResult: Equatable, Sendable {
   let displayID: CGDirectDisplayID
+  let displayPointSize: CGSize
   let appKitGlobalRect: CGRect
   let displayLocalRect: CGRect
   let coreGraphicsGlobalRect: CGRect
   let coreGraphicsDisplayLocalRect: CGRect
   let backingPixelRect: CGRect
+  let backingScale: CGFloat
 }
 
 enum SelectionCancellationReason: String, Equatable, Sendable {

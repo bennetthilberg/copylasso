@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** July 10, 2026
-- **Scope:** G07 feasibility decision adopted by the production G13 selection service; region capture remains deferred to G14
+- **Scope:** G07 feasibility decision adopted by the production G13 selection service and G14 capture timing
 
 ## Context
 
@@ -90,7 +90,7 @@ Every path completes at most once. On mouse-up or cancellation, the controller s
 6. verifies that no panel remains visible; and
 7. delivers only the geometry outcome on the next main-actor turn.
 
-That order establishes the G14 boundary: capture may begin only from the completion callback, after the overlay is absent. G13 sends a valid `SelectionResult` to a temporary `ScreenCaptureService` implementation that always throws `unavailableUntilG14` before calling any capture API, then resets the coordinator to idle.
+That order establishes the capture boundary: capture may begin only from the completion callback, after the overlay is absent. G14 now sends the validated result to the production ScreenCaptureKit service. The selection carries its backing scale and outward-rounded display-local pixel rectangle so capture does not need to reconstruct geometry from a primary-display assumption.
 
 The production service allows only one controller and unresolved continuation at a time. Concurrent menu or shortcut requests remain rejected while selection is active. Partial setup failures, display changes, application termination, and explicit lifecycle cancellation share the same cleanup path; surfaces hold only weak event callbacks, and the controller is released before the deferred result resumes the workflow.
 
@@ -179,7 +179,7 @@ A fresh physical extended-display run was not possible during G13 because the te
 ## Consequences and Limits
 
 - G13 turns the proven behavior into production selection architecture without changing the coordinate contract.
-- G14 must capture only after the selection completion callback and must use the selected display's local Core Graphics rectangle.
+- G14 captures only after the selection completion callback and uses the selected display's local Core Graphics and backing-pixel rectangles.
 - Display configuration changes cancel the current session; production code must rebuild descriptors before another selection.
 - Full hardening across more physical arrangements, display rotations, and macOS versions remains G19 and G29 work.
 - G08 retired the executable overlay harness while retaining the pure geometry and selection-session model. G13 owns the production AppKit adapter.

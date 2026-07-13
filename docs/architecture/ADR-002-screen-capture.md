@@ -85,6 +85,23 @@ No ScreenCaptureKit enumeration or capture call occurred, so the private-window-
 - Manual Clear Preview verification returned the harness to "No image is retained." Clearing the preview or terminating the app releases the only retained `CGImage`.
 - The Debug application had the same designated signing requirement across two clean builds. The team identifier remains only in ignored `Local.xcconfig` and was not logged or committed.
 
+## G14 Production Capture Adoption
+
+G14 implements `SystemScreenCaptureService` as an actor-isolated `ScreenCaptureService`. A valid selection now carries its original display point size, `NSScreen` backing scale, and an outward-rounded, display-local backing-pixel rectangle. The request planner verifies that the pixel rectangle is consistent with the local Core Graphics rectangle, aligns the source rectangle to backing-pixel edges, and disables cursor and audio capture. Both application configurations declare `NSScreenCaptureUsageDescription` with a local-text-recognition explanation.
+
+Only after the G13 completion callback has ordered out and released every overlay does the live client:
+
+1. enumerate `SCShareableContent.current`;
+2. match the stable selected `CGDirectDisplayID`;
+3. build a display filter without excluding applications or windows;
+4. revalidate current point dimensions and `pointPixelScale` against the selection;
+5. configure the aligned source rectangle and exact output pixel dimensions; and
+6. call `SCScreenshotManager.captureImage`.
+
+The service rejects missing or reconfigured displays, nil output, and unexpected image dimensions. `SCStreamError.userDeclined` maps to authoritative permission denial; the permission history records previously observed access, an in-process denial flag prevents ordinary requests from trusting stale preflight, and the existing singleton recovery panel is presented. An explicit **Try Again** permits one fresh preflight observation and one capture attempt. Selection cancellation, a too-small selection, and capture failure leave the authoritative denial in place; only a successful ScreenCaptureKit capture clears it. No raw framework error, pixel content, or application identity enters coordinator state or logs. The returned `CGImage` is forwarded directly to the temporary G15 OCR boundary and then released.
+
+Automated tests use an injectable capture client to compare exact in-memory pixel bytes, inspect every request field, inject nil and wrong-sized images, and cover typed framework errors without touching TCC. The final successful live pixel proof remains the G06 run above. A fresh G14 production success run was unavailable because Screen Recording was disabled and the unattended workstation had auto-locked; locked signed UI attempts could not traverse the menu bar. This is not counted as passing evidence and must be rerun after unlock before end-to-end qualification.
+
 ## Coordinate Assumptions
 
 `SCStreamConfiguration.sourceRect` is expressed in the selected display's logical coordinate system. The spike operates only within one display, uses local display dimensions, and scales the output with `pointPixelScale`. It does not establish global-to-display conversion, multi-display selection, or overlay placement; those remain G07 responsibilities.
@@ -94,4 +111,4 @@ No ScreenCaptureKit enumeration or capture call occurred, so the private-window-
 - The live permission matrix covers the maintainer's current Apple Silicon macOS 26 workstation. macOS 14 compatibility is established by the deployment target and macOS 14 API surface; clean older-system VM behavior remains a later release check.
 - Protected or DRM-controlled content may legitimately capture as blank and is outside the arbitrary-allowed-pixels guarantee.
 - The private-window-picker warning wording and duration are controlled by macOS and may change. Production UI must present recovery guidance without promising a distinction or restart behavior the API cannot prove.
-- G07 established overlay and coordinate-conversion feasibility. G08 retired the executable harness and live adapter while preserving the authorization-history semantics and narrow permission/capture contracts. G12 now owns the production Core Graphics lifecycle and recovery UI; G14 remains responsible for authoritative ScreenCaptureKit denial and pixel capture.
+- G07 established overlay and coordinate-conversion feasibility. G08 retired the executable harness while preserving its contracts. G12 owns the Core Graphics lifecycle and recovery UI; G13 owns overlay cleanup and display-local geometry; G14 owns authoritative ScreenCaptureKit denial and in-memory pixel capture.
