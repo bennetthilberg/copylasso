@@ -25,8 +25,8 @@ final class CaptureCoordinatorTests: XCTestCase {
     }
   }
 
-  func testCaptureRequestIsRejectedFromEveryNonIdleState() {
-    for state in CaptureState.nonIdleTestCases {
+  func testCaptureRequestIsRejectedFromEveryNonInterruptibleState() {
+    for state in CaptureState.nonInterruptibleRequestTestCases {
       let coordinator = CaptureCoordinator(initialState: state)
 
       XCTAssertEqual(
@@ -35,6 +35,16 @@ final class CaptureCoordinatorTests: XCTestCase {
       )
       XCTAssertEqual(coordinator.state, state)
     }
+  }
+
+  func testCaptureRequestInterruptsCompletingFeedback() {
+    let coordinator = CaptureCoordinator(initialState: .completing)
+
+    XCTAssertEqual(
+      coordinator.handle(.requestCapture),
+      .transitioned(from: .completing, to: .requestingPermission)
+    )
+    XCTAssertEqual(coordinator.state, .requestingPermission)
   }
 
   func testCancellationFromEveryActiveStateIsTerminalAndNotFailure() {
@@ -140,6 +150,7 @@ final class CaptureCoordinatorTests: XCTestCase {
   private static func isLegal(_ event: CaptureEvent, from state: CaptureState) -> Bool {
     switch (state, event) {
     case (.idle, .requestCapture),
+      (.completing, .requestCapture),
       (.requestingPermission, .permissionGranted),
       (.selecting, .selectionCompleted),
       (.capturing, .captureCompleted),
@@ -167,6 +178,9 @@ extension CaptureState {
 
   fileprivate static let nonIdleTestCases: [CaptureState] =
     activeTestCases + [.cancelled(.user), .failed(.internal)]
+
+  fileprivate static let nonInterruptibleRequestTestCases: [CaptureState] =
+    nonIdleTestCases.filter { $0 != .completing }
 
   fileprivate static let allTestCases: [CaptureState] = [.idle] + nonIdleTestCases
 

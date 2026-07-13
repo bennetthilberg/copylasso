@@ -67,7 +67,9 @@ protocol SelectionCursorManaging: AnyObject {
 @MainActor
 protocol SelectionApplicationActivationManaging: AnyObject {
   func activateForSelection(whenActive: @escaping @MainActor @Sendable () -> Void)
-  func restorePreviousApplication()
+  func restorePreviousApplication(
+    whenInactive: @escaping @MainActor @Sendable () -> Void
+  )
 }
 
 @MainActor
@@ -334,15 +336,23 @@ private final class SelectionOverlayController {
     guard !hasFinished else { return }
     hasFinished = true
 
-    let cleanupSucceeded = cleanup()
+    let cleanupSucceeded = cleanupSurfaces()
     let resolvedResult: Result<SelectionOutcome, any Error> =
       cleanupSucceeded ? result : .failure(AppKitRegionSelectionError.overlayFailedToHide)
     let completion = completion
     self.completion = nil
-    completion?(resolvedResult)
+
+    guard activationRequested else {
+      completion?(resolvedResult)
+      return
+    }
+    activationRequested = false
+    activationManager.restorePreviousApplication {
+      completion?(resolvedResult)
+    }
   }
 
-  private func cleanup() -> Bool {
+  private func cleanupSurfaces() -> Bool {
     if lifecycleStarted {
       lifecycleObserver.stop()
       lifecycleStarted = false
@@ -358,10 +368,6 @@ private final class SelectionOverlayController {
     if cursorPushed {
       cursorManager.popCrosshair()
       cursorPushed = false
-    }
-    if activationRequested {
-      activationManager.restorePreviousApplication()
-      activationRequested = false
     }
     let everySurfaceHidden = surfaces.allSatisfy { !$0.isVisible }
     surfaces.removeAll()
@@ -693,17 +699,30 @@ final class SystemSelectionApplicationActivationManager: NSObject,
   private let observedApplication: AnyObject?
   private let isApplicationActive: () -> Bool
   private let activateApplication: () -> Void
+  private let deactivateApplication: () -> Void
+  private let frontmostApplication: () -> NSRunningApplication?
+  private let currentProcessIdentifier: () -> pid_t
+  private let requestPreviousApplicationActivation: (NSRunningApplication) -> Void
   private var previousApplication: NSRunningApplication?
   private var hasActiveHandoff = false
   private var isObservingActivation = false
+  private var isObservingDeactivation = false
   private var activationReady: (@MainActor @Sendable () -> Void)?
+  private var restorationReady: (@MainActor @Sendable () -> Void)?
 
   override convenience init() {
     self.init(
       notificationCenter: .default,
       observedApplication: NSApp,
       isApplicationActive: { NSApp.isActive },
-      activateApplication: { NSApp.activate(ignoringOtherApps: true) }
+      activateApplication: { NSApp.activate(ignoringOtherApps: true) },
+      deactivateApplication: { NSApp.deactivate() },
+      frontmostApplication: { NSWorkspace.shared.frontmostApplication },
+      currentProcessIdentifier: { NSRunningApplication.current.processIdentifier },
+      requestPreviousApplicationActivation: { application in
+        NSApp.yieldActivation(to: application)
+        _ = application.activate(from: .current, options: [])
+      }
     )
   }
 
@@ -711,12 +730,28 @@ final class SystemSelectionApplicationActivationManager: NSObject,
     notificationCenter: NotificationCenter,
     observedApplication: AnyObject?,
     isApplicationActive: @escaping () -> Bool,
-    activateApplication: @escaping () -> Void
+    activateApplication: @escaping () -> Void,
+    deactivateApplication: @escaping () -> Void = {},
+    frontmostApplication: @escaping () -> NSRunningApplication? = {
+      NSWorkspace.shared.frontmostApplication
+    },
+    currentProcessIdentifier: @escaping () -> pid_t = {
+      NSRunningApplication.current.processIdentifier
+    },
+    requestPreviousApplicationActivation: @escaping (NSRunningApplication) -> Void = {
+      application in
+      NSApp.yieldActivation(to: application)
+      _ = application.activate(from: .current, options: [])
+    }
   ) {
     self.notificationCenter = notificationCenter
     self.observedApplication = observedApplication
     self.isApplicationActive = isApplicationActive
     self.activateApplication = activateApplication
+    self.deactivateApplication = deactivateApplication
+    self.frontmostApplication = frontmostApplication
+    self.currentProcessIdentifier = currentProcessIdentifier
+    self.requestPreviousApplicationActivation = requestPreviousApplicationActivation
     super.init()
   }
 
@@ -724,9 +759,8 @@ final class SystemSelectionApplicationActivationManager: NSObject,
     guard !hasActiveHandoff else { return }
     hasActiveHandoff = true
 
-    let currentApplication = NSRunningApplication.current
-    if let frontmostApplication = NSWorkspace.shared.frontmostApplication,
-      frontmostApplication.processIdentifier != currentApplication.processIdentifier
+    if let frontmostApplication = frontmostApplication(),
+      frontmostApplication.processIdentifier != currentProcessIdentifier()
     {
       previousApplication = frontmostApplication
     }
@@ -747,25 +781,52 @@ final class SystemSelectionApplicationActivationManager: NSObject,
     activateApplication()
   }
 
-  func restorePreviousApplication() {
-    guard hasActiveHandoff else { return }
+  func restorePreviousApplication(
+    whenInactive: @escaping @MainActor @Sendable () -> Void
+  ) {
+    guard hasActiveHandoff else {
+      whenInactive()
+      return
+    }
     hasActiveHandoff = false
     stopObservingActivation()
     activationReady = nil
 
-    guard let previousApplication else { return }
-    self.previousApplication = nil
-    guard !previousApplication.isTerminated else {
-      NSApp.deactivate()
+    guard isApplicationActive() else {
+      previousApplication = nil
+      whenInactive()
       return
     }
 
-    NSApp.yieldActivation(to: previousApplication)
-    _ = previousApplication.activate(from: .current, options: [])
+    restorationReady = whenInactive
+    notificationCenter.addObserver(
+      self,
+      selector: #selector(applicationDidResignActive),
+      name: NSApplication.didResignActiveNotification,
+      object: observedApplication
+    )
+    isObservingDeactivation = true
+
+    guard let previousApplication else {
+      deactivateApplication()
+      return
+    }
+    self.previousApplication = nil
+    guard !previousApplication.isTerminated else {
+      deactivateApplication()
+      return
+    }
+
+    requestPreviousApplicationActivation(previousApplication)
+    deactivateApplication()
   }
 
   @objc private func applicationDidBecomeActive() {
     completeActivation()
+  }
+
+  @objc private func applicationDidResignActive() {
+    completeRestoration()
   }
 
   private func completeActivation() {
@@ -784,6 +845,23 @@ final class SystemSelectionApplicationActivationManager: NSObject,
       object: observedApplication
     )
     isObservingActivation = false
+  }
+
+  private func completeRestoration() {
+    stopObservingDeactivation()
+    let restorationReady = restorationReady
+    self.restorationReady = nil
+    restorationReady?()
+  }
+
+  private func stopObservingDeactivation() {
+    guard isObservingDeactivation else { return }
+    notificationCenter.removeObserver(
+      self,
+      name: NSApplication.didResignActiveNotification,
+      object: observedApplication
+    )
+    isObservingDeactivation = false
   }
 
   deinit {

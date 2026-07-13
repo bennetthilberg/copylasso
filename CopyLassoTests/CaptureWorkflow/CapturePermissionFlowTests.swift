@@ -116,7 +116,7 @@ final class CapturePermissionFlowTests: XCTestCase {
     XCTAssertEqual(context.scheduler.scheduledWorkCount, 3)
   }
 
-  func testValidSelectionCapturesImageAndReachesProductionOCRExactlyOnce() async throws {
+  func testNonemptyRecognitionWritesPlainTextAndPresentsSuccessExactlyOnce() async throws {
     let selection = try makeSelection()
     let image = try makeImage(width: 80, height: 80)
     let observations = [
@@ -142,11 +142,13 @@ final class CapturePermissionFlowTests: XCTestCase {
     XCTAssertEqual(recognizedImageSizes, [CGSize(width: 80, height: 80)])
     XCTAssertEqual(context.permission.recordCaptureSuccessCallCount, 1)
     XCTAssertEqual(context.textAssembler.inputs, [observations])
+    XCTAssertEqual(context.clipboard.writtenTexts, ["assembled"])
+    XCTAssertEqual(context.feedback.presentedFeedback, [.success(preview: "assembled")])
     XCTAssertEqual(context.coordinator.state, .idle)
     XCTAssertTrue(context.command.isEnabled)
   }
 
-  func testEmptyRecognitionStillProducesAnEmptyFinalStringBoundary() async throws {
+  func testEmptyRecognitionPreservesClipboardAndPresentsNoText() async throws {
     let context = makeContext(
       current: .granted,
       selectionResult: .success(.selected(try makeSelection())),
@@ -159,8 +161,115 @@ final class CapturePermissionFlowTests: XCTestCase {
     await context.scheduler.runNext()
 
     XCTAssertEqual(context.textAssembler.inputs, [[]])
+    XCTAssertEqual(context.clipboard.writtenTexts, [])
+    XCTAssertEqual(context.feedback.presentedFeedback, [.noText])
     XCTAssertEqual(context.coordinator.state, .idle)
     XCTAssertTrue(context.command.isEnabled)
+  }
+
+  func testSuccessPreviewIsWhitespaceNormalizedAndBounded() async throws {
+    let privateSuffix = "private suffix must not appear"
+    let assembled =
+      "  " + String(repeating: "word ", count: 30) + "\n\t" + privateSuffix
+    let context = makeContext(
+      current: .granted,
+      selectionResult: .success(.selected(try makeSelection())),
+      captureResult: .success(try makeImage(width: 80, height: 80)),
+      ocrResult: .success([]),
+      assembledText: assembled
+    )
+
+    _ = context.command.perform()
+    await context.scheduler.runNext()
+
+    let expectedPreview = FeedbackPreview(text: assembled).text
+    XCTAssertEqual(context.clipboard.writtenTexts, [assembled])
+    XCTAssertEqual(context.feedback.presentedFeedback, [.success(preview: expectedPreview)])
+    XCTAssertEqual(expectedPreview.count, FeedbackPreview.maximumCharacterCount)
+    XCTAssertEqual(expectedPreview.last, "…")
+    XCTAssertFalse(expectedPreview.contains(privateSuffix))
+  }
+
+  func testClipboardFailureRecordsNoSuccessfulWriteAndPresentsFailure() async throws {
+    let context = makeContext(
+      current: .granted,
+      selectionResult: .success(.selected(try makeSelection())),
+      captureResult: .success(try makeImage(width: 80, height: 80)),
+      ocrResult: .success([]),
+      clipboardError: .injected
+    )
+
+    _ = context.command.perform()
+    await context.scheduler.runNext()
+
+    XCTAssertEqual(context.clipboard.writtenTexts, [])
+    XCTAssertEqual(context.feedback.presentedFeedback, [.failure(.clipboard)])
+    XCTAssertEqual(context.coordinator.state, .idle)
+    XCTAssertTrue(context.command.isEnabled)
+  }
+
+  func testFeedbackFailureAfterCopyReturnsTheCommandToIdle() async throws {
+    let context = makeContext(
+      current: .granted,
+      selectionResult: .success(.selected(try makeSelection())),
+      captureResult: .success(try makeImage(width: 80, height: 80)),
+      ocrResult: .success([]),
+      feedbackError: .injected
+    )
+
+    _ = context.command.perform()
+    await context.scheduler.runNext()
+
+    XCTAssertEqual(context.clipboard.writtenTexts, ["assembled"])
+    XCTAssertEqual(context.feedback.presentedFeedback, [])
+    XCTAssertEqual(context.coordinator.state, .idle)
+    XCTAssertTrue(context.command.isEnabled)
+  }
+
+  func testTenRapidCaptureCyclesDismissPriorFeedbackWithoutHoldingTheWorkflow() async throws {
+    let coordinator = CaptureCoordinator()
+    let scheduler = ManualCaptureWorkScheduler()
+    let clipboard = SpyClipboardService()
+    let feedback = SpyFeedbackService()
+    let command = CaptureCommand(
+      coordinator: coordinator,
+      permissionService: StubScreenCapturePermissionService(
+        currentResult: .granted,
+        requestResult: .granted
+      ),
+      selectionService: StubRegionSelectionService(
+        result: .success(.selected(try makeSelection()))
+      ),
+      screenCaptureService: StubScreenCaptureService(
+        result: .success(try makeImage(width: 80, height: 80))
+      ),
+      ocrService: StubOCRService(result: .success([])),
+      textAssembler: SpyTextAssembler(result: "copied"),
+      clipboardService: clipboard,
+      feedbackService: feedback,
+      recoveryPresenter: SpyPermissionRecoveryPresenter(),
+      scheduleWork: scheduler.schedule
+    )
+
+    for attempt in 1...10 {
+      XCTAssertEqual(
+        command.perform(),
+        .transitioned(from: .idle, to: .requestingPermission),
+        "Attempt \(attempt)"
+      )
+      await scheduler.runNext()
+      XCTAssertEqual(coordinator.state, .idle, "Attempt \(attempt)")
+      XCTAssertTrue(command.isEnabled, "Attempt \(attempt)")
+      XCTAssertTrue(feedback.isVisible, "Attempt \(attempt)")
+    }
+
+    XCTAssertEqual(clipboard.writtenTexts, Array(repeating: "copied", count: 10))
+    XCTAssertEqual(
+      feedback.presentedFeedback,
+      Array(repeating: .success(preview: "copied"), count: 10)
+    )
+    XCTAssertEqual(feedback.dismissCallCount, 9)
+    XCTAssertEqual(scheduler.pendingWorkCount, 0)
   }
 
   func testRecognitionFailureReturnsIdleWithoutRetryingCapture() async throws {
@@ -180,6 +289,8 @@ final class CapturePermissionFlowTests: XCTestCase {
     XCTAssertEqual(capturedSelections, [selection])
     XCTAssertEqual(recognitionCallCount, 1)
     XCTAssertEqual(context.textAssembler.inputs, [])
+    XCTAssertEqual(context.clipboard.writtenTexts, [])
+    XCTAssertEqual(context.feedback.presentedFeedback, [])
     XCTAssertEqual(context.coordinator.state, .idle)
     XCTAssertTrue(context.command.isEnabled)
   }
@@ -203,6 +314,8 @@ final class CapturePermissionFlowTests: XCTestCase {
       screenCaptureService: screenCapture,
       ocrService: CancelledOCRService(),
       textAssembler: TextAssembler(),
+      clipboardService: SpyClipboardService(),
+      feedbackService: SpyFeedbackService(),
       recoveryPresenter: recovery,
       scheduleWork: scheduler.schedule
     )
@@ -255,6 +368,8 @@ final class CapturePermissionFlowTests: XCTestCase {
       screenCaptureService: PermissionDeniedScreenCaptureService(),
       ocrService: ocr,
       textAssembler: TextAssembler(),
+      clipboardService: SpyClipboardService(),
+      feedbackService: SpyFeedbackService(),
       recoveryPresenter: recovery,
       scheduleWork: scheduler.schedule
     )
@@ -320,6 +435,8 @@ final class CapturePermissionFlowTests: XCTestCase {
       screenCaptureService: StubScreenCaptureService(result: .failure(.injected)),
       ocrService: StubOCRService(result: .failure(.injected)),
       textAssembler: TextAssembler(),
+      clipboardService: SpyClipboardService(),
+      feedbackService: SpyFeedbackService(),
       recoveryPresenter: SpyPermissionRecoveryPresenter(),
       scheduleWork: scheduler.schedule
     )
@@ -347,7 +464,9 @@ final class CapturePermissionFlowTests: XCTestCase {
     selectionResult: Result<SelectionOutcome, TestServiceError> = .failure(.injected),
     captureResult: Result<CGImage, TestServiceError> = .failure(.injected),
     ocrResult: Result<[RecognizedTextObservation], TestServiceError> = .failure(.injected),
-    assembledText: String = "assembled"
+    assembledText: String = "assembled",
+    clipboardError: TestServiceError? = nil,
+    feedbackError: TestServiceError? = nil
   ) -> Context {
     let coordinator = CaptureCoordinator()
     let permission = StubScreenCapturePermissionService(
@@ -358,6 +477,10 @@ final class CapturePermissionFlowTests: XCTestCase {
     let screenCapture = StubScreenCaptureService(result: captureResult)
     let ocr = StubOCRService(result: ocrResult)
     let textAssembler = SpyTextAssembler(result: assembledText)
+    let clipboard = SpyClipboardService()
+    clipboard.error = clipboardError
+    let feedback = SpyFeedbackService()
+    feedback.error = feedbackError
     let recovery = SpyPermissionRecoveryPresenter()
     let scheduler = ManualCaptureWorkScheduler()
     let command = CaptureCommand(
@@ -367,6 +490,8 @@ final class CapturePermissionFlowTests: XCTestCase {
       screenCaptureService: screenCapture,
       ocrService: ocr,
       textAssembler: textAssembler,
+      clipboardService: clipboard,
+      feedbackService: feedback,
       recoveryPresenter: recovery,
       scheduleWork: scheduler.schedule
     )
@@ -377,6 +502,8 @@ final class CapturePermissionFlowTests: XCTestCase {
       screenCapture: screenCapture,
       ocr: ocr,
       textAssembler: textAssembler,
+      clipboard: clipboard,
+      feedback: feedback,
       recovery: recovery,
       scheduler: scheduler,
       command: command
@@ -420,6 +547,8 @@ final class CapturePermissionFlowTests: XCTestCase {
     let screenCapture: StubScreenCaptureService
     let ocr: StubOCRService
     let textAssembler: SpyTextAssembler
+    let clipboard: SpyClipboardService
+    let feedback: SpyFeedbackService
     let recovery: SpyPermissionRecoveryPresenter
     let scheduler: ManualCaptureWorkScheduler
     let command: CaptureCommand

@@ -22,3 +22,4 @@ All notable changes to CopyLasso will be documented in this file.
 - Production in-memory ScreenCaptureKit region capture with outward-rounded Retina geometry, authoritative permission-denial recovery, exact output validation, and a tested OCR handoff seam.
 - Production local Vision OCR with accurate corrected U.S. English recognition, neutral text/confidence/bounds observations, typed failures, and cooperative cancellation away from the main actor.
 - Pure deterministic observation-to-text assembly with whitespace normalization, ordinary line and paragraph grouping, exact duplicate removal, and graceful unsupported-layout handling.
+- Transactional plain-text clipboard output plus a silent, nonactivating, automatically dismissing HUD with bounded accessible previews and temporary menu-bar state.

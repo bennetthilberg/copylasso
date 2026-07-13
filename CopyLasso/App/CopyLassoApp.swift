@@ -32,6 +32,7 @@ struct CopyLassoApp: App {
   private let commandHandler: MenuBarCommandHandler
   private let settingsController: SettingsController
   private let globalShortcutController: GlobalShortcutController
+  private let feedbackController: FeedbackPanelController
 
   init() {
     let settingsStore = UserDefaultsSettingsStore()
@@ -86,6 +87,8 @@ struct CopyLassoApp: App {
       shortcutStore: shortcutStore
     )
     let coordinator = CaptureCoordinator()
+    let feedbackController = FeedbackPanelController()
+    self.feedbackController = feedbackController
     let recoveryController = PermissionRecoveryPanelController(
       permissionService: permissionService
     )
@@ -96,6 +99,8 @@ struct CopyLassoApp: App {
       screenCaptureService: screenCaptureService,
       ocrService: VisionOCRService(),
       textAssembler: TextAssembler(),
+      clipboardService: SystemClipboardService(),
+      feedbackService: feedbackController,
       recoveryPresenter: recoveryController
     )
     recoveryController.captureRequester = captureCommand
@@ -114,7 +119,10 @@ struct CopyLassoApp: App {
     MenuBarExtra {
       MenuBarMenuView(commandHandler: commandHandler)
     } label: {
-      MenuBarLabelView(settingsController: settingsController)
+      MenuBarLabelView(
+        settingsController: settingsController,
+        feedbackModel: feedbackController.model
+      )
     }
     .menuBarExtraStyle(.menu)
 
