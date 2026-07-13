@@ -1,12 +1,14 @@
 # Architecture Overview
 
-CopyLasso currently provides a usable dockless shell plus the complete production service chain through clipboard output and nonactivating feedback. The application includes versioned onboarding, persistent Settings, Launch at Login, a configurable global shortcut, production Screen Recording permission handling, a lifecycle-safe multi-display selection overlay, in-memory ScreenCaptureKit region capture, local Vision OCR, deterministic text assembly, write-only plain-text output, and bounded HUD feedback. Feasibility evidence from G05-G07 is retained in the ADRs, while G18 owns uniform cross-stage cleanup and end-to-end stress integration.
+CopyLasso currently provides a usable dockless shell plus one complete, stress-tested production service chain through clipboard output and nonactivating feedback. The application includes versioned onboarding, persistent Settings, Launch at Login, a configurable global shortcut, production Screen Recording permission handling, a lifecycle-safe multi-display selection overlay, in-memory ScreenCaptureKit region capture, local Vision OCR, deterministic text assembly, write-only plain-text output, and bounded HUD feedback. Feasibility evidence from G05-G07 is retained in the ADRs. G18 completed uniform cross-stage cleanup and end-to-end integration; G19 and later goals retain physical-environment hardening and release qualification.
 
 ## Components and Dependency Direction
 
 ```mermaid
 flowchart LR
   App["App and Shared UI"] --> Coordinator["CaptureCoordinator"]
+  Lifecycle["Lifecycle controller G20"] --> Coordinator
+  Lifecycle --> Services
   Coordinator --> Contracts["Service contracts"]
   Coordinator --> Models["Neutral models"]
   Contracts --> Models
@@ -19,10 +21,12 @@ flowchart LR
   OCR["Vision OCR adapter G15"] -. conform .-> Contracts
   Format["Pure text assembly G16"] --> Models
   Output["Clipboard and feedback adapters G17"] -. conform .-> Contracts
+  Workflow["Private operation orchestration G18"] --> Contracts
+  Workflow --> Coordinator
 ```
 
-- `App` owns the dockless process, scene lifecycle, menu and shortcut command routing, and application termination boundary. `SharedUI` contains the menu, onboarding, Settings, and auxiliary-window presentation.
-- `CaptureWorkflow` owns phase transitions and busy-state policy. Its current command slice invokes permission, production selection, capture, OCR, pure formatting, clipboard output, and success/no-text/clipboard-failure feedback. G18 will make failure and cleanup handling uniform across the entire operation.
+- `App` owns the dockless process, scene lifecycle, menu and shortcut command routing, application termination boundary, and coalesced sleep/lock recovery. `SharedUI` contains the menu, onboarding, Settings, and auxiliary-window presentation.
+- `CaptureWorkflow` owns phase transitions, busy-state policy, and the complete operation lifecycle. Its shared command invokes permission, production selection, capture, OCR, pure formatting, clipboard output, and bounded feedback. Cancellations and failures enter explicit terminal states and reset to idle after cleanup.
 - `Services` declares narrow permission, selection, capture, OCR, clipboard, and feedback boundaries. The Core Graphics permission, AppKit selection, ScreenCaptureKit capture, and Vision OCR adapters are isolated here.
 - `Models` contains geometry, observations, authorization observations, and feedback values without AppKit, SwiftUI, ScreenCaptureKit, or Vision dependencies.
 - `Settings` owns the typed `UserDefaults` adapter, onboarding-version policy, shortcut storage boundary, and observable settings controller. The system login-item adapter remains isolated in `Services`.
@@ -43,7 +47,7 @@ flowchart LR
   Feedback --> Idle["Idle"]
 ```
 
-The coordinator models the corresponding phases: idle, requesting permission, selecting, capturing, recognizing, completing, cancelled, and failed. It carries no geometry, image, observation, assembled-text, clipboard, or preview payload in observable state. Menu and global-shortcut requests reach the same `CaptureCommand`. G12 performs a user-initiated Core Graphics preflight and recovery. G13 returns validated per-display geometry only after every overlay is absent. G14 enumerates shareable displays at that point, validates the selected display and scale, and captures the outward-rounded pixel rectangle into one local `CGImage`. G15 recognizes that image with accurate corrected U.S. English Vision OCR and returns transient neutral observations. G16 deterministically assembles them into a transient plain string. G17 writes only nonempty text and holds the coordinator in `completing` until bounded feedback disappears. G18 will finalize the complete service lifecycle.
+The coordinator models the corresponding phases: idle, requesting permission, selecting, capturing, recognizing, completing, cancelled, and failed. It carries no geometry, image, observation, assembled-text, clipboard, or preview payload in observable state. Menu and global-shortcut requests reach the same `CaptureCommand`. G12 performs a user-initiated Core Graphics preflight and recovery. G13 returns validated per-display geometry only after every overlay is absent. G14 enumerates shareable displays at that point and captures the outward-rounded pixel rectangle into one local `CGImage`. G19 requires the fresh display identity, full point size, scale, source bounds, and derived pixel dimensions to match the initiating snapshot before capture. G15 recognizes the image with accurate corrected U.S. English Vision OCR and returns transient neutral observations. G16 deterministically assembles them into a transient plain string. G17 writes only nonempty text and supplies bounded feedback. G18 makes those services one reusable operation, rejects overlapping requests, and returns to idle after success, cancellation, or failure.
 
 Cancellation is a normal result. It enters an explicit cancelled state and returns to idle only after a reset acknowledging cleanup. Failure records only the responsible stage, never captured content, recognized text, raw platform errors, or user data. A request received outside idle is rejected without changing state.
 
@@ -57,6 +61,8 @@ Cancellation is a normal result. It enters an explicit cancelled state and retur
 - The production Vision adapter performs user-initiated recognition in a detached task away from the main actor. Cancellation calls `VNRequest.cancel()`, returns a typed cancellation result, and releases the request and input image when the operation unwinds.
 - Geometry and text assembly remain pure and independent of AppKit UI objects and Vision framework types.
 - Images, recognized observations, assembled text, clipboard text, and feedback previews remain private transient values. They must be released after the active operation and must never be logged, persisted, or placed in observable coordinator state.
+- One private async operation scope owns the image, observations, and full assembled string. It returns only bounded feedback after any pasteboard write. Success and failure tests hold the HUD open and prove the image has already been released while the coordinator remains busy.
+- The root lifecycle controller owns no private operation payload. It cancels the command's task for sleep, screen sleep, lock/session resign, or termination, and never restarts work on wake/unlock. Fixed OSLog diagnostics contain event classes only.
 
 ## Goal Ownership
 
@@ -71,5 +77,7 @@ Cancellation is a normal result. It enters an explicit cancelled state and retur
 | G16 | Pure observation-to-text assembly |
 | G17 | Clipboard and nonactivating feedback adapters |
 | G18 | End-to-end service orchestration, cleanup, and integration tests |
+| G19 | Multi-display topology, Retina, and display-snapshot hardening |
+| G20 | Sleep, lock, termination, task cancellation, recovery, and safe diagnostics |
 
-The G12 permission adapter, recovery panel, G13 selection overlay, G14 capture adapter, G15 Vision adapter, G16 text assembler, and G17 clipboard/HUD adapters are live. Captured pixels exist only as the local image passed to OCR; recognized observations, assembled text, and bounded previews remain transient. Pasteboard writes are confined to one service, that service never reads prior clipboard contents, and the feedback model clears on dismissal. G18 still owns uniform earlier-stage failure feedback, whole-operation cleanup, and stress integration.
+The G12 permission adapter, recovery panel, G13 selection overlay, G14 capture adapter, G15 Vision adapter, G16 text assembler, G17 clipboard/HUD adapters, and G18 orchestration are live. Captured pixels exist only as the local image passed to OCR; recognized observations, assembled text, and bounded previews remain transient. Pasteboard writes are confined to one service, that service never reads prior clipboard contents, and the feedback model clears on dismissal. Automated integration covers every service boundary, 25 consecutive successes, 20 alternating success/cancel cycles, shared menu/shortcut routing, busy rejection, and resource release. Physical end-to-end qualification remains in the later hardening goals. See [Capture Workflow](capture-workflow.md) for the operation and lifetime contract.

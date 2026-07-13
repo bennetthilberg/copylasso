@@ -22,6 +22,7 @@ struct ScreenCaptureRequest: Equatable, Sendable {
   let displayID: CGDirectDisplayID
   let expectedDisplayPointSize: CGSize
   let sourceRect: CGRect
+  let backingPixelRect: CGRect
   let pixelWidth: Int
   let pixelHeight: Int
   let backingScale: CGFloat
@@ -34,8 +35,10 @@ enum ScreenCaptureRequestPlanner {
     let pointRect = selection.coreGraphicsDisplayLocalRect
     let pixelRect = selection.backingPixelRect
     let scale = selection.backingScale
+    let displayBounds = CGRect(origin: .zero, size: selection.displayPointSize)
 
-    guard isValid(rect: pointRect), isValid(rect: pixelRect), scale.isFinite, scale > 0,
+    guard isValid(rect: displayBounds), isValid(rect: pointRect), isValid(rect: pixelRect),
+      displayBounds.contains(pointRect), scale.isFinite, scale > 0,
       pixelRect.minX >= 0, pixelRect.minY >= 0
     else {
       throw ScreenCaptureError.invalidSelection
@@ -54,12 +57,13 @@ enum ScreenCaptureRequestPlanner {
       throw ScreenCaptureError.invalidSelection
     }
 
-    let sourceRect = CGRect(
+    let alignedSourceRect = CGRect(
       x: pixelRect.minX / scale,
       y: pixelRect.minY / scale,
       width: pixelRect.width / scale,
       height: pixelRect.height / scale
     )
+    let sourceRect = alignedSourceRect.intersection(displayBounds)
     guard isValid(rect: sourceRect) else {
       throw ScreenCaptureError.invalidSelection
     }
@@ -68,6 +72,7 @@ enum ScreenCaptureRequestPlanner {
       displayID: selection.displayID,
       expectedDisplayPointSize: selection.displayPointSize,
       sourceRect: sourceRect,
+      backingPixelRect: pixelRect,
       pixelWidth: pixelWidth,
       pixelHeight: pixelHeight,
       backingScale: scale,
@@ -102,6 +107,12 @@ enum ScreenCaptureRequestValidator {
     _ request: ScreenCaptureRequest,
     against display: ScreenCaptureDisplaySnapshot
   ) throws {
+    guard request.backingScale.isFinite, request.backingScale > 0,
+      isValid(rect: request.sourceRect), isValid(rect: request.backingPixelRect)
+    else {
+      throw ScreenCaptureError.displayConfigurationChanged
+    }
+
     let size = display.pointSize
     guard display.displayID == request.displayID,
       size.width.isFinite, size.height.isFinite,
@@ -109,6 +120,9 @@ enum ScreenCaptureRequestValidator {
       sizesMatch(size, request.expectedDisplayPointSize),
       display.pointPixelScale.isFinite,
       abs(display.pointPixelScale - request.backingScale) < 0.01,
+      request.pixelWidth > 0, request.pixelHeight > 0,
+      request.backingPixelRect.width == CGFloat(request.pixelWidth),
+      request.backingPixelRect.height == CGFloat(request.pixelHeight),
       request.sourceRect.minX >= 0, request.sourceRect.minY >= 0,
       request.sourceRect.maxX <= size.width,
       request.sourceRect.maxY <= size.height
@@ -119,6 +133,12 @@ enum ScreenCaptureRequestValidator {
 
   private static func sizesMatch(_ first: CGSize, _ second: CGSize) -> Bool {
     abs(first.width - second.width) < 0.01 && abs(first.height - second.height) < 0.01
+  }
+
+  private static func isValid(rect: CGRect) -> Bool {
+    rect.origin.x.isFinite && rect.origin.y.isFinite
+      && rect.width.isFinite && rect.height.isFinite
+      && rect.width > 0 && rect.height > 0
   }
 }
 

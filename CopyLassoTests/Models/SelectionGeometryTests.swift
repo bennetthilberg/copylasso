@@ -206,6 +206,21 @@ final class SelectionGeometryTests: XCTestCase {
     XCTAssertThrowsError(try makeDisplay(scale: .infinity))
   }
 
+  func testMismatchedAppKitAndCoreGraphicsPointSizesAreRejected() {
+    XCTAssertThrowsError(
+      try makeDisplay(
+        appKitFrame: CGRect(x: -1_440, y: 100, width: 1_440, height: 900),
+        coreGraphicsBounds: CGRect(x: -1_440, y: 180, width: 1_440, height: 899)
+      )
+    )
+    XCTAssertThrowsError(
+      try makeDisplay(
+        appKitFrame: CGRect(x: 1_920, y: 0, width: 2_560, height: 1_440),
+        coreGraphicsBounds: CGRect(x: 1_920, y: 0, width: 2_559.5, height: 1_440)
+      )
+    )
+  }
+
   func testSessionCompletesAValidSelectionExactlyOnce() throws {
     let display = try makeDisplay()
     var outcomes: [SelectionOutcome] = []
@@ -271,6 +286,21 @@ final class SelectionGeometryTests: XCTestCase {
     XCTAssertTrue(session.begin(on: display.displayID, at: CGPoint(x: 40, y: 40)))
     session.update(to: CGPoint(x: 200, y: -100))
     XCTAssertEqual(session.currentAppKitRect, CGRect(x: 40, y: 0, width: 60, height: 40))
+  }
+
+  func testSessionRejectsAmbiguousDuplicateDisplayIdentifiersWithoutSelecting() throws {
+    let first = try makeDisplay(id: 7)
+    let second = try makeDisplay(
+      id: 7,
+      appKitFrame: CGRect(x: 100, y: 0, width: 100, height: 100),
+      coreGraphicsBounds: CGRect(x: 100, y: 0, width: 100, height: 100)
+    )
+    var outcomes: [SelectionOutcome] = []
+    let session = SelectionSession(displays: [first, second]) { outcomes.append($0) }
+
+    XCTAssertFalse(session.begin(on: 7, at: CGPoint(x: 10, y: 10)))
+    session.cancel(.displayChanged)
+    XCTAssertEqual(outcomes, [.cancelled(.displayChanged)])
   }
 
   private func makeDisplay(

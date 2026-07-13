@@ -12,7 +12,7 @@ The pipeline lints all Swift source, resolves the exact package dependency, buil
 
 Signed UI tests use Debug-only permission doubles. They cover prior-request and previously-granted recovery wording, singleton reuse, System Settings failure instructions, retry routing, Cancel, menu availability, keyboard actions, and accessibility identifiers without calling Core Graphics permission functions or changing real TCC state.
 
-Ordinary signed UI tests use deterministic Debug-only selection and capture doubles so shell tests never unexpectedly cover the desktop or touch TCC. Tests launched with `--g13-live-selection` use the production AppKit service with controlled permission and in-memory capture. They verify that the overlay is accessible, cancellation removes it, a valid drag reaches production OCR and then the pending formatting boundary, the command becomes reusable, and the clipboard remains unchanged.
+Ordinary signed UI tests use deterministic Debug-only selection and capture doubles so shell tests never unexpectedly cover the desktop or touch TCC. Tests launched with `--g13-live-selection` use the production AppKit service with controlled permission and in-memory capture. They verify that the overlay is accessible, cancellation removes it, a valid drag reaches the deterministic downstream workflow and no-text feedback, the command becomes reusable, and the clipboard remains unchanged.
 
 The controlled launch arguments begin with `--g12-` and `--g13-` and are compiled out of Release. CI inspects the Release executable to prevent them from leaking. The application uses the real production permission and selection services unless the existing `--g10-g11-ui-testing` boundary selects their controlled alternatives; `--g13-live-selection` explicitly restores the real selection adapter for overlay UI coverage.
 
@@ -123,7 +123,7 @@ Use a stably signed Debug build with Screen Recording enabled. Invoke the real a
 
 Deterministic tests validate outward-rounded crop geometry, 1×/2× scale propagation, cursor/audio exclusion, current-display validation, exact in-memory pixel data and dimensions, nil/incorrect output, framework error mapping, capture-to-OCR forwarding, cancellation, and authoritative denial recovery. Both configurations compile the same production adapter; Debug UI runs substitute only the capture client to avoid touching real TCC.
 
-A fresh successful live crop could not be performed unattended: the Debug Screen Recording toggle was off, and the workstation auto-locked after G13. Two signed XCUITest attempts failed before invoking the command because Xcode could not traverse a locked menu bar; `loginwindow` was frontmost. These attempts are recorded as unavailable infrastructure evidence, not product failures or passes. G06 remains the latest successful real ScreenCaptureKit pixel proof, and the G14 production matrix must be rerun after unlock before G18/G24 release evidence can pass.
+A fresh successful live crop could not be performed unattended: the Debug Screen Recording toggle was off, and the workstation auto-locked after G13. Two signed XCUITest attempts failed before invoking the command because Xcode could not traverse a locked menu bar; `loginwindow` was frontmost. These attempts are recorded as unavailable infrastructure evidence, not product failures or passes. G06 remains the latest successful real ScreenCaptureKit pixel proof, and the G14 production matrix must be rerun after unlock before G18 live acceptance and G24 release evidence can pass.
 
 ## Production Vision OCR Matrix
 
@@ -175,3 +175,72 @@ This live matrix requires an unlocked graphical session and granted Screen Recor
 7. Repeat success, no-text, and cancellation three times each and confirm Capture Text returns to enabled after every result.
 
 On the unattended July 11, 2026 run, the workstation was locked and no interactive user session was available. The deterministic app-hosted focus/panel checks ran, but the two-application paste and VoiceOver portions remain mandatory live evidence before release.
+
+## End-To-End Capture Workflow Matrix
+
+The G18 integration suite injects permission, selection, capture, OCR, assembly, clipboard, feedback, and scheduling boundaries around the same `CaptureCommand` owned by the production app. It verifies:
+
+- 25 consecutive successful operations with exact per-service call counts, writes, feedback, reuse, and idle recovery;
+- 20 alternating success and Escape-cancellation operations, with downstream calls and clipboard writes only on the ten successful attempts;
+- selection, capture, recognition, clipboard, and feedback failures, plus unavailable permission and authoritative capture-time denial;
+- every selection cancellation reason and Vision cancellation as non-error, feedback-free outcomes;
+- busy rejection while selection, recognition failure feedback, or success feedback remains outstanding;
+- image release before both held success and held recognition-failure HUD presentations;
+- bounded success copy that cannot expose an unbounded private suffix; and
+- the menu and simulated package shortcut event reaching the exact same command instance.
+
+### Signed G18 Manual Matrix
+
+Use one stably signed Debug app with Screen Recording enabled. Keep a unique sentinel on the clipboard before each cancellation or pre-output failure check.
+
+1. Invoke Capture Text from the configured shortcut with Finder, TextEdit, a browser, an image viewer, a playing local video, and the desktop wallpaper frontmost. Select ordinary approximately horizontal English text, verify the success HUD, and paste the result into TextEdit and a browser field.
+2. Repeat one success through the menu. Confirm its overlay, OCR, output, HUD, focus, and idle recovery match the shortcut path.
+3. Repeat in an ordinary full-screen application and after switching normal Spaces. The overlay must appear in the intended Space without activating CopyLasso or moving the user elsewhere.
+4. Press the shortcut repeatedly while one selection is active and while one HUD is visible. Confirm only one overlay, OCR job, clipboard write, and feedback presentation occur.
+5. Cancel with Escape and with a too-small drag. Confirm the sentinel clipboard value remains, no failure HUD appears, every panel disappears, and the next capture begins immediately.
+6. Select a region without visible text. Confirm distinct no-text feedback, no pasteboard write, and immediate reuse after dismissal.
+7. Exercise permission, display-change, capture, recognition, clipboard, and feedback failure paths where safely injectable. Confirm one bounded recovery/failure presentation, no raw platform error or content, complete cleanup, and idle recovery.
+8. Complete 25 consecutive real successes, then 20 real attempts alternating success and Escape. Confirm no duplicate panels, stuck cursor, overlapping work, retained preview, unexpected permission, or responsiveness loss.
+9. Inspect the app container and temporary directories before and after the run. Confirm no screenshot, OCR text, preview, log, cache, or history artifact was created.
+
+The unattended July 11, 2026 run completed the deterministic matrix but could not perform this signed live matrix because the workstation was locked and real G14 capture permission/display evidence was unavailable. This is recorded as pending rather than passed; it remains release-blocking evidence for G24.
+
+## Multi-Display And Retina Hardening Matrix
+
+G19 adds a synthetic topology with primary, left, right, above, below, diagonal, portrait, and recorded Sidecar-style shapes across 1×, 1.5×, and 2× scales. For every fixture, tests drive global selection through display-local Core Graphics conversion and capture-request planning, preserve the initiating display identity, clamp every cross-display endpoint, validate outward-rounded pixels, and reject changed identity, full point size, scale, or derived pixel dimensions. A fractional-scale edge regression also proves the aligned source rectangle stays within the right and bottom display bounds while retaining the outward-rounded output pixels. AppKit tests prove every mixed-scale display can initiate through a panel covering its complete `NSScreen.frame`.
+
+The synthetic matrix is deterministic regression protection; it is not evidence that unavailable physical hardware or a particular menu-bar arrangement worked.
+
+### Signed G19 Physical Matrix
+
+1. Record every connected display's current name, runtime ID, AppKit frame, Core Graphics bounds, backing scale, resolution, refresh rate, orientation, primary-menu-bar ownership, and the **Displays have separate Spaces** setting.
+2. On every display, capture a known corner-and-center calibration grid. Confirm the pixels, output size, and display identity match that display at its current scale.
+3. Select near the menu bar, any secondary menu bar, Dock edge, and each outer screen edge. The overlay must cover the complete display frame and the crop must exclude the overlay itself.
+4. Drag from each display toward every adjacent display. Only the initiating display may dim, the rectangle must stop at its edge, and no stitched or wrong-display image may result.
+5. Exercise every physically available left, right, above, below, diagonal, landscape, and portrait arrangement. Record unavailable arrangements explicitly rather than extrapolating.
+6. Exercise every available mixed-scale pair, including 1× plus 2× and any supported 1.5× mode. Verify outward-rounded dimensions and intended pixels on both sides.
+7. Change one supported resolution or scaling mode while selection is active. Confirm one display-change cancellation, complete overlay cleanup, idle recovery, and fresh descriptors on the next request.
+8. Reconfigure or disconnect the initiating display between selection and capture where a controlled pause makes that safe. Confirm capture rejects the stale identity/point-size/scale snapshot and the clipboard remains unchanged.
+9. Restore the original arrangement, resolution, scale, orientation, refresh rate, menu-bar assignment, and Sidecar state before finishing.
+
+The July 11, 2026 unattended G19 run could not execute this physical matrix because the session was locked and the Sidecar iPad was unavailable. A fresh read-only enumeration saw one online primary Dell S2721HGF at 1920 × 1080 and 144 Hz: runtime ID `4`, matching AppKit/Core Graphics frames `(0, 0, 1920, 1080)`, and 1× scale. That confirms the test environment only; it is not selection or pixel-crop evidence. G07's Dell/Sidecar results remain historical evidence. Fresh physical G19 results are pending release qualification.
+
+## Lifecycle, Reentrancy, And Recovery Matrix
+
+G20 unit coverage posts every registered application/workspace notification through isolated centers and injects cancellable selection, capture, OCR, and feedback gates. It verifies duplicate interruption coalescing, resume without automatic capture, observer teardown, recovery-panel dismissal, shortcut shutdown on termination, cancellation before scheduled work, 100 rapid busy requests, downstream call suppression, terminal reset, and a successful capture immediately after cancellation. The centralized stage-only failure copy remains covered separately for every failure stage.
+
+### Signed G20 Manual Matrix
+
+Use one stably signed Debug app and keep a clipboard sentinel before every pre-output interruption:
+
+1. While idle, sleep/wake and lock/unlock. Confirm no overlay, permission panel, HUD, clipboard change, or automatic capture appears after resume; the next shortcut request works.
+2. Begin selection, then sleep before mouse-up. Wake and confirm no dim, border, cursor override, key overlay window, or stuck busy state remains. Repeat with lock/unlock.
+3. Interrupt while ScreenCaptureKit capture is active using a deliberately large region, then while Vision recognizes a large fixture. Confirm no downstream clipboard write or generic failure HUD and immediate reuse after resume.
+4. Interrupt while success/no-text feedback is visible. Confirm the HUD disappears. If success already wrote the clipboard, retain that completed output; CopyLasso must not read the pasteboard to roll it back.
+5. Press the global shortcut rapidly at least 100 times while one selection is active. Confirm exactly one overlay and one eventual OCR job.
+6. Activate/deactivate CopyLasso Settings and About while another app remains frontmost. Ordinary app activation changes must not cancel or auto-start capture.
+7. Choose Quit while selection is active. Confirm the overlay and cursor disappear, shortcut delivery stops, CopyLasso terminates, and no process/window remains.
+8. Repeat selection cancellation, recoverable capture failure, and successful capture in sequence at least ten times without force-quitting.
+9. Inspect Console lifecycle messages. They may state only idle interruption, active interruption cancellation, resume, or termination cleanup; they must contain no captured/frontmost app name, geometry, pixels, recognized text, clipboard text, preview, or raw error.
+
+The unattended July 11, 2026 run could not perform real sleep/wake, lock/unlock, WindowServer inspection, or quit-during-selection because the workstation was already locked. Deterministic notification/task tests are not a substitute; this signed matrix remains pending release evidence.

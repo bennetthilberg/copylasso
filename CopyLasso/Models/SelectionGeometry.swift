@@ -4,6 +4,7 @@ import Foundation
 enum DisplayGeometryError: Error, Equatable, Sendable {
   case invalidAppKitFrame
   case invalidCoreGraphicsBounds
+  case mismatchedCoordinateSpaceSize
   case invalidBackingScale
   case invalidPoint
 }
@@ -25,6 +26,9 @@ struct DisplayGeometry: Equatable, Sendable {
     }
     guard Self.isValid(frame: coreGraphicsBounds) else {
       throw DisplayGeometryError.invalidCoreGraphicsBounds
+    }
+    guard Self.sizesMatch(appKitFrame.size, coreGraphicsBounds.size) else {
+      throw DisplayGeometryError.mismatchedCoordinateSpaceSize
     }
     guard backingScale.isFinite, backingScale > 0 else {
       throw DisplayGeometryError.invalidBackingScale
@@ -105,6 +109,10 @@ struct DisplayGeometry: Equatable, Sendable {
     point.x.isFinite && point.y.isFinite
   }
 
+  private static func sizesMatch(_ first: CGSize, _ second: CGSize) -> Bool {
+    abs(first.width - second.width) < 0.01 && abs(first.height - second.height) < 0.01
+  }
+
   private static func normalizedRect(from first: CGPoint, to second: CGPoint) -> CGRect {
     CGRect(
       x: min(first.x, second.x),
@@ -164,7 +172,13 @@ final class SelectionSession {
     minimumSize: CGFloat = 4,
     completion: @escaping (SelectionOutcome) -> Void
   ) {
-    displaysByID = Dictionary(uniqueKeysWithValues: displays.map { ($0.displayID, $0) })
+    var indexedDisplays: [CGDirectDisplayID: DisplayGeometry] = [:]
+    var containsDuplicateIdentifier = false
+    for display in displays
+    where indexedDisplays.updateValue(display, forKey: display.displayID) != nil {
+      containsDuplicateIdentifier = true
+    }
+    displaysByID = containsDuplicateIdentifier ? [:] : indexedDisplays
     self.minimumSize = minimumSize
     self.completion = completion
   }

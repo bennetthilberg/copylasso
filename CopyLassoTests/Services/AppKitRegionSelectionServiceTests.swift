@@ -167,6 +167,40 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(outcome, .cancelled(.escape))
   }
 
+  func testSelectionFailsCleanlyWhenApplicationActivationNeverArrives() async throws {
+    let display = try makeDisplay()
+    let factory = RecordingSelectionOverlaySurfaceFactory()
+    let activation = RecordingSelectionApplicationActivationManager(
+      automaticallyCompletesActivation: false
+    )
+    let scheduler = ManualSelectionCompletionScheduler()
+    let service = AppKitRegionSelectionService(
+      displayProvider: StubSelectionDisplayProvider(results: [.success([display])]),
+      surfaceFactory: factory,
+      lifecycleObserver: RecordingSelectionOverlayLifecycleObserver(),
+      cursorManager: RecordingSelectionCursorManager(),
+      activationManager: activation,
+      scheduleCursorInstallation: { work in work() },
+      scheduleCompletion: scheduler.schedule
+    )
+
+    let task = Task { try await service.selectRegion() }
+    await Task.yield()
+    activation.failActivation()
+
+    XCTAssertTrue(factory.surfaces.isEmpty)
+    XCTAssertEqual(activation.restoreCallCount, 1)
+    XCTAssertEqual(scheduler.pendingCount, 1)
+    await scheduler.runNext()
+
+    do {
+      _ = try await task.value
+      XCTFail("Expected activation failure")
+    } catch {
+      XCTAssertEqual(error as? AppKitRegionSelectionError, .applicationActivationFailed)
+    }
+  }
+
   func testCancellationBeforeActivationIgnoresLateActivationReadiness() async throws {
     let display = try makeDisplay()
     let provider = StubSelectionDisplayProvider(results: [.success([display])])
@@ -452,6 +486,40 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(readyCallCount, 1)
   }
 
+  func testSystemActivationManagerFailsOnceWhenActivationNotificationNeverArrives() {
+    let notificationCenter = NotificationCenter()
+    let observedApplication = NSObject()
+    var fallback: (@MainActor @Sendable () -> Void)?
+    var readyCallCount = 0
+    var unavailableCallCount = 0
+    let manager = SystemSelectionApplicationActivationManager(
+      notificationCenter: notificationCenter,
+      observedApplication: observedApplication,
+      isApplicationActive: { false },
+      activateApplication: {},
+      frontmostApplication: { nil },
+      scheduleActivationFallback: { fallback = $0 }
+    )
+
+    manager.activateForSelection(
+      whenActive: { readyCallCount += 1 },
+      whenUnavailable: { unavailableCallCount += 1 }
+    )
+
+    XCTAssertEqual(readyCallCount, 0)
+    XCTAssertEqual(unavailableCallCount, 0)
+
+    fallback?()
+    fallback?()
+    notificationCenter.post(
+      name: NSApplication.didBecomeActiveNotification,
+      object: observedApplication
+    )
+
+    XCTAssertEqual(readyCallCount, 0)
+    XCTAssertEqual(unavailableCallCount, 1)
+  }
+
   func testSystemActivationManagerCompletesImmediatelyWhenApplicationIsAlreadyActive() {
     let notificationCenter = NotificationCenter()
     let observedApplication = NSObject()
@@ -631,6 +699,45 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(result.appKitGlobalRect, CGRect(x: 10, y: 10, width: 90, height: 50))
     XCTAssertEqual(context.activation.activateCallCount, 1)
     XCTAssertEqual(context.activation.restoreCallCount, 1)
+  }
+
+  func testEveryMixedScaleDisplayCanInitiateUsingItsCompleteFrameAndIdentity() async throws {
+    let displays = [
+      try makeDisplay(id: 1, origin: .zero, scale: 1),
+      try makeDisplay(id: 2, origin: CGPoint(x: -100, y: 25), scale: 2),
+      try makeDisplay(id: 3, origin: CGPoint(x: 100, y: -40), scale: 1.5),
+    ]
+
+    for initiatingIndex in displays.indices {
+      let factory = RecordingSelectionOverlaySurfaceFactory()
+      let context = makeContext(
+        provider: StubSelectionDisplayProvider(results: [.success(displays)]),
+        factory: factory
+      )
+      let task = Task { try await context.service.selectRegion() }
+      await Task.yield()
+
+      XCTAssertEqual(factory.surfaces.map(\.frame), displays.map(\.appKitFrame))
+      let display = displays[initiatingIndex]
+      let start = CGPoint(x: display.appKitFrame.minX + 10, y: display.appKitFrame.minY + 10)
+      let end = CGPoint(x: start.x + 50, y: start.y + 40)
+      factory.surfaces[initiatingIndex].send(.mouseDown(start))
+      factory.surfaces[initiatingIndex].send(.mouseUp(end))
+      await context.scheduler.runNext()
+
+      let outcome = try await task.value
+      guard case .selected(let result) = outcome else {
+        return XCTFail("Expected a selection on display \(display.displayID)")
+      }
+      XCTAssertEqual(result.displayID, display.displayID)
+      XCTAssertEqual(result.displayPointSize, display.appKitFrame.size)
+      XCTAssertEqual(result.backingScale, display.backingScale)
+      XCTAssertEqual(
+        result.backingPixelRect.size,
+        CGSize(width: 50 * display.backingScale, height: 40 * display.backingScale)
+      )
+      XCTAssertTrue(factory.surfaces.allSatisfy { !$0.isVisible })
+    }
   }
 
   func testEscapeCleansEverythingBeforeDeferredCompletion() async throws {
@@ -853,6 +960,16 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
           hundredPointBackingSize: CGSize(width: 100, height: 100)
         ),
         .backingScaleMismatch
+      ),
+      (
+        SelectionDisplayMetadata(
+          displayID: 4,
+          appKitFrame: valid.appKitFrame,
+          coreGraphicsBounds: CGRect(x: 0, y: 0, width: 100, height: 99),
+          backingScale: valid.backingScale,
+          hundredPointBackingSize: valid.hundredPointBackingSize
+        ),
+        .invalidDisplayGeometry
       ),
     ]
 
@@ -1186,6 +1303,7 @@ private final class RecordingSelectionApplicationActivationManager:
   private let automaticallyCompletesActivation: Bool
   private let automaticallyCompletesRestoration: Bool
   private var activationReady: (@MainActor @Sendable () -> Void)?
+  private var activationUnavailable: (@MainActor @Sendable () -> Void)?
   private var restorationReady: (@MainActor @Sendable () -> Void)?
 
   init(
@@ -1198,10 +1316,14 @@ private final class RecordingSelectionApplicationActivationManager:
     self.automaticallyCompletesRestoration = automaticallyCompletesRestoration
   }
 
-  func activateForSelection(whenActive: @escaping @MainActor @Sendable () -> Void) {
+  func activateForSelection(
+    whenActive: @escaping @MainActor @Sendable () -> Void,
+    whenUnavailable: @escaping @MainActor @Sendable () -> Void
+  ) {
     activateCallCount += 1
     startupEvents?.events.append(.applicationActivationRequested)
     activationReady = whenActive
+    activationUnavailable = whenUnavailable
     if automaticallyCompletesActivation {
       completeActivation()
     }
@@ -1210,11 +1332,20 @@ private final class RecordingSelectionApplicationActivationManager:
   func completeActivation() {
     let activationReady = activationReady
     self.activationReady = nil
+    activationUnavailable = nil
     activationReady?()
+  }
+
+  func failActivation() {
+    activationReady = nil
+    let activationUnavailable = activationUnavailable
+    self.activationUnavailable = nil
+    activationUnavailable?()
   }
 
   func restorePreviousApplication(whenInactive: @escaping @MainActor @Sendable () -> Void) {
     activationReady = nil
+    activationUnavailable = nil
     restoreCallCount += 1
     startupEvents?.events.append(.previousApplicationRestored)
     restorationReady = whenInactive

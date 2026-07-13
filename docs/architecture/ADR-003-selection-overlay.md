@@ -74,7 +74,7 @@ Conversion is per display rather than based on the primary display:
 4. Add that display's Core Graphics bounds origin for the global top-left rectangle.
 5. Multiply the local top-left rectangle by the backing scale, using `floor` for minimum edges and `ceil` for maximum edges so partially covered pixels are included.
 
-The production display provider cross-checks the reported backing scale against `NSScreen.convertRectToBacking`. It reads `NSScreen.screens` fresh for every session, rejects missing or duplicate display identifiers and invalid geometry, and never caches a display layout. Unit tests cover 1×, 1.5×, and 2× scaling; negative origins; displays above, below, and beside the primary; all edge clamps; and the current Sidecar-style offset shape without embedding its runtime display identifier.
+The production display provider cross-checks the reported backing scale against `NSScreen.convertRectToBacking`. It reads `NSScreen.screens` fresh for every session, rejects missing or duplicate display identifiers, rejects AppKit/Core Graphics point-size disagreement, and never caches a display layout. The selection result carries the initiating display point size so capture can compare it with a fresh ScreenCaptureKit snapshot. Unit tests cover 1×, 1.5×, and 2× scaling; negative origins; landscape and portrait displays above, below, left, right, and diagonal to the primary; all edge clamps; and the current Sidecar-style offset shape without embedding its runtime display identifier.
 
 ## Completion and Cancellation
 
@@ -174,13 +174,13 @@ and suppression of a scheduled push after cancellation.
 
 The G13 production run on macOS 26.5.1 used the Dell primary display at 1920 × 1080 and 144 Hz: display ID `4`, matching AppKit and Core Graphics bounds `(0, 0, 1920, 1080)`, 1× backing scale, and a matching 100-point backing conversion. Menu and global-shortcut invocation each presented one accessible overlay without replacing frontmost TextEdit. Escape, click cancellation, a valid drag, full-screen TextEdit, and quitting during selection all removed every panel and left no CopyLasso window or process behind. The signed suite completed 20 mixed live sessions without changing the clipboard.
 
-A fresh physical extended-display run was not possible during G13 because the temporary Sidecar iPad had been disconnected and was unavailable. The production service still uses the G07-proven per-display strategy, the current suite retains the exact Sidecar-style 2× geometry fixture, and a signed conditional test exercises both directions of a cross-display drag whenever an extended display is attached. That conditional test was compiled on both architectures and skipped—rather than reported as passing—on the one-display G13 workstation state. G19 remains responsible for the broader physical display matrix.
+A fresh physical extended-display run was not possible during G13 because the temporary Sidecar iPad had been disconnected and was unavailable. The production service still uses the G07-proven per-display strategy, the current suite retains the exact Sidecar-style 2× geometry fixture, and a signed conditional test exercises both directions of a cross-display drag whenever an extended display is attached. That conditional test was compiled on both architectures and skipped—rather than reported as passing—on the one-display G13 workstation state. G19 adds broader synthetic layout and snapshot validation, while its fresh physical display matrix remains pending release evidence.
 
 ## Consequences and Limits
 
 - G13 turns the proven behavior into production selection architecture without changing the coordinate contract.
 - G14 captures only after the selection completion callback and uses the selected display's local Core Graphics and backing-pixel rectangles.
 - Display configuration changes cancel the current session; production code must rebuild descriptors before another selection.
-- Full hardening across more physical arrangements, display rotations, and macOS versions remains G19 and G29 work.
+- Synthetic hardening across left/right/above/below/diagonal, portrait, mixed-scale, and Sidecar-style arrangements is part of G19. Fresh physical arrangements and rotations remain release evidence, and older macOS coverage remains G29 work.
 - G08 retired the executable overlay harness while retaining the pure geometry and selection-session model. G13 owns the production AppKit adapter.
 - G13 introduces no public API, dependency, additional permission request, pixel capture, OCR integration, clipboard behavior, or feedback UI.

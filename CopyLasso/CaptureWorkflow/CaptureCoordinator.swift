@@ -4,6 +4,7 @@ enum CaptureCancellationReason: Equatable, Sendable {
   case user
   case selectionTooSmall
   case displayChanged
+  case systemInterrupted
   case applicationTerminated
 }
 
@@ -44,6 +45,7 @@ enum CaptureEvent: Equatable, Sendable {
   case selectionCompleted
   case captureCompleted
   case recognitionCompleted
+  case feedbackBegan
   case completionFinished
   case cancel(CaptureCancellationReason)
   case fail(CaptureFailureStage)
@@ -93,6 +95,10 @@ final class CaptureCoordinator {
     case (.capturing, .captureCompleted):
       nextState = .recognizing
     case (.recognizing, .recognitionCompleted):
+      nextState = .completing
+    case (.selecting, .feedbackBegan),
+      (.capturing, .feedbackBegan),
+      (.recognizing, .feedbackBegan):
       nextState = .completing
     case (.completing, .completionFinished):
       nextState = .idle

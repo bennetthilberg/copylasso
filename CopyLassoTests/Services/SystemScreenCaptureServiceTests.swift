@@ -99,6 +99,94 @@ final class SystemScreenCaptureServiceTests: XCTestCase {
     }
   }
 
+  func testDisplayValidationRejectsPixelDimensionsThatDoNotMatchSourceGeometry() throws {
+    let request = try ScreenCaptureRequestPlanner.request(for: makeSelection(scale: 1.5))
+    let snapshot = ScreenCaptureDisplaySnapshot(
+      displayID: request.displayID,
+      pointSize: CGSize(width: 200, height: 100),
+      pointPixelScale: request.backingScale
+    )
+    let changedWidth = ScreenCaptureRequest(
+      displayID: request.displayID,
+      expectedDisplayPointSize: request.expectedDisplayPointSize,
+      sourceRect: request.sourceRect,
+      backingPixelRect: request.backingPixelRect,
+      pixelWidth: request.pixelWidth + 1,
+      pixelHeight: request.pixelHeight,
+      backingScale: request.backingScale,
+      showsCursor: request.showsCursor,
+      capturesAudio: request.capturesAudio
+    )
+    let changedHeight = ScreenCaptureRequest(
+      displayID: request.displayID,
+      expectedDisplayPointSize: request.expectedDisplayPointSize,
+      sourceRect: request.sourceRect,
+      backingPixelRect: request.backingPixelRect,
+      pixelWidth: request.pixelWidth,
+      pixelHeight: request.pixelHeight - 1,
+      backingScale: request.backingScale,
+      showsCursor: request.showsCursor,
+      capturesAudio: request.capturesAudio
+    )
+
+    XCTAssertThrowsError(
+      try ScreenCaptureRequestValidator.validate(changedWidth, against: snapshot))
+    XCTAssertThrowsError(
+      try ScreenCaptureRequestValidator.validate(changedHeight, against: snapshot))
+  }
+
+  func testDisplayValidationUsesStoredPixelsInsteadOfReroundingFractionalSourceRect()
+    throws
+  {
+    let request = ScreenCaptureRequest(
+      displayID: 7,
+      expectedDisplayPointSize: CGSize(width: 100, height: 80),
+      sourceRect: CGRect(x: 0, y: 0, width: 26.000_000_000_000_004 / 1.5, height: 10),
+      backingPixelRect: CGRect(x: 0, y: 0, width: 26, height: 15),
+      pixelWidth: 26,
+      pixelHeight: 15,
+      backingScale: 1.5,
+      showsCursor: false,
+      capturesAudio: false
+    )
+    let snapshot = ScreenCaptureDisplaySnapshot(
+      displayID: request.displayID,
+      pointSize: request.expectedDisplayPointSize,
+      pointPixelScale: request.backingScale
+    )
+
+    XCTAssertGreaterThan(request.sourceRect.maxX * request.backingScale, 26)
+    XCTAssertNoThrow(try ScreenCaptureRequestValidator.validate(request, against: snapshot))
+  }
+
+  func testFractionalScaleEdgeSelectionClampsTheSourceRectAndRemainsValid() throws {
+    let display = try DisplayGeometry(
+      displayID: 81,
+      appKitFrame: CGRect(x: 0, y: 0, width: 101, height: 81),
+      coreGraphicsBounds: CGRect(x: 0, y: 0, width: 101, height: 81),
+      backingScale: 1.5
+    )
+    let selection = try XCTUnwrap(
+      display.selectionResult(
+        from: CGPoint(x: 90.2, y: 0),
+        to: CGPoint(x: 101, y: 10.2)
+      )
+    )
+
+    let request = try ScreenCaptureRequestPlanner.request(for: selection)
+    let snapshot = ScreenCaptureDisplaySnapshot(
+      displayID: request.displayID,
+      pointSize: selection.displayPointSize,
+      pointPixelScale: selection.backingScale
+    )
+
+    XCTAssertEqual(request.sourceRect.maxX, 101, accuracy: 0.000_1)
+    XCTAssertEqual(request.sourceRect.maxY, 81, accuracy: 0.000_1)
+    XCTAssertEqual(request.pixelWidth, 17)
+    XCTAssertEqual(request.pixelHeight, 16)
+    XCTAssertNoThrow(try ScreenCaptureRequestValidator.validate(request, against: snapshot))
+  }
+
   func testDisplayValidationRejectsAChangedSizeEvenWhenTheSelectionStillFits() throws {
     let request = try ScreenCaptureRequestPlanner.request(for: makeSelection())
     let resizedDisplay = ScreenCaptureDisplaySnapshot(

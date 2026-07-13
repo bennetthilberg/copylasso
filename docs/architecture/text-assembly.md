@@ -17,4 +17,4 @@ These rules produce a Swift `String` containing plain characters and line breaks
 
 The v0.1 contract is ordinary, approximately horizontal, single-column English text. The assembler does not reconstruct tables, columns, indentation, font styling, lists, vertical writing, rotated text, or page structure. Horizontally aligned columns are processed row by row and may interleave. Complex input still has stable output for the same observations, never invents content, and never emits a retained observation more than once.
 
-G16 stops after producing the transient string. G17 now passes a nonempty result to the confined plain-text clipboard service and derives only a bounded HUD preview; empty output bypasses the pasteboard and produces a distinct no-text result. G18 retains ownership of complete cross-stage cleanup and stress integration.
+G16 produces the transient string. The complete workflow passes a nonempty result to the confined plain-text clipboard service and derives only a bounded HUD preview; empty output bypasses the pasteboard and produces a distinct no-text result. The full string leaves the private operation scope before feedback presentation begins.

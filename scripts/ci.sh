@@ -148,6 +148,17 @@ if [[ "$selection_api_files" != "$selection_service" ]] || \
     exit 1
 fi
 
+readonly multi_display_tests='CopyLassoTests/Models/MultiDisplayBehaviorTests.swift'
+if [[ ! -e "$multi_display_tests" ]] || \
+    ! /usr/bin/grep -q 'displayPointSize' CopyLasso/Models/SelectionGeometry.swift || \
+    ! /usr/bin/grep -q 'expectedDisplayPointSize' "$capture_service" || \
+    ! /usr/bin/grep -q 'testEverySyntheticDisplayPreservesIdentityAndLocalPixelsThroughCapturePlanning' "$multi_display_tests" || \
+    ! /usr/bin/grep -q 'testCurrentDisplayChangesRejectTheOriginalRequestForEveryScale' "$multi_display_tests" || \
+    /usr/bin/grep -q 'visibleFrame' "$selection_service"; then
+    echo "G19 must retain complete-frame overlays and full display-snapshot validation." >&2
+    exit 1
+fi
+
 readonly feedback_panel='CopyLasso/SharedUI/FeedbackPanel.swift'
 screen_list_files="$({ /usr/bin/grep -R -l 'NSScreen\.screens' CopyLasso || true; } | /usr/bin/sort)"
 expected_screen_list_files="$(/usr/bin/printf '%s\n%s' "$selection_service" "$feedback_panel" | /usr/bin/sort)"
@@ -199,6 +210,46 @@ if ! /usr/bin/grep -q 'clipboardService: SystemClipboardService()' CopyLasso/App
     ! /usr/bin/grep -q 'feedbackService: feedbackController' CopyLasso/App/CopyLassoApp.swift || \
     ! /usr/bin/grep -q 'feedbackModel: feedbackController.model' CopyLasso/App/CopyLassoApp.swift; then
     echo "The production clipboard, HUD, and temporary menu state must remain wired at the app root." >&2
+    exit 1
+fi
+
+readonly capture_command='CopyLasso/CaptureWorkflow/CaptureCommand.swift'
+readonly capture_coordinator='CopyLasso/CaptureWorkflow/CaptureCoordinator.swift'
+readonly workflow_integration_tests='CopyLassoTests/CaptureWorkflow/CaptureWorkflowIntegrationTests.swift'
+if [[ ! -e "$workflow_integration_tests" ]] || \
+    ! /usr/bin/grep -q 'runPrivateOperation' "$capture_command" || \
+    ! /usr/bin/grep -q 'CaptureOperationInterruption' "$capture_command" || \
+    ! /usr/bin/grep -q 'testTwentyFiveConsecutiveSuccessfulCapturesRemainReusable' "$workflow_integration_tests" || \
+    ! /usr/bin/grep -q 'testTwentyAlternatingSuccessAndCancellationCyclesPreserveClipboardOnCancellation' "$workflow_integration_tests" || \
+    ! /usr/bin/grep -q 'testPixelsAndUnboundedTextAreReleasedBeforeVisibleFeedbackReturnsIdle' "$workflow_integration_tests" || \
+    ! /usr/bin/grep -q 'testMenuAndShortcutRouteThroughTheExactSameSuccessfulCommand' "$workflow_integration_tests"; then
+    echo "G18 must retain its private operation boundary and end-to-end stress integration suite." >&2
+    exit 1
+fi
+
+readonly lifecycle_controller='CopyLasso/App/ApplicationLifecycleController.swift'
+readonly lifecycle_logger='CopyLasso/Services/CaptureLifecycleLogger.swift'
+readonly lifecycle_tests='CopyLassoTests/CaptureWorkflow/CaptureLifecycleTests.swift'
+readonly lifecycle_controller_tests='CopyLassoTests/App/ApplicationLifecycleControllerTests.swift'
+lifecycle_log_files="$({ /usr/bin/grep -R -lE '^[[:space:]]*import[[:space:]]+OSLog|=[[:space:]]*Logger\(' CopyLasso || true; })"
+if [[ "$lifecycle_log_files" != "$lifecycle_logger" ]] || \
+    [[ ! -e "$lifecycle_controller" ]] || \
+    [[ ! -e "$lifecycle_tests" ]] || \
+    [[ ! -e "$lifecycle_controller_tests" ]] || \
+    ! /usr/bin/grep -q 'cancelActiveOperation' "$capture_command" || \
+    ! /usr/bin/grep -q 'NSWorkspace.sessionDidResignActiveNotification' "$lifecycle_controller" || \
+    ! /usr/bin/grep -q 'lifecycleController.start()' CopyLasso/App/CopyLassoApp.swift || \
+    ! /usr/bin/grep -q 'testSystemInterruptionCancelsPendingCaptureWithoutDownstreamWork' "$lifecycle_tests" || \
+    ! /usr/bin/grep -q 'testSystemEventSourceMapsWorkspaceAndApplicationNotificationsAndStopsCleanly' "$lifecycle_controller_tests" || \
+    /usr/bin/grep -F -q '\(' "$lifecycle_logger" || \
+    /usr/bin/grep -qE 'CGImage|RecognizedText|SelectionResult|NSPasteboard|rawError|preview' "$lifecycle_logger"; then
+    echo "G20 must retain owned lifecycle cancellation and fixed content-free diagnostics." >&2
+    exit 1
+fi
+
+if /usr/bin/grep -qE 'CGImage|RecognizedTextObservation|SelectionResult|CaptureFeedback' \
+    "$capture_coordinator"; then
+    echo "CaptureCoordinator must remain free of geometry, pixels, recognized text, and feedback payloads." >&2
     exit 1
 fi
 
@@ -366,7 +417,9 @@ if [[ ! -f "$debug_module" ]] || \
     ! /usr/bin/grep -a -q 'FeedbackPanelController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'PermissionRecoveryPanelController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'SettingsController' "$debug_module" || \
-    ! /usr/bin/grep -a -q 'GlobalShortcutController' "$debug_module"; then
+    ! /usr/bin/grep -a -q 'GlobalShortcutController' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'ApplicationLifecycleController' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'SystemCaptureLifecycleLogger' "$debug_module"; then
     echo "Debug is missing the production-neutral workflow architecture." >&2
     exit 1
 fi
@@ -389,7 +442,9 @@ for release_architecture in arm64 x86_64; do
         ! /usr/bin/grep -a -q 'FeedbackPanelController' "$release_module" || \
         ! /usr/bin/grep -a -q 'PermissionRecoveryPanelController' "$release_module" || \
         ! /usr/bin/grep -a -q 'SettingsController' "$release_module" || \
-        ! /usr/bin/grep -a -q 'GlobalShortcutController' "$release_module"; then
+        ! /usr/bin/grep -a -q 'GlobalShortcutController' "$release_module" || \
+        ! /usr/bin/grep -a -q 'ApplicationLifecycleController' "$release_module" || \
+        ! /usr/bin/grep -a -q 'SystemCaptureLifecycleLogger' "$release_module"; then
         echo "Release is missing the production-neutral workflow architecture for $release_architecture." >&2
         exit 1
     fi

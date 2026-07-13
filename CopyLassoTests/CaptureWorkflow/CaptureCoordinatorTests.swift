@@ -47,6 +47,18 @@ final class CaptureCoordinatorTests: XCTestCase {
     XCTAssertEqual(coordinator.state, .requestingPermission)
   }
 
+  func testFailureFeedbackBeginsFromEveryApplicableWorkflowState() {
+    for state in [CaptureState.selecting, .capturing, .recognizing] {
+      let coordinator = CaptureCoordinator(initialState: state)
+
+      XCTAssertEqual(
+        coordinator.handle(.feedbackBegan),
+        .transitioned(from: state, to: .completing)
+      )
+      XCTAssertEqual(coordinator.state, .completing)
+    }
+  }
+
   func testCancellationFromEveryActiveStateIsTerminalAndNotFailure() {
     for state in CaptureState.activeTestCases {
       for reason in CaptureCancellationReason.allTestCases {
@@ -117,6 +129,7 @@ final class CaptureCoordinatorTests: XCTestCase {
       (.selecting, .selectionCompleted),
       (.capturing, .captureCompleted),
       (.recognizing, .recognitionCompleted),
+      (.recognizing, .feedbackBegan),
       (.completing, .completionFinished),
       (.selecting, .cancel(.user)),
       (.capturing, .fail(.capture)),
@@ -155,6 +168,9 @@ final class CaptureCoordinatorTests: XCTestCase {
       (.selecting, .selectionCompleted),
       (.capturing, .captureCompleted),
       (.recognizing, .recognitionCompleted),
+      (.selecting, .feedbackBegan),
+      (.capturing, .feedbackBegan),
+      (.recognizing, .feedbackBegan),
       (.completing, .completionFinished),
       (.cancelled, .reset),
       (.failed, .reset):
@@ -196,6 +212,7 @@ extension CaptureEvent {
     .selectionCompleted,
     .captureCompleted,
     .recognitionCompleted,
+    .feedbackBegan,
     .completionFinished,
     .cancel(.user),
     .fail(.internal),
@@ -208,6 +225,7 @@ extension CaptureCancellationReason {
     .user,
     .selectionTooSmall,
     .displayChanged,
+    .systemInterrupted,
     .applicationTerminated,
   ]
 }
