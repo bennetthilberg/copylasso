@@ -89,6 +89,40 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(outcome, .cancelled(.escape))
   }
 
+  func testSelectionWaitsForPreviousApplicationToResignBeforeSchedulingCompletion()
+    async throws
+  {
+    let display = try makeDisplay()
+    let factory = RecordingSelectionOverlaySurfaceFactory()
+    let activation = RecordingSelectionApplicationActivationManager(
+      automaticallyCompletesRestoration: false
+    )
+    let scheduler = ManualSelectionCompletionScheduler()
+    let service = AppKitRegionSelectionService(
+      displayProvider: StubSelectionDisplayProvider(results: [.success([display])]),
+      surfaceFactory: factory,
+      lifecycleObserver: RecordingSelectionOverlayLifecycleObserver(),
+      cursorManager: RecordingSelectionCursorManager(),
+      activationManager: activation,
+      scheduleCursorInstallation: { work in work() },
+      scheduleCompletion: scheduler.schedule
+    )
+
+    let task = Task { try await service.selectRegion() }
+    await Task.yield()
+    factory.surfaces[0].send(.escape)
+
+    XCTAssertEqual(activation.restoreCallCount, 1)
+    XCTAssertEqual(scheduler.pendingCount, 0)
+
+    activation.completeRestoration()
+
+    XCTAssertEqual(scheduler.pendingCount, 1)
+    await scheduler.runNext()
+    let outcome = try await task.value
+    XCTAssertEqual(outcome, .cancelled(.escape))
+  }
+
   func testSelectionWaitsForApplicationActivationBeforeShowingSurfacesOrCrosshair()
     async throws
   {
@@ -131,6 +165,40 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     await scheduler.runNext()
     let outcome = try await task.value
     XCTAssertEqual(outcome, .cancelled(.escape))
+  }
+
+  func testSelectionFailsCleanlyWhenApplicationActivationNeverArrives() async throws {
+    let display = try makeDisplay()
+    let factory = RecordingSelectionOverlaySurfaceFactory()
+    let activation = RecordingSelectionApplicationActivationManager(
+      automaticallyCompletesActivation: false
+    )
+    let scheduler = ManualSelectionCompletionScheduler()
+    let service = AppKitRegionSelectionService(
+      displayProvider: StubSelectionDisplayProvider(results: [.success([display])]),
+      surfaceFactory: factory,
+      lifecycleObserver: RecordingSelectionOverlayLifecycleObserver(),
+      cursorManager: RecordingSelectionCursorManager(),
+      activationManager: activation,
+      scheduleCursorInstallation: { work in work() },
+      scheduleCompletion: scheduler.schedule
+    )
+
+    let task = Task { try await service.selectRegion() }
+    await Task.yield()
+    activation.failActivation()
+
+    XCTAssertTrue(factory.surfaces.isEmpty)
+    XCTAssertEqual(activation.restoreCallCount, 1)
+    XCTAssertEqual(scheduler.pendingCount, 1)
+    await scheduler.runNext()
+
+    do {
+      _ = try await task.value
+      XCTFail("Expected activation failure")
+    } catch {
+      XCTAssertEqual(error as? AppKitRegionSelectionError, .applicationActivationFailed)
+    }
   }
 
   func testCancellationBeforeActivationIgnoresLateActivationReadiness() async throws {
@@ -418,6 +486,40 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(readyCallCount, 1)
   }
 
+  func testSystemActivationManagerFailsOnceWhenActivationNotificationNeverArrives() {
+    let notificationCenter = NotificationCenter()
+    let observedApplication = NSObject()
+    var fallback: (@MainActor @Sendable () -> Void)?
+    var readyCallCount = 0
+    var unavailableCallCount = 0
+    let manager = SystemSelectionApplicationActivationManager(
+      notificationCenter: notificationCenter,
+      observedApplication: observedApplication,
+      isApplicationActive: { false },
+      activateApplication: {},
+      frontmostApplication: { nil },
+      scheduleActivationFallback: { fallback = $0 }
+    )
+
+    manager.activateForSelection(
+      whenActive: { readyCallCount += 1 },
+      whenUnavailable: { unavailableCallCount += 1 }
+    )
+
+    XCTAssertEqual(readyCallCount, 0)
+    XCTAssertEqual(unavailableCallCount, 0)
+
+    fallback?()
+    fallback?()
+    notificationCenter.post(
+      name: NSApplication.didBecomeActiveNotification,
+      object: observedApplication
+    )
+
+    XCTAssertEqual(readyCallCount, 0)
+    XCTAssertEqual(unavailableCallCount, 1)
+  }
+
   func testSystemActivationManagerCompletesImmediatelyWhenApplicationIsAlreadyActive() {
     let notificationCenter = NotificationCenter()
     let observedApplication = NSObject()
@@ -436,6 +538,40 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
 
     XCTAssertEqual(activateCallCount, 0)
     XCTAssertEqual(readyCallCount, 1)
+  }
+
+  func testSystemActivationManagerWaitsForDidResignActiveBeforeCompletingRestoration() {
+    let notificationCenter = NotificationCenter()
+    let observedApplication = NSObject()
+    var deactivateCallCount = 0
+    var inactiveCallCount = 0
+    let manager = SystemSelectionApplicationActivationManager(
+      notificationCenter: notificationCenter,
+      observedApplication: observedApplication,
+      isApplicationActive: { true },
+      activateApplication: {},
+      deactivateApplication: { deactivateCallCount += 1 },
+      frontmostApplication: { nil }
+    )
+
+    manager.activateForSelection {}
+    manager.restorePreviousApplication {
+      inactiveCallCount += 1
+    }
+
+    XCTAssertEqual(deactivateCallCount, 1)
+    XCTAssertEqual(inactiveCallCount, 0)
+
+    notificationCenter.post(
+      name: NSApplication.didResignActiveNotification,
+      object: observedApplication
+    )
+    notificationCenter.post(
+      name: NSApplication.didResignActiveNotification,
+      object: observedApplication
+    )
+
+    XCTAssertEqual(inactiveCallCount, 1)
   }
 
   func testRegionSelectionPanelCompletesKeyReadinessOnceAfterBecomingKey() {
@@ -1300,20 +1436,29 @@ private final class RecordingSelectionApplicationActivationManager:
   private(set) var restoreCallCount = 0
   private let startupEvents: RecordingSelectionStartupEvents?
   private let automaticallyCompletesActivation: Bool
+  private let automaticallyCompletesRestoration: Bool
   private var activationReady: (@MainActor @Sendable () -> Void)?
+  private var activationUnavailable: (@MainActor @Sendable () -> Void)?
+  private var restorationReady: (@MainActor @Sendable () -> Void)?
 
   init(
     startupEvents: RecordingSelectionStartupEvents? = nil,
-    automaticallyCompletesActivation: Bool = true
+    automaticallyCompletesActivation: Bool = true,
+    automaticallyCompletesRestoration: Bool = true
   ) {
     self.startupEvents = startupEvents
     self.automaticallyCompletesActivation = automaticallyCompletesActivation
+    self.automaticallyCompletesRestoration = automaticallyCompletesRestoration
   }
 
-  func activateForSelection(whenActive: @escaping @MainActor @Sendable () -> Void) {
+  func activateForSelection(
+    whenActive: @escaping @MainActor @Sendable () -> Void,
+    whenUnavailable: @escaping @MainActor @Sendable () -> Void
+  ) {
     activateCallCount += 1
     startupEvents?.events.append(.applicationActivationRequested)
     activationReady = whenActive
+    activationUnavailable = whenUnavailable
     if automaticallyCompletesActivation {
       completeActivation()
     }
@@ -1322,13 +1467,32 @@ private final class RecordingSelectionApplicationActivationManager:
   func completeActivation() {
     let activationReady = activationReady
     self.activationReady = nil
+    activationUnavailable = nil
     activationReady?()
   }
 
-  func restorePreviousApplication() {
+  func failActivation() {
     activationReady = nil
+    let activationUnavailable = activationUnavailable
+    self.activationUnavailable = nil
+    activationUnavailable?()
+  }
+
+  func restorePreviousApplication(whenInactive: @escaping @MainActor @Sendable () -> Void) {
+    activationReady = nil
+    activationUnavailable = nil
     restoreCallCount += 1
     startupEvents?.events.append(.previousApplicationRestored)
+    restorationReady = whenInactive
+    if automaticallyCompletesRestoration {
+      completeRestoration()
+    }
+  }
+
+  func completeRestoration() {
+    let restorationReady = restorationReady
+    self.restorationReady = nil
+    restorationReady?()
   }
 }
 
