@@ -110,6 +110,7 @@ final class SystemScreenCaptureServiceTests: XCTestCase {
       displayID: request.displayID,
       expectedDisplayPointSize: request.expectedDisplayPointSize,
       sourceRect: request.sourceRect,
+      backingPixelRect: request.backingPixelRect,
       pixelWidth: request.pixelWidth + 1,
       pixelHeight: request.pixelHeight,
       backingScale: request.backingScale,
@@ -120,6 +121,7 @@ final class SystemScreenCaptureServiceTests: XCTestCase {
       displayID: request.displayID,
       expectedDisplayPointSize: request.expectedDisplayPointSize,
       sourceRect: request.sourceRect,
+      backingPixelRect: request.backingPixelRect,
       pixelWidth: request.pixelWidth,
       pixelHeight: request.pixelHeight - 1,
       backingScale: request.backingScale,
@@ -131,6 +133,30 @@ final class SystemScreenCaptureServiceTests: XCTestCase {
       try ScreenCaptureRequestValidator.validate(changedWidth, against: snapshot))
     XCTAssertThrowsError(
       try ScreenCaptureRequestValidator.validate(changedHeight, against: snapshot))
+  }
+
+  func testDisplayValidationUsesStoredPixelsInsteadOfReroundingFractionalSourceRect()
+    throws
+  {
+    let request = ScreenCaptureRequest(
+      displayID: 7,
+      expectedDisplayPointSize: CGSize(width: 100, height: 80),
+      sourceRect: CGRect(x: 0, y: 0, width: 26.000_000_000_000_004 / 1.5, height: 10),
+      backingPixelRect: CGRect(x: 0, y: 0, width: 26, height: 15),
+      pixelWidth: 26,
+      pixelHeight: 15,
+      backingScale: 1.5,
+      showsCursor: false,
+      capturesAudio: false
+    )
+    let snapshot = ScreenCaptureDisplaySnapshot(
+      displayID: request.displayID,
+      pointSize: request.expectedDisplayPointSize,
+      pointPixelScale: request.backingScale
+    )
+
+    XCTAssertGreaterThan(request.sourceRect.maxX * request.backingScale, 26)
+    XCTAssertNoThrow(try ScreenCaptureRequestValidator.validate(request, against: snapshot))
   }
 
   func testFractionalScaleEdgeSelectionClampsTheSourceRectAndRemainsValid() throws {
