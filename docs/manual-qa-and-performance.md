@@ -4,7 +4,7 @@
 
 **Goal:** G24
 
-**Execution state:** G24T signed standard-appearance cursor/outline follow-up passed; complete clean G24 rerun pending
+**Execution state:** G24U signed sleep-selection fix passed; G24 remains blocked by a separate lock-selection defect and a complete clean rerun
 
 This is the release record for system behavior that unit tests and unsigned hosted runners cannot faithfully validate. A result is **Pass**, **Fail**, **Blocked**, or **Not applicable**. Historical spike screenshots and injected-service tests provide context but never replace a fresh G24 result.
 
@@ -164,6 +164,43 @@ during movement and accepted the updated treatment. This is a signed **Pass**
 for the G24T standard-appearance cursor, outline, radius, and Escape boundary;
 it does not promote the remaining full G24 matrix or accessibility-mode rows.
 
+### July 13, 2026 G24U Signed Sleep-Selection Fix
+
+The physically tested candidate was built from the production and test source
+tree committed unchanged as `7d1eba8` at
+`.build/g24u-signed/Build/Products/Debug/CopyLasso.app`. Strict deep signing
+verification passed for Debug bundle
+`io.github.bennetthilberg.copylasso.debug`, version 0.1.0 build 1, arm64,
+Hardened Runtime, App Sandbox, development-only `get-task-allow`, and no network
+client/server entitlement. Its tested executable SHA-256 was
+`cf517ce31e73c52c1ae4c9aa5ef994dd0409bad763b66dd5a0c8dc8c5b2ca292`, and
+executable-path readback confirmed it was the only running CopyLasso process.
+
+Focused arm64 coverage passed 64/64. Canonical arm64 and x86_64 pipelines each
+passed 241/241 ordinary tests, the offline rebuild, three repeatability passes,
+coverage gates, Debug and Release builds, and Universal 2 verification.
+
+Computer Use invoked `⇧⌘2` over the controlled fixture before the maintainer
+put the Mac to sleep pre-drag. After wake, no dim, outline, cursor override, or
+HUD returned; the synthetic sentinel remained unchanged, an ordinary drag did
+not start OCR or alter the clipboard, and the next explicit capture produced a
+success HUD. The same exact process then entered a real drag before a second
+actual sleep. Wake again showed complete cleanup, no automatic work, and the
+same sentinel. A non-capture drag remained inert, and a fresh explicit capture
+again produced the success HUD. This is a signed **Pass** for G24U's pre-drag
+and drag-phase sleep interruption, clipboard, no-resume, and reuse boundary.
+
+A separate `Control-Command-Q` screen-lock probe did not produce the public
+workspace session-switch event on this macOS build. The window looked clean
+after unlock, but a content-free drag probe exposed an invisible retained
+selection and the sentinel was replaced with an empty clipboard value. Screen
+lock is therefore a release-blocking signed **Fail**, not inferred from the
+sleep pass. G24 remains blocked pending a separately approved lock-selection
+defect goal and a clean rerun. Source inspection confirms the only lifecycle
+diagnostics remain fixed strings without captured app names, geometry, pixels,
+recognized text, clipboard text, previews, or raw errors; the signed process
+produced no stored lifecycle entry during this run.
+
 ## Clean-State Preparation
 
 1. Build Debug with the stable Apple Development identity and verify its designated requirement.
@@ -223,8 +260,8 @@ where those properties apply.
 | Permission first request: Deny | One system request, singleton recovery, no downstream work | **Pass** — the first physical shortcut produced one macOS request and one CopyLasso recovery panel; Deny performed no capture, repeated **Try Again** reused the singleton panel, and the clipboard sentinel survived |
 | Permission approval/retry | Follow actual Later/Quit & Reopen behavior; no automatic retry | **Pass** — System Settings opened directly to Screen & System Audio Recording, enabling CopyLasso and choosing **Later** caused no automatic retry, explicit retry remained unavailable until an ordinary quit/relaunch, and the next real capture succeeded after the macOS direct-screen-access **Allow** prompt |
 | Permission revocation | Controlled likely-revoked recovery after authoritative denial | **Blocked** — the reset/deny/grant path passed, but post-grant revocation has not been exercised |
-| Sleep and wake during every active phase | One system-interruption cancellation, cleanup, no auto-resume, immediate reuse | **Blocked** — no active-phase sleep/wake sequence |
-| Lock and unlock during every active phase | Same lifecycle contract and no sensitive residue | **Blocked** — the session was successfully unlocked to resume G24, but no active-phase lock/unlock sequence ran |
+| Sleep and wake during every active phase | One system-interruption cancellation, cleanup, no auto-resume, immediate reuse | **Blocked** for the complete phase matrix — exact signed pre-drag and drag-phase sleeps now pass with cleanup, sentinel preservation, no auto-resume, and successful reuse; capture, OCR, and feedback-phase sleep rows remain pending |
+| Lock and unlock during every active phase | Same lifecycle contract and no sensitive residue | **Fail** — `Control-Command-Q` during a drag did not deliver the observed workspace session-switch event; unlock looked clean, but a subsequent ordinary drag exposed an invisible retained selection and replaced the sentinel with an empty clipboard value |
 | Launch at Login enabled/disabled | Correct dockless presence after real logout/login or reboot | **Blocked** — onboarding enabled exactly one login item pointing to the signed artifact; the required enabled and disabled login cycles remain pending |
 | Light, dark, increased contrast, reduced motion, maximum text size | Legible native UI, one thin gray dashed two-point-radius selection outline, static dash phase under Reduce Motion, no clipped text | **Blocked** for the complete accessibility-mode sweep — the current standard bright-browser treatment passed physically, while Light/Dark system variation, Increased Contrast, Reduce Motion, and maximum text size still require a coherent signed run |
 | VoiceOver and Full Keyboard Access | Clear labels/order/actions across menu, onboarding, Settings, recovery, selection, and HUD | **Blocked** — Computer Use confirmed labels/help/order for onboarding, Settings, recovery, and the selection overlay; VoiceOver speech and Full Keyboard Access remain untested |
