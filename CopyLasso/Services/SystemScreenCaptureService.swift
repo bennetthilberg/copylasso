@@ -22,6 +22,7 @@ struct ScreenCaptureRequest: Equatable, Sendable {
   let displayID: CGDirectDisplayID
   let expectedDisplayPointSize: CGSize
   let sourceRect: CGRect
+  let backingPixelRect: CGRect
   let pixelWidth: Int
   let pixelHeight: Int
   let backingScale: CGFloat
@@ -71,6 +72,7 @@ enum ScreenCaptureRequestPlanner {
       displayID: selection.displayID,
       expectedDisplayPointSize: selection.displayPointSize,
       sourceRect: sourceRect,
+      backingPixelRect: pixelRect,
       pixelWidth: pixelWidth,
       pixelHeight: pixelHeight,
       backingScale: scale,
@@ -106,16 +108,12 @@ enum ScreenCaptureRequestValidator {
     against display: ScreenCaptureDisplaySnapshot
   ) throws {
     guard request.backingScale.isFinite, request.backingScale > 0,
-      isValid(rect: request.sourceRect)
+      isValid(rect: request.sourceRect), isValid(rect: request.backingPixelRect)
     else {
       throw ScreenCaptureError.displayConfigurationChanged
     }
 
     let size = display.pointSize
-    let expectedPixelRect = outwardRoundedPixelRect(
-      request.sourceRect,
-      scale: request.backingScale
-    )
     guard display.displayID == request.displayID,
       size.width.isFinite, size.height.isFinite,
       size.width > 0, size.height > 0,
@@ -123,8 +121,8 @@ enum ScreenCaptureRequestValidator {
       display.pointPixelScale.isFinite,
       abs(display.pointPixelScale - request.backingScale) < 0.01,
       request.pixelWidth > 0, request.pixelHeight > 0,
-      expectedPixelRect.width == CGFloat(request.pixelWidth),
-      expectedPixelRect.height == CGFloat(request.pixelHeight),
+      request.backingPixelRect.width == CGFloat(request.pixelWidth),
+      request.backingPixelRect.height == CGFloat(request.pixelHeight),
       request.sourceRect.minX >= 0, request.sourceRect.minY >= 0,
       request.sourceRect.maxX <= size.width,
       request.sourceRect.maxY <= size.height
@@ -135,14 +133,6 @@ enum ScreenCaptureRequestValidator {
 
   private static func sizesMatch(_ first: CGSize, _ second: CGSize) -> Bool {
     abs(first.width - second.width) < 0.01 && abs(first.height - second.height) < 0.01
-  }
-
-  private static func outwardRoundedPixelRect(_ rect: CGRect, scale: CGFloat) -> CGRect {
-    let minX = floor(rect.minX * scale)
-    let minY = floor(rect.minY * scale)
-    let maxX = ceil(rect.maxX * scale)
-    let maxY = ceil(rect.maxY * scale)
-    return CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
   }
 
   private static func isValid(rect: CGRect) -> Bool {
