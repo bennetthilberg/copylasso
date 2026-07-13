@@ -54,6 +54,7 @@ protocol SelectionOverlaySurfaceMaking: AnyObject {
 protocol SelectionOverlayLifecycleObserving: AnyObject {
   func start(
     displayChange: @escaping () -> Void,
+    systemInterruption: @escaping () -> Void,
     applicationTermination: @escaping () -> Void
   )
   func stop()
@@ -235,6 +236,7 @@ private final class SelectionOverlayController {
     self.completion = completion
     lifecycleObserver.start(
       displayChange: { [weak self] in self?.cancel(.displayChanged) },
+      systemInterruption: { [weak self] in self?.cancel(.systemInterrupted) },
       applicationTermination: { [weak self] in self?.cancel(.applicationTerminated) }
     )
     lifecycleStarted = true
@@ -875,7 +877,7 @@ final class SystemSelectionApplicationActivationManager: NSObject,
 
     notificationCenter.addObserver(
       self,
-      selector: #selector(applicationDidBecomeActive),
+      selector: #selector(applicationDidBecomeActive(_:)),
       name: NSApplication.didBecomeActiveNotification,
       object: observedApplication
     )
@@ -948,7 +950,7 @@ final class SystemSelectionApplicationActivationManager: NSObject,
     restorationReady = whenInactive
     notificationCenter.addObserver(
       self,
-      selector: #selector(applicationDidResignActive),
+      selector: #selector(applicationDidResignActive(_:)),
       name: NSApplication.didResignActiveNotification,
       object: observedApplication
     )
@@ -968,11 +970,11 @@ final class SystemSelectionApplicationActivationManager: NSObject,
     deactivateApplication()
   }
 
-  @objc private func applicationDidBecomeActive() {
+  @objc private func applicationDidBecomeActive(_ notification: Notification) {
     completeActivation()
   }
 
-  @objc private func applicationDidResignActive() {
+  @objc private func applicationDidResignActive(_ notification: Notification) {
     completeRestoration()
   }
 
@@ -1021,26 +1023,52 @@ final class SystemSelectionApplicationActivationManager: NSObject,
 final class SystemSelectionOverlayLifecycleObserver: NSObject,
   SelectionOverlayLifecycleObserving
 {
+  private let applicationCenter: NotificationCenter
+  private let workspaceCenter: NotificationCenter
   private var displayChange: (() -> Void)?
+  private var systemInterruption: (() -> Void)?
   private var applicationTermination: (() -> Void)?
   private var isObserving = false
 
+  init(
+    applicationCenter: NotificationCenter = .default,
+    workspaceCenter: NotificationCenter = NSWorkspace.shared.notificationCenter
+  ) {
+    self.applicationCenter = applicationCenter
+    self.workspaceCenter = workspaceCenter
+    super.init()
+  }
+
   func start(
     displayChange: @escaping () -> Void,
+    systemInterruption: @escaping () -> Void,
     applicationTermination: @escaping () -> Void
   ) {
     stop()
     self.displayChange = displayChange
+    self.systemInterruption = systemInterruption
     self.applicationTermination = applicationTermination
-    NotificationCenter.default.addObserver(
+    applicationCenter.addObserver(
       self,
-      selector: #selector(screenParametersChanged),
+      selector: #selector(screenParametersChanged(_:)),
       name: NSApplication.didChangeScreenParametersNotification,
       object: nil
     )
-    NotificationCenter.default.addObserver(
+    for name in [
+      NSWorkspace.willSleepNotification,
+      NSWorkspace.screensDidSleepNotification,
+      NSWorkspace.sessionDidResignActiveNotification,
+    ] {
+      workspaceCenter.addObserver(
+        self,
+        selector: #selector(systemInterrupted(_:)),
+        name: name,
+        object: nil
+      )
+    }
+    applicationCenter.addObserver(
       self,
-      selector: #selector(applicationWillTerminate),
+      selector: #selector(applicationWillTerminate(_:)),
       name: NSApplication.willTerminateNotification,
       object: nil
     )
@@ -1049,21 +1077,28 @@ final class SystemSelectionOverlayLifecycleObserver: NSObject,
 
   func stop() {
     guard isObserving else { return }
-    NotificationCenter.default.removeObserver(self)
+    applicationCenter.removeObserver(self)
+    workspaceCenter.removeObserver(self)
     displayChange = nil
+    systemInterruption = nil
     applicationTermination = nil
     isObserving = false
   }
 
-  @objc private func screenParametersChanged() {
+  @objc private func screenParametersChanged(_ notification: Notification) {
     displayChange?()
   }
 
-  @objc private func applicationWillTerminate() {
+  @objc private func systemInterrupted(_ notification: Notification) {
+    systemInterruption?()
+  }
+
+  @objc private func applicationWillTerminate(_ notification: Notification) {
     applicationTermination?()
   }
 
   deinit {
-    NotificationCenter.default.removeObserver(self)
+    applicationCenter.removeObserver(self)
+    workspaceCenter.removeObserver(self)
   }
 }

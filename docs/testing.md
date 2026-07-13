@@ -229,6 +229,15 @@ The July 11, 2026 unattended G19 run could not execute this physical matrix beca
 
 G20 unit coverage posts every registered application/workspace notification through isolated centers and injects cancellable selection, capture, OCR, and feedback gates. It verifies duplicate interruption coalescing, resume without automatic capture, observer teardown, recovery-panel dismissal, shortcut shutdown on termination, cancellation before scheduled work, 100 rapid busy requests, downstream call suppression, terminal reset, and a successful capture immediately after cancellation. The centralized stage-only failure copy remains covered separately for every failure stage.
 
+G24U adds direct selection-adapter coverage for public workspace will-sleep,
+screen-sleep, and session-resign notifications. Focused tests interrupt before
+activation and after cursor refresh, deliver duplicates, replay stale overlay
+events, verify exactly-once cleanup and clipboard/downstream suppression, and
+start a second selection. Selector-conformance tests require one
+`Notification` argument. These deterministic checks still do not establish
+that an ordinary screen lock emits a workspace session-switch notification;
+lock/unlock remains a distinct signed row below.
+
 ### Signed G20 Manual Matrix
 
 Use one stably signed Debug app and keep a clipboard sentinel before every pre-output interruption:
@@ -324,9 +333,12 @@ The July 13, 2026 signed run completed many functional, permission, and OCR rows
 passed the idle-CPU threshold, and produced useful process-launch, latency, and
 100-cycle memory context. It then failed pre-drag sleep/wake cleanup: after wake,
 the arrow was visible but an invisible selection session still accepted a drag,
-changed the clipboard, and showed success feedback. G24 is blocked at its
-mandatory stop condition pending a separately approved lifecycle fix and clean
-rerun. Sidecar-only checks, wallpaper and protected-content sources, complete
-accessibility/appearance coverage, interactive status-item cold-launch timing,
-ordinary-region latency, 100-cycle Time Profiler, and several phase-specific or
-privacy rows remain explicitly blocked.
+changed the clipboard, and showed success feedback. G24U subsequently passed
+exact signed pre-drag and drag-phase sleep interruption with full cleanup,
+clipboard preservation, no automatic resume, and immediate reuse. A separate
+screen-lock probe exposed an invisible retained selection after unlock; the
+maintainer accepted that lock-only behavior as a v0.1 residual. G24 now requires
+a clean rerun. Sidecar-only checks, wallpaper and protected-content sources,
+complete accessibility/appearance coverage, interactive status-item cold-launch
+timing, ordinary-region latency, 100-cycle Time Profiler, and several
+phase-specific or privacy rows remain explicitly blocked.

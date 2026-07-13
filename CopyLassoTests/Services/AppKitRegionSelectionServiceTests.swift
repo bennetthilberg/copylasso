@@ -574,6 +574,28 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(inactiveCallCount, 1)
   }
 
+  func testSystemActivationManagerUsesOneNotificationArgumentSelectors() {
+    let manager = SystemSelectionApplicationActivationManager(
+      notificationCenter: NotificationCenter(),
+      observedApplication: NSObject(),
+      isApplicationActive: { true },
+      activateApplication: {}
+    )
+
+    XCTAssertTrue(
+      manager.responds(to: NSSelectorFromString("applicationDidBecomeActive:"))
+    )
+    XCTAssertTrue(
+      manager.responds(to: NSSelectorFromString("applicationDidResignActive:"))
+    )
+    XCTAssertFalse(
+      manager.responds(to: NSSelectorFromString("applicationDidBecomeActive"))
+    )
+    XCTAssertFalse(
+      manager.responds(to: NSSelectorFromString("applicationDidResignActive"))
+    )
+  }
+
   func testRegionSelectionPanelCompletesKeyReadinessOnceAfterBecomingKey() {
     let panel = RegionSelectionPanel(
       contentRect: CGRect(x: 0, y: 0, width: 100, height: 100),
@@ -973,6 +995,170 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     }
   }
 
+  func testSystemInterruptionCancelsExactlyOnceAndSuppressesStaleOverlayEvents()
+    async throws
+  {
+    let display = try makeDisplay()
+    let provider = StubSelectionDisplayProvider(
+      results: [.success([display]), .success([display])]
+    )
+    let factory = RecordingSelectionOverlaySurfaceFactory()
+    let context = makeContext(provider: provider, factory: factory)
+    let first = Task { try await context.service.selectRegion() }
+    await Task.yield()
+
+    let firstSurface = factory.surfaces[0]
+    let staleHandler = firstSurface.eventHandler
+    firstSurface.send(.mouseDown(CGPoint(x: 10, y: 10)))
+    firstSurface.send(.mouseDragged(CGPoint(x: 40, y: 40)))
+    XCTAssertTrue(firstSurface.isVisible)
+    XCTAssertEqual(context.cursor.pushCallCount, 1)
+
+    context.lifecycle.sendSystemInterruption()
+    context.lifecycle.sendSystemInterruption()
+
+    XCTAssertFalse(firstSurface.isVisible)
+    XCTAssertNil(firstSurface.eventHandler)
+    XCTAssertEqual(context.lifecycle.stopCallCount, 1)
+    XCTAssertEqual(context.cursor.popCallCount, 1)
+    XCTAssertEqual(context.activation.restoreCallCount, 1)
+    XCTAssertEqual(context.scheduler.pendingCount, 1)
+
+    staleHandler?(.mouseUp(CGPoint(x: 80, y: 80)))
+    context.lifecycle.sendDisplayChange()
+    context.lifecycle.sendApplicationTermination()
+    XCTAssertEqual(context.scheduler.pendingCount, 1)
+
+    await context.scheduler.runNext()
+    let firstOutcome = try await first.value
+    XCTAssertEqual(firstOutcome, .cancelled(.systemInterrupted))
+
+    let second = Task { try await context.service.selectRegion() }
+    await Task.yield()
+    factory.surfaces[1].send(.escape)
+    await context.scheduler.runNext()
+    let secondOutcome = try await second.value
+    XCTAssertEqual(secondOutcome, .cancelled(.escape))
+  }
+
+  func testSystemInterruptionBeforeActivationSuppressesLateActivationReadiness()
+    async throws
+  {
+    let display = try makeDisplay()
+    let provider = StubSelectionDisplayProvider(results: [.success([display])])
+    let factory = RecordingSelectionOverlaySurfaceFactory()
+    let activation = RecordingSelectionApplicationActivationManager(
+      automaticallyCompletesActivation: false
+    )
+    let lifecycle = RecordingSelectionOverlayLifecycleObserver()
+    let cursor = RecordingSelectionCursorManager()
+    let scheduler = ManualSelectionCompletionScheduler()
+    let service = AppKitRegionSelectionService(
+      displayProvider: provider,
+      surfaceFactory: factory,
+      lifecycleObserver: lifecycle,
+      cursorManager: cursor,
+      activationManager: activation,
+      scheduleCursorInstallation: { work in work() },
+      scheduleCompletion: scheduler.schedule
+    )
+
+    let task = Task { try await service.selectRegion() }
+    await Task.yield()
+    lifecycle.sendSystemInterruption()
+    activation.completeActivation()
+
+    XCTAssertEqual(factory.requestedDisplayIDs, [])
+    XCTAssertEqual(cursor.pushCallCount, 0)
+    XCTAssertEqual(activation.restoreCallCount, 1)
+    XCTAssertEqual(lifecycle.stopCallCount, 1)
+
+    await scheduler.runNext()
+    let outcome = try await task.value
+    XCTAssertEqual(outcome, .cancelled(.systemInterrupted))
+  }
+
+  func testSystemInterruptionAfterCursorRefreshSuppressesLateCrosshairInstallation()
+    async throws
+  {
+    let display = try makeDisplay()
+    let provider = StubSelectionDisplayProvider(results: [.success([display])])
+    let factory = RecordingSelectionOverlaySurfaceFactory(
+      automaticallyCompletesInputReadiness: false
+    )
+    let lifecycle = RecordingSelectionOverlayLifecycleObserver()
+    let cursor = RecordingSelectionCursorManager()
+    let activation = RecordingSelectionApplicationActivationManager()
+    let cursorScheduler = ManualSelectionCompletionScheduler()
+    let completionScheduler = ManualSelectionCompletionScheduler()
+    let service = AppKitRegionSelectionService(
+      displayProvider: provider,
+      surfaceFactory: factory,
+      lifecycleObserver: lifecycle,
+      cursorManager: cursor,
+      activationManager: activation,
+      scheduleCursorInstallation: cursorScheduler.schedule,
+      scheduleCompletion: completionScheduler.schedule
+    )
+
+    let task = Task { try await service.selectRegion() }
+    await Task.yield()
+    factory.surfaces[0].completeInputReadiness()
+    XCTAssertEqual(cursorScheduler.pendingCount, 1)
+
+    lifecycle.sendSystemInterruption()
+    await cursorScheduler.runNext()
+
+    XCTAssertEqual(cursor.pushCallCount, 0)
+    XCTAssertEqual(cursor.popCallCount, 0)
+    XCTAssertFalse(factory.surfaces[0].isVisible)
+
+    await completionScheduler.runNext()
+    let outcome = try await task.value
+    XCTAssertEqual(outcome, .cancelled(.systemInterrupted))
+  }
+
+  func testSystemLifecycleObserverMapsNotificationsAndUsesValidSelectors() {
+    let applicationCenter = NotificationCenter()
+    let workspaceCenter = NotificationCenter()
+    let observer = SystemSelectionOverlayLifecycleObserver(
+      applicationCenter: applicationCenter,
+      workspaceCenter: workspaceCenter
+    )
+    var displayChangeCount = 0
+    var systemInterruptionCount = 0
+    var applicationTerminationCount = 0
+    observer.start(
+      displayChange: { displayChangeCount += 1 },
+      systemInterruption: { systemInterruptionCount += 1 },
+      applicationTermination: { applicationTerminationCount += 1 }
+    )
+
+    workspaceCenter.post(name: NSWorkspace.willSleepNotification, object: nil)
+    workspaceCenter.post(name: NSWorkspace.screensDidSleepNotification, object: nil)
+    workspaceCenter.post(name: NSWorkspace.sessionDidResignActiveNotification, object: nil)
+    applicationCenter.post(
+      name: NSApplication.didChangeScreenParametersNotification,
+      object: nil
+    )
+    applicationCenter.post(name: NSApplication.willTerminateNotification, object: nil)
+
+    XCTAssertEqual(systemInterruptionCount, 3)
+    XCTAssertEqual(displayChangeCount, 1)
+    XCTAssertEqual(applicationTerminationCount, 1)
+    for name in [
+      "systemInterrupted:",
+      "screenParametersChanged:",
+      "applicationWillTerminate:",
+    ] {
+      XCTAssertTrue(observer.responds(to: NSSelectorFromString(name)), name)
+    }
+
+    observer.stop()
+    workspaceCenter.post(name: NSWorkspace.willSleepNotification, object: nil)
+    XCTAssertEqual(systemInterruptionCount, 3)
+  }
+
   func testExplicitLifecycleCancellationRemovesTheOverlay() async throws {
     let display = try makeDisplay()
     let factory = RecordingSelectionOverlaySurfaceFactory()
@@ -1366,27 +1552,35 @@ private final class RecordingSelectionOverlaySurface: SelectionOverlaySurface {
 @MainActor
 private final class RecordingSelectionOverlayLifecycleObserver: SelectionOverlayLifecycleObserving {
   private var displayChange: (() -> Void)?
+  private var systemInterruption: (() -> Void)?
   private var applicationTermination: (() -> Void)?
   private(set) var startCallCount = 0
   private(set) var stopCallCount = 0
 
   func start(
     displayChange: @escaping () -> Void,
+    systemInterruption: @escaping () -> Void,
     applicationTermination: @escaping () -> Void
   ) {
     startCallCount += 1
     self.displayChange = displayChange
+    self.systemInterruption = systemInterruption
     self.applicationTermination = applicationTermination
   }
 
   func stop() {
     stopCallCount += 1
     displayChange = nil
+    systemInterruption = nil
     applicationTermination = nil
   }
 
   func sendDisplayChange() {
     displayChange?()
+  }
+
+  func sendSystemInterruption() {
+    systemInterruption?()
   }
 
   func sendApplicationTermination() {

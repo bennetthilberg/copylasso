@@ -4,7 +4,7 @@
 
 **Goal:** G24
 
-**Execution state:** Blocked by signed sleep/wake lifecycle failure; separate fix goal required
+**Execution state:** G24U signed sleep-selection fix passed; complete clean G24 rerun pending
 
 This is the release record for system behavior that unit tests and unsigned hosted runners cannot faithfully validate. A result is **Pass**, **Fail**, **Blocked**, or **Not applicable**. Historical spike screenshots and injected-service tests provide context but never replace a fresh G24 result.
 
@@ -237,6 +237,43 @@ interruption, proves stale selection events cannot survive wake, passes focused
 and canonical automation, rebuilds the exact signed artifact, and restarts the
 G24 matrix from clean state.
 
+### July 13, 2026 G24U Signed Sleep-Selection Fix
+
+The physically tested candidate was built from the production and test source
+tree committed unchanged as `7d1eba8` at
+`.build/g24u-signed/Build/Products/Debug/CopyLasso.app`. Strict deep signing
+verification passed for Debug bundle
+`io.github.bennetthilberg.copylasso.debug`, version 0.1.0 build 1, arm64,
+Hardened Runtime, App Sandbox, development-only `get-task-allow`, and no network
+client/server entitlement. Its tested executable SHA-256 was
+`cf517ce31e73c52c1ae4c9aa5ef994dd0409bad763b66dd5a0c8dc8c5b2ca292`, and
+executable-path readback confirmed it was the only running CopyLasso process.
+
+Focused arm64 coverage passed 64/64. Canonical arm64 and x86_64 pipelines each
+passed 241/241 ordinary tests, the offline rebuild, three repeatability passes,
+coverage gates, Debug and Release builds, and Universal 2 verification.
+
+Computer Use invoked `⇧⌘2` over the controlled fixture before the maintainer
+put the Mac to sleep pre-drag. After wake, no dim, outline, cursor override, or
+HUD returned; the synthetic sentinel remained unchanged, an ordinary drag did
+not start OCR or alter the clipboard, and the next explicit capture produced a
+success HUD. The same exact process then entered a real drag before a second
+actual sleep. Wake again showed complete cleanup, no automatic work, and the
+same sentinel. A non-capture drag remained inert, and a fresh explicit capture
+again produced the success HUD. This is a signed **Pass** for G24U's pre-drag
+and drag-phase sleep interruption, clipboard, no-resume, and reuse boundary.
+
+A separate `Control-Command-Q` screen-lock probe did not produce the public
+workspace session-switch event on this macOS build. The window looked clean
+after unlock, but a content-free drag probe exposed an invisible retained
+selection and the sentinel was replaced with an empty clipboard value. The
+maintainer explicitly accepted this lock-only behavior as a v0.1 residual on
+July 13, 2026; it does not block G24U or require a separate fix goal. Actual
+sleep remains covered by the passing boundary above. Source inspection confirms
+the only lifecycle diagnostics remain fixed strings without captured app names,
+geometry, pixels, recognized text, clipboard text, previews, or raw errors; the
+signed process produced no stored lifecycle entry during this run.
+
 ## Clean-State Preparation
 
 1. Build Debug with the stable Apple Development identity and verify its designated requirement.
@@ -305,14 +342,14 @@ where those properties apply.
 | Permission first request: Deny | One system request, singleton recovery, no downstream work | **Pass** — the first physical shortcut produced one macOS request and one CopyLasso recovery panel; Deny performed no capture, repeated **Try Again** reused the singleton panel, and the clipboard sentinel survived |
 | Permission approval/retry | Follow actual Later/Quit & Reopen behavior; no automatic retry | **Pass** — System Settings opened directly to Screen & System Audio Recording, enabling CopyLasso and choosing **Later** caused no automatic retry, explicit retry remained unavailable until an ordinary quit/relaunch, and the next real capture succeeded after the macOS direct-screen-access **Allow** prompt |
 | Permission revocation | Controlled likely-revoked recovery after authoritative denial | **Pass** — after manually toggling access off and choosing **Quit & Reopen**, `⇧⌘2` produced no crosshair/capture/HUD, focused one recovery panel, and preserved the sentinel; re-enable plus **Quit & Reopen** restored capture |
-| Sleep and wake during every active phase | One system-interruption cancellation, cleanup, no auto-resume, immediate reuse | **Fail** — sleep during pre-drag selection returned after wake with the arrow visible but selection still invisibly active; the next drag changed the clipboard and showed a success HUD instead of remaining cancelled. G24 stopped immediately |
-| Lock and unlock during every active phase | Same lifecycle contract and no sensitive residue | **Blocked** for the full active-phase matrix — the pre-drag selection case passed: `Control-Command-Q` removed the crosshair, produced no pasteboard change or HUD, preserved the sentinel, kept the process alive, and allowed immediate reuse. Lock during drag, capture, and OCR did not run before the mandatory stop |
+| Sleep and wake during every active phase | One system-interruption cancellation, cleanup, no auto-resume, immediate reuse | **Blocked** for the complete phase matrix — exact signed pre-drag and drag-phase sleeps now pass with cleanup, sentinel preservation, no auto-resume, and successful reuse; capture, OCR, and feedback-phase sleep rows remain pending |
+| Lock and unlock during every active phase | Same lifecycle contract and no sensitive residue | **Pass with accepted residual** — pre-drag lock removed the crosshair, preserved the sentinel, kept the process alive, and allowed reuse. A later drag-phase probe looked clean after unlock but retained an invisible selection; a content-free drag replaced the sentinel with an empty clipboard value. The maintainer accepted this lock-only v0.1 residual; actual sleep remains covered separately |
 | Launch at Login enabled/disabled | Correct dockless presence after real logout/login or reboot | **Pass** — enabled real logout/login auto-launched the sole exact dockless artifact with stored `⇧⌘2`; disabled logout/login left no process and a no-op shortcut. The exact item was re-enabled afterward and macOS reported **Login Item Added** |
 | Light, dark, increased contrast, reduced motion, maximum text size | Legible native UI, one thin gray dashed two-point-radius selection outline, static dash phase under Reduce Motion, no clipped text | **Blocked** for the complete accessibility-mode sweep — the current standard bright-browser treatment passed physically, while Light/Dark system variation, Increased Contrast, Reduce Motion, and maximum text size still require a coherent signed run |
 | VoiceOver and Full Keyboard Access | Clear labels/order/actions across menu, onboarding, Settings, recovery, selection, and HUD | **Blocked** — Computer Use confirmed labels/help/order for onboarding, Settings, recovery, and the selection overlay; VoiceOver speech and Full Keyboard Access remain untested |
 | Offline success | Core workflow succeeds with process networking denied | **Pass** — live sandbox readback denied outbound, inbound, and bind operations, zero internet sockets were present, and real small-text capture copied exactly while those process restrictions were active |
 | Protected content | Controlled blank/unavailable/no-text behavior; no bypass or invented text | **Blocked** — no fresh protected-surface result |
-| Clipboard preservation sweep | Sentinel survives every cancellation and failure before replacement begins. A fault-injected clear-success/write-rejection reports clipboard failure; the prior clipboard may already be lost under the accepted write-only v0.1 boundary | **Fail** — denial, unavailable retry, Escape, click, tiny drag, no-text, revocation, and active-selection quit preserved their sentinels, but the failed pre-drag sleep interruption remained active and the next drag replaced the clipboard instead of preserving it |
+| Clipboard preservation sweep | Sentinel survives every cancellation and failure before replacement begins. A fault-injected clear-success/write-rejection reports clipboard failure; the prior clipboard may already be lost under the accepted write-only v0.1 boundary | **Blocked** for the complete sweep — denial, unavailable retry, Escape, click, tiny drag, no-text, revocation, active-selection quit, and exact signed pre-drag and drag-phase sleep preserved their sentinels. The accepted lock-only residual can replace a sentinel with an empty value after unlock; capture, OCR, and feedback-phase interruption rows remain pending |
 | Success feedback privacy | HUD shows the correct normalized, truncated preview; preserves focus; clears on time; leaves no preview in logs/preferences | **Blocked** for complete preview validation — HUDs were bounded, nonactivating, replaceable, and temporary, the controlled fixture regained focus, and no preview text appeared in logs/preferences. Exact normalized/truncated preview content and timed clearing were not recorded in the coherent run |
 | Private-data residue | Before/after app-container and temporary-directory inventory contains no image/text output; unified log contains no selected content | **Blocked** for the complete delta — the final container held four state files, zero image/PDF files, and zero controlled-text matches; logs contained zero controlled-text matches and the process had zero internet sockets. A before/after container delta and temporary-directory inventory were not retained |
 | Ordinary delete and reinstall | Onboarding remains complete when preferences remain; Launch at Login state is reconciled | **Blocked** — no installable release artifact exists yet |

@@ -332,6 +332,8 @@ extension SelectionCancellationReason {
       .selectionTooSmall
     case .displayChanged:
       .displayChanged
+    case .systemInterrupted:
+      .systemInterrupted
     case .applicationTerminated:
       .applicationTerminated
     }

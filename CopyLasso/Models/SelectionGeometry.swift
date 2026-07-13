@@ -146,6 +146,7 @@ enum SelectionCancellationReason: String, Equatable, Sendable {
   case escape
   case tooSmall
   case displayChanged
+  case systemInterrupted
   case applicationTerminated
 }
 

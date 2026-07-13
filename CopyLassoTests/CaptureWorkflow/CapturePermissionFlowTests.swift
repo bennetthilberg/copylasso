@@ -390,6 +390,7 @@ final class CapturePermissionFlowTests: XCTestCase {
       SelectionCancellationReason.escape,
       .tooSmall,
       .displayChanged,
+      .systemInterrupted,
       .applicationTerminated,
     ] {
       let context = makeContext(

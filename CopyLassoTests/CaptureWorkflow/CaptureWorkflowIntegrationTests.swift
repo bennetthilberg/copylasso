@@ -78,7 +78,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     async throws
   {
     let reasons: [SelectionCancellationReason] = [
-      .escape, .tooSmall, .displayChanged, .applicationTerminated,
+      .escape, .tooSmall, .displayChanged, .systemInterrupted, .applicationTerminated,
     ]
 
     for reason in reasons {

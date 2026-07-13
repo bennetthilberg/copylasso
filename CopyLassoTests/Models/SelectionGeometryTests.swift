@@ -265,10 +265,14 @@ final class SelectionGeometryTests: XCTestCase {
     }
   }
 
-  func testDisplayChangeAndApplicationTerminationCancelExactlyOnce() throws {
+  func testLifecycleReasonsCancelExactlyOnce() throws {
     let display = try makeDisplay()
 
-    for reason in [SelectionCancellationReason.displayChanged, .applicationTerminated] {
+    for reason in [
+      SelectionCancellationReason.displayChanged,
+      .systemInterrupted,
+      .applicationTerminated,
+    ] {
       var outcomes: [SelectionOutcome] = []
       let session = SelectionSession(displays: [display]) { outcomes.append($0) }
       XCTAssertTrue(session.begin(on: display.displayID, at: CGPoint(x: 10, y: 10)))
