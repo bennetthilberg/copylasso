@@ -194,20 +194,23 @@ private struct PermissionRecoveryView: View {
       HStack {
         Button("Open System Settings", action: actions.openSystemSettings)
           .keyboardShortcut(.defaultAction)
+          .accessibilityHint(AccessibilityAuditCopy.openScreenRecordingSettingsHelp)
           .accessibilityIdentifier("copylasso.permission-recovery.open-settings")
 
         Button("Try Again", action: actions.tryAgain)
+          .accessibilityHint(AccessibilityAuditCopy.retryPermissionHelp)
           .accessibilityIdentifier("copylasso.permission-recovery.try-again")
 
         Spacer()
 
         Button("Cancel", action: actions.cancel)
           .keyboardShortcut(.cancelAction)
+          .accessibilityHint(AccessibilityAuditCopy.cancelPermissionHelp)
           .accessibilityIdentifier("copylasso.permission-recovery.cancel")
       }
     }
     .padding(24)
-    .frame(width: 520)
+    .frame(minWidth: 520, idealWidth: 520)
   }
 }
 
@@ -233,13 +236,14 @@ private final class AppKitPermissionRecoveryPanelHost: NSObject,
     super.init()
 
     panel.title = "Screen Recording Access Needed"
+    panel.identifier = NSUserInterfaceItemIdentifier("copylasso.permission-recovery.panel")
     panel.becomesKeyOnlyIfNeeded = false
     panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle]
     panel.hidesOnDeactivate = false
     panel.isFloatingPanel = true
     panel.isReleasedWhenClosed = false
     panel.level = .floating
-    panel.animationBehavior = .utilityWindow
+    panel.animationBehavior = .none
     panel.contentViewController = NSHostingController(
       rootView: PermissionRecoveryView(model: model, actions: actions)
     )

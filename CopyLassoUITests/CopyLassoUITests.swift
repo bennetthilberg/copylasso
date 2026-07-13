@@ -249,6 +249,47 @@ final class CopyLassoUITests: XCTestCase {
   }
 
   @MainActor
+  func testOnboardingExposesCompoundControlNamesAndCompletesFromTheKeyboard() {
+    let app = freshApp()
+    app.launch()
+    defer { app.terminate() }
+
+    XCTAssertTrue(app.staticTexts["copylasso.onboarding.title"].waitForExistence(timeout: 5))
+    let shortcut = app.descendants(matching: .any)["copylasso.onboarding.shortcut"]
+    let launchAtLogin = app.descendants(matching: .any)[
+      "copylasso.onboarding.launch-at-login"
+    ]
+    XCTAssertEqual(shortcut.label, "Capture Text keyboard shortcut")
+    XCTAssertEqual(launchAtLogin.label, "Launch CopyLasso at Login")
+
+    app.typeKey(XCUIKeyboardKey.return, modifierFlags: [])
+    XCTAssertTrue(
+      app.staticTexts["copylasso.onboarding.title"].waitForNonExistence(timeout: 5)
+    )
+  }
+
+  @MainActor
+  func testSettingsExposesNamedControlStatesAndClosesFromTheKeyboard() {
+    let app = completedApp()
+    app.launch()
+    defer { app.terminate() }
+
+    openMenu(in: app)
+    statusItem(in: app).typeKey(",", modifierFlags: .command)
+    let shortcut = app.descendants(matching: .any)["copylasso.settings.shortcut"]
+    let launchAtLogin = app.descendants(matching: .any)[
+      "copylasso.settings.launch-at-login"
+    ]
+    XCTAssertTrue(shortcut.waitForExistence(timeout: 5))
+    XCTAssertEqual(shortcut.label, "Capture Text keyboard shortcut")
+    XCTAssertEqual(launchAtLogin.label, "Launch CopyLasso at Login")
+    XCTAssertNotNil(launchAtLogin.value)
+
+    app.typeKey("w", modifierFlags: .command)
+    XCTAssertTrue(shortcut.waitForNonExistence(timeout: 5))
+  }
+
+  @MainActor
   func testFreshLaunchShowsOnboardingWithoutProtectedPermissionUI() {
     let app = freshApp()
     app.launch()

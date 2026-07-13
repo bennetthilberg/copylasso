@@ -42,11 +42,14 @@ struct SettingsView: View {
             set: { settingsController.setCaptureShortcut($0) }
           )
         )
+        .accessibilityLabel(AccessibilityAuditCopy.shortcutRecorderLabel)
+        .accessibilityHint(AccessibilityAuditCopy.shortcutRecorderHelp)
         .accessibilityIdentifier("copylasso.settings.shortcut")
         LabeledContent {
           Button("Use Suggested Shortcut") {
             settingsController.useSuggestedCaptureShortcut()
           }
+          .accessibilityHint(AccessibilityAuditCopy.suggestedShortcutHelp)
           .accessibilityIdentifier("copylasso.settings.use-suggested-shortcut")
         } label: {
           Text("Default")
@@ -64,6 +67,7 @@ struct SettingsView: View {
             set: { settingsController.setLaunchAtLoginEnabled($0) }
           )
         )
+        .accessibilityHint(AccessibilityAuditCopy.launchAtLoginHelp)
         .accessibilityIdentifier("copylasso.settings.launch-at-login")
         LaunchAtLoginStatusView(
           status: settingsController.launchAtLoginStatus,
@@ -107,7 +111,7 @@ struct SettingsView: View {
     }
     .formStyle(.grouped)
     .padding(16)
-    .frame(width: 520, height: 560)
+    .frame(minWidth: 520, idealWidth: 520, minHeight: 560, idealHeight: 560)
     .accessibilityIdentifier("copylasso.settings.form")
     .onAppear {
       settingsController.refreshLaunchAtLoginStatus()

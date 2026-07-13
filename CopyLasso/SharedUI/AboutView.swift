@@ -22,7 +22,7 @@ struct AboutView: View {
         .multilineTextAlignment(.center)
     }
     .padding(24)
-    .frame(width: 360)
+    .frame(minWidth: 360, idealWidth: 360)
   }
 }
 

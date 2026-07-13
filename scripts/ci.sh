@@ -34,11 +34,17 @@ cd "$repository_root"
 rm -rf "$derived_data"
 mkdir -p "$derived_data"
 
+echo "Verifying canonical CI contract"
+./scripts/test-ci-contract.sh
+
 echo "Linting Swift sources"
 xcrun swift-format lint --recursive --strict \
     CopyLasso \
     CopyLassoTests \
     CopyLassoUITests
+
+echo "Auditing privacy, security, entitlements, and dependencies"
+./scripts/audit-privacy-security.sh
 
 readonly committed_development_team_pattern='^[[:space:]]*"?DEVELOPMENT_TEAM(\[[^]]+\])?"?[[:space:]]*=[[:space:]]*[A-Z0-9]{10};'
 
@@ -247,6 +253,42 @@ if [[ "$lifecycle_log_files" != "$lifecycle_logger" ]] || \
     exit 1
 fi
 
+readonly accessibility_appearance='CopyLasso/SharedUI/AccessibilityAppearance.swift'
+readonly accessibility_tests='CopyLassoTests/SharedUI/AccessibilityAppearanceTests.swift'
+readonly accessibility_documentation='docs/architecture/accessibility-and-appearance.md'
+if [[ ! -e "$accessibility_appearance" ]] || \
+    [[ ! -e "$accessibility_tests" ]] || \
+    [[ ! -e "$accessibility_documentation" ]] || \
+    ! /usr/bin/grep -q 'accessibilityDisplayShouldIncreaseContrast' "$accessibility_appearance" || \
+    ! /usr/bin/grep -q 'accessibilityDisplayShouldReduceMotion' "$accessibility_appearance" || \
+    ! /usr/bin/grep -q 'appearanceProvider.currentAppearance.selectionOverlayStyle' \
+      CopyLasso/Services/AppKitRegionSelectionService.swift || \
+    ! /usr/bin/grep -q 'style.outline.lineWidth' \
+      CopyLasso/Services/AppKitRegionSelectionService.swift || \
+    ! /usr/bin/grep -q 'CAMediaTimingFunction(name: .linear)' \
+      CopyLasso/Services/AppKitRegionSelectionService.swift || \
+    ! /usr/bin/grep -q 'animates: !reduceMotion' "$accessibility_appearance" || \
+    ! /usr/bin/grep -q 'FeedbackPanelLayout.contentHeight' \
+      CopyLasso/SharedUI/FeedbackPanel.swift || \
+    ! /usr/bin/grep -q 'animationBehavior = .none' CopyLasso/SharedUI/FeedbackPanel.swift || \
+    ! /usr/bin/grep -q 'animationBehavior = .none' \
+      CopyLasso/SharedUI/PermissionRecoveryPanel.swift || \
+    ! /usr/bin/grep -q 'AccessibilityAuditCopy.shortcutRecorderLabel' \
+      CopyLasso/SharedUI/OnboardingView.swift || \
+    ! /usr/bin/grep -q 'AccessibilityAuditCopy.shortcutRecorderLabel' \
+      CopyLasso/SharedUI/SettingsView.swift || \
+    ! /usr/bin/grep -q 'testProductionPanelExpandsVerticallyForWrappedPreviewInsteadOfClipping' \
+      CopyLassoTests/SharedUI/FeedbackPanelControllerTests.swift || \
+    ! /usr/bin/grep -q 'testOnboardingExposesCompoundControlNamesAndCompletesFromTheKeyboard' \
+      CopyLassoUITests/CopyLassoUITests.swift || \
+    /usr/bin/grep -R -q 'animationBehavior = .utilityWindow' CopyLasso/SharedUI || \
+    /usr/bin/grep -q 'lineLimit(2)' CopyLasso/SharedUI/FeedbackPanel.swift || \
+    /usr/bin/grep -q 'frame(width: 560, height: 620)' CopyLasso/SharedUI/OnboardingView.swift || \
+    /usr/bin/grep -q 'frame(width: 520, height: 560)' CopyLasso/SharedUI/SettingsView.swift; then
+    echo "G21 must retain accessible controls, adaptive text, contrast, motion-aware selection, and motion-free panels." >&2
+    exit 1
+fi
+
 if /usr/bin/grep -qE 'CGImage|RecognizedTextObservation|SelectionResult|CaptureFeedback' \
     "$capture_coordinator"; then
     echo "CaptureCoordinator must remain free of geometry, pixels, recognized text, and feedback payloads." >&2
@@ -307,12 +349,14 @@ echo "Building unit-test and UI-test bundles"
 xcodebuild build-for-testing \
     "${common_arguments[@]}" \
     -configuration Debug \
+    -enableCodeCoverage YES \
     "${probe_arguments[@]}"
 
 echo "Running unit tests"
 xcodebuild test-without-building \
     "${common_arguments[@]}" \
     -configuration Debug \
+    -enableCodeCoverage YES \
     -parallel-testing-enabled NO \
     -test-timeouts-enabled YES \
     -default-test-execution-time-allowance 60 \
@@ -320,6 +364,20 @@ xcodebuild test-without-building \
     -only-testing:CopyLassoTests \
     -resultBundlePath "$derived_data/UnitTests.xcresult" \
     "${probe_arguments[@]}"
+
+echo "Auditing behavioral coverage"
+./scripts/audit-coverage.sh "$derived_data/UnitTests.xcresult"
+
+echo "Running the complete unit bundle with networking denied"
+COPYLASSO_CI_ARCH="$requested_architecture" \
+    COPYLASSO_OFFLINE_DERIVED_DATA_PATH="$derived_data" \
+    ./scripts/test-offline.sh
+
+echo "Running deterministic unit repeatability gate"
+COPYLASSO_CI_ARCH="$requested_architecture" \
+    COPYLASSO_REPEAT_DERIVED_DATA_PATH="$derived_data" \
+    COPYLASSO_REPEAT_COUNT=3 \
+    ./scripts/test-repeatability.sh
 
 echo "Inspecting required build settings"
 xcodebuild -showBuildSettings \
@@ -352,10 +410,13 @@ assert_setting "$derived_data/debug-build-settings.txt" SWIFT_STRICT_CONCURRENCY
 assert_setting "$derived_data/debug-build-settings.txt" SWIFT_TREAT_WARNINGS_AS_ERRORS YES
 assert_setting "$derived_data/debug-build-settings.txt" GCC_TREAT_WARNINGS_AS_ERRORS YES
 assert_setting "$derived_data/debug-build-settings.txt" ENABLE_APP_SANDBOX YES
+assert_setting "$derived_data/debug-build-settings.txt" CODE_SIGN_ENTITLEMENTS CopyLasso/CopyLasso.entitlements
 assert_setting "$derived_data/debug-build-settings.txt" PRODUCT_BUNDLE_IDENTIFIER io.github.bennetthilberg.copylasso.debug
 assert_setting "$derived_data/debug-build-settings.txt" INFOPLIST_FILE Configuration/CopyLasso-Info.plist
 assert_setting "$derived_data/debug-build-settings.txt" INFOPLIST_KEY_LSUIElement YES
 assert_setting "$derived_data/release-build-settings.txt" PRODUCT_BUNDLE_IDENTIFIER io.github.bennetthilberg.copylasso
+assert_setting "$derived_data/release-build-settings.txt" ENABLE_APP_SANDBOX YES
+assert_setting "$derived_data/release-build-settings.txt" CODE_SIGN_ENTITLEMENTS CopyLasso/CopyLasso.entitlements
 assert_setting "$derived_data/release-build-settings.txt" ENABLE_HARDENED_RUNTIME YES
 assert_setting "$derived_data/release-build-settings.txt" INFOPLIST_FILE Configuration/CopyLasso-Info.plist
 assert_setting "$derived_data/release-build-settings.txt" INFOPLIST_KEY_LSUIElement YES
@@ -398,6 +459,20 @@ if [[ ! -x "$release_executable" ]]; then
     exit 1
 fi
 
+linked_non_system="$({ /usr/bin/otool -L "$release_executable" | \
+    /usr/bin/awk '/^\t/{print $1}' | \
+    /usr/bin/grep -vE '^(/System/Library/|/usr/lib/)' || true; })"
+if [[ -n "$linked_non_system" ]]; then
+    echo "Release links an unexpected non-system dynamic library." >&2
+    exit 1
+fi
+
+if /usr/bin/nm -u "$release_executable" | \
+    /usr/bin/grep -qE 'NSURLSession|NWConnection|_nw_|CFHTTP|WebKit|_socket$'; then
+    echo "Release contains an unexpected network-client symbol." >&2
+    exit 1
+fi
+
 if /usr/bin/strings "$release_executable" | /usr/bin/grep -qE -- '--g10-g11-|--g12-|--g13-|--g14-|--g15-|--g16-|--g17-'; then
     echo "Debug-only UI-test controls leaked into Release." >&2
     exit 1
@@ -419,7 +494,9 @@ if [[ ! -f "$debug_module" ]] || \
     ! /usr/bin/grep -a -q 'SettingsController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'GlobalShortcutController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'ApplicationLifecycleController' "$debug_module" || \
-    ! /usr/bin/grep -a -q 'SystemCaptureLifecycleLogger' "$debug_module"; then
+    ! /usr/bin/grep -a -q 'SystemCaptureLifecycleLogger' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'AccessibilityAppearance' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'SystemAccessibilityAppearanceProvider' "$debug_module"; then
     echo "Debug is missing the production-neutral workflow architecture." >&2
     exit 1
 fi
@@ -444,7 +521,9 @@ for release_architecture in arm64 x86_64; do
         ! /usr/bin/grep -a -q 'SettingsController' "$release_module" || \
         ! /usr/bin/grep -a -q 'GlobalShortcutController' "$release_module" || \
         ! /usr/bin/grep -a -q 'ApplicationLifecycleController' "$release_module" || \
-        ! /usr/bin/grep -a -q 'SystemCaptureLifecycleLogger' "$release_module"; then
+        ! /usr/bin/grep -a -q 'SystemCaptureLifecycleLogger' "$release_module" || \
+        ! /usr/bin/grep -a -q 'AccessibilityAppearance' "$release_module" || \
+        ! /usr/bin/grep -a -q 'SystemAccessibilityAppearanceProvider' "$release_module"; then
         echo "Release is missing the production-neutral workflow architecture for $release_architecture." >&2
         exit 1
     fi

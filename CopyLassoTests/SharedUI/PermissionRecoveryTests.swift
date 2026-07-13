@@ -1,3 +1,4 @@
+import AppKit
 import XCTest
 
 @testable import CopyLasso
@@ -118,6 +119,29 @@ final class PermissionRecoveryTests: XCTestCase {
       controller.model.retryStatus,
       "Access is still unavailable. If you chose Later, quit and reopen CopyLasso, then choose Try Again."
     )
+  }
+
+  func testProductionPanelIsNonactivatingAndUsesNoAppDefinedAnimation() throws {
+    let permission = StubScreenCapturePermissionService(
+      currentResult: .notGrantedAfterRequest,
+      requestResult: .notGrantedAfterRequest
+    )
+    let controller = PermissionRecoveryPanelController(permissionService: permission)
+
+    controller.present(.notGrantedAfterRequest)
+
+    let panel = try XCTUnwrap(
+      NSApp.windows.first(where: {
+        $0.identifier?.rawValue == "copylasso.permission-recovery.panel"
+      }) as? NSPanel
+    )
+    XCTAssertTrue(panel.isVisible)
+    XCTAssertTrue(panel.styleMask.contains(.nonactivatingPanel))
+    XCTAssertEqual(panel.animationBehavior, .none)
+    XCTAssertFalse(panel.canBecomeMain)
+
+    controller.dismiss()
+    XCTAssertFalse(panel.isVisible)
   }
 
   func testRejectedRetryDoesNotClearTheAuthoritativeDenial() {

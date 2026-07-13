@@ -85,6 +85,56 @@ final class FeedbackPanelControllerTests: XCTestCase {
     XCTAssertEqual(host.hideCallCount, 2)
   }
 
+  func testReusedHostRefreshesBackgroundStyleFromCurrentAccessibilityAppearance()
+    async throws
+  {
+    let appearanceProvider = MutableAccessibilityAppearanceProvider(
+      currentAppearance: AccessibilityAppearance(
+        increaseContrast: false,
+        differentiateWithoutColor: false,
+        reduceTransparency: false,
+        reduceMotion: false
+      )
+    )
+    let host = SpyFeedbackPanelHost()
+    let waiter = ManualFeedbackWaiter()
+    var makePanelCallCount = 0
+    let controller = FeedbackPanelController(
+      appearanceProvider: appearanceProvider,
+      makePanel: { _ in
+        makePanelCallCount += 1
+        return host
+      },
+      waitForDismissal: waiter.wait
+    )
+
+    try controller.present(.noText)
+    await waiter.waitUntilCallCount(1)
+    XCTAssertEqual(controller.model.feedbackHUDBackgroundStyle, .regularMaterial)
+    XCTAssertEqual(makePanelCallCount, 1)
+    waiter.resumeCall(at: 0)
+    await waitUntilDismissed(controller)
+
+    appearanceProvider.currentAppearance = AccessibilityAppearance(
+      increaseContrast: false,
+      differentiateWithoutColor: false,
+      reduceTransparency: true,
+      reduceMotion: false
+    )
+    try controller.present(.failure(.feedback))
+    await waiter.waitUntilCallCount(2)
+
+    XCTAssertEqual(
+      controller.model.feedbackHUDBackgroundStyle,
+      .opaqueWindowBackground
+    )
+    XCTAssertEqual(makePanelCallCount, 1)
+    XCTAssertEqual(host.showCallCount, 2)
+
+    waiter.resumeCall(at: 1)
+    await waitUntilDismissed(controller)
+  }
+
   func testOlderDismissalCannotHideANewerPresentation() async throws {
     let host = SpyFeedbackPanelHost()
     let waiter = ManualFeedbackWaiter()
@@ -169,6 +219,7 @@ final class FeedbackPanelControllerTests: XCTestCase {
     XCTAssertTrue(panel.collectionBehavior.contains(.canJoinAllSpaces))
     XCTAssertTrue(panel.collectionBehavior.contains(.fullScreenAuxiliary))
     XCTAssertTrue(panel.collectionBehavior.contains(.ignoresCycle))
+    XCTAssertEqual(panel.animationBehavior, .none)
     XCTAssertEqual(
       NSWorkspace.shared.frontmostApplication?.processIdentifier,
       frontmostProcess
@@ -178,6 +229,30 @@ final class FeedbackPanelControllerTests: XCTestCase {
     await waitUntilDismissed(controller)
     XCTAssertFalse(panel.isVisible)
     XCTAssertNil(controller.model.feedback)
+  }
+
+  func testProductionPanelExpandsVerticallyForWrappedPreviewInsteadOfClipping() async throws {
+    let waiter = ManualFeedbackWaiter()
+    let controller = FeedbackPanelController(waitForDismissal: waiter.wait)
+    let preview = String(
+      repeating: "Readable enlarged preview content ",
+      count: 8
+    )
+    try controller.present(.success(preview: preview))
+    await waiter.waitUntilCallCount(1)
+
+    let panel = try XCTUnwrap(
+      NSApp.windows.first(where: { $0.identifier?.rawValue == "copylasso.feedback.panel" })
+        as? NSPanel
+    )
+    XCTAssertGreaterThan(panel.contentLayoutRect.height, FeedbackPanelLayout.minimumHeight)
+    XCTAssertGreaterThanOrEqual(
+      panel.contentLayoutRect.height,
+      try XCTUnwrap(panel.contentViewController?.view.fittingSize.height)
+    )
+
+    waiter.resumeCall(at: 0)
+    await waitUntilDismissed(controller)
   }
 
   private func waitUntilDismissed(_ controller: FeedbackPanelController) async {
@@ -199,6 +274,15 @@ private final class SpyFeedbackPanelHost: FeedbackPanelHosting {
 
   func hide() {
     hideCallCount += 1
+  }
+}
+
+@MainActor
+private final class MutableAccessibilityAppearanceProvider: AccessibilityAppearanceProviding {
+  var currentAppearance: AccessibilityAppearance
+
+  init(currentAppearance: AccessibilityAppearance) {
+    self.currentAppearance = currentAppearance
   }
 }
 

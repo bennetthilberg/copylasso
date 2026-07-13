@@ -6,13 +6,18 @@ import SwiftUI
 @Observable
 final class FeedbackPresentationModel {
   private(set) var feedback: CaptureFeedback?
+  private(set) var feedbackHUDBackgroundStyle: FeedbackHUDBackgroundStyle = .regularMaterial
 
   var content: FeedbackPresentationContent? {
     feedback.map(FeedbackPresentationContent.init)
   }
 
-  func present(_ feedback: CaptureFeedback) {
+  func present(
+    _ feedback: CaptureFeedback,
+    backgroundStyle: FeedbackHUDBackgroundStyle
+  ) {
     self.feedback = feedback
+    feedbackHUDBackgroundStyle = backgroundStyle
   }
 
   func dismiss() {
@@ -34,6 +39,7 @@ final class FeedbackPanelController: FeedbackService {
   let model = FeedbackPresentationModel()
 
   private let makePanel: PanelFactory
+  private let appearanceProvider: any AccessibilityAppearanceProviding
   private let waitForDismissal: DismissalWaiter
   private var panel: (any FeedbackPanelHosting)?
   private var presentationGeneration: UInt = 0
@@ -41,9 +47,12 @@ final class FeedbackPanelController: FeedbackService {
 
   init(
     displayDuration: Duration = .milliseconds(2500),
+    appearanceProvider: any AccessibilityAppearanceProviding =
+      SystemAccessibilityAppearanceProvider(),
     makePanel: @escaping PanelFactory = { AppKitFeedbackPanelHost(model: $0) },
     waitForDismissal: DismissalWaiter? = nil
   ) {
+    self.appearanceProvider = appearanceProvider
     self.makePanel = makePanel
     self.waitForDismissal =
       waitForDismissal
@@ -56,7 +65,10 @@ final class FeedbackPanelController: FeedbackService {
     presentationGeneration &+= 1
     let generation = presentationGeneration
     dismissalTask?.cancel()
-    model.present(feedback)
+    model.present(
+      feedback,
+      backgroundStyle: appearanceProvider.currentAppearance.feedbackHUDBackgroundStyle
+    )
     ensurePanel().show()
     dismissalTask = Task { @MainActor [weak self, waitForDismissal] in
       do {
@@ -114,7 +126,7 @@ private struct FeedbackHUDView: View {
           Text(content.message)
             .font(.subheadline)
             .foregroundStyle(.secondary)
-            .lineLimit(2)
+            .fixedSize(horizontal: false, vertical: true)
             .accessibilityIdentifier("copylasso.feedback.message")
         }
 
@@ -122,8 +134,11 @@ private struct FeedbackHUDView: View {
       }
       .padding(.horizontal, 18)
       .padding(.vertical, 14)
-      .frame(width: 440, height: 104)
-      .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+      .frame(width: FeedbackPanelLayout.width, alignment: .leading)
+      .background(
+        model.feedbackHUDBackgroundStyle.shapeStyle,
+        in: RoundedRectangle(cornerRadius: 14)
+      )
       .overlay {
         RoundedRectangle(cornerRadius: 14)
           .stroke(.separator.opacity(0.8), lineWidth: 1)
@@ -135,13 +150,33 @@ private struct FeedbackHUDView: View {
   }
 }
 
+extension FeedbackHUDBackgroundStyle {
+  fileprivate var shapeStyle: AnyShapeStyle {
+    switch self {
+    case .regularMaterial:
+      AnyShapeStyle(.regularMaterial)
+    case .opaqueWindowBackground:
+      AnyShapeStyle(
+        Color(nsColor: NSColor.windowBackgroundColor.withAlphaComponent(1))
+      )
+    }
+  }
+}
+
 @MainActor
 private final class AppKitFeedbackPanelHost: FeedbackPanelHosting {
   private let panel: NonactivatingFeedbackPanel
+  private let hostingController: NSHostingController<FeedbackHUDView>
 
   init(model: FeedbackPresentationModel) {
+    hostingController = NSHostingController(rootView: FeedbackHUDView(model: model))
     panel = NonactivatingFeedbackPanel(
-      contentRect: NSRect(x: 0, y: 0, width: 440, height: 104),
+      contentRect: NSRect(
+        x: 0,
+        y: 0,
+        width: FeedbackPanelLayout.width,
+        height: FeedbackPanelLayout.minimumHeight
+      ),
       styleMask: [.borderless, .nonactivatingPanel],
       backing: .buffered,
       defer: false
@@ -156,11 +191,21 @@ private final class AppKitFeedbackPanelHost: FeedbackPanelHosting {
     panel.isOpaque = false
     panel.isReleasedWhenClosed = false
     panel.level = .statusBar
-    panel.animationBehavior = .utilityWindow
-    panel.contentViewController = NSHostingController(rootView: FeedbackHUDView(model: model))
+    panel.animationBehavior = .none
+    panel.contentViewController = hostingController
   }
 
   func show() {
+    hostingController.view.invalidateIntrinsicContentSize()
+    hostingController.view.layoutSubtreeIfNeeded()
+    panel.setContentSize(
+      NSSize(
+        width: FeedbackPanelLayout.width,
+        height: FeedbackPanelLayout.contentHeight(
+          fittingHeight: hostingController.view.fittingSize.height
+        )
+      )
+    )
     let pointer = NSEvent.mouseLocation
     let screen = NSScreen.screens.first(where: { $0.frame.contains(pointer) }) ?? NSScreen.main
     if let visibleFrame = screen?.visibleFrame {

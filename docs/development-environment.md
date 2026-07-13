@@ -131,7 +131,20 @@ The canonical local and GitHub Actions entrypoint is:
 ./scripts/ci.sh
 ```
 
-It selects clean DerivedData under `.build`, verifies Xcode 26.6, lints Swift sources, resolves packages, builds Debug, builds the unit and UI test bundles, runs unit tests, asserts the required build settings, builds Universal 2 Release, and verifies both binary slices. It disables code signing and never launches the unsigned UI-test runner.
+Run the source privacy, security, entitlement, dependency, and secret audit independently with:
+
+```sh
+./scripts/audit-privacy-security.sh
+```
+
+The canonical run enforces the reviewed behavioral-coverage gate and repeats the already-built complete unit bundle three additional times. Re-run either check independently with:
+
+```sh
+./scripts/audit-coverage.sh .build/ci-$(uname -m)/UnitTests.xcresult
+./scripts/test-repeatability.sh
+```
+
+The canonical entrypoint verifies its own CI contract, runs the privacy/security and coverage audits, selects clean DerivedData under `.build`, verifies Xcode 26.6, lints Swift sources, resolves packages, builds Debug, builds the unit and UI test bundles, runs timeout-bounded nonparallel unit tests, repeats that already-built unit bundle with networking denied and then in three deterministic passes, asserts required settings, builds Universal 2 Release, and verifies both binary slices. It disables code signing and never launches the unsigned UI-test runner. See [Automated Coverage Review](coverage-review.md) for the baseline, per-file floors, and every justified uncovered region.
 
 For interactive verification, open `CopyLasso.xcodeproj`, select the shared `CopyLasso` scheme and **My Mac**, then use:
 
@@ -145,13 +158,15 @@ Interactive Run and UI testing require runnable local signing. Keep any team or 
 
 The G05-G07 executable feasibility harnesses were retired after their evidence was recorded. Their former launch arguments are no longer supported. Both Debug and Release contain the production AppKit selection overlay, ScreenCaptureKit region capture, local Vision OCR, pure text assembly, write-only plain-text clipboard output, and nonactivating HUD feedback.
 
-The application target contains the dockless menu-bar shell, production-neutral models and service contracts, live permission and selection adapters, actor-isolated production region capture, production Vision OCR, deterministic text assembly, and the output adapters. Capture Text validates a selected display, captures only after overlays are absent, recognizes the in-memory image away from the main actor, produces a transient plain string, writes nonempty text to the general pasteboard, and presents bounded feedback without activation. See [Architecture Overview](architecture/overview.md) for dependency and actor boundaries, [Capture Workflow](architecture/capture-workflow.md) for the complete operation and lifetime contract, [Plain-Text Assembly](architecture/text-assembly.md) for ordering rules, [Clipboard and Feedback](architecture/clipboard-and-feedback.md) for output privacy/lifetime rules, [Testing](testing.md) for signed matrices, [ADR-001](architecture/ADR-001-vision-ocr.md) for OCR evidence, [ADR-002](architecture/ADR-002-screen-capture.md) for permission and capture evidence, and [ADR-003](architecture/ADR-003-selection-overlay.md) for selection and coordinate evidence.
+The application target contains the dockless menu-bar shell, production-neutral models and service contracts, live permission and selection adapters, actor-isolated production region capture, production Vision OCR, deterministic text assembly, and the output adapters. Capture Text validates a selected display, captures only after overlays are absent, recognizes the in-memory image away from the main actor, produces a transient plain string, writes nonempty text to the general pasteboard, and presents bounded feedback without activation. See [Architecture Overview](architecture/overview.md) for dependency and actor boundaries, [Capture Workflow](architecture/capture-workflow.md) for the complete operation and lifetime contract, [Plain-Text Assembly](architecture/text-assembly.md) for ordering rules, [Clipboard and Feedback](architecture/clipboard-and-feedback.md) for output privacy/lifetime rules, [Security and Privacy Review](security-and-privacy-review.md) for entitlements, trust boundaries, and dependency evidence, [Testing](testing.md) for signed matrices, [ADR-001](architecture/ADR-001-vision-ocr.md) for OCR evidence, [ADR-002](architecture/ADR-002-screen-capture.md) for permission and capture evidence, and [ADR-003](architecture/ADR-003-selection-overlay.md) for selection and coordinate evidence.
 
 ## GitHub Actions
 
-`.github/workflows/ci.yml` runs for pull requests targeting `main` and pushes to `main`. It explicitly selects Xcode 26.6 and executes `scripts/ci.sh` on the GitHub-hosted macOS 26 Apple Silicon and Intel runner images. The workflow has read-only repository contents permission, persists no checkout credential, uses no secrets or cache, and bounds concurrent runs and job duration.
+`.github/workflows/ci.yml` runs for pull requests targeting `main` and pushes to `main`. It explicitly selects Xcode 26.6 and executes `scripts/ci.sh`, including its three-pass repeatability gate, on GitHub-hosted macOS 26 Apple Silicon and Intel runner images. The arm64 job transfers its exact Universal 2 Release artifact to a separate GitHub-hosted macOS 14 arm64 job, which verifies macOS 14.0 deployment metadata, ad-hoc signs the app on that host, and proves a clean process launch without invoking protected resources. The workflow has read-only repository contents permission, persists no checkout credential, uses no secrets or cache, and bounds concurrent runs, artifact retention, and job duration.
 
-The required check names are `build and test (arm64)` and `build and test (x86_64)`. Maintainers can apply the temporary `ci-failure-probe` label to a pull request to compile a controlled unit-test failure into both jobs. Removing the label restores green checks at the same commit. Delete the temporary repository label after verifying both transitions.
+The matrix reports `build and test (arm64)`, `build and test (x86_64)`, and `minimum OS runtime (macOS 14 arm64)`. Branch protection must require the minimum-OS context after this workflow reaches `main`; adding it earlier would make predecessor PRs that cannot emit the new context unmergeable. Maintainers can apply the temporary `ci-failure-probe` label to a pull request to compile a controlled unit-test failure into both build jobs. Removing the label restores all checks at the same commit. Delete the temporary repository label after verifying both transitions.
+
+The pinned KeyboardShortcuts 3.0.1 manifest requires Swift tools 6.2, while GitHub's macOS 14 image offers Xcode 16.2 at most. Source compilation on that image would test an unsupported toolchain rather than the product's runtime contract, so the minimum-OS job deliberately executes the Xcode 26.6 artifact. GitHub began deprecating hosted macOS 14 images on July 6, 2026 and has announced removal on November 2, 2026. Before that date, migrate this smoke to a maintained macOS 14 runner or VM; do not silently remove the gate.
 
 ## Tooling Policy
 
@@ -162,7 +177,7 @@ The required check names are `build and test (arm64)` and `build and test (x86_6
 
 ## Current Boundary
 
-The repository contains a buildable dockless menu-bar app with onboarding, persistent Settings, Launch at Login, a configurable global shortcut, production permission recovery, multi-display selection, in-memory ScreenCaptureKit capture, local Vision OCR, pure text assembly, write-only clipboard output, nonactivating feedback, root-owned sleep/lock/termination recovery, service test doubles, and retained feasibility evidence. The shortcut and menu enter the same complete production chain. Uniform cancellation, stage-specific error feedback, busy rejection, terminal recovery, 25-success and 20-alternating-cycle stress tests, operation-scoped cleanup, a seven-layout 1×/1.5×/2× display-snapshot matrix, and lifecycle cancellation gates are part of the canonical unit suite. Physical end-to-end and environmental hardening remain documented in the later manual matrices.
+The repository contains a buildable dockless menu-bar app with onboarding, persistent Settings, Launch at Login, a configurable global shortcut, accessible native presentation, production permission recovery, multi-display selection, in-memory ScreenCaptureKit capture, local Vision OCR, pure text assembly, write-only clipboard output, nonactivating feedback, root-owned sleep/lock/termination recovery, service test doubles, and retained feasibility evidence. The shortcut and menu enter the same complete production chain. Uniform cancellation, stage-specific error feedback, busy rejection before feedback, capture-independent HUD timers with immediate replacement, terminal recovery, 25-success and 20-alternating-cycle stress tests, operation-scoped cleanup, a seven-layout 1×/1.5×/2× display-snapshot matrix, lifecycle cancellation gates, selection-only focus restoration, and deterministic accessibility/appearance contracts are part of the 214-test canonical suite. Reviewed coverage floors, three-pass repeatability, and latest/minimum-OS CI are release gates. Physical end-to-end, VoiceOver/appearance, and environmental hardening remain documented in the later manual matrices.
 
 Normal Debug and Release runs use production selection and capture. Signed UI tests keep menu/settings coverage deterministic with Debug-only selection and capture doubles. Add `--g13-live-selection` to exercise the real overlay with controlled permission and in-memory capture; add `--g14-live-capture` only for an explicitly manual real ScreenCaptureKit run. Both controls and doubles are compiled out of Release.
 

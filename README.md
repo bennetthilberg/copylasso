@@ -4,7 +4,7 @@
 
 CopyLasso is a free, open-source macOS utility for copying visible text from anywhere on screen. Press a global shortcut, drag around text, and receive the recognized plain text on the clipboard.
 
-> **Project status:** CopyLasso is in early pre-release development. The dockless app now includes first-run setup, persistent native Settings, explicit Launch at Login control, a configurable global shortcut, and one lifecycle-hardened production workflow from Screen Recording permission through multi-display selection, display-snapshot-validated in-memory capture, local OCR, deterministic plain-text assembly, clipboard output, and nonactivating feedback. Physical sleep/lock/display, accessibility, privacy, compatibility, and release qualification are still pending, and no public release is available.
+> **Project status:** CopyLasso is in early pre-release development. The dockless app now includes first-run setup, persistent native Settings, explicit Launch at Login control, a configurable global shortcut, accessibility-aware native presentation, and one lifecycle-hardened production workflow from Screen Recording permission through multi-display selection, display-snapshot-validated in-memory capture, local OCR, deterministic plain-text assembly, clipboard output, and nonactivating feedback. Automated privacy/security and behavioral-coverage audits are active; physical sleep/lock/display, live VoiceOver/appearance, signed privacy deltas, performance, compatibility, and release qualification are still pending. No public release is available.
 
 ## Planned v0.1 Experience
 
@@ -18,9 +18,9 @@ The initial release targets ordinary, approximately horizontal, single-column En
 
 ## Privacy
 
-CopyLasso is designed to keep captured images and recognized text local, in memory, and only for as long as the active operation needs them. v0.1 has no accounts, cloud OCR, analytics, telemetry, or capture history. Core OCR does not require a network connection.
+CopyLasso is designed to keep captured images and recognized text local, in memory, and only for as long as the active operation needs them. v0.1 has no accounts, cloud OCR, analytics, telemetry, capture history, network-client entitlement, or automatic updater. Core OCR does not require a network connection.
 
-See the full [privacy policy](PRIVACY.md) and [v0.1 product contract](docs/v0.1-product-contract.md) for the approved guarantees and limitations.
+See the full [privacy policy](PRIVACY.md), [security and privacy review](docs/security-and-privacy-review.md), and [v0.1 product contract](docs/v0.1-product-contract.md) for the approved guarantees, implementation boundaries, and limitations.
 
 ## Development Requirements
 
@@ -29,7 +29,7 @@ See the full [privacy policy](PRIVACY.md) and [v0.1 product contract](docs/v0.1-
 - Swift 6 and the `swift-format` version bundled with that Xcode release
 - An Apple Development signing identity for signed local builds
 
-The current verified baseline is Xcode 26.6 with Swift 6.3.3. See [Architecture Overview](docs/architecture/overview.md) and [Capture Workflow](docs/architecture/capture-workflow.md) for component and lifetime boundaries, [Development Environment](docs/development-environment.md) for setup and canonical commands, [Testing](docs/testing.md) for automated and signed matrices, and [Build Configuration](docs/architecture/build-configuration.md) for target and signing decisions.
+The current verified baseline is Xcode 26.6 with Swift 6.3.3. See [Architecture Overview](docs/architecture/overview.md), [Capture Workflow](docs/architecture/capture-workflow.md), and [Accessibility and Appearance](docs/architecture/accessibility-and-appearance.md) for component and presentation boundaries, [Development Environment](docs/development-environment.md) for setup and canonical commands, [Testing](docs/testing.md) for automated and signed matrices, [Automated Coverage Review](docs/coverage-review.md) for reviewed gaps and regression floors, [Manual QA and Performance](docs/manual-qa-and-performance.md) for release qualification, and [Build Configuration](docs/architecture/build-configuration.md) for target and signing decisions.
 
 Run the same unsigned build and unit-test pipeline used by CI:
 

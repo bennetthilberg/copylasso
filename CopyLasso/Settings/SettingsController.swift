@@ -186,7 +186,11 @@ final class SettingsController {
         return false
       }
       refreshLaunchAtLoginStatus()
-      return launchAtLoginStatus == .disabled
+      guard launchAtLoginStatus == .disabled else {
+        launchAtLoginIssue = .disableFailed
+        return false
+      }
+      return true
     }
     if launchAtLoginStatus == .unavailable, allowUnavailable {
       launchAtLoginIssue = nil

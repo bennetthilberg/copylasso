@@ -141,6 +141,19 @@ final class ScreenCapturePermissionServiceTests: XCTestCase {
     XCTAssertEqual(context.client.preflightCallCount, 2)
   }
 
+  func testExplicitUserRetryCannotBeBankedBeforeCaptureDenial() {
+    let context = makeContext(preflight: true)
+
+    context.service.beginUserInitiatedRetry()
+    _ = context.service.recordCaptureDenial()
+
+    XCTAssertEqual(
+      context.service.currentObservation(),
+      .notGrantedAfterPreviouslyGranted
+    )
+    XCTAssertEqual(context.client.preflightCallCount, 0)
+  }
+
   func testOpenSystemSettingsUsesTheScreenRecordingPrivacyPaneAndReportsFailure() {
     let success = makeContext(openSettings: true)
     XCTAssertTrue(success.service.openSystemSettings())
