@@ -139,6 +139,7 @@ func makeTestCaptureCommand(
       requestResult: .granted
     ),
     selectionService: StubRegionSelectionService(result: .failure(.injected)),
+    screenCaptureService: StubScreenCaptureService(result: .failure(.injected)),
     recoveryPresenter: SpyPermissionRecoveryPresenter(),
     scheduleWork: scheduleWork
   )

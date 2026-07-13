@@ -2,27 +2,55 @@
 
 - **Status:** Accepted
 - **Date:** July 10, 2026
-- **Scope:** G07 feasibility spike; production selection remains deferred to G13 and region capture to G14
+- **Scope:** G07 feasibility decision adopted by the production G13 selection service; region capture remains deferred to G14
 
 ## Context
 
-CopyLasso must let a user begin a rectangular selection on any attached display without activating the app, dimming unrelated displays, or including the overlay in the later capture. AppKit and Core Graphics describe the same display with different origins and Y-axis conventions, and backing pixels may use a nonintegral scale. G07 tests the windowing and geometry assumptions before they become production architecture.
+CopyLasso must let a user begin a rectangular selection on any attached display without dimming unrelated displays or including the overlay in the later capture. Signed production evidence established that public cursor APIs require CopyLasso to become active during selection to replace another app's pointer reliably. AppKit and Core Graphics describe the same display with different origins and Y-axis conventions, and backing pixels may use a nonintegral scale. G07 tests the windowing and geometry assumptions before they become production architecture.
 
-The experiment is Debug-only and is launched explicitly with `--g07-selection-spike`. Launching it presents a diagnostic window but does not present overlays. It never captures pixels, calls Vision, writes the clipboard, or persists selection data.
+The original experiment was Debug-only and used `--g07-selection-spike`; G08 retired that executable harness while preserving its evidence and geometry. G13 now implements the same decision in the normal Debug and Release path. Construction and launch remain inert: panels are created only after an authorized user command reaches selection. The current workflow never captures pixels, calls Vision, writes the clipboard, or persists selection data.
 
 ## Decision
 
 The AppKit approach is viable. CopyLasso will use one transparent, borderless `NSPanel` per `NSScreen` during selection. Each panel:
 
-- uses [`.nonactivatingPanel`](https://developer.apple.com/documentation/appkit/nswindow/stylemask-swift.struct/nonactivatingpanel) so the user's frontmost application stays active;
+- uses [`.nonactivatingPanel`](https://developer.apple.com/documentation/appkit/nswindow/stylemask-swift.struct/nonactivatingpanel) to avoid ordinary panel activation behavior while an explicit selection-only activation manager owns the temporary focus handoff;
 - covers the complete `NSScreen.frame`, including menu-bar and Dock regions;
 - uses `.canJoinAllSpaces`, `.fullScreenAuxiliary`, and `.ignoresCycle` [collection behaviors](https://developer.apple.com/documentation/appkit/nswindow/collectionbehavior-swift.struct);
 - sits at screen-saver level and does not enter normal window cycling;
-- is visually clear before mouse-down;
-- displays a crosshair and, while dragging, dims only the initiating display outside the selection with 18% black; and
+- is visually clear before mouse-down while the normal AppKit crosshair replaces the pointer;
+- while dragging, dims only the initiating display outside the selection with 18% black; and
 - draws a black-and-white selection border that remains visible over light and dark content.
 
-The panel under the pointer becomes key and explicitly makes its overlay view first responder without activating CopyLasso. This gives Escape a deterministic path before or during a drag. A drag remains owned by its initiating display; moving the pointer onto another display clamps the endpoint to the initiating display edge. Unrelated display panels remain fully transparent.
+Before panels are shown, the activation manager records the frontmost application,
+requests selection-only activation, and waits for AppKit's
+`didBecomeActiveNotification`. Only that confirmed-active callback may construct
+and present the panels. The panel under the pointer then requests key status, but
+cursor setup waits for that exact panel's `didBecomeKey` callback rather than
+treating `makeKey()` as synchronous. Once key, the panel explicitly makes its
+overlay view first responder. If mouse-down occurs on any other display,
+that clicked panel becomes key and its overlay view becomes first responder before
+drag handling begins. This gives Escape a deterministic path before or during a
+drag regardless of which display was initially under the pointer. A drag remains
+owned by its initiating display; moving the pointer onto another display clamps
+the endpoint to the initiating display edge. Unrelated display panels remain fully
+transparent.
+
+Cursor setup follows panel setup rather than preceding it. After every panel is
+ordered and the pointer panel has become key with its overlay view first
+responder, that view asks its owning window to invalidate and rebuild its
+full-window crosshair cursor rectangle. Cursor-rectangle management remains
+enabled so AppKit continues to apply that crosshair during movement. The
+controller waits one main-actor turn for the key-window refresh to settle, then
+pushes and sets the selection-wide system crosshair. Mouse-down repeats the
+window-level refresh after making a newly clicked panel key.
+
+AppKit does not reliably replace the WindowServer cursor while another
+application remains active. CopyLasso therefore requests foreground status for
+the selection interval and uses the normal AppKit crosshair; it does not draw a
+second pointer. Cleanup hides all panels, restores the cursor stack, and then
+cooperatively yields activation back to the recorded application before the
+deferred selection result is delivered.
 
 The spike intentionally does not set `NSWindow.SharingType.none`. Apple now documents [`none`](https://developer.apple.com/documentation/appkit/nswindow/sharingtype-swift.enum/none) as a legacy value that should not be used to hide a window from screen capture.
 
@@ -46,7 +74,7 @@ Conversion is per display rather than based on the primary display:
 4. Add that display's Core Graphics bounds origin for the global top-left rectangle.
 5. Multiply the local top-left rectangle by the backing scale, using `floor` for minimum edges and `ceil` for maximum edges so partially covered pixels are included.
 
-The harness cross-checks the reported backing scale against `NSScreen.convertRectToBacking`. Invalid frames, nonfinite coordinates, and nonpositive scales are rejected. Unit tests cover 1×, 1.5×, and 2× scaling; negative origins; displays above, below, and beside the primary; all edge clamps; and the current Sidecar-style offset shape without embedding its runtime display identifier.
+The production display provider cross-checks the reported backing scale against `NSScreen.convertRectToBacking`. It reads `NSScreen.screens` fresh for every session, rejects missing or duplicate display identifiers and invalid geometry, and never caches a display layout. Unit tests cover 1×, 1.5×, and 2× scaling; negative origins; displays above, below, and beside the primary; all edge clamps; and the current Sidecar-style offset shape without embedding its runtime display identifier.
 
 ## Completion and Cancellation
 
@@ -58,10 +86,13 @@ Every path completes at most once. On mouse-up or cancellation, the controller s
 2. clears overlay drawing state;
 3. orders out every panel;
 4. restores the cursor stack;
-5. verifies that no panel remains visible; and
-6. delivers only the geometry outcome on the next main-actor turn.
+5. restores the previously active application when it remains available;
+6. verifies that no panel remains visible; and
+7. delivers only the geometry outcome on the next main-actor turn.
 
-That order establishes the G14 boundary: a future capture may begin only from the completion callback, after the overlay is absent. The G07 spike itself never performs capture.
+That order establishes the G14 boundary: capture may begin only from the completion callback, after the overlay is absent. G13 sends a valid `SelectionResult` to a temporary `ScreenCaptureService` implementation that always throws `unavailableUntilG14` before calling any capture API, then resets the coordinator to idle.
+
+The production service allows only one controller and unresolved continuation at a time. Concurrent menu or shortcut requests remain rejected while selection is active. Partial setup failures, display changes, application termination, and explicit lifecycle cancellation share the same cleanup path; surfaces hold only weak event callbacks, and the controller is released before the deferred result resumes the workflow.
 
 ## Live Evidence
 
@@ -82,11 +113,74 @@ At Dell 1600 × 900 and 144 Hz, live descriptors rebuilt to `(0, 0, 1600, 900)` 
 
 With TextEdit in a separate full-screen Space, the five-second trigger left the panel transparent until mouse-down, changed the cursor to a crosshair, and then displayed the expected initiating-display dim and border over TextEdit. It did not switch Spaces or bring CopyLasso forward. Final inspection found no CopyLasso process or window after termination, and no panel, dim, border, or crosshair remained after any completed or cancelled session.
 
+## Production Adoption
+
+G13 replaces the temporary unavailable selection service with `AppKitRegionSelectionService`. Normal Debug and Release runs use it. A Debug-only deterministic selection double keeps unrelated signed UI tests from covering the desktop, while `--g13-live-selection` combines a controlled granted permission observation with the real accessible overlay. Both the argument and double are absent from Release.
+
+Automated coverage begins from an expected compile failure before the production service types exist and covers fresh enumeration, surface construction and partial failure, initiating-display-only rendering, clamping and conversion, every cancellation source, deferred cleanup, hidden-window verification, overlap rejection, controller reuse, no launch-time overlay, no-pixel command orchestration, and at least 20 sequential sessions. The signed live matrix and its exact workstation display evidence are recorded in `docs/testing.md` and the local roadmap when executed.
+
+A July 11 signed follow-up found that the production pointer could remain an
+arrow because the cursor was pushed before the AppKit panels were ordered. A
+focused regression test first reproduced that startup order and now requires
+all surfaces to be visible, the input surface to be ready, and every cursor
+rectangle to be refreshed before the crosshair is pushed. The same test proves
+a partial surface-construction failure does not mutate the cursor stack. A
+fresh signed manual run remains required to validate the WindowServer-visible
+pointer before and throughout a drag.
+
+A subsequent review found that directly discarding and adding a cursor rectangle
+on the view did not invalidate AppKit's active window cursor tracking when the
+stationary pointer was already over the newly ordered overlay. The regression
+now proves that refresh invalidates and rebuilds cursor rectangles through the
+owning window and that a clicked noninitial panel repeats that refresh before
+drag rendering.
+
+The follow-up signed runs first showed only the ordinary arrow and then showed
+that arrow plus an offset app-drawn reticle. Reasserting or hiding the cursor
+could not provide a reliable replacement while the originating application
+remained active. The maintainer therefore approved a selection-only focus
+handoff. Focused controller coverage proves activation precedes panel
+presentation, the rejected drawn-reticle path is absent, and restoration
+precedes deferred completion. Signed human observation remains the final visual
+and focus-restoration gate.
+
+A July 12 repeated-capture run found a narrower activation race: invoking again
+while success feedback remained visible could leave the arrow in place until
+mouse-down, even though the selection request had already called `activate`.
+Calling `activate` is only a request, so the controller now waits for the actual
+application-active notification before it creates an input-ready surface,
+refreshes cursor rectangles, or pushes the crosshair. Regression tests hold that
+notification to prove no surface or cursor appears early, prove the notification
+releases startup exactly once, cover the already-active path, and prove
+cancellation invalidates a late callback.
+
+The corresponding signed candidate proved application activation was still not
+the final WindowServer-visible boundary: rapid reuse could flicker or leave the
+arrow until mouse-down. The controller had requested `makeKey()` on the pointer's
+panel and immediately rebuilt cursor rectangles. AppKit establishes invalidated
+cursor rectangles when their window becomes key, so the production surface now
+reports a one-shot key-readiness callback. Only that callback rebuilds cursor
+rectangles and pushes the native crosshair. Cleanup cancels pending readiness,
+and direct tests cover delayed key status, cancellation, duplicate callbacks, and
+a mouse-down handoff that arrives before the initial panel reports key.
+
+A later signed run proved that disabling cursor-rectangle management to avoid a
+stationary overwrite instead made the pointer alternate between the arrow and
+crosshair during movement. The correction keeps native cursor rectangles active,
+refreshes the exact keyed surface, and defers the global crosshair push by one
+main-actor turn so AppKit's key-window refresh is established first. Focused
+tests prove the refresh through the owning window, the refresh-before-push order,
+and suppression of a scheduled push after cancellation.
+
+The G13 production run on macOS 26.5.1 used the Dell primary display at 1920 × 1080 and 144 Hz: display ID `4`, matching AppKit and Core Graphics bounds `(0, 0, 1920, 1080)`, 1× backing scale, and a matching 100-point backing conversion. Menu and global-shortcut invocation each presented one accessible overlay without replacing frontmost TextEdit. Escape, click cancellation, a valid drag, full-screen TextEdit, and quitting during selection all removed every panel and left no CopyLasso window or process behind. The signed suite completed 20 mixed live sessions without changing the clipboard.
+
+A fresh physical extended-display run was not possible during G13 because the temporary Sidecar iPad had been disconnected and was unavailable. The production service still uses the G07-proven per-display strategy, the current suite retains the exact Sidecar-style 2× geometry fixture, and a signed conditional test exercises both directions of a cross-display drag whenever an extended display is attached. That conditional test was compiled on both architectures and skipped—rather than reported as passing—on the one-display G13 workstation state. G19 remains responsible for the broader physical display matrix.
+
 ## Consequences and Limits
 
-- G13 may turn the proven behavior into production selection architecture without changing the coordinate contract.
+- G13 turns the proven behavior into production selection architecture without changing the coordinate contract.
 - G14 must capture only after the selection completion callback and must use the selected display's local Core Graphics rectangle.
 - Display configuration changes cancel the current session; production code must rebuild descriptors before another selection.
 - Full hardening across more physical arrangements, display rotations, and macOS versions remains G19 and G29 work.
 - G08 retired the executable overlay harness while retaining the pure geometry and selection-session model. G13 owns the production AppKit adapter.
-- G07 introduces no public API, dependency, permission request, pixel capture, OCR integration, clipboard behavior, onboarding, or production UI.
+- G13 introduces no public API, dependency, additional permission request, pixel capture, OCR integration, clipboard behavior, or feedback UI.

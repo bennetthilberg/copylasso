@@ -61,6 +61,127 @@ final class CopyLassoUITests: XCTestCase {
   }
 
   @MainActor
+  func testLiveSelectionOverlayIsAccessibleAndEscapeCleansItUp() {
+    let app = completedApp(extraArguments: ["--g13-live-selection"])
+    app.launch()
+    defer { app.terminate() }
+
+    openMenu(in: app)
+    menuItem("Capture Text", in: app).click()
+
+    let overlay = selectionOverlay(in: app)
+    XCTAssertTrue(overlay.waitForExistence(timeout: 5))
+    XCTAssertEqual(overlay.label, "CopyLasso text selection overlay")
+    app.typeKey(XCUIKeyboardKey.escape, modifierFlags: [])
+    XCTAssertTrue(overlay.waitForNonExistence(timeout: 5))
+
+    openMenu(in: app)
+    XCTAssertTrue(menuItem("Capture Text", in: app).isEnabled)
+  }
+
+  @MainActor
+  func testLiveSelectionClickAndValidDragCleanUpWithoutClipboardMutation() {
+    let app = completedApp(extraArguments: ["--g13-live-selection"])
+    app.launch()
+    defer { app.terminate() }
+    let pasteboardChangeCount = NSPasteboard.general.changeCount
+
+    openMenu(in: app)
+    menuItem("Capture Text", in: app).click()
+    var overlay = selectionOverlay(in: app)
+    XCTAssertTrue(overlay.waitForExistence(timeout: 5))
+    overlay.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+    XCTAssertTrue(overlay.waitForNonExistence(timeout: 5))
+
+    openMenu(in: app)
+    menuItem("Capture Text", in: app).click()
+    overlay = selectionOverlay(in: app)
+    XCTAssertTrue(overlay.waitForExistence(timeout: 5))
+    let start = overlay.coordinate(withNormalizedOffset: CGVector(dx: 0.35, dy: 0.35))
+    let end = overlay.coordinate(withNormalizedOffset: CGVector(dx: 0.55, dy: 0.50))
+    start.press(forDuration: 0.1, thenDragTo: end)
+
+    XCTAssertTrue(overlay.waitForNonExistence(timeout: 5))
+    XCTAssertEqual(NSPasteboard.general.changeCount, pasteboardChangeCount)
+    openMenu(in: app)
+    XCTAssertTrue(menuItem("Capture Text", in: app).isEnabled)
+  }
+
+  @MainActor
+  func testLiveSelectionRemainsReusableAcrossTwentyMixedSessions() {
+    let app = completedApp(extraArguments: ["--g13-live-selection"])
+    app.launch()
+    defer { app.terminate() }
+    let pasteboardChangeCount = NSPasteboard.general.changeCount
+
+    for index in 0..<20 {
+      openMenu(in: app)
+      let capture = menuItem("Capture Text", in: app)
+      XCTAssertTrue(capture.isEnabled, "Capture should be idle before session \(index + 1)")
+      capture.click()
+
+      let overlay = selectionOverlay(in: app)
+      XCTAssertTrue(overlay.waitForExistence(timeout: 5))
+
+      switch index % 3 {
+      case 0:
+        app.typeKey(XCUIKeyboardKey.escape, modifierFlags: [])
+      case 1:
+        overlay.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+      default:
+        let start = overlay.coordinate(withNormalizedOffset: CGVector(dx: 0.40, dy: 0.40))
+        let end = overlay.coordinate(withNormalizedOffset: CGVector(dx: 0.55, dy: 0.52))
+        start.press(forDuration: 0.1, thenDragTo: end)
+      }
+
+      XCTAssertTrue(
+        overlay.waitForNonExistence(timeout: 5),
+        "Overlay should be absent after session \(index + 1)"
+      )
+    }
+
+    XCTAssertEqual(NSPasteboard.general.changeCount, pasteboardChangeCount)
+    openMenu(in: app)
+    XCTAssertTrue(menuItem("Capture Text", in: app).isEnabled)
+  }
+
+  @MainActor
+  func testLiveSelectionCleansUpAfterCrossDisplayDrags() throws {
+    let displayCount = NSScreen.screens.count
+    guard displayCount > 1 else {
+      throw XCTSkip("Cross-display UI verification requires an extended display")
+    }
+
+    let app = completedApp(extraArguments: ["--g13-live-selection"])
+    app.launch()
+    defer { app.terminate() }
+    let pasteboardChangeCount = NSPasteboard.general.changeCount
+
+    for indices in [(0, 1), (1, 0)] {
+      openMenu(in: app)
+      menuItem("Capture Text", in: app).click()
+
+      let overlays = app.dialogs.matching(identifier: "copylasso.selection.overlay")
+      XCTAssertTrue(overlays.firstMatch.waitForExistence(timeout: 5))
+      XCTAssertEqual(overlays.count, displayCount)
+
+      let start = overlays.element(boundBy: indices.0).coordinate(
+        withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)
+      )
+      let end = overlays.element(boundBy: indices.1).coordinate(
+        withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)
+      )
+      start.press(forDuration: 0.1, thenDragTo: end)
+
+      XCTAssertTrue(overlays.firstMatch.waitForNonExistence(timeout: 5))
+    }
+
+    XCTAssertEqual(NSPasteboard.general.changeCount, pasteboardChangeCount)
+    openMenu(in: app)
+    XCTAssertTrue(menuItem("Capture Text", in: app).isEnabled)
+  }
+
+  @MainActor
   func testSettingsAndAboutReopenAfterClosing() {
     var app = completedApp()
     app.launch()
@@ -420,6 +541,11 @@ final class CopyLassoUITests: XCTestCase {
   @MainActor
   private func menuItem(_ label: String, in app: XCUIApplication) -> XCUIElement {
     statusItem(in: app).menuItems[label]
+  }
+
+  @MainActor
+  private func selectionOverlay(in app: XCUIApplication) -> XCUIElement {
+    app.dialogs["copylasso.selection.overlay"]
   }
 
   @MainActor

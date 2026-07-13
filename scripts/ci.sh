@@ -96,9 +96,26 @@ if [[ "$permission_api_files" != "$permission_service" ]] || \
     exit 1
 fi
 
-readonly prohibited_capture_runtime_pattern='import[[:space:]]+(ScreenCaptureKit|Vision)|SCScreenshotManager|SCShareableContent|SCContentSharingPicker|CGWindowListCreateImage|CGDisplayCreateImage|VNRecognizeTextRequest|SelectionOverlayPanel|--g06-capture-spike|--g07-selection-spike|NSPasteboard'
+readonly prohibited_capture_runtime_pattern='import[[:space:]]+(ScreenCaptureKit|Vision)|SCScreenshotManager|SCShareableContent|SCContentSharingPicker|CGWindowListCreateImage|CGDisplayCreateImage|VNRecognizeTextRequest|--g06-capture-spike|--g07-selection-spike|NSPasteboard|sharingType[[:space:]]*=[[:space:]]*\.none|NSWindow\.SharingType\.none'
 if /usr/bin/grep -R -nE "$prohibited_capture_runtime_pattern" CopyLasso; then
     echo "A prohibited capture, OCR, pasteboard, or retired experiment API remains in the application target." >&2
+    exit 1
+fi
+
+readonly selection_service='CopyLasso/Services/AppKitRegionSelectionService.swift'
+selection_api_files="$({ /usr/bin/grep -R -lE \
+    'NSScreen\.screens|CGDisplayBounds|didChangeScreenParametersNotification|NSCursor\.crosshair|RegionSelectionPanel' CopyLasso || true; })"
+if [[ "$selection_api_files" != "$selection_service" ]] || \
+    ! /usr/bin/grep -q 'styleMask: \[.borderless, .nonactivatingPanel\]' "$selection_service" || \
+    ! /usr/bin/grep -q 'panel.level = .screenSaver' "$selection_service" || \
+    ! /usr/bin/grep -q 'panel.collectionBehavior = \[.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle\]' "$selection_service"; then
+    echo "Production display and selection-overlay APIs must remain confined to the AppKit selection service." >&2
+    exit 1
+fi
+
+if [[ -e CopyLasso/Services/PendingRegionSelectionService.swift ]] || \
+    [[ ! -e CopyLasso/Services/PendingScreenCaptureService.swift ]]; then
+    echo "G13 must use production selection and stop at the temporary no-pixel G14 boundary." >&2
     exit 1
 fi
 
@@ -230,7 +247,7 @@ if [[ ! -x "$release_executable" ]]; then
     exit 1
 fi
 
-if /usr/bin/strings "$release_executable" | /usr/bin/grep -qE -- '--g10-g11-|--g12-'; then
+if /usr/bin/strings "$release_executable" | /usr/bin/grep -qE -- '--g10-g11-|--g12-|--g13-'; then
     echo "Debug-only UI-test controls leaked into Release." >&2
     exit 1
 fi
@@ -241,6 +258,8 @@ if [[ ! -f "$debug_module" ]] || \
     ! /usr/bin/grep -a -q 'DisplayGeometry' "$debug_module" || \
     ! /usr/bin/grep -a -q 'CaptureCommand' "$debug_module" || \
     ! /usr/bin/grep -a -q 'SystemScreenCapturePermissionService' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'AppKitRegionSelectionService' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'PendingScreenCaptureService' "$debug_module" || \
     ! /usr/bin/grep -a -q 'PermissionRecoveryPanelController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'SettingsController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'GlobalShortcutController' "$debug_module"; then
@@ -258,6 +277,8 @@ for release_architecture in arm64 x86_64; do
         ! /usr/bin/grep -a -q 'DisplayGeometry' "$release_module" || \
         ! /usr/bin/grep -a -q 'CaptureCommand' "$release_module" || \
         ! /usr/bin/grep -a -q 'SystemScreenCapturePermissionService' "$release_module" || \
+        ! /usr/bin/grep -a -q 'AppKitRegionSelectionService' "$release_module" || \
+        ! /usr/bin/grep -a -q 'PendingScreenCaptureService' "$release_module" || \
         ! /usr/bin/grep -a -q 'PermissionRecoveryPanelController' "$release_module" || \
         ! /usr/bin/grep -a -q 'SettingsController' "$release_module" || \
         ! /usr/bin/grep -a -q 'GlobalShortcutController' "$release_module"; then
