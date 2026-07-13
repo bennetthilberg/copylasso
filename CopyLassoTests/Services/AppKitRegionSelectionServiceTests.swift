@@ -167,6 +167,40 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(outcome, .cancelled(.escape))
   }
 
+  func testSelectionFailsCleanlyWhenApplicationActivationNeverArrives() async throws {
+    let display = try makeDisplay()
+    let factory = RecordingSelectionOverlaySurfaceFactory()
+    let activation = RecordingSelectionApplicationActivationManager(
+      automaticallyCompletesActivation: false
+    )
+    let scheduler = ManualSelectionCompletionScheduler()
+    let service = AppKitRegionSelectionService(
+      displayProvider: StubSelectionDisplayProvider(results: [.success([display])]),
+      surfaceFactory: factory,
+      lifecycleObserver: RecordingSelectionOverlayLifecycleObserver(),
+      cursorManager: RecordingSelectionCursorManager(),
+      activationManager: activation,
+      scheduleCursorInstallation: { work in work() },
+      scheduleCompletion: scheduler.schedule
+    )
+
+    let task = Task { try await service.selectRegion() }
+    await Task.yield()
+    activation.failActivation()
+
+    XCTAssertTrue(factory.surfaces.isEmpty)
+    XCTAssertEqual(activation.restoreCallCount, 1)
+    XCTAssertEqual(scheduler.pendingCount, 1)
+    await scheduler.runNext()
+
+    do {
+      _ = try await task.value
+      XCTFail("Expected activation failure")
+    } catch {
+      XCTAssertEqual(error as? AppKitRegionSelectionError, .applicationActivationFailed)
+    }
+  }
+
   func testCancellationBeforeActivationIgnoresLateActivationReadiness() async throws {
     let display = try makeDisplay()
     let provider = StubSelectionDisplayProvider(results: [.success([display])])
@@ -450,6 +484,40 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     )
 
     XCTAssertEqual(readyCallCount, 1)
+  }
+
+  func testSystemActivationManagerFailsOnceWhenActivationNotificationNeverArrives() {
+    let notificationCenter = NotificationCenter()
+    let observedApplication = NSObject()
+    var fallback: (@MainActor @Sendable () -> Void)?
+    var readyCallCount = 0
+    var unavailableCallCount = 0
+    let manager = SystemSelectionApplicationActivationManager(
+      notificationCenter: notificationCenter,
+      observedApplication: observedApplication,
+      isApplicationActive: { false },
+      activateApplication: {},
+      frontmostApplication: { nil },
+      scheduleActivationFallback: { fallback = $0 }
+    )
+
+    manager.activateForSelection(
+      whenActive: { readyCallCount += 1 },
+      whenUnavailable: { unavailableCallCount += 1 }
+    )
+
+    XCTAssertEqual(readyCallCount, 0)
+    XCTAssertEqual(unavailableCallCount, 0)
+
+    fallback?()
+    fallback?()
+    notificationCenter.post(
+      name: NSApplication.didBecomeActiveNotification,
+      object: observedApplication
+    )
+
+    XCTAssertEqual(readyCallCount, 0)
+    XCTAssertEqual(unavailableCallCount, 1)
   }
 
   func testSystemActivationManagerCompletesImmediatelyWhenApplicationIsAlreadyActive() {
@@ -1235,6 +1303,7 @@ private final class RecordingSelectionApplicationActivationManager:
   private let automaticallyCompletesActivation: Bool
   private let automaticallyCompletesRestoration: Bool
   private var activationReady: (@MainActor @Sendable () -> Void)?
+  private var activationUnavailable: (@MainActor @Sendable () -> Void)?
   private var restorationReady: (@MainActor @Sendable () -> Void)?
 
   init(
@@ -1247,10 +1316,14 @@ private final class RecordingSelectionApplicationActivationManager:
     self.automaticallyCompletesRestoration = automaticallyCompletesRestoration
   }
 
-  func activateForSelection(whenActive: @escaping @MainActor @Sendable () -> Void) {
+  func activateForSelection(
+    whenActive: @escaping @MainActor @Sendable () -> Void,
+    whenUnavailable: @escaping @MainActor @Sendable () -> Void
+  ) {
     activateCallCount += 1
     startupEvents?.events.append(.applicationActivationRequested)
     activationReady = whenActive
+    activationUnavailable = whenUnavailable
     if automaticallyCompletesActivation {
       completeActivation()
     }
@@ -1259,11 +1332,20 @@ private final class RecordingSelectionApplicationActivationManager:
   func completeActivation() {
     let activationReady = activationReady
     self.activationReady = nil
+    activationUnavailable = nil
     activationReady?()
+  }
+
+  func failActivation() {
+    activationReady = nil
+    let activationUnavailable = activationUnavailable
+    self.activationUnavailable = nil
+    activationUnavailable?()
   }
 
   func restorePreviousApplication(whenInactive: @escaping @MainActor @Sendable () -> Void) {
     activationReady = nil
+    activationUnavailable = nil
     restoreCallCount += 1
     startupEvents?.events.append(.previousApplicationRestored)
     restorationReady = whenInactive

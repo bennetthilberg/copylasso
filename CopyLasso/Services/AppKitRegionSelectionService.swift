@@ -10,6 +10,7 @@ enum AppKitRegionSelectionError: Error, Equatable, Sendable {
   case backingScaleMismatch
   case surfaceCreationFailed
   case overlayFailedToHide
+  case applicationActivationFailed
 }
 
 enum SelectionOverlayEvent: Equatable {
@@ -66,7 +67,10 @@ protocol SelectionCursorManaging: AnyObject {
 
 @MainActor
 protocol SelectionApplicationActivationManaging: AnyObject {
-  func activateForSelection(whenActive: @escaping @MainActor @Sendable () -> Void)
+  func activateForSelection(
+    whenActive: @escaping @MainActor @Sendable () -> Void,
+    whenUnavailable: @escaping @MainActor @Sendable () -> Void
+  )
   func restorePreviousApplication(
     whenInactive: @escaping @MainActor @Sendable () -> Void
   )
@@ -235,9 +239,14 @@ private final class SelectionOverlayController {
     )
     lifecycleStarted = true
     activationRequested = true
-    activationManager.activateForSelection { [weak self] in
-      self?.applicationDidBecomeActive()
-    }
+    activationManager.activateForSelection(
+      whenActive: { [weak self] in
+        self?.applicationDidBecomeActive()
+      },
+      whenUnavailable: { [weak self] in
+        self?.finish(.failure(AppKitRegionSelectionError.applicationActivationFailed))
+      }
+    )
   }
 
   private func applicationDidBecomeActive() {
@@ -695,6 +704,9 @@ final class SystemSelectionCursorManager: SelectionCursorManaging {
 final class SystemSelectionApplicationActivationManager: NSObject,
   SelectionApplicationActivationManaging
 {
+  typealias ActivationFallbackScheduler =
+    @MainActor (@escaping @MainActor @Sendable () -> Void) -> Void
+
   private let notificationCenter: NotificationCenter
   private let observedApplication: AnyObject?
   private let isApplicationActive: () -> Bool
@@ -703,11 +715,13 @@ final class SystemSelectionApplicationActivationManager: NSObject,
   private let frontmostApplication: () -> NSRunningApplication?
   private let currentProcessIdentifier: () -> pid_t
   private let requestPreviousApplicationActivation: (NSRunningApplication) -> Void
+  private let scheduleActivationFallback: ActivationFallbackScheduler
   private var previousApplication: NSRunningApplication?
   private var hasActiveHandoff = false
   private var isObservingActivation = false
   private var isObservingDeactivation = false
   private var activationReady: (@MainActor @Sendable () -> Void)?
+  private var activationUnavailable: (@MainActor @Sendable () -> Void)?
   private var restorationReady: (@MainActor @Sendable () -> Void)?
 
   override convenience init() {
@@ -722,8 +736,64 @@ final class SystemSelectionApplicationActivationManager: NSObject,
       requestPreviousApplicationActivation: { application in
         NSApp.yieldActivation(to: application)
         _ = application.activate(from: .current, options: [])
-      }
+      },
+      scheduleActivationFallback: Self.scheduleDefaultActivationFallback
     )
+  }
+
+  private static func scheduleDefaultActivationFallback(
+    _ work: @escaping @MainActor @Sendable () -> Void
+  ) {
+    Task { @MainActor in
+      try? await Task.sleep(for: .seconds(1))
+      work()
+    }
+  }
+
+  func activateForSelection(whenActive: @escaping @MainActor @Sendable () -> Void) {
+    activateForSelection(whenActive: whenActive, whenUnavailable: {})
+  }
+
+  func activateForSelection(
+    whenActive: @escaping @MainActor @Sendable () -> Void,
+    whenUnavailable: @escaping @MainActor @Sendable () -> Void
+  ) {
+    guard !hasActiveHandoff else { return }
+    hasActiveHandoff = true
+
+    if let frontmostApplication = frontmostApplication(),
+      frontmostApplication.processIdentifier != currentProcessIdentifier()
+    {
+      previousApplication = frontmostApplication
+    }
+
+    activationReady = whenActive
+    activationUnavailable = whenUnavailable
+    if isApplicationActive() {
+      completeActivation()
+      return
+    }
+
+    notificationCenter.addObserver(
+      self,
+      selector: #selector(applicationDidBecomeActive),
+      name: NSApplication.didBecomeActiveNotification,
+      object: observedApplication
+    )
+    isObservingActivation = true
+    activateApplication()
+    scheduleActivationFallback { [weak self] in
+      self?.failActivationIfStillPending()
+    }
+  }
+
+  private func failActivationIfStillPending() {
+    guard hasActiveHandoff, activationReady != nil else { return }
+    stopObservingActivation()
+    activationReady = nil
+    let activationUnavailable = activationUnavailable
+    self.activationUnavailable = nil
+    activationUnavailable?()
   }
 
   init(
@@ -742,7 +812,9 @@ final class SystemSelectionApplicationActivationManager: NSObject,
       application in
       NSApp.yieldActivation(to: application)
       _ = application.activate(from: .current, options: [])
-    }
+    },
+    scheduleActivationFallback: @escaping ActivationFallbackScheduler =
+      SystemSelectionApplicationActivationManager.scheduleDefaultActivationFallback
   ) {
     self.notificationCenter = notificationCenter
     self.observedApplication = observedApplication
@@ -752,33 +824,8 @@ final class SystemSelectionApplicationActivationManager: NSObject,
     self.frontmostApplication = frontmostApplication
     self.currentProcessIdentifier = currentProcessIdentifier
     self.requestPreviousApplicationActivation = requestPreviousApplicationActivation
+    self.scheduleActivationFallback = scheduleActivationFallback
     super.init()
-  }
-
-  func activateForSelection(whenActive: @escaping @MainActor @Sendable () -> Void) {
-    guard !hasActiveHandoff else { return }
-    hasActiveHandoff = true
-
-    if let frontmostApplication = frontmostApplication(),
-      frontmostApplication.processIdentifier != currentProcessIdentifier()
-    {
-      previousApplication = frontmostApplication
-    }
-
-    activationReady = whenActive
-    if isApplicationActive() {
-      completeActivation()
-      return
-    }
-
-    notificationCenter.addObserver(
-      self,
-      selector: #selector(applicationDidBecomeActive),
-      name: NSApplication.didBecomeActiveNotification,
-      object: observedApplication
-    )
-    isObservingActivation = true
-    activateApplication()
   }
 
   func restorePreviousApplication(
@@ -791,6 +838,7 @@ final class SystemSelectionApplicationActivationManager: NSObject,
     hasActiveHandoff = false
     stopObservingActivation()
     activationReady = nil
+    activationUnavailable = nil
 
     guard isApplicationActive() else {
       previousApplication = nil
@@ -834,6 +882,7 @@ final class SystemSelectionApplicationActivationManager: NSObject,
     stopObservingActivation()
     let activationReady = activationReady
     self.activationReady = nil
+    activationUnavailable = nil
     activationReady?()
   }
 
