@@ -339,12 +339,14 @@ clipboard preservation, no automatic resume, and immediate reuse. A separate
 screen-lock probe exposed an invisible retained selection after unlock; the
 maintainer accepted that lock-only behavior as a v0.1 residual. G24 now requires
 a clean rerun. The final clean merged-head rerun has now passed clean permission
-recovery, three exact controlled 2x Sidecar captures, idle CPU, and a zero-leak
-check. One exact 1x Dell capture and both physical cross-display clamp directions
-once each produced the expected results. Two more current Dell observations and
-one more cross-display observation are required by the manual matrix's three-run
-minimum before those rows can pass.
+recovery, three exact controlled 2x Sidecar captures, idle CPU, and an idle-only
+zero-leak check. One exact 1x Dell capture and both physical cross-display clamp
+directions once each produced the expected results. Two more current Dell
+observations and one more cross-display observation are required by the manual
+matrix's three-run minimum before those rows can pass.
 Wallpaper and protected-content sources, complete accessibility/appearance
 coverage, interactive status-item cold-launch timing, ordinary-region latency,
 the 100-cycle Time Profiler/Allocations sequence, and several phase-specific or
-privacy rows remain explicitly pending.
+privacy rows remain explicitly pending. Earlier Finder, browser, native-app,
+menu-fallback, full-screen, login-item, and process-denied passes remain
+historical until repeated in the final-clean run.
