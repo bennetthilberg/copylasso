@@ -4,7 +4,7 @@
 
 **Goal:** G24
 
-**Execution state:** final clean post-G24U rerun in progress; signed Sidecar and idle rows passed
+**Execution state:** final clean post-G24U rerun in progress; signed Sidecar capture and idle rows passed, cross-display sample count pending
 
 This is the release record for system behavior that unit tests and unsigned hosted runners cannot faithfully validate. A result is **Pass**, **Fail**, **Blocked**, or **Not applicable**. Historical spike screenshots and injected-service tests provide context but never replace a fresh G24 result.
 
@@ -399,7 +399,7 @@ where those properties apply.
 | Selection cursor and drag rendering | Clear before mouse-down; one normal-sized crosshair replaces the pointer before and throughout the drag; initiating display dims outside the selection; one thin gray dashed two-point-radius outline moves steadily | **Pass with accepted residual** — dimming, animated dashed outline, radius, drag cursor, and Escape cleanup passed. Immediate retrigger occasionally left the stationary arrow until movement or mouse-down, the explicitly deferred G24S residual |
 | Reverse drag and every edge | Correct region, initiating-display clamp, no orphaned panel/cursor | **Pass** — reverse drag copied text, and left/right/top/bottom edge-terminating drags in full screen each produced a HUD with correct cursor/dim cleanup and no orphaned surface |
 | Every connected display and backing scale | Correct display identity, point-to-pixel scale, crop, HUD placement, and focus restoration | **Pass** — final clean head `f6f75c0` passed exact controlled captures on the 1× Dell and three times on the 2× Sidecar display; each Sidecar capture copied the expected three lines, placed its HUD on the iPad, dimmed only the iPad, and restored TextEdit |
-| Cross-display drag | Initiating display alone dims; selection clamps at its edge and never spans displays | **Pass** — final clean head `f6f75c0` passed both physical directions: the crosshair followed the pointer across the boundary, while the dashed box stopped at the initiating display edge and only that display dimmed |
+| Cross-display drag | Initiating display alone dims; selection clamps at its edge and never spans displays | **Blocked** for sample count — final clean head `f6f75c0` produced the expected result once in each physical direction: the crosshair followed the pointer across the boundary, while the dashed box stopped at the initiating display edge and only that display dimmed. The row requires at least three current observations, so one more controlled cross-display run is still required |
 | Full-screen app and changed Space | Selection-only activation appears over the intended full-screen Space, does not switch Spaces, and restores the originating app | **Pass** — four edge-terminating captures stayed in the controlled full-screen Space and restored the same native app |
 | Escape before/during drag | Normal cancellation; clipboard sentinel unchanged; immediate reuse | **Blocked** for final clean promotion — the current pre-drag Escape produced no HUD and cleaned up visually, while the historical isolated during-drag and 50-cycle results remain useful context. The shared current-batch sentinel changed before final readback, so pre-drag and during-drag clipboard preservation must be repeated with isolated sentinels |
 | Click and sub-4-point drag | Too-small cancellation; sentinel unchanged | **Blocked** for final clean promotion — current click and 1-2-pixel drags produced no HUD, and a larger blank selection produced the no-text HUD. Because the shared final sentinel changed, each current clipboard assertion must be repeated with its own sentinel rather than inferred from the visual result |
@@ -415,7 +415,7 @@ where those properties apply.
 | VoiceOver and Full Keyboard Access | Clear labels/order/actions across menu, onboarding, Settings, recovery, selection, and HUD | **Blocked** — Computer Use confirmed labels/help/order for onboarding, Settings, recovery, and the selection overlay; VoiceOver speech and Full Keyboard Access remain untested |
 | Offline success | Core workflow succeeds with process networking denied | **Pass** — live sandbox readback denied outbound, inbound, and bind operations, zero internet sockets were present, and real small-text capture copied exactly while those process restrictions were active |
 | Protected content | Controlled blank/unavailable/no-text behavior; no bypass or invented text | **Blocked** — no fresh protected-surface result |
-| Clipboard preservation sweep | Sentinel survives every cancellation and failure before replacement begins. A fault-injected clear-success/write-rejection reports clipboard failure; the prior clipboard may already be lost under the accepted write-only v0.1 boundary | **Blocked** for the complete sweep — denial, unavailable retry, Escape, click, tiny drag, no-text, revocation, active-selection quit, and exact signed pre-drag and drag-phase sleep preserved their sentinels. The accepted lock-only residual can replace a sentinel with an empty value after unlock; capture, OCR, and feedback-phase interruption rows remain pending |
+| Clipboard preservation sweep | Sentinel survives every cancellation and failure before replacement begins. A fault-injected clear-success/write-rejection reports clipboard failure; the prior clipboard may already be lost under the accepted write-only v0.1 boundary | **Blocked** for the complete sweep — the final clean run freshly confirms denial and unavailable-retry preservation. Its shared Escape/click/tiny/no-text batch was inconclusive because the final sentinel changed, so none of those current clipboard checks is promoted until isolated repeats pass. Historical revocation, active-selection quit, sleep, and lock-residual observations remain context; current revocation, quit, lifecycle-phase, capture, OCR, and feedback interruption rows remain pending |
 | Success feedback privacy | HUD shows the correct normalized, truncated preview; preserves focus; clears on time; leaves no preview in logs/preferences | **Blocked** for complete preview validation — HUDs were bounded, nonactivating, replaceable, and temporary, the controlled fixture regained focus, and no preview text appeared in logs/preferences. Exact normalized/truncated preview content and timed clearing were not recorded in the coherent run |
 | Private-data residue | Before/after app-container and temporary-directory inventory contains no image/text output; unified log contains no selected content | **Blocked** for the complete delta — the final container held four state files, zero image/PDF files, and zero controlled-text matches; logs contained zero controlled-text matches and the process had zero internet sockets. A before/after container delta and temporary-directory inventory were not retained |
 | Ordinary delete and reinstall | Onboarding remains complete when preferences remain; Launch at Login state is reconciled | **Blocked** — no installable release artifact exists yet |
@@ -645,11 +645,12 @@ The raw `.trace`, XML, logs, and samples remain ignored build artifacts and must
 
 G24 is complete only when every row above has a fresh Pass, Fail, Blocked, or Not-applicable result from one coherent signed run **and** the four numeric acceptance criteria have actual interactive measurements. Any product failure becomes a narrowly scoped defect goal; do not modify production behavior inside G24. After that fix merges, restart this protocol from clean state.
 
-The July 13 run has a passing idle-CPU measurement plus useful process-launch,
-small-line latency, and 100-cycle memory context. Interactive status-item cold
-launch, the official ordinary-region latency series, and the 100-cycle Time
-Profiler requirement remain **Blocked**.
-Every matrix row has an explicit state. G24 remains **Blocked**, not complete,
-because the signed sleep/wake and clipboard-preservation rows failed; Sidecar-
-only and other rows deferred by the mandatory stop also remain blocked and may
-not be promoted from historical or automated evidence.
+The final clean rerun has fresh passing idle CPU and 1x/2x display-capture
+measurements. It also has the expected clamp behavior once in each cross-display
+direction, but that row remains blocked until its third required observation.
+Interactive status-item cold launch, the official ordinary-region latency
+series, the simultaneous 100-cycle Time Profiler/Allocations requirement, the
+isolated clipboard repeats, remaining lifecycle phases, appearance and assistive
+technology, protected content, and wallpaper remain pending. Every matrix row
+has an explicit state; G24 remains **in progress**, not complete, and no pending
+row is promoted from historical or automated evidence.
