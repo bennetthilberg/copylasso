@@ -271,7 +271,7 @@ Run this checklist with one stably signed Debug app and a normal unlocked graphi
 9. Increase the system text size to its largest supported value. Confirm onboarding, Settings, About, permission guidance, login errors, and the longest bounded feedback preview wrap or grow without clipped labels or inaccessible controls.
 10. Repeat keyboard and VoiceOver checks after closing/reopening each singleton window and while another application or full-screen Space is frontmost. Explicit Settings/About actions may activate their windows; capture feedback and selection must preserve the other application's focus policy.
 
-The unattended July 11, 2026 implementation run could not launch this physical matrix because the workstation remained locked. The signed app and UI runner built and launched, but the two focused XCUITests failed only while discovering onboarding and Settings hierarchy: `loginwindow` was the frontmost process, the accessibility shield hid both windows, and neither test reached its semantic or keyboard assertion. Strict signature verification and the generated `LSUIElement = true` check passed. The July 14 final-clean G24 continuation subsequently passed Light/Dark, Increased Contrast, Reduce Motion, Differentiate Without Color, Reduce Transparency, maximum text size, Full Keyboard Access, and VoiceOver speech for the status item/menu/Settings/About; VoiceOver speech for the selection overlay, HUD, and permission recovery remains pending. The authoritative signed details are in [Manual QA and Performance](manual-qa-and-performance.md).
+The unattended July 11, 2026 implementation run could not launch this physical matrix because the workstation remained locked. The signed app and UI runner built and launched, but the two focused XCUITests failed only while discovering onboarding and Settings hierarchy: `loginwindow` was the frontmost process, the accessibility shield hid both windows, and neither test reached its semantic or keyboard assertion. Strict signature verification and the generated `LSUIElement = true` check passed. The July 14 final-clean G24 continuation subsequently passed Light/Dark, Increased Contrast, Reduce Motion, Differentiate Without Color, Reduce Transparency, maximum text size, Full Keyboard Access, and VoiceOver speech for the status item/menu/Settings/About; VoiceOver speech for onboarding, the selection overlay, HUD, and permission recovery remains pending. The authoritative signed details are in [Manual QA and Performance](manual-qa-and-performance.md).
 
 ## Privacy, Security, Entitlement, And Dependency Matrix
 
@@ -338,10 +338,10 @@ accepted that lock-only behavior as a v0.1 residual.
 
 The July 13-14 final clean merged-head rerun now passes three controlled 1x Dell
 and three controlled 2x Sidecar captures, three physical cross-display clamps,
-reverse and every-edge drags, isolated cancellation/no-text clipboard checks,
-active-selection Quit, the complete browser/Finder/TextEdit/PDF/raster/video/
+reverse and every-edge drags, passing isolated Escape/no-text clipboard checks,
+one click, one tiny-drag, and one active-selection Quit observation, the complete browser/Finder/TextEdit/PDF/raster/video/
 photograph/system-UI/wallpaper/difficult-text/multi-column OCR-source sweep,
-protected-content blanking, Light/Dark and accessibility appearance modes, Full
+one passing protected-content blanking observation, Light/Dark and accessibility appearance modes, Full
 Keyboard Access, idle CPU, and ordinary-region capture latency. Its official
 100-cycle run recorded the first exact 50 successes and 50 cancellations while
 one Allocations/VM Tracker/Time Profiler trace remained active; the post-settle
@@ -351,7 +351,8 @@ Raw profiler and content-free timing evidence remains ignored under
 
 G24 remains in progress because the available automation can measure process
 visibility but cannot faithfully timestamp when the native status item becomes
-visible and interactive. Permission invocation/repeat coverage, some active-
-phase lifecycle/busy-state cases, reboot persistence, and VoiceOver speech for
-the selection, HUD, and recovery panel also remain explicitly classified rather
-than inferred from automation or historical runs.
+visible and interactive. Permission invocation/repeat and protected-content
+sample coverage, some active-phase lifecycle/busy-state cases, reboot
+persistence, and VoiceOver speech for onboarding, selection, HUD, and recovery
+also remain explicitly classified rather than inferred from automation or
+historical runs.
