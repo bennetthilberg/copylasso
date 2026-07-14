@@ -338,7 +338,10 @@ exact signed pre-drag and drag-phase sleep interruption with full cleanup,
 clipboard preservation, no automatic resume, and immediate reuse. A separate
 screen-lock probe exposed an invisible retained selection after unlock; the
 maintainer accepted that lock-only behavior as a v0.1 residual. G24 now requires
-a clean rerun. Sidecar-only checks, wallpaper and protected-content sources,
-complete accessibility/appearance coverage, interactive status-item cold-launch
-timing, ordinary-region latency, 100-cycle Time Profiler, and several
-phase-specific or privacy rows remain explicitly blocked.
+a clean rerun. The final clean merged-head rerun has now passed clean permission
+recovery, exact controlled OCR on both the 1x Dell and 2x Sidecar display, both
+physical cross-display clamp directions, idle CPU, and a zero-leak check.
+Wallpaper and protected-content sources, complete accessibility/appearance
+coverage, interactive status-item cold-launch timing, ordinary-region latency,
+the 100-cycle Time Profiler/Allocations sequence, and several phase-specific or
+privacy rows remain explicitly pending.

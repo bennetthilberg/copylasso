@@ -4,7 +4,7 @@
 
 **Goal:** G24
 
-**Execution state:** G24U signed sleep-selection fix passed; complete clean G24 rerun pending
+**Execution state:** final clean post-G24U rerun in progress; signed Sidecar and idle rows passed
 
 This is the release record for system behavior that unit tests and unsigned hosted runners cannot faithfully validate. A result is **Pass**, **Fail**, **Blocked**, or **Not applicable**. Historical spike screenshots and injected-service tests provide context but never replace a fresh G24 result.
 
@@ -274,6 +274,66 @@ the only lifecycle diagnostics remain fixed strings without captured app names,
 geometry, pixels, recognized text, clipboard text, previews, or raw errors; the
 signed process produced no stored lifecycle entry during this run.
 
+### July 13-14, 2026 Final Clean G24 Rerun In Progress
+
+The final clean rerun uses merged `main` head
+`f6f75c0da23f8e58fe2ce3d8a3f273cf17a37be8` from branch
+`a/g24-final-manual-qa-performance`. A clean arm64 Debug build at
+`.build/g24-signed/Build/Products/Debug/CopyLasso.app` passed strict deep
+signing verification. Safe readback confirms Debug bundle
+`io.github.bennetthilberg.copylasso.debug`, version 0.1.0 build 1, arm64,
+Hardened Runtime, App Sandbox, development-only `get-task-allow`, no network
+client/server entitlement, executable SHA-256
+`e728fcde475b25bc7ad6ed5b3593a019647d93fbf93cbd77b3c8bb299540580f`, and
+content-free designated-requirement SHA-256
+`6e972a6b202a4ef4edf08846acce3246a16bdf4bd63ab0bccc31f266bb228da0`.
+Canonical arm64 and x86_64 pipelines each passed 241/241 ordinary tests and
+all three 241/241 repeatability runs, plus the offline, coverage, format,
+privacy, Debug/Release, and Universal 2 gates.
+
+Computer Use drove the app-owned reset, verified onboarding's default
+`Shift-Command-2` shortcut and deferred Launch at Login choice, completed
+onboarding after explicit login-item approval, and read back one enabled item
+whose URL names the exact signed artifact. The first menu command produced one
+macOS Screen Recording request. Denial produced one accessible recovery panel;
+repeated **Try Again** stayed unavailable and preserved a fresh synthetic
+sentinel. Enabling access in System Settings and choosing **Later** caused no
+automatic retry; a second fresh-sentinel retry stayed unavailable until an
+ordinary quit and exact-path relaunch. A physical shortcut then presented the
+crosshair and a hand-driven controlled TextEdit capture copied the three visible
+lines exactly. Computer Use key and drag injection did not route through the
+selection overlay reliably, so those synthetic attempts are not counted as
+product failures or manual passes.
+
+The Dell remained the main 1920 by 1080, 1x, 144 Hz display at AppKit/Core
+Graphics origin `(0, 0)` with runtime ID 5. Sidecar runtime ID 16 was extended,
+not mirrored, at AppKit `(-1298, -147, 1298, 954)`, Core Graphics
+`(-1298, 273, 1298, 954)`, 2x, and 60 Hz. Three Sidecar-initiated captures each
+showed the crosshair, dimmed only the iPad, presented a HUD, restored the
+originating app, and copied the controlled three-line fixture exactly. Physical
+Sidecar-to-Dell and Dell-to-Sidecar drags each kept the crosshair across the
+boundary while the dashed selection box stopped at the initiating display edge
+and only that display dimmed.
+
+The Escape, click, 1-2-pixel drag, and larger blank-box batch produced the
+expected no-HUD, no-HUD, no-HUD, and no-text-HUD outcomes. Its final clipboard
+value did not match the batch sentinel, so clipboard preservation for this
+batch remains pending a controlled repeat instead of being inferred from the
+visual result. After a new 30-second settle, 60 one-second idle samples all
+reported 0.0% CPU; RSS stayed between 98,832 and 98,928 KiB with a 98,909.6 KiB
+average. Post-sample physical footprint was 66 MiB, and `/usr/bin/leaks`
+reported 0 leaks for 0 leaked bytes. The app container still held four state
+files, zero image/PDF files, and zero controlled-text matches; the process had
+zero open image/PDF files, zero internet sockets, and zero controlled-text
+matches in two hours of unified logs. Raw current-run samples remain ignored at
+`.build/g24-final-current`.
+
+This rerun is intentionally still in progress. Physical appearance and assistive
+technology changes, protected-content and wallpaper probes, remaining lifecycle
+phases, visible status-item cold launch, the official 30-capture ordinary-region
+series, and the simultaneous Time Profiler/Allocations 100-cycle sequence have
+not yet been promoted from historical context.
+
 ## Clean-State Preparation
 
 1. Build Debug with the stable Apple Development identity and verify its designated requirement.
@@ -310,6 +370,12 @@ synthetic sentinels and the controlled fixture app. Sidecar could not be
 reconnected, so the final coherent matrix used the Dell only and isolates the
 display-dependent blockers below.
 
+For the final clean rerun, the same app-local and TCC reset sequence was repeated
+against exact merged head `f6f75c0`. Sidecar was connected before display work,
+and only the exact signed artifact remained running. The current result is the
+in-progress record immediately above; older Dell-only evidence remains
+historical until each pending physical row is repeated or explicitly classified.
+
 ## Functional And Recovery Matrix
 
 Run each row at least three times unless a larger sample is specified.
@@ -332,8 +398,8 @@ where those properties apply.
 | Ordinary success | Selected text reaches plain-text clipboard; bounded success HUD appears after originating-app restoration | **Pass** — controlled multiline and small-text selections copied exactly; every success in the latency and 100-cycle runs produced clipboard text and a bounded HUD after native-fixture restoration |
 | Selection cursor and drag rendering | Clear before mouse-down; one normal-sized crosshair replaces the pointer before and throughout the drag; initiating display dims outside the selection; one thin gray dashed two-point-radius outline moves steadily | **Pass with accepted residual** — dimming, animated dashed outline, radius, drag cursor, and Escape cleanup passed. Immediate retrigger occasionally left the stationary arrow until movement or mouse-down, the explicitly deferred G24S residual |
 | Reverse drag and every edge | Correct region, initiating-display clamp, no orphaned panel/cursor | **Pass** — reverse drag copied text, and left/right/top/bottom edge-terminating drags in full screen each produced a HUD with correct cursor/dim cleanup and no orphaned surface |
-| Every connected display and backing scale | Correct display identity, point-to-pixel scale, crop, HUD placement, and focus restoration | **Blocked** — Dell 1× capture passed repeatedly; Sidecar was unavailable, so no current 2× result exists |
-| Cross-display drag | Initiating display alone dims; selection clamps at its edge and never spans displays | **Blocked** — Sidecar was unavailable, so neither physical cross-display direction could run |
+| Every connected display and backing scale | Correct display identity, point-to-pixel scale, crop, HUD placement, and focus restoration | **Pass** — final clean head `f6f75c0` passed exact controlled captures on the 1× Dell and three times on the 2× Sidecar display; each Sidecar capture copied the expected three lines, placed its HUD on the iPad, dimmed only the iPad, and restored TextEdit |
+| Cross-display drag | Initiating display alone dims; selection clamps at its edge and never spans displays | **Pass** — final clean head `f6f75c0` passed both physical directions: the crosshair followed the pointer across the boundary, while the dashed box stopped at the initiating display edge and only that display dimmed |
 | Full-screen app and changed Space | Selection-only activation appears over the intended full-screen Space, does not switch Spaces, and restores the originating app | **Pass** — four edge-terminating captures stayed in the controlled full-screen Space and restored the same native app |
 | Escape before/during drag | Normal cancellation; clipboard sentinel unchanged; immediate reuse | **Pass** — pre-drag Escape plus 50 instrumented cycle cancellations passed. A separately isolated mouse-down/drag/Escape/release produced no pasteboard change or HUD, preserved the synthetic sentinel exactly, cleaned up the overlay, and allowed immediate normal reuse |
 | Click and sub-4-point drag | Too-small cancellation; sentinel unchanged | **Pass** — click/zero-area and 1–2-pixel drags produced no HUD or pasteboard change; a slightly larger blank selection correctly produced the no-text HUD |
@@ -510,6 +576,13 @@ After a 30-second settle, 60 one-second samples all reported 0.0% CPU. RSS
 minimum/average/maximum was 101,472/108,606.4/115,872 KiB and declined across
 the sample. Idle CPU therefore **Passes** the below-1% criterion. Raw samples
 remain ignored at `.build/g24-interactive-current/idle-samples.tsv`.
+
+The final clean `f6f75c0` rerun independently repeated the same protocol after
+the clean permission and Sidecar work. All 60 samples again reported 0.0% CPU;
+RSS minimum/average/maximum was 98,832/98,909.6/98,928 KiB. Physical footprint
+was 66 MiB immediately afterward, and `/usr/bin/leaks` reported zero leaked
+bytes. This exact-head rerun therefore **Passes** the idle criterion. Its raw
+samples remain ignored at `.build/g24-final-current/idle-samples.tsv`.
 
 #### Repeated-Capture Growth Result
 
