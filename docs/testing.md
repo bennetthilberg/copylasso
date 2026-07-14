@@ -271,7 +271,7 @@ Run this checklist with one stably signed Debug app and a normal unlocked graphi
 9. Increase the system text size to its largest supported value. Confirm onboarding, Settings, About, permission guidance, login errors, and the longest bounded feedback preview wrap or grow without clipped labels or inaccessible controls.
 10. Repeat keyboard and VoiceOver checks after closing/reopening each singleton window and while another application or full-screen Space is frontmost. Explicit Settings/About actions may activate their windows; capture feedback and selection must preserve the other application's focus policy.
 
-The unattended July 11, 2026 implementation run could not launch this physical matrix because the workstation remained locked. The signed app and UI runner built and launched, but the two focused XCUITests failed only while discovering onboarding and Settings hierarchy: `loginwindow` was the frontmost process, the accessibility shield hid both windows, and neither test reached its semantic or keyboard assertion. Strict signature verification and the generated `LSUIElement = true` check passed. Automated semantic, layout, appearance-policy, and UI-bundle coverage is regression evidence only; VoiceOver speech/order, Accessibility Inspector, Full Keyboard Access traversal, maximum text size, and real system appearance toggles remain pending release evidence.
+The unattended July 11, 2026 implementation run could not launch this physical matrix because the workstation remained locked. The signed app and UI runner built and launched, but the two focused XCUITests failed only while discovering onboarding and Settings hierarchy: `loginwindow` was the frontmost process, the accessibility shield hid both windows, and neither test reached its semantic or keyboard assertion. Strict signature verification and the generated `LSUIElement = true` check passed. The July 14 final-clean G24 continuation subsequently passed Light/Dark, Increased Contrast, Reduce Motion, Differentiate Without Color, Reduce Transparency, maximum text size, Full Keyboard Access, and VoiceOver speech for the status item/menu/Settings/About; VoiceOver speech for the selection overlay, HUD, and permission recovery remains pending. The authoritative signed details are in [Manual QA and Performance](manual-qa-and-performance.md).
 
 ## Privacy, Security, Entitlement, And Dependency Matrix
 
@@ -329,26 +329,29 @@ Signed XCUITests remain focused on first-run, Settings, menu, recovery, and acce
 
 The versioned release checklist and performance result sheet are maintained in [Manual QA and Performance](manual-qa-and-performance.md). G24 must execute that complete document from one clean, stably signed Debug state; partial or historical evidence must not be promoted into a release pass.
 
-The July 13, 2026 signed run completed many functional, permission, and OCR rows,
-passed the idle-CPU threshold, and produced useful process-launch, latency, and
-100-cycle memory context. It then failed pre-drag sleep/wake cleanup: after wake,
-the arrow was visible but an invisible selection session still accepted a drag,
-changed the clipboard, and showed success feedback. G24U subsequently passed
-exact signed pre-drag and drag-phase sleep interruption with full cleanup,
-clipboard preservation, no automatic resume, and immediate reuse. A separate
-screen-lock probe exposed an invisible retained selection after unlock; the
-maintainer accepted that lock-only behavior as a v0.1 residual. G24 now requires
-a clean rerun. The final clean merged-head rerun has one successful permission
-recovery observation, which remains pending invocation coverage and the required
-repeats. Three exact controlled 2x Sidecar captures, idle CPU, and an idle-only
-zero-leak check passed. One exact 1x Dell capture passed, and three physical
-cross-display drags (one Sidecar-to-Dell and two Dell-to-Sidecar) produced the
-expected clamp result. Two more current Dell observations are required by the
-manual matrix's three-run minimum before the display-scale row can pass.
-Wallpaper, protected content, the complete browser/PDF/raster/video/photograph/
-system-UI/difficult-text/multi-column OCR-source sweep, accessibility/appearance
-coverage, interactive status-item cold-launch timing, ordinary-region latency,
-the 100-cycle Time Profiler/Allocations sequence, and several phase-specific or
-privacy rows remain explicitly pending. Earlier Finder, browser, native-app,
-menu-fallback, full-screen, login-item, and process-denied passes remain
-historical until repeated in the final-clean run.
+The July 13, 2026 signed run completed many functional, permission, and OCR rows
+before exposing a pre-drag sleep/wake failure. G24U subsequently passed exact
+signed pre-drag and drag-phase sleep interruption with full cleanup, clipboard
+preservation, no automatic resume, and immediate reuse. A separate screen-lock
+probe exposed an invisible retained selection after unlock; the maintainer
+accepted that lock-only behavior as a v0.1 residual.
+
+The July 13-14 final clean merged-head rerun now passes three controlled 1x Dell
+and three controlled 2x Sidecar captures, three physical cross-display clamps,
+reverse and every-edge drags, isolated cancellation/no-text clipboard checks,
+active-selection Quit, the complete browser/Finder/TextEdit/PDF/raster/video/
+photograph/system-UI/wallpaper/difficult-text/multi-column OCR-source sweep,
+protected-content blanking, Light/Dark and accessibility appearance modes, Full
+Keyboard Access, idle CPU, and ordinary-region capture latency. Its official
+100-cycle run recorded the first exact 50 successes and 50 cancellations while
+one Allocations/VM Tracker/Time Profiler trace remained active; the post-settle
+physical footprint fell to 60.7 MiB and `/usr/bin/leaks` reported zero leaks.
+Raw profiler and content-free timing evidence remains ignored under
+`.build/g24-final-current`.
+
+G24 remains in progress because the available automation can measure process
+visibility but cannot faithfully timestamp when the native status item becomes
+visible and interactive. Permission invocation/repeat coverage, some active-
+phase lifecycle/busy-state cases, reboot persistence, and VoiceOver speech for
+the selection, HUD, and recovery panel also remain explicitly classified rather
+than inferred from automation or historical runs.
