@@ -338,13 +338,15 @@ exact signed pre-drag and drag-phase sleep interruption with full cleanup,
 clipboard preservation, no automatic resume, and immediate reuse. A separate
 screen-lock probe exposed an invisible retained selection after unlock; the
 maintainer accepted that lock-only behavior as a v0.1 residual. G24 now requires
-a clean rerun. The final clean merged-head rerun has now passed clean permission
-recovery, three exact controlled 2x Sidecar captures, idle CPU, and an idle-only
-zero-leak check. One exact 1x Dell capture and both physical cross-display clamp
-directions once each produced the expected results. Two more current Dell
+a clean rerun. The final clean merged-head rerun has one successful permission
+recovery observation, which remains pending invocation coverage and the required
+repeats. Three exact controlled 2x Sidecar captures, idle CPU, and an idle-only
+zero-leak check passed. One exact 1x Dell capture and both physical cross-display
+clamp directions once each produced the expected results. Two more current Dell
 observations and one more cross-display observation are required by the manual
 matrix's three-run minimum before those rows can pass.
-Wallpaper and protected-content sources, complete accessibility/appearance
+Wallpaper, protected content, the complete browser/PDF/raster/video/photograph/
+system-UI/difficult-text/multi-column OCR-source sweep, accessibility/appearance
 coverage, interactive status-item cold-launch timing, ordinary-region latency,
 the 100-cycle Time Profiler/Allocations sequence, and several phase-specific or
 privacy rows remain explicitly pending. Earlier Finder, browser, native-app,
