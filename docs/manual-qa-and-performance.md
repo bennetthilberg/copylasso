@@ -4,7 +4,7 @@
 
 **Goal:** G24
 
-**Execution state:** final clean post-G24U rerun in progress; signed Sidecar capture and idle passed, Dell and cross-display sample counts pending
+**Execution state:** final clean post-G24U rerun in progress; signed Sidecar, cross-display, and idle rows passed, Dell sample count pending
 
 This is the release record for system behavior that unit tests and unsigned hosted runners cannot faithfully validate. A result is **Pass**, **Fail**, **Blocked**, or **Not applicable**. Historical spike screenshots and injected-service tests provide context but never replace a fresh G24 result.
 
