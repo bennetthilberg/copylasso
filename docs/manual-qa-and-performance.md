@@ -4,7 +4,7 @@
 
 **Goal:** G24
 
-**Execution state:** final clean post-G24U rerun in progress; signed Sidecar capture and idle rows passed, cross-display sample count pending
+**Execution state:** final clean post-G24U rerun in progress; signed Sidecar capture and idle passed, Dell and cross-display sample counts pending
 
 This is the release record for system behavior that unit tests and unsigned hosted runners cannot faithfully validate. A result is **Pass**, **Fail**, **Blocked**, or **Not applicable**. Historical spike screenshots and injected-service tests provide context but never replace a fresh G24 result.
 
@@ -291,6 +291,19 @@ Canonical arm64 and x86_64 pipelines each passed 241/241 ordinary tests and
 all three 241/241 repeatability runs, plus the offline, coverage, format,
 privacy, Debug/Release, and Universal 2 gates.
 
+The final-clean environment record is:
+
+| Field | Final-clean value |
+| --- | --- |
+| Hardware | Apple M5 Pro MacBook Pro (`Mac17,9`), 15 cores, 24 GB memory |
+| macOS | 26.5.1 (`25F80`) |
+| Xcode | 26.6 (`17F113`) |
+| Displays | Dell S2721HGF primary, runtime ID 5, `(0, 0, 1920, 1080)` AppKit/Core Graphics, 1x, 1920x1080, 144 Hz; extended Sidecar, runtime ID 16, AppKit `(-1298, -147, 1298, 954)`, Core Graphics `(-1298, 273, 1298, 954)`, 2x, 2596x1908, 60 Hz |
+| Spaces | Separate Spaces enabled; final-clean full-screen/changed-Space repeat pending |
+| Permission state | Screen Recording reset before launch, denied for the recovery phase, then enabled with **Later** and made effective by ordinary quit/relaunch; enabled during capture and idle measurements |
+| Network | Host connected; the signed app has no network entitlement and had zero internet sockets; dedicated final-clean process-denied capture repeat pending |
+| Clipboard sentinels | Fresh synthetic non-secret values per controlled phase; denial and unavailable retry verified individually, shared Escape/click/tiny/no-text batch inconclusive and pending isolated values |
+
 Computer Use drove the app-owned reset, verified onboarding's default
 `Shift-Command-2` shortcut and deferred Launch at Login choice, completed
 onboarding after explicit login-item approval, and read back one enabled item
@@ -398,16 +411,16 @@ where those properties apply.
 | Ordinary success | Selected text reaches plain-text clipboard; bounded success HUD appears after originating-app restoration | **Pass** — controlled multiline and small-text selections copied exactly; every success in the latency and 100-cycle runs produced clipboard text and a bounded HUD after native-fixture restoration |
 | Selection cursor and drag rendering | Clear before mouse-down; one normal-sized crosshair replaces the pointer before and throughout the drag; initiating display dims outside the selection; one thin gray dashed two-point-radius outline moves steadily | **Pass with accepted residual** — dimming, animated dashed outline, radius, drag cursor, and Escape cleanup passed. Immediate retrigger occasionally left the stationary arrow until movement or mouse-down, the explicitly deferred G24S residual |
 | Reverse drag and every edge | Correct region, initiating-display clamp, no orphaned panel/cursor | **Pass** — reverse drag copied text, and left/right/top/bottom edge-terminating drags in full screen each produced a HUD with correct cursor/dim cleanup and no orphaned surface |
-| Every connected display and backing scale | Correct display identity, point-to-pixel scale, crop, HUD placement, and focus restoration | **Pass** — final clean head `f6f75c0` passed exact controlled captures on the 1× Dell and three times on the 2× Sidecar display; each Sidecar capture copied the expected three lines, placed its HUD on the iPad, dimmed only the iPad, and restored TextEdit |
+| Every connected display and backing scale | Correct display identity, point-to-pixel scale, crop, HUD placement, and focus restoration | **Blocked** for Dell sample count — final clean head `f6f75c0` produced one exact controlled 1× Dell capture and three exact 2× Sidecar captures. Each Sidecar capture copied the expected three lines, placed its HUD on the iPad, dimmed only the iPad, and restored TextEdit, but two more current Dell observations are required by the three-run minimum |
 | Cross-display drag | Initiating display alone dims; selection clamps at its edge and never spans displays | **Blocked** for sample count — final clean head `f6f75c0` produced the expected result once in each physical direction: the crosshair followed the pointer across the boundary, while the dashed box stopped at the initiating display edge and only that display dimmed. The row requires at least three current observations, so one more controlled cross-display run is still required |
 | Full-screen app and changed Space | Selection-only activation appears over the intended full-screen Space, does not switch Spaces, and restores the originating app | **Pass** — four edge-terminating captures stayed in the controlled full-screen Space and restored the same native app |
 | Escape before/during drag | Normal cancellation; clipboard sentinel unchanged; immediate reuse | **Blocked** for final clean promotion — the current pre-drag Escape produced no HUD and cleaned up visually, while the historical isolated during-drag and 50-cycle results remain useful context. The shared current-batch sentinel changed before final readback, so pre-drag and during-drag clipboard preservation must be repeated with isolated sentinels |
 | Click and sub-4-point drag | Too-small cancellation; sentinel unchanged | **Blocked** for final clean promotion — current click and 1-2-pixel drags produced no HUD, and a larger blank selection produced the no-text HUD. Because the shared final sentinel changed, each current clipboard assertion must be repeated with its own sentinel rather than inferred from the visual result |
-| Quit during selection | All panels/cursor state disappear exactly once and the process terminates without a clipboard change | **Pass** — two active-selection quits removed the crosshair immediately and preserved the sentinel; measured exact-artifact relaunches became process-visible in 81 ms and 58 ms |
+| Quit during selection | All panels/cursor state disappear exactly once and the process terminates without a clipboard change | **Blocked** for final clean promotion — the historical run completed two active-selection quits with immediate cursor cleanup and sentinel preservation, but the current final-clean run has not repeated this row |
 | No recognizable text | No-text HUD; sentinel unchanged | **Blocked** for final clean promotion — the current controlled blank region produced the expected no-text HUD, but the shared batch sentinel did not survive to final readback; repeat this row with an isolated sentinel |
 | Permission first request: Deny | One system request, singleton recovery, no downstream work | **Pass** — the first physical shortcut produced one macOS request and one CopyLasso recovery panel; Deny performed no capture, repeated **Try Again** reused the singleton panel, and the clipboard sentinel survived |
 | Permission approval/retry | Follow actual Later/Quit & Reopen behavior; no automatic retry | **Pass** — System Settings opened directly to Screen & System Audio Recording, enabling CopyLasso and choosing **Later** caused no automatic retry, explicit retry remained unavailable until an ordinary quit/relaunch, and the next real capture succeeded after the macOS direct-screen-access **Allow** prompt |
-| Permission revocation | Controlled likely-revoked recovery after authoritative denial | **Pass** — after manually toggling access off and choosing **Quit & Reopen**, `⇧⌘2` produced no crosshair/capture/HUD, focused one recovery panel, and preserved the sentinel; re-enable plus **Quit & Reopen** restored capture |
+| Permission revocation | Controlled likely-revoked recovery after authoritative denial | **Blocked** for final clean promotion — the historical run passed revoke/recover/re-enable with sentinel preservation, but the current final-clean run has not repeated this row |
 | Sleep and wake during every active phase | One system-interruption cancellation, cleanup, no auto-resume, immediate reuse | **Blocked** for the complete phase matrix — exact signed pre-drag and drag-phase sleeps now pass with cleanup, sentinel preservation, no auto-resume, and successful reuse; capture, OCR, and feedback-phase sleep rows remain pending |
 | Lock and unlock during every active phase | Same lifecycle contract and no sensitive residue | **Pass with accepted residual** — pre-drag lock removed the crosshair, preserved the sentinel, kept the process alive, and allowed reuse. A later drag-phase probe looked clean after unlock but retained an invisible selection; a content-free drag replaced the sentinel with an empty clipboard value. The maintainer accepted this lock-only v0.1 residual; actual sleep remains covered separately |
 | Launch at Login enabled/disabled | Correct dockless presence after real logout/login or reboot | **Pass** — enabled real logout/login auto-launched the sole exact dockless artifact with stored `⇧⌘2`; disabled logout/login left no process and a no-op shortcut. The exact item was re-enabled afterward and macOS reported **Login Item Added** |
@@ -525,8 +538,10 @@ peak and final values.
 
 ### Interactive Measurements To Date
 
-All final measurements below use the July 13 exact signed artifact. Raw files
-remain ignored at `.build/g24-interactive-current`.
+The historical cold-launch, capture, stage, idle, and repeated-capture sections
+below use the July 13 exact signed artifact, with raw files ignored at
+`.build/g24-interactive-current`. The separately labeled final-clean idle result
+uses exact head `f6f75c0` and `.build/g24-final-current`.
 
 #### Cold Launch Result
 
@@ -570,14 +585,16 @@ making these results artificially faster. A simultaneous 56.536-second Time
 Profiler trace covered all 30 captures and exported 4,290 time-profile rows,
 with zero potential-hang and zero hang-risk rows.
 
-#### Idle Result
+#### July 13 Idle Result
 
 After a 30-second settle, 60 one-second samples all reported 0.0% CPU. RSS
 minimum/average/maximum was 101,472/108,606.4/115,872 KiB and declined across
 the sample. Idle CPU therefore **Passes** the below-1% criterion. Raw samples
 remain ignored at `.build/g24-interactive-current/idle-samples.tsv`.
 
-The final clean `f6f75c0` rerun independently repeated the same protocol after
+#### Final-Clean `f6f75c0` Idle Result
+
+The final clean rerun independently repeated the same protocol after
 the clean permission and Sidecar work. All 60 samples again reported 0.0% CPU;
 RSS minimum/average/maximum was 98,832/98,909.6/98,928 KiB. Physical footprint
 was 66 MiB immediately afterward, and `/usr/bin/leaks` reported zero leaked
@@ -645,9 +662,11 @@ The raw `.trace`, XML, logs, and samples remain ignored build artifacts and must
 
 G24 is complete only when every row above has a fresh Pass, Fail, Blocked, or Not-applicable result from one coherent signed run **and** the four numeric acceptance criteria have actual interactive measurements. Any product failure becomes a narrowly scoped defect goal; do not modify production behavior inside G24. After that fix merges, restart this protocol from clean state.
 
-The final clean rerun has fresh passing idle CPU and 1x/2x display-capture
-measurements. It also has the expected clamp behavior once in each cross-display
-direction, but that row remains blocked until its third required observation.
+The final clean rerun has fresh passing idle CPU and three 2x Sidecar capture
+measurements. It also has one exact 1x Dell capture and the expected clamp
+behavior once in each cross-display direction, but those rows remain blocked
+until two more Dell observations and one more cross-display observation meet
+their three-run minimums.
 Interactive status-item cold launch, the official ordinary-region latency
 series, the simultaneous 100-cycle Time Profiler/Allocations requirement, the
 isolated clipboard repeats, remaining lifecycle phases, appearance and assistive
