@@ -274,7 +274,7 @@ the only lifecycle diagnostics remain fixed strings without captured app names,
 geometry, pixels, recognized text, clipboard text, previews, or raw errors; the
 signed process produced no stored lifecycle entry during this run.
 
-### July 13-14, 2026 Final Clean G24 Rerun In Progress
+### July 13-14, 2026 Final Clean G24 Evidence Record
 
 The final clean rerun uses merged `main` head
 `f6f75c0da23f8e58fe2ce3d8a3f273cf17a37be8` from branch
@@ -400,9 +400,9 @@ sockets, and only normal LaunchServices/Metal cache paths open under the system
 temporary hierarchy. Interactive cold status-item timing remains blocked because
 the available harness cannot faithfully timestamp the native item's visible and
 interactive transition. The specifically identified permission-repeat,
-protected-content repeat, phase-specific lifecycle/busy-state,
-reboot-persistence, and remaining VoiceOver speech rows also remain partial
-rather than inferred.
+per-capture display-scale/crop, phase-specific lifecycle/busy-state,
+reboot-persistence, private-memory, and temporary-inventory rows also remain
+blocked rather than inferred.
 
 ## Clean-State Preparation
 
@@ -442,9 +442,10 @@ display-dependent blockers below.
 
 For the final clean rerun, the same app-local and TCC reset sequence was repeated
 against exact merged head `f6f75c0`. Sidecar was connected before display work,
-and only the exact signed artifact remained running. The current result is the
-in-progress record immediately above; older Dell-only evidence remains
-historical until each pending physical row is repeated or explicitly classified.
+and only the exact signed artifact remained running. The completed evidence
+record is immediately above; older Dell-only evidence remains historical unless
+a matrix row explicitly cites it, and every unfinished boundary retains a
+Blocked or accepted-residual classification.
 
 ## Functional And Recovery Matrix
 
@@ -468,7 +469,7 @@ where those properties apply.
 | Ordinary success | Selected text reaches plain-text clipboard; bounded success HUD appears after originating-app restoration | **Pass** — the final-clean run produced one exact controlled Dell capture and three exact controlled Sidecar captures; all four copied the expected three lines and presented a bounded HUD |
 | Selection cursor and drag rendering | Clear before mouse-down; one normal-sized crosshair replaces the pointer before and throughout the drag; initiating display dims outside the selection; one thin gray dashed two-point-radius outline moves steadily | **Pass with accepted residual** — the final-clean Dell capture, three Sidecar captures, and three cross-display drags produced the crosshair and initiating-display selection treatment with correct cleanup. The explicitly deferred G24S immediate-reuse stationary-arrow residual remains accepted |
 | Reverse drag and every edge | Correct region, initiating-display clamp, no orphaned panel/cursor | **Pass** — a final-clean bottom-right-to-top-left selection succeeded, and top/bottom/left/right Dell drags clamped at the initiating-display boundary with correct dimming, feedback, cleanup, and immediate reuse |
-| Every connected display and backing scale | Correct display identity, point-to-pixel scale, crop, HUD placement, and focus restoration | **Pass** — three exact 1× Dell and three exact 2× Sidecar captures copied the controlled fixture, placed feedback on the initiating display, dimmed only that display, and restored the originating app |
+| Every connected display and backing scale | Correct display identity, point-to-pixel scale, crop, HUD placement, and focus restoration | **Blocked** for exact crop/output-size evidence — three current 1× Dell and three current 2× Sidecar captures prove display reach, initiating-display dim/HUD placement, focus restoration, and exact controlled OCR. Fresh descriptors record each display's point frame, pixel size, and scale, but no content-free per-capture crop/output dimensions or captured-display identity were retained; correct OCR alone cannot prove that boundary |
 | Cross-display drag | Initiating display alone dims; selection clamps at its edge and never spans displays | **Pass** — final clean head `f6f75c0` produced the expected result in three physical drags, once Sidecar-to-Dell and twice Dell-to-Sidecar: the crosshair followed the pointer across the boundary, while the dashed box stopped at the initiating display edge and only that display dimmed |
 | Full-screen app and changed Space | Selection-only activation appears over the intended full-screen Space, does not switch Spaces, and restores the originating app | **Pass** — four final-clean captures remained in the full-screen originating app/Space, with correct cursor, dimming, clipboard output, HUD, and restoration |
 | Escape before/during drag | Normal cancellation; clipboard sentinel unchanged; immediate reuse | **Pass with accepted residual** — isolated pre-drag Escape, the 50-cycle pre-drag cancellation series, and one mouse-down/drag/Escape/release observation all removed dim/crosshair immediately, produced no HUD, preserved their sentinels, and returned to immediate reuse. Back-to-back stationary Escape/retrigger can still omit the crosshair until pointer movement under the accepted residual |
@@ -487,7 +488,7 @@ where those properties apply.
 | Protected content | Controlled blank/unavailable/no-text behavior; no bypass or invented text | **Pass** — three valid nonshareable-fixture probes over text-free Finder/Preview surfaces produced No Text Found, preserved isolated sentinels and pasteboard change counts, and recognized or invented none of the protected text. The final two ran with a debugger breakpoint on CopyLasso's sole pasteboard-write method; neither entered it. Attempts over ordinary text-bearing backgrounds were excluded because macOS correctly exposed those shareable pixels underneath the omitted protected window |
 | Clipboard preservation sweep | Sentinel survives every cancellation and failure before replacement begins. A fault-injected clear-success/write-rejection reports clipboard failure; the prior clipboard may already be lost under the accepted write-only v0.1 boundary | **Blocked** for the remaining active-phase sweep — final-clean denial, unavailable retry, isolated Escape/click/tiny/no-text, protected-content, permission revocation, and active-selection Quit all preserved separately armed sentinels. Capture-, OCR-, and feedback-phase interruption preservation remains pending; the accepted lock-only residual remains explicitly excluded |
 | Success feedback privacy | HUD shows the correct normalized, truncated preview; preserves focus; clears on time; leaves no preview in logs/preferences | **Pass** — a controlled 129-character two-line fixture produced the exact normalized 80-character preview `COPYLASSO PREVIEW VALIDATION KEEPS EVERY RECOGNIZED WORD LOCAL WHILE THE BOUNDE…`; the maintainer confirmed the HUD remained nonactivating and dismissed itself after about 2.5 seconds. Earlier immediate-replacement runs passed, and final log/preference scans contained no preview text |
-| Private-data residue | Before/after app-container and temporary-directory inventory contains no image/text output; unified log contains no selected content | **Blocked** for the complete delta — retained four-file baseline/current container manifests are byte-identical, and final readback found three container state files, zero image/PDF or controlled-text residue, zero open image/PDF files, zero internet sockets, and only normal LaunchServices/Metal temporary caches. No comparable pre-run temporary-directory manifest was retained, so the clean final temp scan cannot establish the required before/after delta |
+| Private-data residue | Before/after app-container and temporary-directory inventory contains no image/text output; unified log contains no selected content | **Blocked** for the complete delta — retained baseline/current manifests are byte-identical across four total container entries: one container-manager metadata file plus three files under `Data`. The later “three state files” readback counted only those `Data` files. Both checks found zero image/PDF or controlled-text residue, zero open image/PDF files, zero internet sockets, and only normal LaunchServices/Metal temporary caches. No comparable pre-run temporary-directory manifest was retained, so the clean final temp scan cannot establish the required before/after delta |
 | Ordinary delete and reinstall | Onboarding remains complete when preferences remain; Launch at Login state is reconciled | **Blocked** — no installable release artifact exists yet |
 | Complete uninstall and reinstall | Login item, preferences, app-owned container data, and Screen Recording entry are removed; onboarding returns cleanly | **Blocked** — final uninstall procedure is a G25 deliverable and authoritative VM proof is G29 |
 
@@ -800,16 +801,18 @@ The final clean rerun now passes the idle CPU, ordinary-region latency, and
 stage-signpost requirements. It completed a simultaneous 100-cycle Time
 Profiler/Allocations recording with zero leaks and a content-free final scan,
 but the growth row remains blocked on the missing private-memory checkpoint
-series. It also passes the three-sample 1x Dell/2x Sidecar scale minimum,
-cross-display, full-screen, OCR-source, appearance, Full Keyboard Access, and
-complete VoiceOver rows.
+series. It records three successful 1x Dell and three successful 2x Sidecar
+captures, while their exact per-capture crop/output-size boundary remains
+blocked. Cross-display, full-screen, OCR-source, appearance, Full Keyboard
+Access, and complete VoiceOver rows pass.
 
 Interactive cold status-item timing remains **Blocked**: ten process-visible
 samples and direct observation prove ordinary launch behavior, but neither
 faithfully timestamps the native item's visible and interactive transition.
-One first-request Deny repeat, one revocation repeat, some active-phase
-lifecycle/busy-state cases, reboot persistence, the pre-run temporary inventory,
-and later-goal install/uninstall work remain explicitly blocked. The applicable
+Exact per-capture scale/crop dimensions, one first-request Deny repeat, one
+revocation repeat, some active-phase lifecycle/busy-state cases, reboot
+persistence, the pre-run temporary inventory, and later-goal install/uninstall
+work remain explicitly blocked. The applicable
 lock-only failure and stationary immediate-reuse crosshair nuance are retained
 as maintainer-accepted v0.1 residuals. Every matrix row has a current state. On
 July 14 the maintainer directed the repetitive physical run to stop and accepted

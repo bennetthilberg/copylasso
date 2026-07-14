@@ -336,10 +336,11 @@ preservation, no automatic resume, and immediate reuse. A separate screen-lock
 probe exposed an invisible retained selection after unlock; the maintainer
 accepted that lock-only behavior as a v0.1 residual.
 
-The July 13-14 final clean merged-head rerun now passes three controlled 1x Dell
-and three controlled 2x Sidecar captures, three physical cross-display clamps,
+The July 13-14 final clean merged-head rerun records three controlled 1x Dell
+and three controlled 2x Sidecar captures. Three physical cross-display clamps,
 reverse and every-edge drags, pre-drag and drag-phase Escape, three click/tiny,
-three blank no-text, and three active-selection Quit observations, the complete browser/Finder/TextEdit/PDF/raster/video/
+three blank no-text, and three active-selection Quit observations pass, along
+with the complete browser/Finder/TextEdit/PDF/raster/video/
 photograph/system-UI/wallpaper/difficult-text/multi-column OCR-source sweep,
 three passing protected-content blanking observations, Light/Dark and accessibility appearance modes, Full
 Keyboard Access, three menu-fallback captures, exact normalized/truncated HUD
@@ -356,10 +357,11 @@ Raw profiler and content-free timing evidence remains ignored under
 G24 is complete as an evidence-recording goal. Every manual row has an explicit
 Pass, Fail, Blocked, or Not-applicable result, and the maintainer directed the
 run to stop repeating low-value physical samples. Cold native-status-item
-timing, one first-request Deny repeat, one permission-revocation repeat,
-private-memory checkpoints, some active-phase lifecycle/busy-state cases,
-reboot persistence, and the missing pre-run temporary-directory inventory
-remain honest blocked evidence gaps rather than inferred passes. Clean install
-and uninstall remain owned by their later roadmap goals. The applicable
+timing, exact per-capture scale/crop dimensions, one first-request Deny repeat,
+one permission-revocation repeat, private-memory checkpoints, some active-phase
+lifecycle/busy-state cases, reboot persistence, and the missing pre-run
+temporary-directory inventory remain honest blocked evidence gaps rather than
+inferred passes. Clean install and uninstall remain owned by their later
+roadmap goals. The applicable
 lock-only failure and immediate-reuse stationary-crosshair nuance remain
 maintainer-accepted v0.1 residuals.
