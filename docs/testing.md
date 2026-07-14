@@ -338,7 +338,7 @@ accepted that lock-only behavior as a v0.1 residual.
 
 The July 13-14 final clean merged-head rerun now passes three controlled 1x Dell
 and three controlled 2x Sidecar captures, three physical cross-display clamps,
-reverse and every-edge drags, passing isolated Escape/no-text clipboard checks,
+reverse and every-edge drags, passing pre-drag Escape and blank no-text observations,
 one click, one tiny-drag, and one active-selection Quit observation, the complete browser/Finder/TextEdit/PDF/raster/video/
 photograph/system-UI/wallpaper/difficult-text/multi-column OCR-source sweep,
 one passing protected-content blanking observation, Light/Dark and accessibility appearance modes, Full
@@ -346,13 +346,16 @@ Keyboard Access, idle CPU, and ordinary-region capture latency. Its official
 100-cycle run recorded the first exact 50 successes and 50 cancellations while
 one Allocations/VM Tracker/Time Profiler trace remained active; the post-settle
 physical footprint fell to 60.7 MiB and `/usr/bin/leaks` reported zero leaks.
+The growth row remains blocked because the protocol's distinct private-memory
+value was not retained at each checkpoint.
 Raw profiler and content-free timing evidence remains ignored under
 `.build/g24-final-current`.
 
 G24 remains in progress because the available automation can measure process
 visibility but cannot faithfully timestamp when the native status item becomes
-visible and interactive. Permission invocation/repeat and protected-content
-sample coverage, some active-phase lifecycle/busy-state cases, reboot
-persistence, and VoiceOver speech for onboarding, selection, HUD, and recovery
-also remain explicitly classified rather than inferred from automation or
-historical runs.
+visible and interactive. Drag-phase Escape, blank no-text, permission and
+protected-content repeat coverage, private-memory checkpoints, some active-
+phase lifecycle/busy-state cases, reboot persistence, and VoiceOver speech for
+onboarding, selection, HUD, and recovery also remain explicitly classified
+rather than inferred. The applicable lock-only failure remains a maintainer-
+accepted v0.1 residual.

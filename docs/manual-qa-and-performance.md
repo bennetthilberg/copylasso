@@ -437,19 +437,19 @@ where those properties apply.
 | Every connected display and backing scale | Correct display identity, point-to-pixel scale, crop, HUD placement, and focus restoration | **Pass** — three exact 1× Dell and three exact 2× Sidecar captures copied the controlled fixture, placed feedback on the initiating display, dimmed only that display, and restored the originating app |
 | Cross-display drag | Initiating display alone dims; selection clamps at its edge and never spans displays | **Pass** — final clean head `f6f75c0` produced the expected result in three physical drags, once Sidecar-to-Dell and twice Dell-to-Sidecar: the crosshair followed the pointer across the boundary, while the dashed box stopped at the initiating display edge and only that display dimmed |
 | Full-screen app and changed Space | Selection-only activation appears over the intended full-screen Space, does not switch Spaces, and restores the originating app | **Pass** — four final-clean captures remained in the full-screen originating app/Space, with correct cursor, dimming, clipboard output, HUD, and restoration |
-| Escape before/during drag | Normal cancellation; clipboard sentinel unchanged; immediate reuse | **Pass with accepted residual** — isolated pre-drag Escape and the 50-cycle cancellation series preserved the clipboard and returned to immediate reuse; back-to-back stationary Escape/retrigger can omit the crosshair until pointer movement under the accepted residual |
+| Escape before/during drag | Normal cancellation; clipboard sentinel unchanged; immediate reuse | **Blocked** for drag-phase coverage — isolated pre-drag Escape and the 50-cycle pre-drag cancellation series preserved the clipboard and returned to immediate reuse, but no final-clean mouse-down/drag/Escape/release observation was isolated. Back-to-back stationary Escape/retrigger can also omit the crosshair until pointer movement under the accepted residual |
 | Click and sub-4-point drag | Too-small cancellation; sentinel unchanged | **Blocked** for sample count — separately armed sentinels survived one click and one 1–2-pixel drag; both cleaned up with no HUD. One additional current observation remains required by the row-level minimum |
 | Quit during selection | All panels/cursor state disappear exactly once and the process terminates without a clipboard change | **Blocked** for sample count — one final-clean pre-drag Command-Q removed crosshair/dim/status item, terminated the exact process, left zero CopyLasso windows, and preserved the isolated sentinel. Two additional current observations remain required |
-| No recognizable text | No-text HUD; sentinel unchanged | **Pass** — a separately armed sentinel survived a clearly sized blank selection, which produced the distinct No Text Found HUD |
+| No recognizable text | No-text HUD; sentinel unchanged | **Blocked** for sample count — one separately armed sentinel survived a clearly sized blank selection, which produced the distinct No Text Found HUD. Two additional current blank-region observations remain required |
 | Permission first request: Deny | One system request, singleton recovery, no downstream work | **Blocked** for invocation coverage and sample count — one final-clean reset/denial sequence used the menu fallback, produced one macOS request and one recovery panel, performed no capture, reused the singleton panel on **Try Again**, and preserved its sentinel. A physical-shortcut denial plus two more current reset/denial observations remain required |
 | Permission approval/retry | Follow actual Later/Quit & Reopen behavior; no automatic retry | **Blocked** for sample count — one final-clean enable-with-**Later** sequence caused no automatic retry, stayed unavailable until ordinary quit/relaunch, and then captured successfully after direct-screen-access **Allow**. Two more current approval/retry observations are required by the three-run minimum |
 | Permission revocation | Controlled likely-revoked recovery after authoritative denial | **Blocked** for sample count — one final-clean revocation produced no selection or HUD, focused the singleton recovery panel, and blocked downstream work; re-enabling access with Quit & Reopen restored normal capture. Two additional current observations remain required |
 | Sleep and wake during every active phase | One system-interruption cancellation, cleanup, no auto-resume, immediate reuse | **Blocked** for the complete phase matrix — exact signed pre-drag and drag-phase sleeps now pass with cleanup, sentinel preservation, no auto-resume, and successful reuse; capture, OCR, and feedback-phase sleep rows remain pending |
-| Lock and unlock during every active phase | Same lifecycle contract and no sensitive residue | **Not applicable for further final-clean execution by maintainer direction** — the historical pre-drag probe cleaned up, while a drag-phase lock retained an invisible selection and replaced its sentinel with an empty value. The maintainer explicitly accepted this lock-only v0.1 residual and directed the run to move past further lock testing; actual sleep remains covered separately |
+| Lock and unlock during every active phase | Same lifecycle contract and no sensitive residue | **Fail with maintainer-accepted residual** — the historical pre-drag probe cleaned up, while a drag-phase lock retained an invisible selection and replaced its sentinel with an empty value. The maintainer explicitly accepted this applicable lock-only v0.1 failure and directed the run to move past further lock testing; actual sleep remains covered separately |
 | Launch at Login enabled/disabled | Correct dockless presence after real logout/login or reboot | **Blocked** for final clean promotion — the final-clean run confirms one exact enabled item after onboarding, while the historical enabled/disabled logout/login sequence remains context. Current enabled and disabled logout/login or reboot checks are pending |
 | Light, dark, increased contrast, reduced motion, maximum text size | Legible native UI, one thin gray dashed two-point-radius selection outline, static dash phase under Reduce Motion, no clipped text | **Pass** — Light/Dark, Increased Contrast, Reduce Motion, maximum text size, Differentiate Without Color, and Reduce Transparency retained legible unclipped UI and correct capture/HUD behavior; Reduce Motion made the dash phase static, and all settings were restored |
 | VoiceOver and Full Keyboard Access | Clear labels/order/actions across menu, onboarding, Settings, recovery, selection, and HUD | **Blocked** for remaining speech coverage — VoiceOver correctly announced the status item, vertical menu order, Settings, and About; Full Keyboard Access reached every Settings control/link and invoked/cancelled/captured successfully. Physical VoiceOver speech for onboarding, selection, HUD, and permission recovery remains pending |
-| Offline success | Core workflow succeeds with process networking denied | **Pass** — a final-clean process-denied capture copied the controlled fixture and presented its HUD; the signed app also has no network entitlement and exposed zero internet sockets |
+| Offline success | Core workflow succeeds with process networking denied | **Pass** — the signed app had no network entitlement throughout the coherent run, exposed zero internet sockets, and completed far more than three controlled captures including the dedicated process-denied fixture capture with normal HUD feedback |
 | Protected content | Controlled blank/unavailable/no-text behavior; no bypass or invented text | **Blocked** for sample count — one valid nonshareable-fixture probe backed by a text-free Finder surface produced No Text Found, preserved the isolated sentinel and pasteboard change count, and recognized or invented none of the protected text. Two additional valid probes remain required |
 | Clipboard preservation sweep | Sentinel survives every cancellation and failure before replacement begins. A fault-injected clear-success/write-rejection reports clipboard failure; the prior clipboard may already be lost under the accepted write-only v0.1 boundary | **Blocked** for the remaining active-phase sweep — final-clean denial, unavailable retry, isolated Escape/click/tiny/no-text, protected-content, permission revocation, and active-selection Quit all preserved separately armed sentinels. Capture-, OCR-, and feedback-phase interruption preservation remains pending; the accepted lock-only residual remains explicitly excluded |
 | Success feedback privacy | HUD shows the correct normalized, truncated preview; preserves focus; clears on time; leaves no preview in logs/preferences | **Blocked** for complete preview validation — HUDs were bounded, nonactivating, replaceable, and temporary, the controlled fixture regained focus, and no preview text appeared in logs/preferences. Exact normalized/truncated preview content and timed clearing were not recorded in the coherent run |
@@ -731,9 +731,12 @@ anonymous VM across 115,469 persistent allocations, with 6.53 GiB and
 12,746,619 allocations observed over the full recording. `/usr/bin/leaks`
 reported 118,425 malloc nodes using 20,383 KiB and **0 leaks for 0 leaked
 bytes**. No controlled OCR text, image/PDF, unbounded output file, internet
-socket, or selected-text log entry remained. The bounded active plateau,
-post-settle drop, populated trace, and zero-leak/readback results **Pass** the
-no-sustained-growth and no-retained-private-payload acceptance boundary.
+socket, or selected-text log entry remained. The bounded active physical-
+footprint plateau, post-settle drop, populated trace, and zero-leak/readback
+results are strong no-growth context. The protocol nevertheless requires a
+separate private-memory value at every checkpoint; those values were not
+retained and cannot be reconstructed from physical footprint or RSS. The
+repeated-capture growth row therefore remains **Blocked** rather than promoted.
 
 ## Noninteractive Process Context
 
@@ -754,19 +757,22 @@ The raw `.trace`, XML, logs, and samples remain ignored build artifacts and must
 
 G24 is complete only when every row above has a fresh Pass, Fail, Blocked, or Not-applicable result from one coherent signed run **and** the four numeric acceptance criteria have actual interactive measurements. Any product failure becomes a narrowly scoped defect goal; do not modify production behavior inside G24. After that fix merges, restart this protocol from clean state.
 
-The final clean rerun now passes the idle CPU, ordinary-region latency, stage-
-signpost, and simultaneous 100-cycle Time Profiler/Allocations requirements;
-the 100-cycle result includes a zero-leak and content-free residue check. It
-also passes the three-sample 1x Dell/2x Sidecar scale minimum, cross-display,
-full-screen, Escape/no-text cancellation, OCR-source, appearance,
+The final clean rerun now passes the idle CPU, ordinary-region latency, and
+stage-signpost requirements. It completed a simultaneous 100-cycle Time
+Profiler/Allocations recording with zero leaks and a content-free final scan,
+but the growth row remains blocked on the missing private-memory checkpoint
+series. It also passes the three-sample 1x Dell/2x Sidecar scale minimum,
+cross-display, full-screen, OCR-source, appearance,
 and Full Keyboard Access rows.
 
 Interactive cold status-item timing remains **Blocked**: ten process-visible
 samples and direct observation prove ordinary launch behavior, but neither
 faithfully timestamps the native item's visible and interactive transition.
-Permission invocation/repeat and protected-content sample coverage, some active-
-phase lifecycle/busy-state cases, reboot persistence, and VoiceOver speech for
-onboarding/selection/HUD/recovery also remain explicitly partial. Every matrix
-row has a current state, but the cold-
-launch numeric criterion lacks a valid measurement, so G24 remains **in
-progress** and G25 has not begun.
+Drag-phase Escape, blank no-text, permission invocation/repeat, and protected-
+content sample coverage, some active-phase lifecycle/busy-state cases, reboot
+persistence, and VoiceOver speech for onboarding/selection/HUD/recovery also
+remain explicitly partial. The applicable lock-only failure is retained as a
+maintainer-accepted v0.1 residual. Every matrix row has a current state, but
+cold-launch timing and the repeated-growth private-memory checkpoint requirement
+still lack valid measurements, so G24 remains **in progress** and G25 has not
+begun.
