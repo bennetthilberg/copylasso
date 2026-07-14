@@ -324,7 +324,7 @@ not mirrored, at AppKit `(-1298, -147, 1298, 954)`, Core Graphics
 `(-1298, 273, 1298, 954)`, 2x, and 60 Hz. Three Sidecar-initiated captures each
 showed the crosshair, dimmed only the iPad, presented a HUD, restored the
 originating app, and copied the controlled three-line fixture exactly. Physical
-Sidecar-to-Dell and Dell-to-Sidecar drags each kept the crosshair across the
+Sidecar-to-Dell once and Dell-to-Sidecar twice kept the crosshair across the
 boundary while the dashed selection box stopped at the initiating display edge
 and only that display dimmed.
 
@@ -409,10 +409,10 @@ where those properties apply.
 | Menu fallback with shortcut cleared | Capture Text remains usable and matches shortcut behavior | **Blocked** for final clean promotion — the historical clear/no-op/menu-capture/restore sequence passed, but the current final-clean run has not repeated this row |
 | Rapid repeated shortcut while active | Requests during permission, selection, capture, or OCR are rejected; a request during feedback dismisses that HUD and immediately begins exactly one fresh selection | **Blocked** for the full active-phase matrix — ten immediate success/HUD retriggers completed, and the exact 100-cycle sequence produced 50 success/HUD outcomes plus 50 Escape cancellations without stale feedback. No physical shortcut request was isolated during permission, capture, or OCR work, so deterministic busy-state tests are not promoted into a signed pass |
 | Ordinary success | Selected text reaches plain-text clipboard; bounded success HUD appears after originating-app restoration | **Pass** — the final-clean run produced one exact controlled Dell capture and three exact controlled Sidecar captures; all four copied the expected three lines and presented a bounded HUD |
-| Selection cursor and drag rendering | Clear before mouse-down; one normal-sized crosshair replaces the pointer before and throughout the drag; initiating display dims outside the selection; one thin gray dashed two-point-radius outline moves steadily | **Pass with accepted residual** — the final-clean Dell capture, three Sidecar captures, and two cross-display drags produced the crosshair and initiating-display selection treatment with correct cleanup. The explicitly deferred G24S immediate-reuse stationary-arrow residual remains accepted |
+| Selection cursor and drag rendering | Clear before mouse-down; one normal-sized crosshair replaces the pointer before and throughout the drag; initiating display dims outside the selection; one thin gray dashed two-point-radius outline moves steadily | **Pass with accepted residual** — the final-clean Dell capture, three Sidecar captures, and three cross-display drags produced the crosshair and initiating-display selection treatment with correct cleanup. The explicitly deferred G24S immediate-reuse stationary-arrow residual remains accepted |
 | Reverse drag and every edge | Correct region, initiating-display clamp, no orphaned panel/cursor | **Blocked** for final clean promotion — the historical reverse and four edge drags passed, but the current final-clean run has not repeated this row |
 | Every connected display and backing scale | Correct display identity, point-to-pixel scale, crop, HUD placement, and focus restoration | **Blocked** for Dell sample count — final clean head `f6f75c0` produced one exact controlled 1× Dell capture and three exact 2× Sidecar captures. Each Sidecar capture copied the expected three lines, placed its HUD on the iPad, dimmed only the iPad, and restored TextEdit, but two more current Dell observations are required by the three-run minimum |
-| Cross-display drag | Initiating display alone dims; selection clamps at its edge and never spans displays | **Blocked** for sample count — final clean head `f6f75c0` produced the expected result once in each physical direction: the crosshair followed the pointer across the boundary, while the dashed box stopped at the initiating display edge and only that display dimmed. The row requires at least three current observations, so one more controlled cross-display run is still required |
+| Cross-display drag | Initiating display alone dims; selection clamps at its edge and never spans displays | **Pass** — final clean head `f6f75c0` produced the expected result in three physical drags, once Sidecar-to-Dell and twice Dell-to-Sidecar: the crosshair followed the pointer across the boundary, while the dashed box stopped at the initiating display edge and only that display dimmed |
 | Full-screen app and changed Space | Selection-only activation appears over the intended full-screen Space, does not switch Spaces, and restores the originating app | **Blocked** for final clean promotion — the historical full-screen/Space sequence passed, but the current environment record and final-clean run leave this repeat pending |
 | Escape before/during drag | Normal cancellation; clipboard sentinel unchanged; immediate reuse | **Blocked** for final clean promotion — the current pre-drag Escape produced no HUD and cleaned up visually, while the historical isolated during-drag and 50-cycle results remain useful context. The shared current-batch sentinel changed before final readback, so pre-drag and during-drag clipboard preservation must be repeated with isolated sentinels |
 | Click and sub-4-point drag | Too-small cancellation; sentinel unchanged | **Blocked** for final clean promotion — current click and 1-2-pixel drags produced no HUD, and a larger blank selection produced the no-text HUD. Because the shared final sentinel changed, each current clipboard assertion must be repeated with its own sentinel rather than inferred from the visual result |
@@ -664,9 +664,9 @@ G24 is complete only when every row above has a fresh Pass, Fail, Blocked, or No
 
 The final clean rerun has fresh passing idle CPU and three 2x Sidecar capture
 measurements. It also has one exact 1x Dell capture and the expected clamp
-behavior once in each cross-display direction, but those rows remain blocked
-until two more Dell observations and one more cross-display observation meet
-their three-run minimums.
+behavior across three cross-display drags. The cross-display row passes; the
+display-scale row remains blocked until two more Dell observations meet its
+three-run minimum.
 Interactive status-item cold launch, the official ordinary-region latency
 series, the simultaneous 100-cycle Time Profiler/Allocations requirement, the
 isolated clipboard repeats, Finder/browser/native-app/menu/full-screen/offline

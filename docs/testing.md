@@ -341,10 +341,10 @@ maintainer accepted that lock-only behavior as a v0.1 residual. G24 now requires
 a clean rerun. The final clean merged-head rerun has one successful permission
 recovery observation, which remains pending invocation coverage and the required
 repeats. Three exact controlled 2x Sidecar captures, idle CPU, and an idle-only
-zero-leak check passed. One exact 1x Dell capture and both physical cross-display
-clamp directions once each produced the expected results. Two more current Dell
-observations and one more cross-display observation are required by the manual
-matrix's three-run minimum before those rows can pass.
+zero-leak check passed. One exact 1x Dell capture passed, and three physical
+cross-display drags (one Sidecar-to-Dell and two Dell-to-Sidecar) produced the
+expected clamp result. Two more current Dell observations are required by the
+manual matrix's three-run minimum before the display-scale row can pass.
 Wallpaper, protected content, the complete browser/PDF/raster/video/photograph/
 system-UI/difficult-text/multi-column OCR-source sweep, accessibility/appearance
 coverage, interactive status-item cold-launch timing, ordinary-region latency,
