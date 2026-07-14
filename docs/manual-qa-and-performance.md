@@ -91,7 +91,9 @@ failed to enter selection. This is a signed **Fail**, not a partial pass.
 The replacement implementation removes the cause instead of tuning the race:
 feedback presentation now returns synchronously, the coordinator reaches idle,
 and the panel alone owns its cancellable 2.5-second timer. Ten-cycle automated
-coverage passes, but a fresh exact-head signed physical run is still required.
+coverage passed; at this historical checkpoint a fresh exact-head signed
+physical run was still required. The later final-clean record below supersedes
+that pending status.
 
 ### July 12, 2026 G24R Decoupled-Feedback Candidate
 
@@ -366,12 +368,17 @@ matches in two hours of unified logs. Raw current-run samples remain ignored at
 The July 14 continuation completed the remaining controlled OCR-source sweep,
 three protected-content probes and the wallpaper row, reverse/every-edge drags, isolated
 clipboard cancellation paths, three-sample Dell scale minimum, full-screen and
-changed-Space checks, process-denied capture, appearance modes, and Full Keyboard
-Access. VoiceOver speech passed for the status item, menu, Settings, and About;
+changed-Space checks, process-denied capture, appearance modes, and sampled
+assistive-technology behavior. VoiceOver speech passed for the status item,
+menu, Settings, and About;
 the maintainer then traversed onboarding, heard the selection overlay and
 bounded success preview, and traversed the complete permission-recovery title,
-explanation, and three actions in order. Full Keyboard Access and VoiceOver
-therefore pass across every required CopyLasso surface.
+explanation, and three actions in order. No-text and non-permission failure HUD
+speech were not sampled. Full Keyboard Access reached Settings, the status
+menu, cancellation, and capture, but onboarding, recovery, and reopened
+singleton traversal were not physically completed. The combined assistive row
+therefore retains these positive observations but remains blocked for complete
+coverage.
 
 Three current menu-fallback captures with the shortcut cleared each completed
 selection, OCR, one plain-text replacement, and success feedback. The final
@@ -483,7 +490,7 @@ where those properties apply.
 | Lock and unlock during every active phase | Same lifecycle contract and no sensitive residue | **Fail with maintainer-accepted residual** — the historical pre-drag probe cleaned up, while a drag-phase lock retained an invisible selection and replaced its sentinel with an empty value. The maintainer explicitly accepted this applicable lock-only v0.1 failure and directed the run to move past further lock testing; actual sleep remains covered separately |
 | Launch at Login enabled/disabled | Correct dockless presence after real logout/login or reboot | **Blocked** for final clean promotion — the final-clean run confirms one exact enabled item after onboarding, while the historical enabled/disabled logout/login sequence remains context. Current enabled and disabled logout/login or reboot checks are pending |
 | Light, dark, increased contrast, reduced motion, maximum text size | Legible native UI, one thin gray dashed two-point-radius selection outline, static dash phase under Reduce Motion, no clipped text | **Pass** — Light/Dark, Increased Contrast, Reduce Motion, maximum text size, Differentiate Without Color, and Reduce Transparency retained legible unclipped UI and correct capture/HUD behavior; Reduce Motion made the dash phase static, and all settings were restored |
-| VoiceOver and Full Keyboard Access | Clear labels/order/actions across menu, onboarding, Settings, recovery, selection, and HUD | **Pass** — VoiceOver announced the status item, vertical menu order, Settings, About, complete onboarding traversal, selection overlay, bounded success preview, and recovery title/explanation/actions clearly. Full Keyboard Access reached every Settings control/link and invoked, cancelled, and captured successfully |
+| VoiceOver and Full Keyboard Access | Clear labels/order/actions across menu, onboarding, Settings, recovery, selection, and HUD | **Blocked** for complete assistive coverage — VoiceOver announced the status item, vertical menu order, Settings, About, onboarding, selection overlay, bounded success preview, and recovery title/explanation/actions clearly, but no-text and non-permission failure HUD speech were not sampled. Full Keyboard Access reached every Settings control/link and invoked, cancelled, and captured successfully, but onboarding, recovery, and reopened-singleton traversal were not physically completed |
 | Offline success | Core workflow succeeds with process networking denied | **Pass** — the signed app had no network entitlement throughout the coherent run, exposed zero internet sockets, and completed far more than three controlled captures including the dedicated process-denied fixture capture with normal HUD feedback |
 | Protected content | Controlled blank/unavailable/no-text behavior; no bypass or invented text | **Pass** — three valid nonshareable-fixture probes over text-free Finder/Preview surfaces produced No Text Found, preserved isolated sentinels and pasteboard change counts, and recognized or invented none of the protected text. The final two ran with a debugger breakpoint on CopyLasso's sole pasteboard-write method; neither entered it. Attempts over ordinary text-bearing backgrounds were excluded because macOS correctly exposed those shareable pixels underneath the omitted protected window |
 | Clipboard preservation sweep | Sentinel survives every cancellation and failure before replacement begins. A fault-injected clear-success/write-rejection reports clipboard failure; the prior clipboard may already be lost under the accepted write-only v0.1 boundary | **Blocked** for the remaining active-phase sweep — final-clean denial, unavailable retry, isolated Escape/click/tiny/no-text, protected-content, permission revocation, and active-selection Quit all preserved separately armed sentinels. Capture-, OCR-, and feedback-phase interruption preservation remains pending; the accepted lock-only residual remains explicitly excluded |
@@ -504,7 +511,8 @@ gate on July 12.
 The earlier partial cursor-failure run is not promoted into a complete result.
 The July 13 evidence above is the required clean-state restart and supersedes
 that historical boundary. Its accepted stationary-pointer residual remains
-explicit, and its independent sleep/wake failure now blocks G24.
+explicit. At that July 13 checkpoint its independent sleep/wake failure blocked
+G24; G24U and the later final-clean rerun supersede that historical blocker.
 
 ## OCR Content Matrix
 
@@ -803,16 +811,18 @@ Profiler/Allocations recording with zero leaks and a content-free final scan,
 but the growth row remains blocked on the missing private-memory checkpoint
 series. It records three successful 1x Dell and three successful 2x Sidecar
 captures, while their exact per-capture crop/output-size boundary remains
-blocked. Cross-display, full-screen, OCR-source, appearance, Full Keyboard
-Access, and complete VoiceOver rows pass.
+blocked. Cross-display, full-screen, OCR-source, and appearance rows pass. The
+assistive-technology row records positive VoiceOver and Full Keyboard Access
+samples but remains blocked for the unsampled surfaces and feedback states.
 
 Interactive cold status-item timing remains **Blocked**: ten process-visible
 samples and direct observation prove ordinary launch behavior, but neither
 faithfully timestamps the native item's visible and interactive transition.
 Exact per-capture scale/crop dimensions, one first-request Deny repeat, one
 revocation repeat, some active-phase lifecycle/busy-state cases, reboot
-persistence, the pre-run temporary inventory, and later-goal install/uninstall
-work remain explicitly blocked. The applicable
+persistence, VoiceOver no-text/failure feedback, Full Keyboard Access
+onboarding/recovery/reopened-singleton traversal, the pre-run temporary
+inventory, and later-goal install/uninstall work remain explicitly blocked. The applicable
 lock-only failure and stationary immediate-reuse crosshair nuance are retained
 as maintainer-accepted v0.1 residuals. Every matrix row has a current state. On
 July 14 the maintainer directed the repetitive physical run to stop and accepted
