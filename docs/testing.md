@@ -271,7 +271,7 @@ Run this checklist with one stably signed Debug app and a normal unlocked graphi
 9. Increase the system text size to its largest supported value. Confirm onboarding, Settings, About, permission guidance, login errors, and the longest bounded feedback preview wrap or grow without clipped labels or inaccessible controls.
 10. Repeat keyboard and VoiceOver checks after closing/reopening each singleton window and while another application or full-screen Space is frontmost. Explicit Settings/About actions may activate their windows; capture feedback and selection must preserve the other application's focus policy.
 
-The unattended July 11, 2026 implementation run could not launch this physical matrix because the workstation remained locked. The signed app and UI runner built and launched, but the two focused XCUITests failed only while discovering onboarding and Settings hierarchy: `loginwindow` was the frontmost process, the accessibility shield hid both windows, and neither test reached its semantic or keyboard assertion. Strict signature verification and the generated `LSUIElement = true` check passed. The July 14 final-clean G24 continuation subsequently passed Light/Dark, Increased Contrast, Reduce Motion, Differentiate Without Color, Reduce Transparency, maximum text size, Full Keyboard Access, and VoiceOver speech for the status item/menu/Settings/About; VoiceOver speech for onboarding, the selection overlay, HUD, and permission recovery remains pending. The authoritative signed details are in [Manual QA and Performance](manual-qa-and-performance.md).
+The unattended July 11, 2026 implementation run could not launch this physical matrix because the workstation remained locked. The signed app and UI runner built and launched, but the two focused XCUITests failed only while discovering onboarding and Settings hierarchy: `loginwindow` was the frontmost process, the accessibility shield hid both windows, and neither test reached its semantic or keyboard assertion. Strict signature verification and the generated `LSUIElement = true` check passed. The July 14 final-clean G24 continuation subsequently passed Light/Dark, Increased Contrast, Reduce Motion, Differentiate Without Color, Reduce Transparency, maximum text size, Full Keyboard Access, and complete VoiceOver coverage for the status item, menu, Settings, About, onboarding, selection overlay, success HUD, and permission recovery. The authoritative signed details are in [Manual QA and Performance](manual-qa-and-performance.md).
 
 ## Privacy, Security, Entitlement, And Dependency Matrix
 
@@ -338,11 +338,13 @@ accepted that lock-only behavior as a v0.1 residual.
 
 The July 13-14 final clean merged-head rerun now passes three controlled 1x Dell
 and three controlled 2x Sidecar captures, three physical cross-display clamps,
-reverse and every-edge drags, passing pre-drag Escape and blank no-text observations,
-one click, one tiny-drag, and one active-selection Quit observation, the complete browser/Finder/TextEdit/PDF/raster/video/
+reverse and every-edge drags, pre-drag and drag-phase Escape, three click/tiny,
+three blank no-text, and three active-selection Quit observations, the complete browser/Finder/TextEdit/PDF/raster/video/
 photograph/system-UI/wallpaper/difficult-text/multi-column OCR-source sweep,
-one passing protected-content blanking observation, Light/Dark and accessibility appearance modes, Full
-Keyboard Access, idle CPU, and ordinary-region capture latency. Its official
+three passing protected-content blanking observations, Light/Dark and accessibility appearance modes, Full
+Keyboard Access, three menu-fallback captures, exact normalized/truncated HUD
+preview and timed clearing, complete VoiceOver coverage, three permission
+approval/retry observations, idle CPU, and ordinary-region capture latency. Its official
 100-cycle run recorded the first exact 50 successes and 50 cancellations while
 one Allocations/VM Tracker/Time Profiler trace remained active; the post-settle
 physical footprint fell to 60.7 MiB and `/usr/bin/leaks` reported zero leaks.
@@ -351,11 +353,13 @@ value was not retained at each checkpoint.
 Raw profiler and content-free timing evidence remains ignored under
 `.build/g24-final-current`.
 
-G24 remains in progress because the available automation can measure process
-visibility but cannot faithfully timestamp when the native status item becomes
-visible and interactive. Drag-phase Escape, blank no-text, permission and
-protected-content repeat coverage, private-memory checkpoints, some active-
-phase lifecycle/busy-state cases, reboot persistence, and VoiceOver speech for
-onboarding, selection, HUD, and recovery also remain explicitly classified
-rather than inferred. The applicable lock-only failure remains a maintainer-
-accepted v0.1 residual.
+G24 is complete as an evidence-recording goal. Every manual row has an explicit
+Pass, Fail, Blocked, or Not-applicable result, and the maintainer directed the
+run to stop repeating low-value physical samples. Cold native-status-item
+timing, one first-request Deny repeat, one permission-revocation repeat,
+private-memory checkpoints, some active-phase lifecycle/busy-state cases,
+reboot persistence, and the missing pre-run temporary-directory inventory
+remain honest blocked evidence gaps rather than inferred passes. Clean install
+and uninstall remain owned by their later roadmap goals. The applicable
+lock-only failure and immediate-reuse stationary-crosshair nuance remain
+maintainer-accepted v0.1 residuals.

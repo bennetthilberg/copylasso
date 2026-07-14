@@ -4,7 +4,7 @@
 
 **Goal:** G24
 
-**Execution state:** final clean post-G24U rerun substantially complete; functional, OCR, appearance, display, latency, idle, and 100-cycle rows recorded, with cold status-item timing and explicitly named partial rows still blocked
+**Execution state:** complete as an evidence record; functional, OCR, appearance, display, latency, idle, and 100-cycle rows are recorded, with explicitly accepted residuals and blocked coverage gaps retained rather than inferred
 
 This is the release record for system behavior that unit tests and unsigned hosted runners cannot faithfully validate. A result is **Pass**, **Fail**, **Blocked**, or **Not applicable**. Historical spike screenshots and injected-service tests provide context but never replace a fresh G24 result.
 
@@ -300,7 +300,7 @@ The final-clean environment record is:
 | Xcode | 26.6 (`17F113`) |
 | Displays | Dell S2721HGF primary, runtime ID 5, `(0, 0, 1920, 1080)` AppKit/Core Graphics, 1x, 1920x1080, 144 Hz; extended Sidecar, runtime ID 16, AppKit `(-1298, -147, 1298, 954)`, Core Graphics `(-1298, 273, 1298, 954)`, 2x, 2596x1908, 60 Hz |
 | Spaces | Separate Spaces enabled; four final-clean full-screen/changed-Space captures passed without leaving the originating Space |
-| Permission state | Screen Recording reset before launch, denied for the recovery phase, then enabled with **Later** and made effective by ordinary quit/relaunch; enabled during capture and idle measurements |
+| Permission state | Screen Recording reset before launch, denied for the recovery phase, then enabled with **Later** and made effective by ordinary quit/relaunch; two later approval/retry cycles repeated that behavior, and access is enabled at completion |
 | Network | Host connected; the signed app has no network entitlement and had zero internet sockets; a dedicated final-clean process-denied capture succeeded |
 | Clipboard sentinels | Fresh synthetic non-secret values per controlled phase; denial, unavailable retry, isolated Escape/click/tiny/no-text, protected-content, and active-selection Quit checks preserved their values |
 
@@ -318,6 +318,22 @@ lines exactly. Computer Use key and drag injection did not route through the
 selection overlay reliably, so those synthetic attempts are not counted as
 product failures or manual passes.
 
+Two later physical-shortcut permission cycles added one explicit native Deny
+and two approval-with-**Later** recoveries. Both approvals caused no automatic
+selection, remained unavailable to the old process, and succeeded after an
+exact-path relaunch by copying the controlled three-line fixture exactly. A
+third artificial TCC reset removed CopyLasso from the privacy list and macOS
+suppressed a new system prompt; that unavailable recovery preserved its
+sentinel but is excluded from the first-request Deny count. Approval/retry now
+has three passing observations. First-request Deny has two counted native
+requests and remains blocked on one repeat. One additional same-process
+revocation allowed the already-started overlay through stale preflight, then
+the real ScreenCaptureKit call denied pixels, OCR, clipboard output, and HUD,
+presented the singleton recovery panel, and preserved both the sentinel and
+pasteboard change count. Recovery after re-enabling access copied the exact
+fixture; revocation has two counted observations and remains blocked on one
+repeat.
+
 The Dell remained the main 1920 by 1080, 1x, 144 Hz display at AppKit/Core
 Graphics origin `(0, 0)` with runtime ID 5. Sidecar runtime ID 16 was extended,
 not mirrored, at AppKit `(-1298, -147, 1298, 954)`, Core Graphics
@@ -329,10 +345,16 @@ boundary while the dashed selection box stopped at the initiating display edge
 and only that display dimmed.
 
 The Escape, click, 1-2-pixel drag, and larger blank-box batch produced the
-expected no-HUD, no-HUD, no-HUD, and no-text-HUD outcomes. Its final clipboard
-value did not match the batch sentinel, so clipboard preservation for this
-batch remains pending a controlled repeat instead of being inferred from the
-visual result. After a new 30-second settle, 60 one-second idle samples all
+expected no-HUD, no-HUD, no-HUD, and no-text-HUD outcomes. Its aggregate
+clipboard check was inconclusive, so every path was repeated with a fresh
+synthetic sentinel instead of inferring preservation from that batch. The
+isolated repeats covered Escape both before mouse-down and during a live drag,
+three click/tiny outcomes, and three clearly sized blank selections. Every
+counted run produced the expected HUD behavior and preserved its sentinel.
+Two extra uninstrumented attempts later observed an empty or nonempty
+replacement after reporting; immediate change-count-instrumented repeats did
+not reproduce either mutation and are retained as attribution anomalies rather
+than product passes or failures. After a new 30-second settle, 60 one-second idle samples all
 reported 0.0% CPU; RSS stayed between 98,832 and 98,928 KiB with a 98,909.6 KiB
 average. Post-sample physical footprint was 66 MiB, and `/usr/bin/leaks`
 reported 0 leaks for 0 leaked bytes. The app container still held four state
@@ -342,12 +364,24 @@ matches in two hours of unified logs. Raw current-run samples remain ignored at
 `.build/g24-final-current`.
 
 The July 14 continuation completed the remaining controlled OCR-source sweep,
-one protected-content probe and the wallpaper row, reverse/every-edge drags, isolated
+three protected-content probes and the wallpaper row, reverse/every-edge drags, isolated
 clipboard cancellation paths, three-sample Dell scale minimum, full-screen and
 changed-Space checks, process-denied capture, appearance modes, and Full Keyboard
 Access. VoiceOver speech passed for the status item, menu, Settings, and About;
-speech for onboarding, the selection overlay, HUD, and recovery panel remains
-pending.
+the maintainer then traversed onboarding, heard the selection overlay and
+bounded success preview, and traversed the complete permission-recovery title,
+explanation, and three actions in order. Full Keyboard Access and VoiceOver
+therefore pass across every required CopyLasso surface.
+
+Three current menu-fallback captures with the shortcut cleared each completed
+selection, OCR, one plain-text replacement, and success feedback. The final
+fallback was instrumented at CopyLasso's sole clipboard boundary and hit it
+exactly once. Restoring the suggested shortcut persisted `⇧⌘2`; after the
+normal relaunch registration settled, a physical shortcut again copied the
+controlled fixture. A separate 129-character two-line fixture produced the
+exact 80-character normalized HUD preview ending in `BOUNDE…`; the maintainer
+confirmed it remained nonactivating and dismissed itself after about 2.5
+seconds. Existing residue checks found no preview in logs or preferences.
 
 The official ordinary-region series retained the first 30 of 32 complete
 captures and passed the one-second median/two-second p95 limits. A separate
@@ -429,7 +463,7 @@ where those properties apply.
 | Suggested shortcut with Finder frontmost | Selection-only activation presents the crosshair, then restores Finder before downstream work | **Pass** — the final-clean Finder source capture copied its controlled filename, presented the HUD, and returned to Finder |
 | Shortcut with browser and TextEdit frontmost | Same command path and originating-app restoration | **Pass** — final-clean browser and TextEdit source captures completed with normal selection treatment, clipboard output, HUD, and originating-app restoration |
 | Shortcut with another native app frontmost | Same command path and restoration outside the specifically tested apps | **Pass** — the final-clean native fixture, Preview, QuickTime, and native-alert captures completed through the pixel workflow without semantic app integration |
-| Menu fallback with shortcut cleared | Capture Text remains usable and matches shortcut behavior | **Blocked** for sample count — Computer Use cleared the shortcut and read back the empty value; physical `⇧⌘2` did nothing, while one status-menu Capture Text observation completed the normal selection/OCR/HUD path, after which `⇧⌘2` was restored. Two additional current menu-fallback observations remain required |
+| Menu fallback with shortcut cleared | Capture Text remains usable and matches shortcut behavior | **Pass** — Computer Use cleared the shortcut and read back the empty value; physical `⇧⌘2` remained inert, while three status-menu Capture Text observations completed the normal selection/OCR/HUD path. The final run copied the exact controlled three-line fixture and hit CopyLasso's clipboard-write boundary exactly once. The suggested `⇧⌘2` was restored, persisted through normal relaunch, and resumed physical delivery |
 | Rapid repeated shortcut while active | Requests during permission, selection, capture, or OCR are rejected; a request during feedback dismisses that HUD and immediately begins exactly one fresh selection | **Blocked** for the full active-phase matrix — ten immediate success/HUD retriggers completed, and the exact 100-cycle sequence produced 50 success/HUD outcomes plus 50 Escape cancellations without stale feedback. No physical shortcut request was isolated during permission, capture, or OCR work, so deterministic busy-state tests are not promoted into a signed pass |
 | Ordinary success | Selected text reaches plain-text clipboard; bounded success HUD appears after originating-app restoration | **Pass** — the final-clean run produced one exact controlled Dell capture and three exact controlled Sidecar captures; all four copied the expected three lines and presented a bounded HUD |
 | Selection cursor and drag rendering | Clear before mouse-down; one normal-sized crosshair replaces the pointer before and throughout the drag; initiating display dims outside the selection; one thin gray dashed two-point-radius outline moves steadily | **Pass with accepted residual** — the final-clean Dell capture, three Sidecar captures, and three cross-display drags produced the crosshair and initiating-display selection treatment with correct cleanup. The explicitly deferred G24S immediate-reuse stationary-arrow residual remains accepted |
@@ -437,22 +471,22 @@ where those properties apply.
 | Every connected display and backing scale | Correct display identity, point-to-pixel scale, crop, HUD placement, and focus restoration | **Pass** — three exact 1× Dell and three exact 2× Sidecar captures copied the controlled fixture, placed feedback on the initiating display, dimmed only that display, and restored the originating app |
 | Cross-display drag | Initiating display alone dims; selection clamps at its edge and never spans displays | **Pass** — final clean head `f6f75c0` produced the expected result in three physical drags, once Sidecar-to-Dell and twice Dell-to-Sidecar: the crosshair followed the pointer across the boundary, while the dashed box stopped at the initiating display edge and only that display dimmed |
 | Full-screen app and changed Space | Selection-only activation appears over the intended full-screen Space, does not switch Spaces, and restores the originating app | **Pass** — four final-clean captures remained in the full-screen originating app/Space, with correct cursor, dimming, clipboard output, HUD, and restoration |
-| Escape before/during drag | Normal cancellation; clipboard sentinel unchanged; immediate reuse | **Blocked** for drag-phase coverage — isolated pre-drag Escape and the 50-cycle pre-drag cancellation series preserved the clipboard and returned to immediate reuse, but no final-clean mouse-down/drag/Escape/release observation was isolated. Back-to-back stationary Escape/retrigger can also omit the crosshair until pointer movement under the accepted residual |
-| Click and sub-4-point drag | Too-small cancellation; sentinel unchanged | **Blocked** for sample count — separately armed sentinels survived one click and one 1–2-pixel drag; both cleaned up with no HUD. One additional current observation remains required by the row-level minimum |
-| Quit during selection | All panels/cursor state disappear exactly once and the process terminates without a clipboard change | **Blocked** for sample count — one final-clean pre-drag Command-Q removed crosshair/dim/status item, terminated the exact process, left zero CopyLasso windows, and preserved the isolated sentinel. Two additional current observations remain required |
-| No recognizable text | No-text HUD; sentinel unchanged | **Blocked** for sample count — one separately armed sentinel survived a clearly sized blank selection, which produced the distinct No Text Found HUD. Two additional current blank-region observations remain required |
-| Permission first request: Deny | One system request, singleton recovery, no downstream work | **Blocked** for invocation coverage and sample count — one final-clean reset/denial sequence used the menu fallback, produced one macOS request and one recovery panel, performed no capture, reused the singleton panel on **Try Again**, and preserved its sentinel. A physical-shortcut denial plus two more current reset/denial observations remain required |
-| Permission approval/retry | Follow actual Later/Quit & Reopen behavior; no automatic retry | **Blocked** for sample count — one final-clean enable-with-**Later** sequence caused no automatic retry, stayed unavailable until ordinary quit/relaunch, and then captured successfully after direct-screen-access **Allow**. Two more current approval/retry observations are required by the three-run minimum |
-| Permission revocation | Controlled likely-revoked recovery after authoritative denial | **Blocked** for sample count — one final-clean revocation produced no selection or HUD, focused the singleton recovery panel, and blocked downstream work; re-enabling access with Quit & Reopen restored normal capture. Two additional current observations remain required |
+| Escape before/during drag | Normal cancellation; clipboard sentinel unchanged; immediate reuse | **Pass with accepted residual** — isolated pre-drag Escape, the 50-cycle pre-drag cancellation series, and one mouse-down/drag/Escape/release observation all removed dim/crosshair immediately, produced no HUD, preserved their sentinels, and returned to immediate reuse. Back-to-back stationary Escape/retrigger can still omit the crosshair until pointer movement under the accepted residual |
+| Click and sub-4-point drag | Too-small cancellation; sentinel unchanged | **Pass** — three current separately armed click/1–2-pixel-drag observations cleaned up with no HUD and preserved their sentinels. An extra uninstrumented empty-clipboard observation did not reproduce with a fresh sentinel and is excluded as an attribution anomaly |
+| Quit during selection | All panels/cursor state disappear exactly once and the process terminates without a clipboard change | **Pass** — three isolated pre-drag Command-Q observations removed crosshair/dim/status item immediately, terminated the exact process, and preserved their sentinels; one attribution repeat also recorded pasteboard change-count delta 0. One extra uninstrumented nonempty clipboard replacement did not reproduce under the counter and is excluded |
+| No recognizable text | No-text HUD; sentinel unchanged | **Pass** — three separately armed clearly sized blank selections produced the distinct No Text Found HUD and preserved their sentinels |
+| Permission first request: Deny | One system request, singleton recovery, no downstream work | **Blocked** by one repeat — the original menu-triggered request and a later physical-shortcut request each produced one native request, explicit Deny, singleton recovery, no downstream work, and sentinel preservation. A third artificial TCC reset produced recovery without a native request and is excluded rather than counted |
+| Permission approval/retry | Follow actual Later/Quit & Reopen behavior; no automatic retry | **Pass** — three current enable-with-**Later** observations caused no automatic selection and required a fresh exact-path process before capture. Each recovery completed the controlled OCR/HUD path; the two final samples copied the three-line fixture exactly |
+| Permission revocation | Controlled likely-revoked recovery after authoritative denial | **Blocked** by one repeat — the original revocation stopped before selection; a second same-process revocation passed stale preflight into selection but the real capture denial blocked pixels, OCR, clipboard, and HUD, preserved its sentinel/change count, and presented the singleton likely-revoked panel. Re-enabling and relaunching the exact artifact restored exact fixture capture in both cases |
 | Sleep and wake during every active phase | One system-interruption cancellation, cleanup, no auto-resume, immediate reuse | **Blocked** for the complete phase matrix — exact signed pre-drag and drag-phase sleeps now pass with cleanup, sentinel preservation, no auto-resume, and successful reuse; capture, OCR, and feedback-phase sleep rows remain pending |
 | Lock and unlock during every active phase | Same lifecycle contract and no sensitive residue | **Fail with maintainer-accepted residual** — the historical pre-drag probe cleaned up, while a drag-phase lock retained an invisible selection and replaced its sentinel with an empty value. The maintainer explicitly accepted this applicable lock-only v0.1 failure and directed the run to move past further lock testing; actual sleep remains covered separately |
 | Launch at Login enabled/disabled | Correct dockless presence after real logout/login or reboot | **Blocked** for final clean promotion — the final-clean run confirms one exact enabled item after onboarding, while the historical enabled/disabled logout/login sequence remains context. Current enabled and disabled logout/login or reboot checks are pending |
 | Light, dark, increased contrast, reduced motion, maximum text size | Legible native UI, one thin gray dashed two-point-radius selection outline, static dash phase under Reduce Motion, no clipped text | **Pass** — Light/Dark, Increased Contrast, Reduce Motion, maximum text size, Differentiate Without Color, and Reduce Transparency retained legible unclipped UI and correct capture/HUD behavior; Reduce Motion made the dash phase static, and all settings were restored |
-| VoiceOver and Full Keyboard Access | Clear labels/order/actions across menu, onboarding, Settings, recovery, selection, and HUD | **Blocked** for remaining speech coverage — VoiceOver correctly announced the status item, vertical menu order, Settings, and About; Full Keyboard Access reached every Settings control/link and invoked/cancelled/captured successfully. Physical VoiceOver speech for onboarding, selection, HUD, and permission recovery remains pending |
+| VoiceOver and Full Keyboard Access | Clear labels/order/actions across menu, onboarding, Settings, recovery, selection, and HUD | **Pass** — VoiceOver announced the status item, vertical menu order, Settings, About, complete onboarding traversal, selection overlay, bounded success preview, and recovery title/explanation/actions clearly. Full Keyboard Access reached every Settings control/link and invoked, cancelled, and captured successfully |
 | Offline success | Core workflow succeeds with process networking denied | **Pass** — the signed app had no network entitlement throughout the coherent run, exposed zero internet sockets, and completed far more than three controlled captures including the dedicated process-denied fixture capture with normal HUD feedback |
-| Protected content | Controlled blank/unavailable/no-text behavior; no bypass or invented text | **Blocked** for sample count — one valid nonshareable-fixture probe backed by a text-free Finder surface produced No Text Found, preserved the isolated sentinel and pasteboard change count, and recognized or invented none of the protected text. Two additional valid probes remain required |
+| Protected content | Controlled blank/unavailable/no-text behavior; no bypass or invented text | **Pass** — three valid nonshareable-fixture probes over text-free Finder/Preview surfaces produced No Text Found, preserved isolated sentinels and pasteboard change counts, and recognized or invented none of the protected text. The final two ran with a debugger breakpoint on CopyLasso's sole pasteboard-write method; neither entered it. Attempts over ordinary text-bearing backgrounds were excluded because macOS correctly exposed those shareable pixels underneath the omitted protected window |
 | Clipboard preservation sweep | Sentinel survives every cancellation and failure before replacement begins. A fault-injected clear-success/write-rejection reports clipboard failure; the prior clipboard may already be lost under the accepted write-only v0.1 boundary | **Blocked** for the remaining active-phase sweep — final-clean denial, unavailable retry, isolated Escape/click/tiny/no-text, protected-content, permission revocation, and active-selection Quit all preserved separately armed sentinels. Capture-, OCR-, and feedback-phase interruption preservation remains pending; the accepted lock-only residual remains explicitly excluded |
-| Success feedback privacy | HUD shows the correct normalized, truncated preview; preserves focus; clears on time; leaves no preview in logs/preferences | **Blocked** for complete preview validation — HUDs were bounded, nonactivating, replaceable, and temporary, the controlled fixture regained focus, and no preview text appeared in logs/preferences. Exact normalized/truncated preview content and timed clearing were not recorded in the coherent run |
+| Success feedback privacy | HUD shows the correct normalized, truncated preview; preserves focus; clears on time; leaves no preview in logs/preferences | **Pass** — a controlled 129-character two-line fixture produced the exact normalized 80-character preview `COPYLASSO PREVIEW VALIDATION KEEPS EVERY RECOGNIZED WORD LOCAL WHILE THE BOUNDE…`; the maintainer confirmed the HUD remained nonactivating and dismissed itself after about 2.5 seconds. Earlier immediate-replacement runs passed, and final log/preference scans contained no preview text |
 | Private-data residue | Before/after app-container and temporary-directory inventory contains no image/text output; unified log contains no selected content | **Blocked** for the complete delta — retained four-file baseline/current container manifests are byte-identical, and final readback found three container state files, zero image/PDF or controlled-text residue, zero open image/PDF files, zero internet sockets, and only normal LaunchServices/Metal temporary caches. No comparable pre-run temporary-directory manifest was retained, so the clean final temp scan cannot establish the required before/after delta |
 | Ordinary delete and reinstall | Onboarding remains complete when preferences remain; Launch at Login state is reconciled | **Blocked** — no installable release artifact exists yet |
 | Complete uninstall and reinstall | Login item, preferences, app-owned container data, and Screen Recording entry are removed; onboarding returns cleanly | **Blocked** — final uninstall procedure is a G25 deliverable and authoritative VM proof is G29 |
@@ -755,24 +789,31 @@ The raw `.trace`, XML, logs, and samples remain ignored build artifacts and must
 
 ## Completion Rule
 
-G24 is complete only when every row above has a fresh Pass, Fail, Blocked, or Not-applicable result from one coherent signed run **and** the four numeric acceptance criteria have actual interactive measurements. Any product failure becomes a narrowly scoped defect goal; do not modify production behavior inside G24. After that fix merges, restart this protocol from clean state.
+The original completion rule required every row above to have a fresh Pass,
+Fail, Blocked, or Not-applicable result from one coherent signed run **and** all
+four numeric acceptance criteria to have actual interactive measurements. Any
+product failure becomes a narrowly scoped defect goal; production behavior is
+not modified inside G24. The final closure below is a maintainer-approved
+exception for two protocol-specific measurement gaps, not an inferred pass.
 
 The final clean rerun now passes the idle CPU, ordinary-region latency, and
 stage-signpost requirements. It completed a simultaneous 100-cycle Time
 Profiler/Allocations recording with zero leaks and a content-free final scan,
 but the growth row remains blocked on the missing private-memory checkpoint
 series. It also passes the three-sample 1x Dell/2x Sidecar scale minimum,
-cross-display, full-screen, OCR-source, appearance,
-and Full Keyboard Access rows.
+cross-display, full-screen, OCR-source, appearance, Full Keyboard Access, and
+complete VoiceOver rows.
 
 Interactive cold status-item timing remains **Blocked**: ten process-visible
 samples and direct observation prove ordinary launch behavior, but neither
 faithfully timestamps the native item's visible and interactive transition.
-Drag-phase Escape, blank no-text, permission invocation/repeat, and protected-
-content sample coverage, some active-phase lifecycle/busy-state cases, reboot
-persistence, and VoiceOver speech for onboarding/selection/HUD/recovery also
-remain explicitly partial. The applicable lock-only failure is retained as a
-maintainer-accepted v0.1 residual. Every matrix row has a current state, but
-cold-launch timing and the repeated-growth private-memory checkpoint requirement
-still lack valid measurements, so G24 remains **in progress** and G25 has not
-begun.
+One first-request Deny repeat, one revocation repeat, some active-phase
+lifecycle/busy-state cases, reboot persistence, the pre-run temporary inventory,
+and later-goal install/uninstall work remain explicitly blocked. The applicable
+lock-only failure and stationary immediate-reuse crosshair nuance are retained
+as maintainer-accepted v0.1 residuals. Every matrix row has a current state. On
+July 14 the maintainer directed the repetitive physical run to stop and accepted
+the cold-launch timing and repeated-growth private-memory checkpoint gaps as
+blocked evidence rather than release passes. G24 is therefore **complete as an
+evidence-recording goal**; its remaining gaps stay visible for release judgment
+and later-goal validation.
