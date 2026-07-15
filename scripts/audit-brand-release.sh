@@ -92,6 +92,11 @@ require_text BrandAssets/AppIconLayers/background-default.svg '#6366F1'
 require_text BrandAssets/AppIconLayers/lasso.svg '#F8FAFC'
 require_text BrandAssets/AppIconLayers/text-strokes.svg '#F8FAFC'
 
+if [[ "$(/usr/bin/grep -c 'data-role="lasso-quadrant"' BrandAssets/AppIconLayers/lasso.svg)" != 4 ]] || \
+    [[ "$(/usr/bin/grep -c 'data-role="lasso-tail"' BrandAssets/AppIconLayers/lasso.svg)" != 1 ]]; then
+    fail "The app-icon lasso must retain four cardinal gaps and one lower-right rope tail."
+fi
+
 if /usr/bin/grep -R -n -F 'viewfinder' CopyLasso; then
     fail "The development viewfinder placeholder remains in the application target."
 fi

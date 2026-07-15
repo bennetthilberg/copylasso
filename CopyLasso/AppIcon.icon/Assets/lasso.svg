@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <path
-    d="M284 704H302C236 704 190 658 190 592V344C190 278 236 232 302 232H722C788 232 834 278 834 344V584C834 650 788 696 722 696H656C704 696 746 724 776 774"
+  <g
     fill="none"
     stroke="#F8FAFC"
-    stroke-width="64"
+    stroke-width="60"
     stroke-linecap="round"
     stroke-linejoin="round"
-  />
+  >
+    <path data-role="lasso-quadrant" d="M454 226C338 226 242 278 208 392C201 415 196 438 196 462"/>
+    <path data-role="lasso-quadrant" d="M570 226C686 226 782 278 816 392C823 415 828 438 828 462"/>
+    <path data-role="lasso-quadrant" d="M196 562C196 586 201 609 208 632C242 746 338 798 454 798"/>
+    <path data-role="lasso-quadrant" d="M570 798C686 798 782 746 816 632C823 609 828 586 828 562"/>
+    <path data-role="lasso-tail" d="M704 764C750 776 794 812 824 858"/>
+  </g>
 </svg>

@@ -4,14 +4,14 @@
 
 The CopyLasso mark was created specifically for this project on July 14, 2026. It is not stock artwork, is not derived from another product's icon, and does not imply affiliation with another organization. The project-authored source is distributed under CopyLasso's MIT license.
 
-The mark combines an open lasso-shaped selection frame, a short lower-right tail, and three horizontal text strokes. It contains no letters or wordmark and remains recognizable without color.
+The mark combines an open lasso loop, four small cardinal gaps that give the loop a crosshair rhythm, a short lower-right rope tail, and three horizontal text strokes. It contains no letters or wordmark and remains recognizable without color.
 
 ## App Icon
 
 `CopyLasso/AppIcon.icon` is the shipping layered Icon Composer document. Its three vector layers are retained in `BrandAssets/AppIconLayers` and embedded into the document:
 
 - Indigo background: a diagonal gradient from `#312E81` to `#6366F1`.
-- Lasso frame: warm white `#F8FAFC`, with rounded caps and joins.
+- Lasso frame: warm white `#F8FAFC`, formed from four curved quadrants with rounded caps and a lower-right rope tail.
 - Text strokes: three warm-white rounded bars of decreasing length.
 
 Icon Composer supplies the platform mask, depth treatment, and distinct Default, Dark, and Mono renditions. The final mark layers keep Liquid Glass effects disabled so their source geometry and contrast remain crisp. Xcode compiles the document into the standard macOS icon representations and the app's asset catalog.
