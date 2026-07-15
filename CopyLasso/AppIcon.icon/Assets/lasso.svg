@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <path
+    d="M284 704H302C236 704 190 658 190 592V344C190 278 236 232 302 232H722C788 232 834 278 834 344V584C834 650 788 696 722 696H656C704 696 746 724 776 774"
+    fill="none"
+    stroke="#F8FAFC"
+    stroke-width="64"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

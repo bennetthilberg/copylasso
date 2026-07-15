@@ -339,6 +339,10 @@ xcodebuild build \
     "${common_arguments[@]}" \
     -configuration Debug
 
+echo "Auditing final brand assets and release documentation"
+COPYLASSO_BRAND_APP="$derived_data/Build/Products/Debug/CopyLasso.app" \
+    ./scripts/audit-brand-release.sh
+
 probe_arguments=('SWIFT_ACTIVE_COMPILATION_CONDITIONS=$(inherited)')
 if [[ "${COPYLASSO_CI_FAILURE_PROBE:-false}" == "true" ]]; then
     probe_arguments=('SWIFT_ACTIVE_COMPILATION_CONDITIONS=$(inherited) COPYLASSO_CI_FAILURE_PROBE')

@@ -4,29 +4,27 @@ All notable changes to CopyLasso will be documented in this file.
 
 ## Unreleased
 
+## 0.1.0 - Unreleased
+
 ### Added
 
-- Initial v0.1 product contract and verified development-environment documentation.
-- Public project overview, contribution guidance, security-reporting policy, privacy policy, and repository hygiene rules.
-- Native SwiftUI Xcode scaffold with shared app, unit-test, and UI-test scheme.
-- Reproducible dual-architecture CI for Debug, XCTest bundles, unit tests, and Universal 2 Release builds.
-- Project-owned OCR fixtures, a thin in-memory Vision experiment, explicit quality tests, and a recorded viability decision.
-- A Debug-only in-memory ScreenCaptureKit experiment, permission-state tests, and a recorded capture viability decision.
-- A Debug-only multi-display AppKit selection experiment, coordinate-conversion tests, and a recorded overlay viability decision.
-- Production-neutral capture service contracts, a tested workflow state machine, explicit concurrency boundaries, and retired executable feasibility harnesses.
-- A dockless native menu-bar shell with reusable Capture Text routing, reopenable Settings and About windows, and a tested Quit boundary.
-- Versioned first-run setup, persistent native Settings, explicit Launch at Login reconciliation, and a configurable global shortcut shared with the menu capture command.
-- KeyboardShortcuts 3.0.1 with exact Swift Package Manager resolution and an MIT third-party notice.
-- Production Core Graphics Screen Recording permission observation and requests, persistent neutral history, a singleton nonactivating recovery panel with explicit retry feedback, and a temporary post-approval selection boundary.
-- A production multi-display AppKit selection overlay with per-display coordinate conversion, initiating-display-only dimming, complete cancellation cleanup, and a temporary no-pixel G14 capture boundary.
-- Production in-memory ScreenCaptureKit region capture with outward-rounded Retina geometry, authoritative permission-denial recovery, exact output validation, and a tested OCR handoff seam.
-- Production local Vision OCR with accurate corrected U.S. English recognition, neutral text/confidence/bounds observations, typed failures, and cooperative cancellation away from the main actor.
-- Pure deterministic observation-to-text assembly with whitespace normalization, ordinary line and paragraph grouping, exact duplicate removal, and graceful unsupported-layout handling.
-- Transactional plain-text clipboard output plus a silent, nonactivating, automatically dismissing HUD with bounded accessible previews and temporary menu-bar state.
-- End-to-end menu and shortcut orchestration with uniform cancellation, stage-specific failure feedback, busy rejection, terminal recovery, stress coverage, and operation-scoped release of captured pixels and unbounded recognized text.
-- Multi-display and Retina hardening that rejects mismatched coordinate-space metadata, carries the initiating display point size through capture validation, checks derived pixel dimensions, safely rejects ambiguous duplicate identifiers, and exercises a seven-layout synthetic topology.
-- Lifecycle and recovery hardening with owned workflow-task cancellation, coalesced sleep/lock notifications, termination cleanup, non-error system interruption state, observer teardown, rapid-hotkey rejection, immediate reuse, and content-free OSLog diagnostics.
-- Accessibility and appearance hardening with explicit compound-control semantics, native keyboard actions, system accessibility-display observation, a thin subtly rounded animated gray dashed selection outline with Increased Contrast and Reduce Motion variants, motion-free transient panels, and vertically adaptive feedback.
-- A reconciled privacy and security review, explicit minimal App Sandbox entitlement, dependency justification, offline whole-suite proof, and reproducible source/secret/network/persistence audit.
-- A reviewed behavioral-coverage gate, targeted recovery and text-order branch tests, three-pass repeatability runner, and real macOS 14 artifact-launch job alongside latest arm64 and Intel CI.
-- A versioned manual QA and performance protocol with explicit functional, OCR-source, lifecycle, accessibility, privacy, latency, CPU, memory-growth, and Instruments result boundaries.
+- A native Universal 2 menu-bar application for macOS 14 and newer.
+- A configurable global capture shortcut, with `⇧⌘2` as the suggested default, plus a shared menu command.
+- First-run setup, persistent Settings, explicit Launch at Login control, and permission recovery.
+- A multi-display region-selection overlay with the system crosshair, initiating-display clamping, cancellation cleanup, accessibility-aware contrast, and reduced-motion presentation.
+- In-memory ScreenCaptureKit region capture with Retina geometry validation and local Vision OCR configured for accurate corrected U.S. English recognition.
+- Deterministic plain-text assembly for ordinary lines and paragraphs, followed by write-only plain-text clipboard output.
+- A silent, nonactivating HUD for success, no-text, busy, permission, and recoverable-failure states.
+- Lifecycle cancellation, rapid-hotkey rejection, repeatability coverage, content-free diagnostics, and resource-release checks.
+- Minimal App Sandbox and Hardened Runtime configuration with no network client, capture persistence, analytics, telemetry, accounts, or automatic updater.
+- An original layered CopyLasso app icon, template menu-bar mark, complete About panel, public documentation, and release checklist.
+- KeyboardShortcuts 3.0.1, pinned exactly and acknowledged under its MIT license.
+
+### Known Limitations
+
+- OCR targets ordinary horizontal single-column U.S. English text; complex layouts, handwriting, and strongly rotated text are outside the initial release target.
+- Selection is confined to the display where the drag begins, and protected content can be blank or unavailable under macOS capture restrictions.
+- Immediate stationary-pointer reuse can briefly delay the visible crosshair until movement or mouse-down.
+- Locking during an active drag can require quitting and reopening CopyLasso after unlock.
+- A rare pasteboard clear-success followed by text-write rejection can leave the clipboard empty; CopyLasso does not read or restore prior contents.
+- Updates are manual.

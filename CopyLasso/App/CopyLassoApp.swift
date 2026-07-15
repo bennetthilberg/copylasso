@@ -153,7 +153,10 @@ struct CopyLassoApp: App {
     .windowResizability(.contentSize)
 
     Window("About CopyLasso", id: "about") {
-      AboutView(metadata: AboutMetadata(bundle: .main))
+      AboutView(
+        metadata: AboutMetadata(bundle: .main),
+        applicationIcon: NSApp.applicationIconImage
+      )
     }
     .windowResizability(.contentSize)
   }

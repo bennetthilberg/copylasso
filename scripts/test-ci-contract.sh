@@ -28,6 +28,14 @@ if [[ "$contract_invocations" != "1" ]]; then
     fail "Canonical CI must run its repeatability contract exactly once."
 fi
 
+brand_audit_invocations="$({
+    /usr/bin/grep -Ec '^[[:space:]]*\./scripts/audit-brand-release\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$brand_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-brand-release.sh exactly once."
+fi
+
 if ! /usr/bin/grep -Fq 'COPYLASSO_CI_ARCH="$requested_architecture" \' "$ci_script" || \
     ! /usr/bin/grep -Fq 'COPYLASSO_REPEAT_DERIVED_DATA_PATH="$derived_data" \' "$ci_script" || \
     ! /usr/bin/grep -Fq 'COPYLASSO_REPEAT_COUNT=3 \' "$ci_script"; then
