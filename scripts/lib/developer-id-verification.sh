@@ -5,6 +5,14 @@ release_verification_fail() {
     return 1
 }
 
+signature_has_hardened_runtime() {
+    local signature_details="$1"
+
+    /usr/bin/grep -Eq \
+        'CodeDirectory .*flags=[^[:space:]]*\(([^,()]+,)*runtime(,[^,()]+)*\)' \
+        "$signature_details"
+}
+
 assert_release_metadata() {
     local info_plist="$1"
     local bundle_identifier
@@ -104,7 +112,7 @@ assert_developer_id_signature() {
         release_verification_fail "The Developer ID signature is missing a secure timestamp."
         return 1
     fi
-    if ! /usr/bin/grep -F 'CodeDirectory ' "$signature_details" | /usr/bin/grep -Fq '(runtime)'; then
+    if ! signature_has_hardened_runtime "$signature_details"; then
         release_verification_fail "The Developer ID signature is missing Hardened Runtime."
         return 1
     fi
@@ -131,7 +139,7 @@ assert_nested_developer_id_signature() {
         release_verification_fail "The nested Developer ID signature is missing a secure timestamp."
         return 1
     fi
-    if ! /usr/bin/grep -F 'CodeDirectory ' "$signature_details" | /usr/bin/grep -Fq '(runtime)'; then
+    if ! signature_has_hardened_runtime "$signature_details"; then
         release_verification_fail "The nested Developer ID signature is missing Hardened Runtime."
         return 1
     fi
@@ -144,6 +152,7 @@ assert_nested_developer_id_signature() {
 
 assert_release_requirement() {
     local requirement_details="$1"
+    local expected_team_identifier="${2:-}"
 
     if ! /usr/bin/grep -Fq 'identifier "io.github.bennetthilberg.copylasso"' "$requirement_details"; then
         release_verification_fail "The designated requirement does not contain the production identifier."
@@ -155,6 +164,13 @@ assert_release_requirement() {
     fi
     if ! /usr/bin/grep -Fq '1.2.840.113635.100.6.1.13' "$requirement_details"; then
         release_verification_fail "The designated requirement is not constrained to Developer ID Application."
+        return 1
+    fi
+    if [[ -z "$expected_team_identifier" ]] ||
+        ! /usr/bin/grep -Fq \
+            "certificate leaf[subject.OU] = \"$expected_team_identifier\"" \
+            "$requirement_details"; then
+        release_verification_fail "The designated requirement does not match the application team."
         return 1
     fi
 }

@@ -146,7 +146,12 @@ TEXT
 
 assert_developer_id_signature "$valid_signature"
 
+sed 's/(runtime)/(library-validation,runtime)/' "$valid_signature" > \
+    "$temporary_directory/multiple-runtime-flags.txt"
+assert_developer_id_signature "$temporary_directory/multiple-runtime-flags.txt"
+
 assert_nested_developer_id_signature "$valid_signature" "REDACTED"
+assert_nested_developer_id_signature "$temporary_directory/multiple-runtime-flags.txt" "REDACTED"
 
 sed '/Developer ID Application/d' "$valid_signature" > "$temporary_directory/nested-development-signature.txt"
 expect_failure "nested code is not signed with Developer ID Application" \
@@ -185,9 +190,9 @@ expect_failure "team identifier" assert_developer_id_signature "$temporary_direc
 
 readonly valid_requirement="$temporary_directory/valid-requirement.txt"
 cat > "$valid_requirement" <<'TEXT'
-designated => identifier "io.github.bennetthilberg.copylasso" and anchor apple generic and certificate leaf[field.1.2.840.113635.100.6.1.13]
+designated => identifier "io.github.bennetthilberg.copylasso" and anchor apple generic and certificate leaf[field.1.2.840.113635.100.6.1.13] and certificate leaf[subject.OU] = "REDACTED"
 TEXT
-assert_release_requirement "$valid_requirement"
+assert_release_requirement "$valid_requirement" "REDACTED"
 echo 'designated => identifier "io.github.bennetthilberg.copylasso.debug" and anchor apple generic' > \
     "$temporary_directory/debug-requirement.txt"
 
@@ -198,6 +203,11 @@ sed 's/1.2.840.113635.100.6.1.13/1.2.3.4/' "$valid_requirement" > "$temporary_di
 expect_failure "constrained to Developer ID Application" assert_release_requirement "$temporary_directory/wrong-certificate-requirement.txt"
 expect_failure "production identifier" assert_release_requirement \
     "$temporary_directory/debug-requirement.txt"
+
+sed 's/subject.OU] = "REDACTED"/subject.OU] = "DIFFERENT"/' "$valid_requirement" > \
+    "$temporary_directory/wrong-team-requirement.txt"
+expect_failure "does not match the application team" assert_release_requirement \
+    "$temporary_directory/wrong-team-requirement.txt" "REDACTED"
 
 readonly valid_gatekeeper="$temporary_directory/valid-gatekeeper.txt"
 cat > "$valid_gatekeeper" <<'TEXT'

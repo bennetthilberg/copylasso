@@ -60,7 +60,7 @@ if ! /usr/bin/codesign --display --requirements - "$application" >"$temporary_di
     2>"$temporary_directory/requirement-diagnostics.txt"; then
     release_verification_fail "The designated requirement could not be inspected."
 fi
-assert_release_requirement "$temporary_directory/requirement.txt"
+assert_release_requirement "$temporary_directory/requirement.txt" "$application_team_identifier"
 
 if ! /usr/bin/codesign --display --entitlements :- "$application" >"$temporary_directory/entitlements.plist" 2>"$temporary_directory/entitlements-diagnostics.txt"; then
     release_verification_fail "The signed entitlements could not be extracted."
