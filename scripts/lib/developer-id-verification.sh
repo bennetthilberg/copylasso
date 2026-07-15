@@ -199,7 +199,7 @@ assert_release_requirement() {
     fi
     if [[ -z "$required_team_identifier" ]] ||
         ! /usr/bin/grep -Eq \
-            "certificate leaf\\[subject\\.OU\\] = (\"$required_team_identifier\"|$required_team_identifier)([[:space:]]|$)" \
+            "certificate leaf\\[subject\\.OU\\] = (\"$required_team_identifier\"|$required_team_identifier)([[:space:]]|\\)|$)" \
             "$requirement_details"; then
         release_verification_fail "The designated requirement does not match the application team."
         return 1
