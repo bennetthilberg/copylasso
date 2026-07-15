@@ -9,7 +9,7 @@ readonly xcode_contents_directory="$(cd "$active_developer_directory/.." && /bin
 readonly icon_tool="$xcode_contents_directory/Applications/Icon Composer.app/Contents/Executables/ictool"
 readonly icon_document="$repository_root/CopyLasso/AppIcon.icon"
 readonly menu_image_set="$repository_root/CopyLasso/Assets.xcassets/MenuBarLasso.imageset"
-readonly audit_output="$repository_root/.build/brand-release-audit"
+readonly audit_output="${COPYLASSO_BRAND_AUDIT_OUTPUT:-$repository_root/.build/brand-release-audit}"
 
 fail() {
     echo "$1" >&2
@@ -28,6 +28,11 @@ require_text() {
 }
 
 cd "$repository_root"
+
+case "$audit_output" in
+    "$repository_root"/.build/*) ;;
+    *) fail "Brand audit output must remain under the repository .build directory." ;;
+esac
 
 require_file "$icon_document/icon.json"
 require_file "$icon_document/Assets/background-default.svg"

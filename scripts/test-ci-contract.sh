@@ -37,6 +37,25 @@ if [[ "$brand_audit_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/audit-brand-release.sh exactly once."
 fi
 
+if ! /usr/bin/grep -Fq \
+    'COPYLASSO_BRAND_AUDIT_OUTPUT="$derived_data/brand-release-audit" \' \
+    "$ci_script"; then
+    fail "Each canonical architecture must isolate its brand-audit output."
+fi
+
+if [[ ! -x "$repository_root/scripts/retry-xctest-harness.sh" ]] || \
+    [[ ! -x "$repository_root/scripts/test-xctest-harness-retry.sh" ]]; then
+    fail "Canonical CI must retain its focused XCTest harness retry contract."
+fi
+
+harness_retry_invocations="$({
+    /usr/bin/grep -Ec '^[[:space:]]*\./scripts/retry-xctest-harness\.sh[[:space:]]*\\$' \
+        "$ci_script" || true
+})"
+if [[ "$harness_retry_invocations" != "1" ]]; then
+    fail "Canonical CI must guard its primary XCTest launch exactly once."
+fi
+
 if /usr/bin/grep -Fq '/Applications/Xcode.app' "$brand_audit_script" || \
     ! /usr/bin/grep -Fq 'DEVELOPER_DIR:-$(/usr/bin/xcode-select -p)' \
         "$brand_audit_script"; then
@@ -89,5 +108,7 @@ if [[ "$workflow_ci_invocations" != "1" ]] || \
     ! /usr/bin/grep -Fq 'COPYLASSO_CI_ARCH: ${{ matrix.architecture }}' "$workflow"; then
     fail "Both GitHub architecture jobs must enter through canonical CI."
 fi
+
+"$repository_root/scripts/test-xctest-harness-retry.sh"
 
 echo "CopyLasso CI repeatability contract passed."

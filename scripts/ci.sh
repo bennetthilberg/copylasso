@@ -341,6 +341,7 @@ xcodebuild build \
 
 echo "Auditing final brand assets and release documentation"
 COPYLASSO_BRAND_APP="$derived_data/Build/Products/Debug/CopyLasso.app" \
+    COPYLASSO_BRAND_AUDIT_OUTPUT="$derived_data/brand-release-audit" \
     ./scripts/audit-brand-release.sh
 
 probe_arguments=('SWIFT_ACTIVE_COMPILATION_CONDITIONS=$(inherited)')
@@ -357,7 +358,10 @@ xcodebuild build-for-testing \
     "${probe_arguments[@]}"
 
 echo "Running unit tests"
-xcodebuild test-without-building \
+./scripts/retry-xctest-harness.sh \
+    "$derived_data/UnitTests.xcresult" \
+    "$derived_data/UnitTests.log" \
+    xcodebuild test-without-building \
     "${common_arguments[@]}" \
     -configuration Debug \
     -enableCodeCoverage YES \
