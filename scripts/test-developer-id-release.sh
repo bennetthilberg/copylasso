@@ -146,6 +146,26 @@ TEXT
 
 assert_developer_id_signature "$valid_signature"
 
+assert_nested_developer_id_signature "$valid_signature" "REDACTED"
+
+sed '/Developer ID Application/d' "$valid_signature" > "$temporary_directory/nested-development-signature.txt"
+expect_failure "nested code is not signed with Developer ID Application" \
+    assert_nested_developer_id_signature "$temporary_directory/nested-development-signature.txt" "REDACTED"
+
+sed '/Timestamp=/d' "$valid_signature" > "$temporary_directory/nested-no-timestamp.txt"
+expect_failure "nested Developer ID signature is missing a secure timestamp" \
+    assert_nested_developer_id_signature "$temporary_directory/nested-no-timestamp.txt" "REDACTED"
+
+sed 's/flags=0x10000(runtime)/flags=0x0(none)/' "$valid_signature" > \
+    "$temporary_directory/nested-no-runtime.txt"
+expect_failure "nested Developer ID signature is missing Hardened Runtime" \
+    assert_nested_developer_id_signature "$temporary_directory/nested-no-runtime.txt" "REDACTED"
+
+sed 's/TeamIdentifier=REDACTED/TeamIdentifier=DIFFERENT/' "$valid_signature" > \
+    "$temporary_directory/nested-wrong-team.txt"
+expect_failure "nested Developer ID signature does not match the application team" \
+    assert_nested_developer_id_signature "$temporary_directory/nested-wrong-team.txt" "REDACTED"
+
 sed '/Developer ID Application/d' "$valid_signature" > "$temporary_directory/development-signature.txt"
 expect_failure "Developer ID Application" assert_developer_id_signature \
     "$temporary_directory/development-signature.txt"

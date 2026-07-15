@@ -52,8 +52,12 @@ if ! /usr/bin/codesign --display --verbose=4 "$application" > /dev/null 2>"$temp
     release_verification_fail "The Developer ID signature could not be inspected."
 fi
 assert_developer_id_signature "$temporary_directory/signature.txt"
+readonly application_team_identifier="$(
+    /usr/bin/sed -n 's/^TeamIdentifier=//p' "$temporary_directory/signature.txt" | /usr/bin/head -n 1
+)"
 
-if ! /usr/bin/codesign --display --requirements - "$application" > /dev/null 2>"$temporary_directory/requirement.txt"; then
+if ! /usr/bin/codesign --display --requirements - "$application" >"$temporary_directory/requirement.txt" \
+    2>"$temporary_directory/requirement-diagnostics.txt"; then
     release_verification_fail "The designated requirement could not be inspected."
 fi
 assert_release_requirement "$temporary_directory/requirement.txt"
@@ -70,9 +74,29 @@ while IFS= read -r -d '' candidate; do
         if ! /usr/bin/codesign --verify --strict --verbose=2 "$candidate" >"$temporary_directory/nested-codesign-$mach_o_count.txt" 2>&1; then
             release_verification_fail "A nested Mach-O signature failed strict verification."
         fi
+        if ! /usr/bin/codesign --display --verbose=4 "$candidate" > /dev/null \
+            2>"$temporary_directory/nested-signature-$mach_o_count.txt"; then
+            release_verification_fail "A nested Mach-O Developer ID signature could not be inspected."
+        fi
+        assert_nested_developer_id_signature \
+            "$temporary_directory/nested-signature-$mach_o_count.txt" \
+            "$application_team_identifier"
     fi
 done < <(/usr/bin/find "$application/Contents" -type f -print0)
 [[ "$mach_o_count" -gt 0 ]] || release_verification_fail "No signed Mach-O executable was found."
+
+nested_bundle_count=0
+while IFS= read -r -d '' nested_bundle; do
+    nested_bundle_count=$((nested_bundle_count + 1))
+    if ! /usr/bin/codesign --verify --strict --verbose=2 "$nested_bundle" \
+        >"$temporary_directory/nested-bundle-$nested_bundle_count.txt" 2>&1; then
+        release_verification_fail "A nested code bundle failed strict signature verification."
+    fi
+done < <(
+    /usr/bin/find "$application/Contents" -type d \
+        \( -name '*.app' -o -name '*.appex' -o -name '*.bundle' -o -name '*.framework' -o -name '*.xpc' \) \
+        -print0
+)
 
 if [[ "$mode" == "post" ]]; then
     if ! xcrun stapler validate "$application" >"$temporary_directory/stapler.txt" 2>&1; then

@@ -114,6 +114,34 @@ assert_developer_id_signature() {
     fi
 }
 
+assert_nested_developer_id_signature() {
+    local signature_details="$1"
+    local expected_team_identifier="$2"
+    local nested_team_identifier
+
+    if ! /usr/bin/grep -Eq '^Identifier=.+$' "$signature_details"; then
+        release_verification_fail "The nested code signature is missing its identifier."
+        return 1
+    fi
+    if ! /usr/bin/grep -Fq 'Authority=Developer ID Application:' "$signature_details"; then
+        release_verification_fail "The nested code is not signed with Developer ID Application."
+        return 1
+    fi
+    if ! /usr/bin/grep -Eq '^Timestamp=.+$' "$signature_details"; then
+        release_verification_fail "The nested Developer ID signature is missing a secure timestamp."
+        return 1
+    fi
+    if ! /usr/bin/grep -F 'CodeDirectory ' "$signature_details" | /usr/bin/grep -Fq '(runtime)'; then
+        release_verification_fail "The nested Developer ID signature is missing Hardened Runtime."
+        return 1
+    fi
+    nested_team_identifier="$(/usr/bin/sed -n 's/^TeamIdentifier=//p' "$signature_details" | /usr/bin/head -n 1)"
+    if [[ -z "$nested_team_identifier" || "$nested_team_identifier" != "$expected_team_identifier" ]]; then
+        release_verification_fail "The nested Developer ID signature does not match the application team."
+        return 1
+    fi
+}
+
 assert_release_requirement() {
     local requirement_details="$1"
 

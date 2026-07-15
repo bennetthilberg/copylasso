@@ -21,12 +21,15 @@ Account, configured team identifier, and app-specific password never appear in c
 process arguments:
 
 ~~~sh
-xcrun notarytool store-credentials copylasso-notary
+xcrun notarytool store-credentials copylasso-notary \
+  --keychain "$HOME/Library/Keychains/login.keychain-db"
 ~~~
 
-Accept the default validation and do not enable Keychain synchronization. Do not print or commit
-the Apple Account, team identifier, app-specific password, certificate fingerprint, private key,
-or profile contents. Future protected CI credentials are a separate G28 concern.
+Leave the API-key path blank, then enter the Apple Account, configured team identifier, and
+app-specific password only at the secure interactive prompts. Accept the default validation and do
+not enable Keychain synchronization. Do not print or commit the Apple Account, team identifier,
+app-specific password, certificate fingerprint, private key, or profile contents. Future protected
+CI credentials are a separate G28 concern.
 
 ## Archive and Export
 
@@ -69,6 +72,7 @@ The notary service accepts a ZIP container rather than a bare application bundle
 
 xcrun notarytool submit "$G26_OUTPUT/CopyLasso-notarization.zip" \
   --keychain-profile copylasso-notary \
+  --keychain "$HOME/Library/Keychains/login.keychain-db" \
   --wait \
   --output-format json
 
