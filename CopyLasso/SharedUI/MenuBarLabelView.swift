@@ -8,18 +8,25 @@ struct MenuBarLabelView: View {
   let feedbackModel: FeedbackPresentationModel
 
   var body: some View {
-    Image(systemName: feedbackModel.content?.symbolName ?? "viewfinder")
-      .accessibilityLabel(
-        feedbackModel.content?.menuBarAccessibilityLabel ?? "CopyLasso"
-      )
-      .accessibilityHint(AccessibilityAuditCopy.menuBarHelp)
-      .task {
-        await Task.yield()
-        guard settingsController.takeInitialOnboardingPresentationRequest() else {
-          return
-        }
-        NSApp.activate(ignoringOtherApps: true)
-        openWindow(id: "onboarding")
+    Group {
+      if let content = feedbackModel.content {
+        Image(systemName: content.symbolName)
+      } else {
+        Image("MenuBarLasso")
+          .renderingMode(.template)
       }
+    }
+    .accessibilityLabel(
+      feedbackModel.content?.menuBarAccessibilityLabel ?? "CopyLasso"
+    )
+    .accessibilityHint(AccessibilityAuditCopy.menuBarHelp)
+    .task {
+      await Task.yield()
+      guard settingsController.takeInitialOnboardingPresentationRequest() else {
+        return
+      }
+      NSApp.activate(ignoringOtherApps: true)
+      openWindow(id: "onboarding")
+    }
   }
 }

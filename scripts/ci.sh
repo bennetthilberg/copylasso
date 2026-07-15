@@ -339,6 +339,11 @@ xcodebuild build \
     "${common_arguments[@]}" \
     -configuration Debug
 
+echo "Auditing final brand assets and release documentation"
+COPYLASSO_BRAND_APP="$derived_data/Build/Products/Debug/CopyLasso.app" \
+    COPYLASSO_BRAND_AUDIT_OUTPUT="$derived_data/brand-release-audit" \
+    ./scripts/audit-brand-release.sh
+
 probe_arguments=('SWIFT_ACTIVE_COMPILATION_CONDITIONS=$(inherited)')
 if [[ "${COPYLASSO_CI_FAILURE_PROBE:-false}" == "true" ]]; then
     probe_arguments=('SWIFT_ACTIVE_COMPILATION_CONDITIONS=$(inherited) COPYLASSO_CI_FAILURE_PROBE')
@@ -346,14 +351,20 @@ if [[ "${COPYLASSO_CI_FAILURE_PROBE:-false}" == "true" ]]; then
 fi
 
 echo "Building unit-test and UI-test bundles"
+# The hosted Intel runner has no usable Icon Services session. The final icon was
+# already compiled and audited above; omit only its binding from the headless test host.
 xcodebuild build-for-testing \
     "${common_arguments[@]}" \
     -configuration Debug \
     -enableCodeCoverage YES \
+    ASSETCATALOG_COMPILER_APPICON_NAME= \
     "${probe_arguments[@]}"
 
 echo "Running unit tests"
-xcodebuild test-without-building \
+./scripts/retry-xctest-harness.sh \
+    "$derived_data/UnitTests.xcresult" \
+    "$derived_data/UnitTests.log" \
+    xcodebuild test-without-building \
     "${common_arguments[@]}" \
     -configuration Debug \
     -enableCodeCoverage YES \

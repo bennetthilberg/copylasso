@@ -4,6 +4,7 @@ set -euo pipefail
 
 readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly ci_script="$repository_root/scripts/ci.sh"
+readonly brand_audit_script="$repository_root/scripts/audit-brand-release.sh"
 readonly repeatability_script="$repository_root/scripts/test-repeatability.sh"
 readonly workflow="$repository_root/.github/workflows/ci.yml"
 
@@ -26,6 +27,52 @@ contract_invocations="$({
 })"
 if [[ "$contract_invocations" != "1" ]]; then
     fail "Canonical CI must run its repeatability contract exactly once."
+fi
+
+brand_audit_invocations="$({
+    /usr/bin/grep -Ec '^[[:space:]]*\./scripts/audit-brand-release\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$brand_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-brand-release.sh exactly once."
+fi
+
+if ! /usr/bin/grep -Fq \
+    'COPYLASSO_BRAND_AUDIT_OUTPUT="$derived_data/brand-release-audit" \' \
+    "$ci_script"; then
+    fail "Each canonical architecture must isolate its brand-audit output."
+fi
+
+if ! /usr/bin/grep -Fq 'audit_output_parent_canonical' "$brand_audit_script" || \
+    ! /usr/bin/grep -Fq 'cd "$audit_output_parent" 2>/dev/null && /bin/pwd -P' \
+        "$brand_audit_script"; then
+    fail "The brand audit must canonicalize its cleanup path before accepting it."
+fi
+
+if [[ ! -x "$repository_root/scripts/retry-xctest-harness.sh" ]] || \
+    [[ ! -x "$repository_root/scripts/test-xctest-harness-retry.sh" ]]; then
+    fail "Canonical CI must retain its focused XCTest harness retry contract."
+fi
+
+harness_retry_invocations="$({
+    /usr/bin/grep -Ec '^[[:space:]]*\./scripts/retry-xctest-harness\.sh[[:space:]]*\\$' \
+        "$ci_script" || true
+})"
+if [[ "$harness_retry_invocations" != "1" ]]; then
+    fail "Canonical CI must guard its primary XCTest launch exactly once."
+fi
+
+test_host_icon_suppressions="$({
+    /usr/bin/grep -Fc 'ASSETCATALOG_COMPILER_APPICON_NAME=' "$ci_script" || true
+})"
+if [[ "$test_host_icon_suppressions" != "1" ]]; then
+    fail "Canonical CI must isolate the headless XCTest host from Icon Services exactly once."
+fi
+
+if /usr/bin/grep -Fq '/Applications/Xcode.app' "$brand_audit_script" || \
+    ! /usr/bin/grep -Fq 'DEVELOPER_DIR:-$(/usr/bin/xcode-select -p)' \
+        "$brand_audit_script"; then
+    fail "The brand audit must locate Icon Composer from the active Xcode developer directory."
 fi
 
 if ! /usr/bin/grep -Fq 'COPYLASSO_CI_ARCH="$requested_architecture" \' "$ci_script" || \
@@ -74,5 +121,7 @@ if [[ "$workflow_ci_invocations" != "1" ]] || \
     ! /usr/bin/grep -Fq 'COPYLASSO_CI_ARCH: ${{ matrix.architecture }}' "$workflow"; then
     fail "Both GitHub architecture jobs must enter through canonical CI."
 fi
+
+"$repository_root/scripts/test-xctest-harness-retry.sh"
 
 echo "CopyLasso CI repeatability contract passed."

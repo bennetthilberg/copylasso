@@ -197,9 +197,42 @@ final class CopyLassoUITests: XCTestCase {
       menuItem("About CopyLasso", in: app).click()
       let aboutTitle = app.staticTexts["copylasso.about.title"]
       XCTAssertTrue(aboutTitle.waitForExistence(timeout: 5))
+      XCTAssertTrue(app.images["copylasso.about.icon"].exists)
+      assertAccessibleText(
+        app.staticTexts["copylasso.about.version"], equals: "Version 0.1.0 (1)"
+      )
+      assertAccessibleText(
+        app.staticTexts["copylasso.about.copyright"],
+        equals: "Copyright © 2026 Bennett Hilberg"
+      )
+      XCTAssertTrue(app.links["copylasso.about.repository"].exists)
+      XCTAssertTrue(app.links["copylasso.about.license"].exists)
+      XCTAssertTrue(app.buttons["copylasso.about.acknowledgements"].exists)
+      app.buttons["copylasso.about.acknowledgements"].click()
+      XCTAssertTrue(
+        app.staticTexts["copylasso.about.acknowledgements.title"].waitForExistence(timeout: 5)
+      )
+      XCTAssertTrue(app.staticTexts["KeyboardShortcuts 3.0.1"].exists)
+      app.buttons["copylasso.about.acknowledgements.done"].click()
       app.typeKey("w", modifierFlags: .command)
       XCTAssertTrue(aboutTitle.waitForNonExistence(timeout: 5))
     }
+  }
+
+  @MainActor
+  private func assertAccessibleText(
+    _ element: XCUIElement,
+    equals expected: String,
+    file: StaticString = #filePath,
+    line: UInt = #line
+  ) {
+    let exposedText = [element.label, element.value as? String].compactMap { $0 }
+    XCTAssertTrue(
+      exposedText.contains(expected),
+      "Expected accessibility to expose \(expected.debugDescription); got \(exposedText)",
+      file: file,
+      line: line
+    )
   }
 
   @MainActor

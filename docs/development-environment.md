@@ -125,6 +125,8 @@ The verified G01 environment has one valid Apple Development identity. The certi
 
 ## Project Build and Test
 
+CopyLasso's runtime minimum is macOS 14. Reproducing the complete canonical source pipeline requires a macOS 26.4-or-newer development host because the final-brand audit invokes Icon Composer's `ictool`; the verified baseline above uses macOS 26.5.1 and Xcode 26.6.
+
 The canonical local and GitHub Actions entrypoint is:
 
 ```sh

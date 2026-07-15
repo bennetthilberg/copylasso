@@ -92,9 +92,9 @@ struct SettingsView: View {
 
       Section("CopyLasso") {
         LabeledContent("Version", value: metadata.versionDescription)
-        Link("Project Repository", destination: Self.repositoryURL)
-        Link("Privacy Policy", destination: Self.privacyURL)
-        Link("MIT License", destination: Self.licenseURL)
+        Link("Project Repository", destination: metadata.repositoryURL)
+        Link("Privacy Policy", destination: metadata.privacyURL)
+        Link(metadata.licenseName, destination: metadata.licenseURL)
       }
 
       #if DEBUG
@@ -135,11 +135,4 @@ struct SettingsView: View {
     #endif
   }
 
-  private static let repositoryURL = URL(string: "https://github.com/bennetthilberg/copylasso")!
-  private static let privacyURL = URL(
-    string: "https://github.com/bennetthilberg/copylasso/blob/main/PRIVACY.md"
-  )!
-  private static let licenseURL = URL(
-    string: "https://github.com/bennetthilberg/copylasso/blob/main/LICENSE"
-  )!
 }

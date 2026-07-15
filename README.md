@@ -2,47 +2,99 @@
 
 [![CI](https://github.com/bennetthilberg/copylasso/actions/workflows/ci.yml/badge.svg)](https://github.com/bennetthilberg/copylasso/actions/workflows/ci.yml)
 
-CopyLasso is a free, open-source macOS utility for copying visible text from anywhere on screen. Press a global shortcut, drag around text, and receive the recognized plain text on the clipboard.
+CopyLasso is a free and open-source macOS utility for copying visible text from anywhere on screen. Press `⇧⌘2`, drag around text, and receive recognized plain text on the clipboard. Recognition runs locally with Apple's Vision framework, and CopyLasso does not retain a screenshot or OCR history.
 
-> **Project status:** CopyLasso is in early pre-release development. The dockless app now includes first-run setup, persistent native Settings, explicit Launch at Login control, a configurable global shortcut, accessibility-aware native presentation, and one production workflow from Screen Recording permission through multi-display selection, display-snapshot-validated in-memory capture, local OCR, deterministic plain-text assembly, clipboard output, and nonactivating feedback. The final signed G24 QA record passes the complete OCR-source sweep, physical cross-display clamping, cancellation and protected-content samples, appearance, idle CPU, and ordinary-region latency; it also records three successful captures on both the 1x Dell and 2x Sidecar plus positive keyboard and VoiceOver samples. A simultaneous Time Profiler/Allocations 100-cycle run completed with zero leaks and a strong physical-footprint plateau. Exact per-capture scale/crop dimensions, the complete assistive-technology matrix, the protocol's private-memory checkpoints, interactive cold status-item timing, and explicitly classified permission-repeat, privacy-delta, lifecycle, and persistence rows remain blocked rather than inferred. The stationary immediate-reuse crosshair and lock-only residuals remain accepted and documented. G24 is complete as an evidence record, but no public release is available.
+> **Pre-release status:** Version 0.1.0 is being prepared and is not available for public download yet. This page previews the installation and usage flow that the signed, notarized release will provide.
 
-## Planned v0.1 Experience
+## Requirements
 
-- Capture text from screen pixels in any application, including images and video.
-- Perform OCR entirely on the Mac with Apple's Vision framework.
-- Copy recognized plain text without retaining a screenshot or OCR history.
-- Start capture from a configurable global shortcut or menu-bar command.
-- Run as a native Universal 2 app on macOS 14 or newer.
+- macOS 14 or newer
+- An Apple silicon or Intel Mac; the release is a native Universal 2 application
+- Screen Recording permission for region capture
 
-The initial release targets ordinary, approximately horizontal, single-column English text. Protected or DRM-restricted content may not be capturable because CopyLasso follows macOS screen-capture restrictions.
+## Installation Preview
+
+The public release will be distributed as a signed and notarized disk image from this repository's GitHub Releases page. When it is published:
+
+1. Download `CopyLasso-0.1.0.dmg` and compare its SHA-256 checksum with the value on the release page.
+2. Open the disk image and drag CopyLasso into Applications.
+3. Open CopyLasso. It runs in the menu bar and does not add a Dock icon.
+4. Complete the short first-run setup and keep the suggested `⇧⌘2` shortcut or record another one.
+5. The first capture asks macOS for Screen Recording permission. Approve CopyLasso, then choose **Quit & Reopen** if macOS offers it.
+
+No unsigned download or placeholder release link is provided before the qualified artifact is published.
+
+## Use CopyLasso
+
+1. Press `⇧⌘2`, or choose **Capture Text** from the CopyLasso menu-bar menu.
+2. Drag around text on one display. Press `Esc` to cancel without changing the clipboard.
+3. CopyLasso captures only the selected region, recognizes English text locally, and writes the assembled plain text to the clipboard.
+4. A short, nonactivating HUD reports copied text, no text found, a busy request, or a recoverable failure.
+
+Open **Settings…** from the menu to change or clear the shortcut, enable Launch at Login, review privacy information, or reopen first-run setup when it is incomplete.
+
+## Permission and Recovery
+
+Screen Recording is the only macOS privacy permission required for core capture. CopyLasso does not require Accessibility, Input Monitoring, microphone, camera, location, contacts, or network access.
+
+If capture access is unavailable, CopyLasso shows a recovery window with a direct route to **System Settings > Privacy & Security > Screen & System Audio Recording**. Enable CopyLasso, quit and reopen it when macOS requests that transition, and then choose **Try Again**. Denial and unavailable-access paths preserve the clipboard.
 
 ## Privacy
 
-CopyLasso is designed to keep captured images and recognized text local, in memory, and only for as long as the active operation needs them. v0.1 has no accounts, cloud OCR, analytics, telemetry, capture history, network-client entitlement, or automatic updater. Core OCR does not require a network connection.
+CopyLasso is private, offline, and local by design:
 
-See the full [privacy policy](PRIVACY.md), [security and privacy review](docs/security-and-privacy-review.md), and [v0.1 product contract](docs/v0.1-product-contract.md) for the approved guarantees, implementation boundaries, and limitations.
+- Captured pixels and unbounded recognized text stay in memory only for the active operation.
+- Screenshots, OCR results, clipboard history, and HUD previews are never logged, persisted, or transmitted.
+- The application has no accounts, analytics, telemetry, cloud OCR, automatic updater, or network-client implementation.
+- Clipboard access is write-only and plain-text-only. CopyLasso never reads the existing clipboard to preserve or restore its contents.
 
-## Development Requirements
+See the [privacy policy](PRIVACY.md), [security and privacy review](docs/security-and-privacy-review.md), and [v0.1 product contract](docs/v0.1-product-contract.md) for the reviewed guarantees and boundaries.
 
-- A Mac running macOS 14 or newer
-- The latest stable full Xcode release selected by the project
-- Swift 6 and the `swift-format` version bundled with that Xcode release
-- An Apple Development signing identity for signed local builds
+## Known Limitations
 
-The current verified baseline is Xcode 26.6 with Swift 6.3.3. See [Architecture Overview](docs/architecture/overview.md), [Capture Workflow](docs/architecture/capture-workflow.md), and [Accessibility and Appearance](docs/architecture/accessibility-and-appearance.md) for component and presentation boundaries, [Development Environment](docs/development-environment.md) for setup and canonical commands, [Testing](docs/testing.md) for automated and signed matrices, [Automated Coverage Review](docs/coverage-review.md) for reviewed gaps and regression floors, [Manual QA and Performance](docs/manual-qa-and-performance.md) for release qualification, and [Build Configuration](docs/architecture/build-configuration.md) for target and signing decisions.
+- Version 0.1 targets ordinary, approximately horizontal, single-column U.S. English text. Dense tables, handwriting, strongly rotated text, and complex multi-column layouts can be incomplete or reordered.
+- A selection belongs to the display where the drag begins and clamps at that display's edge. Start another capture to select text on a different display.
+- Protected or DRM-restricted content can appear blank or unavailable to screen capture. CopyLasso follows macOS capture restrictions and does not bypass them.
+- Immediately reusing capture without moving the pointer can briefly leave the ordinary pointer visible. Moving the pointer or pressing the mouse button restores the crosshair; selection remains functional.
+- Locking the Mac during an active drag is a narrow recovery edge case. After unlocking, quit and reopen CopyLasso before the next capture if selection does not return to idle.
+- In the rare event that macOS accepts clearing the pasteboard but rejects the subsequent text write, the previous clipboard contents have already been cleared. CopyLasso reports failure and does not read or reconstruct the prior contents.
+- Updates are manual in version 0.1.
 
-Run the same unsigned build and unit-test pipeline used by CI:
+## Build from Source
+
+The app runs on macOS 14 or newer. Reproducing the complete canonical source pipeline requires macOS 26.4 or newer because its final-brand audit invokes Apple's Icon Composer tooling, plus the stable Xcode version documented in [Development Environment](docs/development-environment.md), Swift 6, and the `swift-format` bundled with that Xcode release. An Apple Development identity is required only for signed local UI and privacy-permission testing.
+
+Clone the repository, open `CopyLasso.xcodeproj`, and run the shared `CopyLasso` scheme. To run the same unsigned build, unit-test, offline, repeatability, audit, and Universal 2 Release pipeline used by CI:
 
 ```sh
 ./scripts/ci.sh
 ```
 
-The shared Xcode scheme also builds and runs the current menu-bar application locally. UI tests require runnable local signing; CI builds their bundle without launching the unsigned runner. The exact KeyboardShortcuts dependency and license are recorded in [Third-Party Notices](THIRD_PARTY_NOTICES.md).
+Architecture and test details are documented in [Architecture Overview](docs/architecture/overview.md), [Testing](docs/testing.md), and [Manual QA and Performance](docs/manual-qa-and-performance.md). The exact KeyboardShortcuts dependency and license are recorded in [Third-Party Notices](THIRD_PARTY_NOTICES.md).
 
 ## Contributing
 
-CopyLasso is under active development. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before proposing a change. Security issues should be reported privately according to [SECURITY.md](SECURITY.md).
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a change. Report security issues privately according to [SECURITY.md](SECURITY.md).
+
+## Complete Uninstall
+
+These steps remove only CopyLasso's production application, login registration, preferences, sandbox container, and Screen Recording entry. They are destructive for CopyLasso settings and onboarding state.
+
+1. Open CopyLasso Settings, turn off **Launch CopyLasso at Login**, and verify that it reports disabled. Then choose **Quit CopyLasso**.
+2. If the app was already removed, disable its entry in **System Settings > General > Login Items & Extensions** before continuing.
+3. Move CopyLasso from Applications to the Trash.
+4. Run the following commands in Terminal. They target only the production bundle identifier and do not reset other applications:
+
+   ```sh
+   defaults delete io.github.bennetthilberg.copylasso 2>/dev/null || true
+   rm -rf "$HOME/Library/Containers/io.github.bennetthilberg.copylasso"
+   tccutil reset ScreenCapture io.github.bennetthilberg.copylasso
+   ```
+
+5. In **System Settings > Privacy & Security > Screen & System Audio Recording**, confirm that CopyLasso is no longer listed. A later reinstall should open first-run setup again.
+
+Do not use broad login-item resets or reset Screen Recording for every application.
 
 ## License
 
-CopyLasso is available under the [MIT License](LICENSE). Copyright 2026 Bennett Hilberg.
+CopyLasso is available under the [MIT License](LICENSE). Copyright © 2026 Bennett Hilberg.
