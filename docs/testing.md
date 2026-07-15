@@ -203,7 +203,7 @@ Use one stably signed Debug app with Screen Recording enabled. Keep a unique sen
 8. Complete 25 consecutive real successes, then 20 real attempts alternating success and Escape. Confirm no duplicate panels, stuck cursor, overlapping work, retained preview, unexpected permission, or responsiveness loss.
 9. Inspect the app container and temporary directories before and after the run. Confirm no screenshot, OCR text, preview, log, cache, or history artifact was created.
 
-The unattended July 11, 2026 run completed the deterministic matrix but could not perform this signed live matrix because the workstation was locked and real G14 capture permission/display evidence was unavailable. This is recorded as pending rather than passed; it remains release-blocking evidence for G24.
+The unattended July 11, 2026 run completed the deterministic matrix but could not perform this signed live matrix because the workstation was locked and real G14 capture permission/display evidence was unavailable. At that historical checkpoint this was recorded as pending release-blocking G24 evidence. The final signed G24 record below supersedes that checkpoint with current per-row classifications.
 
 ## Multi-Display And Retina Hardening Matrix
 
@@ -252,7 +252,7 @@ Use one stably signed Debug app and keep a clipboard sentinel before every pre-o
 8. Repeat selection cancellation, recoverable capture failure, and successful capture in sequence at least ten times without force-quitting.
 9. Inspect Console lifecycle messages. They may state only idle interruption, active interruption cancellation, resume, or termination cleanup; they must contain no captured/frontmost app name, geometry, pixels, recognized text, clipboard text, preview, or raw error.
 
-The unattended July 11, 2026 run could not perform real sleep/wake, lock/unlock, WindowServer inspection, or quit-during-selection because the workstation was already locked. Deterministic notification/task tests are not a substitute; this signed matrix remains pending release evidence.
+The unattended July 11, 2026 run could not perform real sleep/wake, lock/unlock, WindowServer inspection, or quit-during-selection because the workstation was already locked. Deterministic notification/task tests were not a substitute at that historical checkpoint. The final signed G24 record supplies the current lifecycle classifications, including the accepted lock-only failure and remaining blocked active-phase coverage.
 
 ## Accessibility And Appearance Checklist
 
@@ -271,7 +271,7 @@ Run this checklist with one stably signed Debug app and a normal unlocked graphi
 9. Increase the system text size to its largest supported value. Confirm onboarding, Settings, About, permission guidance, login errors, and the longest bounded feedback preview wrap or grow without clipped labels or inaccessible controls.
 10. Repeat keyboard and VoiceOver checks after closing/reopening each singleton window and while another application or full-screen Space is frontmost. Explicit Settings/About actions may activate their windows; capture feedback and selection must preserve the other application's focus policy.
 
-The unattended July 11, 2026 implementation run could not launch this physical matrix because the workstation remained locked. The signed app and UI runner built and launched, but the two focused XCUITests failed only while discovering onboarding and Settings hierarchy: `loginwindow` was the frontmost process, the accessibility shield hid both windows, and neither test reached its semantic or keyboard assertion. Strict signature verification and the generated `LSUIElement = true` check passed. Automated semantic, layout, appearance-policy, and UI-bundle coverage is regression evidence only; VoiceOver speech/order, Accessibility Inspector, Full Keyboard Access traversal, maximum text size, and real system appearance toggles remain pending release evidence.
+The unattended July 11, 2026 implementation run could not launch this physical matrix because the workstation remained locked. The signed app and UI runner built and launched, but the two focused XCUITests failed only while discovering onboarding and Settings hierarchy: `loginwindow` was the frontmost process, the accessibility shield hid both windows, and neither test reached its semantic or keyboard assertion. Strict signature verification and the generated `LSUIElement = true` check passed. The July 14 final-clean G24 continuation subsequently passed Light/Dark, Increased Contrast, Reduce Motion, Differentiate Without Color, Reduce Transparency, and maximum text size. VoiceOver produced clear status-item, menu, Settings, About, onboarding, selection-overlay, success-HUD, and permission-recovery samples, while Full Keyboard Access covered Settings, the status menu, cancellation, and capture. VoiceOver no-text/non-permission failure HUD speech and Full Keyboard Access onboarding/recovery/reopened-singleton traversal remain blocked. The authoritative signed details are in [Manual QA and Performance](manual-qa-and-performance.md).
 
 ## Privacy, Security, Entitlement, And Dependency Matrix
 
@@ -300,7 +300,7 @@ Use one stably signed Debug app, keep Screen Recording enabled, and avoid inspec
 9. Inspect Privacy & Security after real use. Screen Recording must be the only core permission; Accessibility, Input Monitoring, Microphone, Full Disk Access, Files and Folders, and automation access must not be required.
 10. Paste the success result into TextEdit, then confirm cancellation/no-text/pre-output failures preserved the sentinel in separate runs. Remember that clipboard contents become a macOS/user trust boundary after a successful write.
 
-The unattended July 11, 2026 G22 run completed the source, dependency, signed-entitlement, container baseline, and full offline-unit evidence. It could not create a fresh before/after delta across real captures, inspect live Console output, or recheck the privacy pane because `loginwindow` remained frontmost and the workstation was locked. Those observations remain pending release evidence rather than inferred passes.
+The unattended July 11, 2026 G22 run completed the source, dependency, signed-entitlement, container baseline, and full offline-unit evidence. It could not create a fresh before/after delta across real captures, inspect live Console output, or recheck the privacy pane because `loginwindow` remained frontmost and the workstation was locked. That was a historical pending checkpoint; the final signed G24 record provides current privacy classifications and retains the missing comparable temporary-directory baseline as Blocked.
 
 ## Automated Coverage, Repeatability, And OS Matrix
 
@@ -329,16 +329,40 @@ Signed XCUITests remain focused on first-run, Settings, menu, recovery, and acce
 
 The versioned release checklist and performance result sheet are maintained in [Manual QA and Performance](manual-qa-and-performance.md). G24 must execute that complete document from one clean, stably signed Debug state; partial or historical evidence must not be promoted into a release pass.
 
-The July 13, 2026 signed run completed many functional, permission, and OCR rows,
-passed the idle-CPU threshold, and produced useful process-launch, latency, and
-100-cycle memory context. It then failed pre-drag sleep/wake cleanup: after wake,
-the arrow was visible but an invisible selection session still accepted a drag,
-changed the clipboard, and showed success feedback. G24U subsequently passed
-exact signed pre-drag and drag-phase sleep interruption with full cleanup,
-clipboard preservation, no automatic resume, and immediate reuse. A separate
-screen-lock probe exposed an invisible retained selection after unlock; the
-maintainer accepted that lock-only behavior as a v0.1 residual. G24 now requires
-a clean rerun. Sidecar-only checks, wallpaper and protected-content sources,
-complete accessibility/appearance coverage, interactive status-item cold-launch
-timing, ordinary-region latency, 100-cycle Time Profiler, and several
-phase-specific or privacy rows remain explicitly blocked.
+The July 13, 2026 signed run completed many functional, permission, and OCR rows
+before exposing a pre-drag sleep/wake failure. G24U subsequently passed exact
+signed pre-drag and drag-phase sleep interruption with full cleanup, clipboard
+preservation, no automatic resume, and immediate reuse. A separate screen-lock
+probe exposed an invisible retained selection after unlock; the maintainer
+accepted that lock-only behavior as a v0.1 residual.
+
+The July 13-14 final clean merged-head rerun records three controlled 1x Dell
+and three controlled 2x Sidecar captures. Three physical cross-display clamps,
+reverse and every-edge drags, pre-drag and drag-phase Escape, three click/tiny,
+three blank no-text, and three active-selection Quit observations pass, along
+with the complete browser/Finder/TextEdit/PDF/raster/video/
+photograph/system-UI/wallpaper/difficult-text/multi-column OCR-source sweep,
+three passing protected-content blanking observations, Light/Dark and accessibility appearance modes, Full
+Keyboard Access and VoiceOver samples, three menu-fallback captures, exact
+normalized/truncated HUD preview and timed clearing, three permission
+approval/retry observations, idle CPU, and ordinary-region capture latency. Its official
+100-cycle run recorded the first exact 50 successes and 50 cancellations while
+one Allocations/VM Tracker/Time Profiler trace remained active; the post-settle
+physical footprint fell to 60.7 MiB and `/usr/bin/leaks` reported zero leaks.
+The growth row remains blocked because the protocol's distinct private-memory
+value was not retained at each checkpoint.
+Raw profiler and content-free timing evidence remains ignored under
+`.build/g24-final-current`.
+
+G24 is complete as an evidence-recording goal. Every manual row has an explicit
+Pass, Fail, Blocked, or Not-applicable result, and the maintainer directed the
+run to stop repeating low-value physical samples. Cold native-status-item
+timing, exact per-capture scale/crop dimensions, one first-request Deny repeat,
+one permission-revocation repeat, private-memory checkpoints, some active-phase
+lifecycle/busy-state cases, reboot persistence, remaining VoiceOver feedback
+states, Full Keyboard Access onboarding/recovery/reopened-singleton traversal,
+and the missing pre-run temporary-directory inventory remain honest blocked
+evidence gaps rather than inferred passes. Clean install and uninstall remain
+owned by their later roadmap goals. The applicable
+lock-only failure and immediate-reuse stationary-crosshair nuance remain
+maintainer-accepted v0.1 residuals.
