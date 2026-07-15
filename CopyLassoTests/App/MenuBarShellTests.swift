@@ -1,3 +1,4 @@
+import AppKit
 import XCTest
 
 @testable import CopyLasso
@@ -74,6 +75,24 @@ final class MenuBarShellTests: XCTestCase {
     XCTAssertEqual(metadata.versionDescription, "Version Unknown (Unknown)")
     XCTAssertEqual(metadata.applicationName, "CopyLasso")
     XCTAssertEqual(metadata.repositoryURL.host(), "github.com")
+  }
+
+  func testAboutViewDefersAndInjectsApplicationIconLoading() {
+    let expectedIcon = NSImage(size: NSSize(width: 80, height: 80))
+    var loadCount = 0
+    let iconSource = ApplicationIconSource {
+      loadCount += 1
+      return expectedIcon
+    }
+
+    _ = AboutView(
+      metadata: AboutMetadata(infoDictionary: [:]),
+      applicationIconSource: iconSource
+    )
+
+    XCTAssertEqual(loadCount, 0)
+    XCTAssertTrue(iconSource.load() === expectedIcon)
+    XCTAssertEqual(loadCount, 1)
   }
 }
 

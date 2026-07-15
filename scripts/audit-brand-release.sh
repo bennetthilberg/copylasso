@@ -98,7 +98,12 @@ fi
 
 require_text CopyLasso/SharedUI/MenuBarLabelView.swift 'Image("MenuBarLasso")'
 require_text CopyLasso/SharedUI/MenuBarLabelView.swift '.renderingMode(.template)'
-require_text CopyLasso/SharedUI/AboutView.swift 'Image(nsImage: applicationIcon)'
+require_text CopyLasso/SharedUI/AboutView.swift \
+    'DeferredApplicationIconView(source: applicationIconSource)'
+require_text CopyLasso/SharedUI/AboutView.swift 'NSApp.applicationIconImage'
+if /usr/bin/grep -Fq 'NSApp.applicationIconImage' CopyLasso/App/CopyLassoApp.swift; then
+    fail "The About scene must defer loading the application icon until its view is presented."
+fi
 require_text CopyLasso/Models/AboutMetadata.swift 'Copyright © 2026 Bennett Hilberg'
 require_text CopyLasso/Models/AboutMetadata.swift 'https://github.com/bennetthilberg/copylasso'
 require_text CopyLasso/Models/AboutMetadata.swift 'KeyboardShortcuts 3.0.1'

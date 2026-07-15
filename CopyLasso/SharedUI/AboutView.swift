@@ -1,17 +1,32 @@
 import AppKit
 import SwiftUI
 
+@MainActor
+struct ApplicationIconSource {
+  private let imageLoader: () -> NSImage
+
+  init(_ imageLoader: @escaping () -> NSImage) {
+    self.imageLoader = imageLoader
+  }
+
+  func load() -> NSImage {
+    imageLoader()
+  }
+
+  static let application = ApplicationIconSource {
+    NSApp.applicationIconImage
+  }
+}
+
 struct AboutView: View {
   let metadata: AboutMetadata
-  let applicationIcon: NSImage
+  let applicationIconSource: ApplicationIconSource
 
   @State private var isShowingAcknowledgements = false
 
   var body: some View {
     VStack(spacing: 10) {
-      Image(nsImage: applicationIcon)
-        .resizable()
-        .scaledToFit()
+      DeferredApplicationIconView(source: applicationIconSource)
         .frame(width: 80, height: 80)
         .accessibilityLabel("CopyLasso app icon")
         .accessibilityIdentifier("copylasso.about.icon")
@@ -54,6 +69,19 @@ struct AboutView: View {
       AcknowledgementsView(acknowledgement: metadata.acknowledgement)
     }
   }
+}
+
+private struct DeferredApplicationIconView: NSViewRepresentable {
+  let source: ApplicationIconSource
+
+  func makeNSView(context: Context) -> NSImageView {
+    let imageView = NSImageView()
+    imageView.image = source.load()
+    imageView.imageScaling = .scaleProportionallyUpOrDown
+    return imageView
+  }
+
+  func updateNSView(_ imageView: NSImageView, context: Context) {}
 }
 
 private struct AcknowledgementsView: View {
@@ -103,6 +131,8 @@ private struct AcknowledgementsView: View {
         "CFBundleVersion": "1",
       ]
     ),
-    applicationIcon: NSImage(named: NSImage.applicationIconName) ?? NSImage()
+    applicationIconSource: ApplicationIconSource {
+      NSImage(named: NSImage.applicationIconName) ?? NSImage()
+    }
   )
 }
