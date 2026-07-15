@@ -64,7 +64,7 @@ assert_universal_architectures() {
 
 assert_release_entitlements() {
     local entitlements_plist="$1"
-    local sandbox_value
+    local sandbox_node_type
     local xml
     local key_count
 
@@ -72,24 +72,33 @@ assert_release_entitlements() {
         release_verification_fail "The signed entitlements are not a valid property list."
         return 1
     fi
-    if ! sandbox_value="$(/usr/libexec/PlistBuddy -c 'Print :com.apple.security.app-sandbox' "$entitlements_plist" 2>/dev/null)"; then
-        release_verification_fail "The signed application must retain App Sandbox."
+    if ! xml="$(/usr/bin/plutil -convert xml1 -o - "$entitlements_plist")"; then
+        release_verification_fail "The signed entitlements could not be inspected."
         return 1
     fi
-    if [[ "$sandbox_value" != "true" ]]; then
-        release_verification_fail "The signed application must retain App Sandbox."
-        return 1
-    fi
+    sandbox_node_type="$(
+        /usr/bin/printf '%s' "$xml" |
+            /usr/bin/xmllint --nonet --xpath \
+                'name(/plist/dict/key[.="com.apple.security.app-sandbox"]/following-sibling::*[1])' \
+                - 2>/dev/null || true
+    )"
+    case "$sandbox_node_type" in
+        true) ;;
+        false | "")
+            release_verification_fail "The signed application must retain App Sandbox."
+            return 1
+            ;;
+        *)
+            release_verification_fail "The signed App Sandbox entitlement must be a Boolean true value."
+            return 1
+            ;;
+    esac
 
     if /usr/libexec/PlistBuddy -c 'Print :com.apple.security.get-task-allow' "$entitlements_plist" >/dev/null 2>&1; then
         release_verification_fail "The Release application must not contain get-task-allow."
         return 1
     fi
 
-    if ! xml="$(/usr/bin/plutil -convert xml1 -o - "$entitlements_plist")"; then
-        release_verification_fail "The signed entitlements could not be inspected."
-        return 1
-    fi
     key_count="$(/usr/bin/grep -c '<key>' <<< "$xml" || true)"
     if [[ "$key_count" != "1" ]]; then
         release_verification_fail "Release entitlements must contain only the reviewed App Sandbox capability."

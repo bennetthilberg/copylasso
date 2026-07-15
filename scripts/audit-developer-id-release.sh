@@ -18,7 +18,7 @@ fail() {
 require_text() {
     local file="$1"
     local required="$2"
-    /usr/bin/grep -Fq "$required" "$file" ||
+    /usr/bin/grep -Fq -- "$required" "$file" ||
         fail "Required Developer ID text is missing: $required"
 }
 
@@ -60,13 +60,23 @@ require_text "$signing_documentation" 'Developer ID Application'
 require_text "$signing_documentation" 'copylasso-notary'
 require_text "$signing_documentation" 'notarytool store-credentials'
 require_text "$signing_documentation" 'login.keychain-db'
+require_text "$signing_documentation" 'Team API key'
+require_text "$signing_documentation" 'Developer role'
+require_text "$signing_documentation" '--key-id "$COPYLASSO_NOTARY_KEY_ID"'
+require_text "$signing_documentation" '--issuer "$COPYLASSO_NOTARY_ISSUER_ID"'
 require_text "$signing_documentation" 'notarytool submit'
 require_text "$signing_documentation" 'stapler staple'
 require_text "$signing_documentation" 'verify-developer-id-app.sh'
 require_text "$signing_documentation" 'Configuration/DeveloperIDExportOptions.plist'
 require_text "$signing_documentation" 'Do not print or commit'
 require_text "$release_checklist" 'without recording the identifier itself'
-require_text "$verifier" '>"$temporary_directory/requirement.txt"'
+require_text "$verifier" '>"$temporary_directory/requirement-$architecture.txt"'
 require_text "$verifier" 'assert_nested_developer_id_signature'
+require_text "$verifier" '--architecture "$architecture"'
+require_text "$verifier" '--entitlements - --xml'
+
+if /usr/bin/grep -Fq -- '--apple-id' "$signing_documentation"; then
+    fail "Developer ID signing documentation must use the approved API-key profile."
+fi
 
 echo "CopyLasso Developer ID release audit passed."

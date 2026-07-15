@@ -16,20 +16,36 @@ Do not export the private key during this goal.
 
 ## Notarization Credential Profile
 
-CopyLasso uses the local Keychain profile **copylasso-notary**. Create it interactively so the Apple
-Account, configured team identifier, and app-specific password never appear in command history or
-process arguments:
+CopyLasso uses a **Team API key** with the **Developer role** and stores its credentials in the local
+Keychain profile **copylasso-notary**. An Individual API key cannot authenticate `notarytool`. Create
+and download the Team key once in App Store Connect, keep the downloaded private key outside the
+repository, and restrict the file before importing it. In a local Bash session, read the key and
+issuer identifiers without adding them to command history:
 
 ~~~sh
+read -r -p 'Downloaded private-key path: ' COPYLASSO_NOTARY_KEY
+chmod 600 "$COPYLASSO_NOTARY_KEY"
+read -r -s -p 'App Store Connect key ID: ' COPYLASSO_NOTARY_KEY_ID; echo
+read -r -s -p 'App Store Connect issuer ID: ' COPYLASSO_NOTARY_ISSUER_ID; echo
+
 xcrun notarytool store-credentials copylasso-notary \
+  --key "$COPYLASSO_NOTARY_KEY" \
+  --key-id "$COPYLASSO_NOTARY_KEY_ID" \
+  --issuer "$COPYLASSO_NOTARY_ISSUER_ID" \
   --keychain "$HOME/Library/Keychains/login.keychain-db"
+
+xcrun notarytool history \
+  --keychain-profile copylasso-notary \
+  --keychain "$HOME/Library/Keychains/login.keychain-db"
+
+/bin/rm -f "$COPYLASSO_NOTARY_KEY"
+unset COPYLASSO_NOTARY_KEY COPYLASSO_NOTARY_KEY_ID COPYLASSO_NOTARY_ISSUER_ID
 ~~~
 
-Leave the API-key path blank, then enter the Apple Account, configured team identifier, and
-app-specific password only at the secure interactive prompts. Accept the default validation and do
-not enable Keychain synchronization. Do not print or commit the Apple Account, team identifier,
-app-specific password, certificate fingerprint, private key, or profile contents. Future protected
-CI credentials are a separate G28 concern.
+The profile must validate before use. Once validation succeeds, remove the downloaded private-key
+file; the credentials remain in the nonsynchronized login Keychain profile. Do not print or commit
+the account, key identifier, issuer identifier, certificate fingerprint, private key, or profile
+contents. Future protected CI credentials are a separate G28 concern.
 
 ## Archive and Export
 
@@ -90,8 +106,9 @@ the complete signing or notarization log into public CI output.
 - If the Developer ID certificate is missing, expired, revoked, or lacks its private key, stop and
   repair the identity through the Account Holder. Never fall back to Apple Development or ad-hoc
   signing for a release export.
-- If credential validation fails, replace only the **copylasso-notary** Keychain item after
-  confirming the intended account and team. Do not delete unrelated Keychain items.
+- If credential validation fails, confirm that the Team API key remains active and has the intended
+  access. Replace only the **copylasso-notary** Keychain item; revoke and regenerate the API key only
+  if it is compromised or no longer usable. Do not delete unrelated Keychain items.
 - If notarization is rejected, inspect the external log, fix the reported source or signing issue,
   create a new commit, and rebuild from the beginning. Never staple or promote a rejected artifact.
 - Any tracked commit after archive creation invalidates the archive. Repeat archive, export,

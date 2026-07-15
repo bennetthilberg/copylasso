@@ -42,30 +42,48 @@ trap 'rm -rf "$temporary_directory"' EXIT
 assert_release_metadata "$signed_info_plist"
 [[ -n "$signed_executable_name" && -x "$signed_executable" ]] ||
     release_verification_fail "The signed application executable is missing."
-assert_universal_architectures "$(/usr/bin/lipo -archs "$signed_executable")"
+readonly application_architectures="$(/usr/bin/lipo -archs "$signed_executable")"
+assert_universal_architectures "$application_architectures"
 
 if ! /usr/bin/codesign --verify --deep --strict --verbose=2 "$application" >"$temporary_directory/codesign-verify.txt" 2>&1; then
     release_verification_fail "Strict recursive code-signature verification failed."
 fi
 
-if ! /usr/bin/codesign --display --verbose=4 "$application" > /dev/null 2>"$temporary_directory/signature.txt"; then
-    release_verification_fail "The Developer ID signature could not be inspected."
-fi
-assert_developer_id_signature "$temporary_directory/signature.txt"
-readonly application_team_identifier="$(
-    /usr/bin/sed -n 's/^TeamIdentifier=//p' "$temporary_directory/signature.txt" | /usr/bin/head -n 1
-)"
+application_team_identifier=""
+for architecture in $application_architectures; do
+    if ! /usr/bin/codesign --display --architecture "$architecture" --verbose=4 "$application" \
+        > /dev/null 2>"$temporary_directory/signature-$architecture.txt"; then
+        release_verification_fail "A Developer ID signature slice could not be inspected."
+    fi
+    assert_developer_id_signature "$temporary_directory/signature-$architecture.txt"
+    slice_team_identifier="$(
+        /usr/bin/sed -n 's/^TeamIdentifier=//p' \
+            "$temporary_directory/signature-$architecture.txt" | /usr/bin/head -n 1
+    )"
+    if [[ -z "$application_team_identifier" ]]; then
+        application_team_identifier="$slice_team_identifier"
+    elif [[ "$slice_team_identifier" != "$application_team_identifier" ]]; then
+        release_verification_fail "The application signature slices do not use the same team."
+    fi
 
-if ! /usr/bin/codesign --display --requirements - "$application" >"$temporary_directory/requirement.txt" \
-    2>"$temporary_directory/requirement-diagnostics.txt"; then
-    release_verification_fail "The designated requirement could not be inspected."
-fi
-assert_release_requirement "$temporary_directory/requirement.txt" "$application_team_identifier"
+    if ! /usr/bin/codesign --display --architecture "$architecture" --requirements - "$application" \
+        >"$temporary_directory/requirement-$architecture.txt" \
+        2>"$temporary_directory/requirement-diagnostics-$architecture.txt"; then
+        release_verification_fail "A designated requirement slice could not be inspected."
+    fi
+    assert_release_requirement \
+        "$temporary_directory/requirement-$architecture.txt" \
+        "$application_team_identifier"
 
-if ! /usr/bin/codesign --display --entitlements :- "$application" >"$temporary_directory/entitlements.plist" 2>"$temporary_directory/entitlements-diagnostics.txt"; then
-    release_verification_fail "The signed entitlements could not be extracted."
-fi
-assert_release_entitlements "$temporary_directory/entitlements.plist"
+    if ! /usr/bin/codesign --display --architecture "$architecture" \
+        --entitlements - --xml "$application" \
+        >"$temporary_directory/entitlements-$architecture.plist" \
+        2>"$temporary_directory/entitlements-diagnostics-$architecture.txt"; then
+        release_verification_fail "A signed entitlement slice could not be extracted."
+    fi
+    assert_release_entitlements "$temporary_directory/entitlements-$architecture.plist"
+done
+readonly application_team_identifier
 
 mach_o_count=0
 while IFS= read -r -d '' candidate; do
@@ -74,13 +92,19 @@ while IFS= read -r -d '' candidate; do
         if ! /usr/bin/codesign --verify --strict --verbose=2 "$candidate" >"$temporary_directory/nested-codesign-$mach_o_count.txt" 2>&1; then
             release_verification_fail "A nested Mach-O signature failed strict verification."
         fi
-        if ! /usr/bin/codesign --display --verbose=4 "$candidate" > /dev/null \
-            2>"$temporary_directory/nested-signature-$mach_o_count.txt"; then
-            release_verification_fail "A nested Mach-O Developer ID signature could not be inspected."
+        if ! candidate_architectures="$(/usr/bin/lipo -archs "$candidate")"; then
+            release_verification_fail "A nested Mach-O architecture list could not be inspected."
         fi
-        assert_nested_developer_id_signature \
-            "$temporary_directory/nested-signature-$mach_o_count.txt" \
-            "$application_team_identifier"
+        for architecture in $candidate_architectures; do
+            if ! /usr/bin/codesign --display --architecture "$architecture" --verbose=4 "$candidate" \
+                > /dev/null \
+                2>"$temporary_directory/nested-signature-$mach_o_count-$architecture.txt"; then
+                release_verification_fail "A nested Mach-O Developer ID signature slice could not be inspected."
+            fi
+            assert_nested_developer_id_signature \
+                "$temporary_directory/nested-signature-$mach_o_count-$architecture.txt" \
+                "$application_team_identifier"
+        done
     fi
 done < <(/usr/bin/find "$application/Contents" -type f -print0)
 [[ "$mach_o_count" -gt 0 ]] || release_verification_fail "No signed Mach-O executable was found."

@@ -107,6 +107,13 @@ PLIST
 
 assert_release_entitlements "$valid_entitlements"
 
+cp "$valid_entitlements" "$temporary_directory/string-sandbox-entitlements.plist"
+/usr/libexec/PlistBuddy -c 'Delete :com.apple.security.app-sandbox' \
+    -c 'Add :com.apple.security.app-sandbox string true' \
+    "$temporary_directory/string-sandbox-entitlements.plist"
+expect_failure "Boolean true value" assert_release_entitlements \
+    "$temporary_directory/string-sandbox-entitlements.plist"
+
 cp "$valid_entitlements" "$temporary_directory/debug-entitlements.plist"
 /usr/libexec/PlistBuddy -c 'Add :com.apple.security.get-task-allow bool true' \
     "$temporary_directory/debug-entitlements.plist"
