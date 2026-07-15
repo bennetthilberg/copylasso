@@ -101,6 +101,11 @@ if [[ "$(/usr/bin/grep -c 'data-role="lasso-quadrant"' BrandAssets/AppIconLayers
     fail "The app-icon lasso must retain four cardinal gaps and one lower-right rope tail."
 fi
 
+if [[ "$(/usr/bin/grep -c 'data-role="lasso-quadrant"' "$menu_image_set/MenuBarLasso.svg")" != 4 ]] || \
+    [[ "$(/usr/bin/grep -c 'data-role="lasso-tail"' "$menu_image_set/MenuBarLasso.svg")" != 1 ]]; then
+    fail "The menu-bar lasso must retain four cardinal gaps and one lower-right rope tail."
+fi
+
 if /usr/bin/grep -R -n -F 'viewfinder' CopyLasso; then
     fail "The development viewfinder placeholder remains in the application target."
 fi

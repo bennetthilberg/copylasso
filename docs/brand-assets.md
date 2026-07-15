@@ -18,7 +18,7 @@ Icon Composer supplies the platform mask, depth treatment, and distinct Default,
 
 ## Menu-Bar Symbol
 
-`MenuBarLasso` is an original 18-by-18-point SVG template symbol derived from the same open frame and text strokes. The asset catalog preserves its vector representation and renders it as a black-and-transparent template so macOS supplies the correct menu-bar color in light, dark, and increased-contrast appearances. Temporary workflow feedback continues to use familiar system status symbols.
+`MenuBarLasso` is an original 18-by-18-point SVG template symbol derived from the same four-gap lasso, lower-right rope tail, and text strokes as the application mark. The asset catalog preserves its vector representation and renders it as a black-and-transparent template so macOS supplies the correct menu-bar color in light, dark, and increased-contrast appearances. Temporary workflow feedback continues to use familiar system status symbols.
 
 ## Exact-Name Review
 
