@@ -56,6 +56,12 @@ printing or recording the identifier, and keep it only in the process environmen
 verification:
 
 ~~~sh
+set -euo pipefail
+readonly G26_COMMIT="$(git rev-parse HEAD)"
+readonly G26_OUTPUT="$HOME/Library/Developer/CopyLasso/G26/$G26_COMMIT"
+umask 077
+mkdir -p "$G26_OUTPUT"
+
 read -r -s -p 'Expected release Team ID: ' COPYLASSO_EXPECTED_TEAM_ID; echo
 export COPYLASSO_EXPECTED_TEAM_ID
 
@@ -95,13 +101,27 @@ xcrun notarytool submit "$G26_OUTPUT/CopyLasso-notarization.zip" \
   --keychain-profile copylasso-notary \
   --keychain "$HOME/Library/Keychains/login.keychain-db" \
   --wait \
-  --output-format json
+  --output-format json \
+  > "$G26_OUTPUT/notary-submission.json"
+
+COPYLASSO_SUBMISSION_STATUS="$(
+  /usr/bin/plutil -extract status raw -o - "$G26_OUTPUT/notary-submission.json"
+)"
+COPYLASSO_SUBMISSION_ID="$(
+  /usr/bin/plutil -extract id raw -o - "$G26_OUTPUT/notary-submission.json"
+)"
+[[ "$COPYLASSO_SUBMISSION_STATUS" == 'Accepted' ]]
+
+xcrun notarytool log "$COPYLASSO_SUBMISSION_ID" \
+  --keychain-profile copylasso-notary \
+  --keychain "$HOME/Library/Keychains/login.keychain-db" \
+  > "$G26_OUTPUT/notary-log.json"
 
 xcrun stapler staple "$G26_OUTPUT/export/CopyLasso.app"
 ./scripts/verify-developer-id-app.sh --post-notarization \
   "$G26_OUTPUT/export/CopyLasso.app"
 
-unset COPYLASSO_EXPECTED_TEAM_ID
+unset COPYLASSO_EXPECTED_TEAM_ID COPYLASSO_SUBMISSION_STATUS COPYLASSO_SUBMISSION_ID
 ~~~
 
 Store the submission result and diagnostic log beside the external archive. Evidence may record the

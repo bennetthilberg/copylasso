@@ -216,6 +216,9 @@ cat > "$valid_requirement" <<'TEXT'
 designated => identifier "io.github.bennetthilberg.copylasso" and anchor apple generic and certificate leaf[field.1.2.840.113635.100.6.1.13] and certificate leaf[subject.OU] = "REDACTED"
 TEXT
 assert_release_requirement "$valid_requirement" "REDACTED"
+sed 's/subject.OU] = "REDACTED"/subject.OU] = REDACTED/' "$valid_requirement" > \
+    "$temporary_directory/unquoted-team-requirement.txt"
+assert_release_requirement "$temporary_directory/unquoted-team-requirement.txt" "REDACTED"
 echo 'designated => identifier "io.github.bennetthilberg.copylasso.debug" and anchor apple generic' > \
     "$temporary_directory/debug-requirement.txt"
 
