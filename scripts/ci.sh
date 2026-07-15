@@ -351,10 +351,13 @@ if [[ "${COPYLASSO_CI_FAILURE_PROBE:-false}" == "true" ]]; then
 fi
 
 echo "Building unit-test and UI-test bundles"
+# The hosted Intel runner has no usable Icon Services session. The final icon was
+# already compiled and audited above; omit only its binding from the headless test host.
 xcodebuild build-for-testing \
     "${common_arguments[@]}" \
     -configuration Debug \
     -enableCodeCoverage YES \
+    ASSETCATALOG_COMPILER_APPICON_NAME= \
     "${probe_arguments[@]}"
 
 echo "Running unit tests"

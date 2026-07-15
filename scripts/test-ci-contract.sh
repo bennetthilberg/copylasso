@@ -43,6 +43,12 @@ if ! /usr/bin/grep -Fq \
     fail "Each canonical architecture must isolate its brand-audit output."
 fi
 
+if ! /usr/bin/grep -Fq 'audit_output_parent_canonical' "$brand_audit_script" || \
+    ! /usr/bin/grep -Fq 'cd "$audit_output_parent" 2>/dev/null && /bin/pwd -P' \
+        "$brand_audit_script"; then
+    fail "The brand audit must canonicalize its cleanup path before accepting it."
+fi
+
 if [[ ! -x "$repository_root/scripts/retry-xctest-harness.sh" ]] || \
     [[ ! -x "$repository_root/scripts/test-xctest-harness-retry.sh" ]]; then
     fail "Canonical CI must retain its focused XCTest harness retry contract."
@@ -54,6 +60,13 @@ harness_retry_invocations="$({
 })"
 if [[ "$harness_retry_invocations" != "1" ]]; then
     fail "Canonical CI must guard its primary XCTest launch exactly once."
+fi
+
+test_host_icon_suppressions="$({
+    /usr/bin/grep -Fc 'ASSETCATALOG_COMPILER_APPICON_NAME=' "$ci_script" || true
+})"
+if [[ "$test_host_icon_suppressions" != "1" ]]; then
+    fail "Canonical CI must isolate the headless XCTest host from Icon Services exactly once."
 fi
 
 if /usr/bin/grep -Fq '/Applications/Xcode.app' "$brand_audit_script" || \

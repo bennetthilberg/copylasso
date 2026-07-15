@@ -9,7 +9,7 @@ readonly xcode_contents_directory="$(cd "$active_developer_directory/.." && /bin
 readonly icon_tool="$xcode_contents_directory/Applications/Icon Composer.app/Contents/Executables/ictool"
 readonly icon_document="$repository_root/CopyLasso/AppIcon.icon"
 readonly menu_image_set="$repository_root/CopyLasso/Assets.xcassets/MenuBarLasso.imageset"
-readonly audit_output="${COPYLASSO_BRAND_AUDIT_OUTPUT:-$repository_root/.build/brand-release-audit}"
+readonly audit_output_candidate="${COPYLASSO_BRAND_AUDIT_OUTPUT:-$repository_root/.build/brand-release-audit}"
 
 fail() {
     echo "$1" >&2
@@ -28,6 +28,14 @@ require_text() {
 }
 
 cd "$repository_root"
+
+readonly audit_output_parent="$(/usr/bin/dirname "$audit_output_candidate")"
+readonly audit_output_name="$(/usr/bin/basename "$audit_output_candidate")"
+audit_output_parent_canonical="$({
+    cd "$audit_output_parent" 2>/dev/null && /bin/pwd -P
+})" || fail "Brand audit output parent must already exist."
+readonly audit_output_parent_canonical
+readonly audit_output="$audit_output_parent_canonical/$audit_output_name"
 
 case "$audit_output" in
     "$repository_root"/.build/*) ;;

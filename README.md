@@ -62,7 +62,7 @@ See the [privacy policy](PRIVACY.md), [security and privacy review](docs/securit
 
 ## Build from Source
 
-Development requires macOS 14 or newer, the stable Xcode version documented in [Development Environment](docs/development-environment.md), Swift 6, and the `swift-format` bundled with that Xcode release. An Apple Development identity is required only for signed local UI and privacy-permission testing.
+The app runs on macOS 14 or newer. Reproducing the complete canonical source pipeline requires macOS 26.4 or newer because its final-brand audit invokes Apple's Icon Composer tooling, plus the stable Xcode version documented in [Development Environment](docs/development-environment.md), Swift 6, and the `swift-format` bundled with that Xcode release. An Apple Development identity is required only for signed local UI and privacy-permission testing.
 
 Clone the repository, open `CopyLasso.xcodeproj`, and run the shared `CopyLasso` scheme. To run the same unsigned build, unit-test, offline, repeatability, audit, and Universal 2 Release pipeline used by CI:
 

@@ -24,7 +24,7 @@ retry_output="$(
     COPYLASSO_XCTEST_HARNESS_ATTEMPTS=2 "$retry_helper" \
         "$test_root/retry.xcresult" \
         "$test_root/retry.log" \
-        /bin/sh -c '
+        /bin/bash -c '
             marker="$1"
             attempts="$2"
             printf "attempt\n" >> "$attempts"
@@ -47,7 +47,7 @@ ordinary_output="$(
     COPYLASSO_XCTEST_HARNESS_ATTEMPTS=2 "$retry_helper" \
         "$test_root/ordinary.xcresult" \
         "$test_root/ordinary.log" \
-        /bin/sh -c '
+        /bin/bash -c '
             printf "attempt\n" >> "$1"
             echo "An ordinary test failed."
             exit 42
@@ -68,7 +68,7 @@ exhausted_output="$(
     COPYLASSO_XCTEST_HARNESS_ATTEMPTS=2 "$retry_helper" \
         "$test_root/exhausted.xcresult" \
         "$test_root/exhausted.log" \
-        /bin/sh -c '
+        /bin/bash -c '
             printf "attempt\n" >> "$1"
             echo "The test runner hung before establishing connection."
             exit 65
