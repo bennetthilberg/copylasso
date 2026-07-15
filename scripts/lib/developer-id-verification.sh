@@ -62,6 +62,18 @@ assert_universal_architectures() {
     fi
 }
 
+bundle_contains_mach_o() {
+    local bundle="$1"
+    local candidate
+
+    while IFS= read -r -d '' candidate; do
+        if /usr/bin/file -b "$candidate" | /usr/bin/grep -Fq 'Mach-O'; then
+            return 0
+        fi
+    done < <(/usr/bin/find "$bundle" -type f -print0)
+    return 1
+}
+
 assert_release_entitlements() {
     local entitlements_plist="$1"
     local sandbox_node_type
@@ -108,7 +120,7 @@ assert_release_entitlements() {
 
 assert_developer_id_signature() {
     local signature_details="$1"
-    local expected_team_identifier="${2:-}"
+    local required_team_identifier="${2:-}"
     local signature_team_identifier
 
     if ! /usr/bin/grep -Fqx 'Identifier=io.github.bennetthilberg.copylasso' "$signature_details"; then
@@ -134,8 +146,8 @@ assert_developer_id_signature() {
         release_verification_fail "The Developer ID signature is missing its team identifier."
         return 1
     fi
-    if [[ -n "$expected_team_identifier" && \
-        "$signature_team_identifier" != "$expected_team_identifier" ]]; then
+    if [[ -n "$required_team_identifier" && \
+        "$signature_team_identifier" != "$required_team_identifier" ]]; then
         release_verification_fail "The Developer ID signature does not match the approved release team."
         return 1
     fi
@@ -143,7 +155,7 @@ assert_developer_id_signature() {
 
 assert_nested_developer_id_signature() {
     local signature_details="$1"
-    local expected_team_identifier="$2"
+    local required_team_identifier="$2"
     local nested_team_identifier
 
     if ! /usr/bin/grep -Eq '^Identifier=.+$' "$signature_details"; then
@@ -163,7 +175,7 @@ assert_nested_developer_id_signature() {
         return 1
     fi
     nested_team_identifier="$(/usr/bin/sed -n 's/^TeamIdentifier=//p' "$signature_details" | /usr/bin/head -n 1)"
-    if [[ -z "$nested_team_identifier" || "$nested_team_identifier" != "$expected_team_identifier" ]]; then
+    if [[ -z "$nested_team_identifier" || "$nested_team_identifier" != "$required_team_identifier" ]]; then
         release_verification_fail "The nested Developer ID signature does not match the application team."
         return 1
     fi
@@ -171,7 +183,7 @@ assert_nested_developer_id_signature() {
 
 assert_release_requirement() {
     local requirement_details="$1"
-    local expected_team_identifier="${2:-}"
+    local required_team_identifier="${2:-}"
 
     if ! /usr/bin/grep -Fq 'identifier "io.github.bennetthilberg.copylasso"' "$requirement_details"; then
         release_verification_fail "The designated requirement does not contain the production identifier."
@@ -185,9 +197,9 @@ assert_release_requirement() {
         release_verification_fail "The designated requirement is not constrained to Developer ID Application."
         return 1
     fi
-    if [[ -z "$expected_team_identifier" ]] ||
+    if [[ -z "$required_team_identifier" ]] ||
         ! /usr/bin/grep -Fq \
-            "certificate leaf[subject.OU] = \"$expected_team_identifier\"" \
+            "certificate leaf[subject.OU] = \"$required_team_identifier\"" \
             "$requirement_details"; then
         release_verification_fail "The designated requirement does not match the application team."
         return 1

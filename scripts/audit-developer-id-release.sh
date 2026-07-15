@@ -76,6 +76,7 @@ require_text "$verifier" 'assert_nested_developer_id_signature'
 require_text "$verifier" '--architecture "$architecture"'
 require_text "$verifier" '--entitlements - --xml'
 require_text "$verifier" 'COPYLASSO_EXPECTED_TEAM_ID'
+require_text "$verifier" 'bundle_contains_mach_o "$nested_bundle"'
 
 if /usr/bin/grep -Fq -- '--apple-id' "$signing_documentation"; then
     fail "Developer ID signing documentation must use the approved API-key profile."

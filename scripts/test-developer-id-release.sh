@@ -23,6 +23,9 @@ fail() {
 # shellcheck source=scripts/lib/developer-id-verification.sh
 source "$verifier_library"
 
+declare -F bundle_contains_mach_o >/dev/null ||
+    fail "The verifier must distinguish code-bearing bundles from resource-only bundles."
+
 expect_failure() {
     local expected_message="$1"
     shift
@@ -38,6 +41,16 @@ expect_failure() {
 
 readonly temporary_directory="$(mktemp -d "${TMPDIR:-/tmp}/copylasso-g26-tests.XXXXXX")"
 trap 'rm -rf "$temporary_directory"' EXIT
+
+mkdir -p "$temporary_directory/resource-only.bundle/Contents/Resources"
+echo 'localized resources' > "$temporary_directory/resource-only.bundle/Contents/Resources/content.txt"
+if bundle_contains_mach_o "$temporary_directory/resource-only.bundle"; then
+    fail "A resource-only bundle must not be classified as nested executable code."
+fi
+mkdir -p "$temporary_directory/code-bearing.bundle/Contents/MacOS"
+cp /bin/echo "$temporary_directory/code-bearing.bundle/Contents/MacOS/Helper"
+bundle_contains_mach_o "$temporary_directory/code-bearing.bundle" ||
+    fail "A bundle containing Mach-O code must be classified as nested executable code."
 
 readonly valid_info="$temporary_directory/Info.plist"
 cat > "$valid_info" <<'PLIST'
@@ -151,6 +164,7 @@ Timestamp=Jul 15, 2026 at 12:00:00 PM
 TeamIdentifier=REDACTED
 TEXT
 
+readonly expected_team_identifier="REDACTED"
 assert_developer_id_signature "$valid_signature"
 expect_failure "approved release team" assert_developer_id_signature \
     "$valid_signature" "DIFFERENT"

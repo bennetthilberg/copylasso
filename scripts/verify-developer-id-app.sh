@@ -118,6 +118,9 @@ done < <(/usr/bin/find "$application/Contents" -type f -print0)
 
 nested_bundle_count=0
 while IFS= read -r -d '' nested_bundle; do
+    if ! bundle_contains_mach_o "$nested_bundle"; then
+        continue
+    fi
     nested_bundle_count=$((nested_bundle_count + 1))
     if ! /usr/bin/codesign --verify --strict --verbose=2 "$nested_bundle" \
         >"$temporary_directory/nested-bundle-$nested_bundle_count.txt" 2>&1; then
