@@ -49,6 +49,7 @@ require_file "$icon_document/Assets/text-strokes.svg"
 require_file "$menu_image_set/Contents.json"
 require_file "$menu_image_set/MenuBarLasso.svg"
 require_file "$repository_root/docs/brand-assets.md"
+require_file "$repository_root/docs/developer-id-signing.md"
 require_file "$repository_root/docs/release-checklist.md"
 
 if [[ -e CopyLasso/Assets.xcassets/AppIcon.appiconset ]]; then
@@ -162,6 +163,7 @@ readonly public_copy=(
     CONTRIBUTING.md
     SECURITY.md
     docs/brand-assets.md
+    docs/developer-id-signing.md
     docs/release-checklist.md
     docs/v0.1-product-contract.md
 )

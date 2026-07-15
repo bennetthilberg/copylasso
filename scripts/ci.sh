@@ -46,6 +46,12 @@ xcrun swift-format lint --recursive --strict \
 echo "Auditing privacy, security, entitlements, and dependencies"
 ./scripts/audit-privacy-security.sh
 
+echo "Auditing Developer ID release configuration"
+./scripts/audit-developer-id-release.sh
+
+echo "Testing Developer ID release verification"
+./scripts/test-developer-id-release.sh
+
 readonly committed_development_team_pattern='^[[:space:]]*"?DEVELOPMENT_TEAM(\[[^]]+\])?"?[[:space:]]*=[[:space:]]*[A-Z0-9]{10};'
 
 if /usr/bin/grep -Eq "$committed_development_team_pattern" \
