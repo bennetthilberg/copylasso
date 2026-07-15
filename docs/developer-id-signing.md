@@ -51,9 +51,14 @@ contents. Future protected CI credentials are a separate G28 concern.
 
 Start from a clean, pushed, reviewed commit. Keep the archive outside the repository in a directory
 whose final component is the full source commit. Use the shared scheme, Release configuration, and
-generic macOS destination:
+generic macOS destination. In the same local Bash session, read the expected release team without
+printing or recording the identifier, and keep it only in the process environment for artifact
+verification:
 
 ~~~sh
+read -r -s -p 'Expected release Team ID: ' COPYLASSO_EXPECTED_TEAM_ID; echo
+export COPYLASSO_EXPECTED_TEAM_ID
+
 xcodebuild archive \
   -project CopyLasso.xcodeproj \
   -scheme CopyLasso \
@@ -95,11 +100,14 @@ xcrun notarytool submit "$G26_OUTPUT/CopyLasso-notarization.zip" \
 xcrun stapler staple "$G26_OUTPUT/export/CopyLasso.app"
 ./scripts/verify-developer-id-app.sh --post-notarization \
   "$G26_OUTPUT/export/CopyLasso.app"
+
+unset COPYLASSO_EXPECTED_TEAM_ID
 ~~~
 
 Store the submission result and diagnostic log beside the external archive. Evidence may record the
 submission identifier and accepted status, but it must redact account and team details. Never print
-the complete signing or notarization log into public CI output.
+the complete signing or notarization log into public CI output. The verifier fails unless every
+signature slice matches `COPYLASSO_EXPECTED_TEAM_ID`; it never records that value.
 
 ## Renewal and Failure Recovery
 

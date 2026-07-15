@@ -108,6 +108,8 @@ assert_release_entitlements() {
 
 assert_developer_id_signature() {
     local signature_details="$1"
+    local expected_team_identifier="${2:-}"
+    local signature_team_identifier
 
     if ! /usr/bin/grep -Fqx 'Identifier=io.github.bennetthilberg.copylasso' "$signature_details"; then
         release_verification_fail "The code signature identifier is not the production identifier."
@@ -125,8 +127,16 @@ assert_developer_id_signature() {
         release_verification_fail "The Developer ID signature is missing Hardened Runtime."
         return 1
     fi
-    if ! /usr/bin/grep -Eq '^TeamIdentifier=.+$' "$signature_details"; then
+    signature_team_identifier="$(
+        /usr/bin/sed -n 's/^TeamIdentifier=//p' "$signature_details" | /usr/bin/head -n 1
+    )"
+    if [[ -z "$signature_team_identifier" ]]; then
         release_verification_fail "The Developer ID signature is missing its team identifier."
+        return 1
+    fi
+    if [[ -n "$expected_team_identifier" && \
+        "$signature_team_identifier" != "$expected_team_identifier" ]]; then
+        release_verification_fail "The Developer ID signature does not match the approved release team."
         return 1
     fi
 }

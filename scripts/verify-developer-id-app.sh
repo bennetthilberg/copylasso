@@ -36,9 +36,14 @@ readonly application="$application_parent/$(basename "$application_candidate")"
 readonly signed_info_plist="$application/Contents/Info.plist"
 readonly signed_executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$signed_info_plist" 2>/dev/null || true)"
 readonly signed_executable="$application/Contents/MacOS/$signed_executable_name"
+readonly expected_team_identifier="${COPYLASSO_EXPECTED_TEAM_ID:-}"
 readonly temporary_directory="$(mktemp -d "${TMPDIR:-/tmp}/copylasso-developer-id-verify.XXXXXX")"
 trap 'rm -rf "$temporary_directory"' EXIT
 
+if [[ ! "$expected_team_identifier" =~ ^[A-Z0-9]{10}$ ]]; then
+    release_verification_fail \
+        "COPYLASSO_EXPECTED_TEAM_ID must provide the approved release team outside the repository."
+fi
 assert_release_metadata "$signed_info_plist"
 [[ -n "$signed_executable_name" && -x "$signed_executable" ]] ||
     release_verification_fail "The signed application executable is missing."
@@ -55,7 +60,9 @@ for architecture in $application_architectures; do
         > /dev/null 2>"$temporary_directory/signature-$architecture.txt"; then
         release_verification_fail "A Developer ID signature slice could not be inspected."
     fi
-    assert_developer_id_signature "$temporary_directory/signature-$architecture.txt"
+    assert_developer_id_signature \
+        "$temporary_directory/signature-$architecture.txt" \
+        "$expected_team_identifier"
     slice_team_identifier="$(
         /usr/bin/sed -n 's/^TeamIdentifier=//p' \
             "$temporary_directory/signature-$architecture.txt" | /usr/bin/head -n 1

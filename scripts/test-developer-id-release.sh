@@ -152,6 +152,8 @@ TeamIdentifier=REDACTED
 TEXT
 
 assert_developer_id_signature "$valid_signature"
+expect_failure "approved release team" assert_developer_id_signature \
+    "$valid_signature" "DIFFERENT"
 
 sed 's/(runtime)/(library-validation,runtime)/' "$valid_signature" > \
     "$temporary_directory/multiple-runtime-flags.txt"

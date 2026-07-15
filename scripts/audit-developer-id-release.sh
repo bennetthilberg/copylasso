@@ -64,6 +64,7 @@ require_text "$signing_documentation" 'Team API key'
 require_text "$signing_documentation" 'Developer role'
 require_text "$signing_documentation" '--key-id "$COPYLASSO_NOTARY_KEY_ID"'
 require_text "$signing_documentation" '--issuer "$COPYLASSO_NOTARY_ISSUER_ID"'
+require_text "$signing_documentation" 'COPYLASSO_EXPECTED_TEAM_ID'
 require_text "$signing_documentation" 'notarytool submit'
 require_text "$signing_documentation" 'stapler staple'
 require_text "$signing_documentation" 'verify-developer-id-app.sh'
@@ -74,6 +75,7 @@ require_text "$verifier" '>"$temporary_directory/requirement-$architecture.txt"'
 require_text "$verifier" 'assert_nested_developer_id_signature'
 require_text "$verifier" '--architecture "$architecture"'
 require_text "$verifier" '--entitlements - --xml'
+require_text "$verifier" 'COPYLASSO_EXPECTED_TEAM_ID'
 
 if /usr/bin/grep -Fq -- '--apple-id' "$signing_documentation"; then
     fail "Developer ID signing documentation must use the approved API-key profile."

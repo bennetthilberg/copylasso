@@ -17,7 +17,7 @@ Record every command, artifact name, SHA-256 checksum, commit, tag, signing iden
 
 - [ ] Create the Release archive from the exact reviewed commit with the approved Developer ID Application identity.
 - [ ] Record the archive path outside the repository, Xcode and SDK versions, signing identity class, confirmation that the configured Team ID matched without recording the identifier itself, version, build, architectures, and source commit.
-- [ ] Verify the designated requirement, nested-code signatures, Hardened Runtime, App Sandbox entitlement, production bundle identifier, and absence of debug-only settings.
+- [ ] Verify the designated requirement, nested-code signatures, Hardened Runtime, App Sandbox entitlement, production bundle identifier, approved release team supplied outside the repository, and absence of debug-only settings.
 - [ ] Submit the exact signed application or approved test container to Apple's notary service using the validated Team API key profile in the nonsynchronized login Keychain.
 - [ ] Record the submission identifier and successful status, then staple and validate the notarization ticket.
 - [ ] Re-run strict signature, Gatekeeper, entitlements, version/build, bundle-identifier, and architecture checks after stapling. Export only the qualified application for the next gate; do not publish it.
