@@ -217,8 +217,9 @@ assert_notarized_gatekeeper() {
         release_verification_fail "Gatekeeper did not report Notarized Developer ID."
         return 1
     fi
-    if ! /usr/bin/grep -Fq 'origin=Developer ID Application:' "$gatekeeper_details"; then
-        release_verification_fail "Gatekeeper did not recognize the Developer ID Application origin."
+    if /usr/bin/grep -Eq '^origin=' "$gatekeeper_details" &&
+        ! /usr/bin/grep -Fq 'origin=Developer ID Application:' "$gatekeeper_details"; then
+        release_verification_fail "Gatekeeper reported an unexpected origin."
         return 1
     fi
 }

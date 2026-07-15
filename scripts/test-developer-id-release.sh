@@ -252,7 +252,12 @@ sed 's/: accepted/: rejected/' "$valid_gatekeeper" > "$temporary_directory/rejec
 expect_failure "did not accept" assert_notarized_gatekeeper "$temporary_directory/rejected-gatekeeper.txt"
 
 sed '/origin=/d' "$valid_gatekeeper" > "$temporary_directory/missing-origin-gatekeeper.txt"
-expect_failure "did not recognize" assert_notarized_gatekeeper "$temporary_directory/missing-origin-gatekeeper.txt"
+assert_notarized_gatekeeper "$temporary_directory/missing-origin-gatekeeper.txt"
+
+sed 's/origin=Developer ID Application: Redacted/origin=Apple Development: Redacted/' \
+    "$valid_gatekeeper" > "$temporary_directory/wrong-origin-gatekeeper.txt"
+expect_failure "unexpected origin" assert_notarized_gatekeeper \
+    "$temporary_directory/wrong-origin-gatekeeper.txt"
 expect_failure "Notarized Developer ID" assert_notarized_gatekeeper \
     "$temporary_directory/unstapled-gatekeeper.txt"
 
