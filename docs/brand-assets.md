@@ -10,7 +10,7 @@ The mark combines an open lasso loop, four small cardinal gaps that give the loo
 
 `CopyLasso/AppIcon.icon` is the shipping layered Icon Composer document. Its three vector layers are retained in `BrandAssets/AppIconLayers` and embedded into the document:
 
-- Indigo background: a diagonal gradient from `#312E81` to `#6366F1`.
+- Blue background: a diagonal gradient from deep blue `#0B3A82` to clear blue `#3B82F6`.
 - Lasso frame: warm white `#F8FAFC`, formed from four curved quadrants with rounded caps and a lower-right rope tail.
 - Text strokes: three warm-white rounded bars of decreasing length.
 

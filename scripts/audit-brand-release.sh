@@ -70,7 +70,7 @@ done
 if ! /usr/bin/jq -e '
     .groups | length == 1
     and .[0].name == "CopyLasso Mark"
-    and (.[0].layers | map(.name) == ["Text Strokes", "Lasso Frame", "Indigo Background"])
+    and (.[0].layers | map(.name) == ["Text Strokes", "Lasso Frame", "Blue Background"])
     and (.[0].layers[0].glass == false)
     and (.[0].layers[0].fill == "none")
     and (.[0].layers[1].glass == false)
@@ -87,8 +87,12 @@ if ! /usr/bin/jq -e '
     fail "MenuBarLasso must remain a preserved vector template asset."
 fi
 
-require_text BrandAssets/AppIconLayers/background-default.svg '#312E81'
-require_text BrandAssets/AppIconLayers/background-default.svg '#6366F1'
+require_text BrandAssets/AppIconLayers/background-default.svg '#0B3A82'
+require_text BrandAssets/AppIconLayers/background-default.svg '#3B82F6'
+if /usr/bin/grep -Eq '#312E81|#6366F1|id="indigo"' \
+    BrandAssets/AppIconLayers/background-default.svg; then
+    fail "The retired purple-indigo app-icon gradient remains in the brand source."
+fi
 require_text BrandAssets/AppIconLayers/lasso.svg '#F8FAFC'
 require_text BrandAssets/AppIconLayers/text-strokes.svg '#F8FAFC'
 
