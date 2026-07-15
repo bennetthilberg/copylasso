@@ -4,6 +4,7 @@ set -euo pipefail
 
 readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly ci_script="$repository_root/scripts/ci.sh"
+readonly brand_audit_script="$repository_root/scripts/audit-brand-release.sh"
 readonly repeatability_script="$repository_root/scripts/test-repeatability.sh"
 readonly workflow="$repository_root/.github/workflows/ci.yml"
 
@@ -34,6 +35,12 @@ brand_audit_invocations="$({
 })"
 if [[ "$brand_audit_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/audit-brand-release.sh exactly once."
+fi
+
+if /usr/bin/grep -Fq '/Applications/Xcode.app' "$brand_audit_script" || \
+    ! /usr/bin/grep -Fq 'DEVELOPER_DIR:-$(/usr/bin/xcode-select -p)' \
+        "$brand_audit_script"; then
+    fail "The brand audit must locate Icon Composer from the active Xcode developer directory."
 fi
 
 if ! /usr/bin/grep -Fq 'COPYLASSO_CI_ARCH="$requested_architecture" \' "$ci_script" || \

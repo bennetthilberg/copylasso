@@ -4,7 +4,9 @@ set -euo pipefail
 
 readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly built_app="${COPYLASSO_BRAND_APP:-}"
-readonly icon_tool='/Applications/Xcode.app/Contents/Applications/Icon Composer.app/Contents/Executables/ictool'
+readonly active_developer_directory="${DEVELOPER_DIR:-$(/usr/bin/xcode-select -p)}"
+readonly xcode_contents_directory="$(cd "$active_developer_directory/.." && /bin/pwd -P)"
+readonly icon_tool="$xcode_contents_directory/Applications/Icon Composer.app/Contents/Executables/ictool"
 readonly icon_document="$repository_root/CopyLasso/AppIcon.icon"
 readonly menu_image_set="$repository_root/CopyLasso/Assets.xcassets/MenuBarLasso.imageset"
 readonly audit_output="$repository_root/.build/brand-release-audit"
