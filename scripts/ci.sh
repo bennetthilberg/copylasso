@@ -58,6 +58,12 @@ echo "Auditing reproducible release packaging"
 echo "Testing reproducible release packaging"
 ./scripts/test-release-package.sh
 
+echo "Auditing protected release workflow"
+./scripts/audit-release-workflow.sh
+
+echo "Testing protected release workflow"
+./scripts/test-release-workflow.sh
+
 readonly committed_development_team_pattern='^[[:space:]]*"?DEVELOPMENT_TEAM(\[[^]]+\])?"?[[:space:]]*=[[:space:]]*[A-Z0-9]{10};'
 
 if /usr/bin/grep -Eq "$committed_development_team_pattern" \

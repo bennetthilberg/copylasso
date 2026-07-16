@@ -7,6 +7,7 @@ readonly ci_script="$repository_root/scripts/ci.sh"
 readonly brand_audit_script="$repository_root/scripts/audit-brand-release.sh"
 readonly developer_id_audit_script="$repository_root/scripts/audit-developer-id-release.sh"
 readonly release_package_audit_script="$repository_root/scripts/audit-release-package.sh"
+readonly release_workflow_audit_script="$repository_root/scripts/audit-release-workflow.sh"
 readonly repeatability_script="$repository_root/scripts/test-repeatability.sh"
 readonly workflow="$repository_root/.github/workflows/ci.yml"
 
@@ -71,6 +72,22 @@ if [[ "$release_package_test_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/test-release-package.sh exactly once."
 fi
 
+release_workflow_audit_invocations="$({
+    /usr/bin/grep -Ec '^[[:space:]]*\./scripts/audit-release-workflow\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$release_workflow_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-release-workflow.sh exactly once."
+fi
+
+release_workflow_test_invocations="$({
+    /usr/bin/grep -Ec '^[[:space:]]*\./scripts/test-release-workflow\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$release_workflow_test_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/test-release-workflow.sh exactly once."
+fi
+
 if [[ ! -x "$developer_id_audit_script" ]] || \
     [[ ! -x "$repository_root/scripts/verify-developer-id-app.sh" ]] || \
     [[ ! -x "$repository_root/scripts/test-developer-id-release.sh" ]]; then
@@ -83,6 +100,13 @@ if [[ ! -x "$release_package_audit_script" ]] || \
     [[ ! -x "$repository_root/scripts/compare-release-packages.sh" ]] || \
     [[ ! -x "$repository_root/scripts/test-release-package.sh" ]]; then
     fail "Release-package verification scripts must be executable."
+fi
+
+if [[ ! -x "$release_workflow_audit_script" ]] || \
+    [[ ! -x "$repository_root/scripts/test-release-workflow.sh" ]] || \
+    [[ ! -x "$repository_root/scripts/build-release-candidate.sh" ]] || \
+    [[ ! -x "$repository_root/scripts/create-draft-release.sh" ]]; then
+    fail "Protected-release workflow scripts must be executable."
 fi
 
 if ! /usr/bin/grep -Fq \

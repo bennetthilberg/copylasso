@@ -92,3 +92,8 @@ Finally, mount the selected verified image in Finder, confirm that it is read-on
 - Keep the dSYM archive private and restricted even though it contains no signing credential.
 
 Do not publish, tag, upload, or create a GitHub release in G27. G28 later introduces protected release CI and a draft-release rehearsal using the exact verified packaging contract.
+
+G28 invokes this same package script only after it has archived, exported, notarized, stapled, and
+verified an application from the exact protected workflow commit. It constructs the same
+commit-addressed handoff layout, uses that commit as both payload and packaging provenance, and does
+not weaken any G27 package check. See [`release-workflow.md`](release-workflow.md).
