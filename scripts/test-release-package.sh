@@ -277,6 +277,29 @@ expect_failure "payload commit does not match" \
 expect_failure "expected payload commit is invalid" \
     assert_release_commit_matches "payload" "not-a-commit" "not-a-commit"
 
+commit_repository="$temporary_directory/commit-repository"
+/usr/bin/git init -q "$commit_repository"
+/usr/bin/git -C "$commit_repository" \
+    -c user.name=CopyLasso \
+    -c user.email=release-test.invalid \
+    commit -q --allow-empty -m payload
+fixture_payload_commit="$(/usr/bin/git -C "$commit_repository" rev-parse HEAD)"
+/usr/bin/git -C "$commit_repository" \
+    -c user.name=CopyLasso \
+    -c user.email=release-test.invalid \
+    commit -q --allow-empty -m packaging
+fixture_packaging_commit="$(/usr/bin/git -C "$commit_repository" rev-parse HEAD)"
+assert_release_commit_relationship \
+    "$commit_repository" "$fixture_payload_commit" "$fixture_packaging_commit"
+expect_failure "payload commit is not available" \
+    assert_release_commit_relationship \
+    "$commit_repository" \
+    "1111111111111111111111111111111111111111" \
+    "$fixture_packaging_commit"
+expect_failure "payload commit is not an ancestor" \
+    assert_release_commit_relationship \
+    "$commit_repository" "$fixture_packaging_commit" "$fixture_payload_commit"
+
 assert_release_artifact_names \
     "CopyLasso-0.1.0.dmg" \
     "CopyLasso-0.1.0.dmg.sha256" \

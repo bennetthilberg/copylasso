@@ -52,6 +52,8 @@ assert_release_commit_matches \
     "payload" "$expected_payload_commit" "$expected_payload_commit"
 assert_release_commit_matches \
     "packaging" "$expected_packaging_commit" "$expected_packaging_commit"
+assert_release_commit_relationship \
+    "$repository_root" "$expected_payload_commit" "$expected_packaging_commit"
 
 [[ -d "$run_candidate" ]] || release_package_fail "The release-package run directory is missing."
 readonly run_parent="$(cd "$(dirname "$run_candidate")" && /bin/pwd -P)"

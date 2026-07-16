@@ -257,3 +257,22 @@ assert_release_commit_matches() {
     [[ "$evidence_commit" == "$expected_commit" ]] || \
         release_package_fail "The release evidence $label commit does not match the expected commit."
 }
+
+assert_release_commit_relationship() {
+    local commit_repository_path="$1"
+    local payload_commit_value="$2"
+    local packaging_commit_value="$3"
+
+    if ! /usr/bin/git -C "$commit_repository_path" cat-file -e \
+        "$payload_commit_value^{commit}" 2>/dev/null; then
+        release_package_fail "The payload commit is not available in this repository."
+    fi
+    if ! /usr/bin/git -C "$commit_repository_path" cat-file -e \
+        "$packaging_commit_value^{commit}" 2>/dev/null; then
+        release_package_fail "The packaging commit is not available in this repository."
+    fi
+    if ! /usr/bin/git -C "$commit_repository_path" merge-base --is-ancestor \
+        "$payload_commit_value" "$packaging_commit_value"; then
+        release_package_fail "The payload commit is not an ancestor of the packaging commit."
+    fi
+}
