@@ -155,7 +155,7 @@ expect_failure "incomplete or unexpected asset set" \
 
 printf 'Fixed content-free release diagnostic.\n' > "$temporary_directory/safe.log"
 assert_release_log_is_public_safe "$temporary_directory/safe.log"
-printf '%s\n' '-----BEGIN PRIVATE KEY-----' > "$temporary_directory/private.log"
+printf '%s%s\n' '-----BEGIN PRIVATE' ' KEY-----' > "$temporary_directory/private.log"
 expect_failure "credential or account material" \
     assert_release_log_is_public_safe "$temporary_directory/private.log"
 

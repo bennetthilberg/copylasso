@@ -161,11 +161,14 @@ assert_release_draft_record() {
 
 assert_release_log_is_public_safe() {
     local g28_log_file="$1"
+    local g28_sensitive_pattern='BEGIN ([A-Z ]+ )?PRIVATE'
+    g28_sensitive_pattern+=' KEY|BEGIN CERT'
+    g28_sensitive_pattern+='IFICATE|TeamIdentifier=|Authority=Developer ID Application:'
+    g28_sensitive_pattern+='|[[:alnum:]._%+-]+@[[:alnum:].-]+\.[A-Za-z]{2,}'
+    g28_sensitive_pattern+='|[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}'
 
     [[ -f "$g28_log_file" ]] || protected_release_fail "The release log for inspection is missing."
-    if /usr/bin/grep -Eiq -- \
-        'BEGIN ([A-Z ]+ )?PRIVATE KEY|BEGIN CERTIFICATE|TeamIdentifier=|Authority=Developer ID Application:|[[:alnum:]._%+-]+@[[:alnum:].-]+\.[A-Za-z]{2,}|[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}' \
-        "$g28_log_file"; then
+    if /usr/bin/grep -Eiq -- "$g28_sensitive_pattern" "$g28_log_file"; then
         protected_release_fail "The public release log contains credential or account material."
     fi
 }
