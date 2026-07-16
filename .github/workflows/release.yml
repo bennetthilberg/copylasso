@@ -1,0 +1,106 @@
+name: Protected Release Candidate
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: copylasso-protected-release
+  cancel-in-progress: false
+
+jobs:
+  quality-gate:
+    name: Complete release quality gate
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
+
+  protected-release:
+    name: Build protected draft release
+    needs: quality-gate
+    runs-on: macos-26
+    timeout-minutes: 90
+    environment:
+      name: release
+    permissions:
+      contents: write
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    steps:
+      - name: Check out exact protected commit
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify protected source provenance
+        env:
+          COPYLASSO_EXPECTED_REF: ${{ github.ref }}
+          COPYLASSO_EXPECTED_COMMIT: ${{ github.sha }}
+        run: |
+          ./scripts/verify-release-workflow-source.sh \
+            --expected-ref "$COPYLASSO_EXPECTED_REF" \
+            --expected-commit "$COPYLASSO_EXPECTED_COMMIT"
+
+      - name: Initialize ephemeral release paths
+        run: |
+          release_keychain_password="$(/usr/bin/openssl rand -hex 32)"
+          echo "::add-mask::$release_keychain_password"
+          printf 'COPYLASSO_RELEASE_KEYCHAIN_PASSWORD=%s\n' \
+            "$release_keychain_password" >> "$GITHUB_ENV"
+          printf 'COPYLASSO_RELEASE_STATE=%s\n' \
+            "$RUNNER_TEMP/copylasso-release-state" >> "$GITHUB_ENV"
+          printf 'COPYLASSO_RELEASE_KEYCHAIN_PATH=%s\n' \
+            "$RUNNER_TEMP/copylasso-release-state/copylasso-release.keychain-db" \
+            >> "$GITHUB_ENV"
+          printf 'COPYLASSO_RELEASE_HANDOFF=%s\n' \
+            "$RUNNER_TEMP/CopyLasso/G28/$GITHUB_SHA" >> "$GITHUB_ENV"
+          printf 'COPYLASSO_RELEASE_RUN_DIR=%s\n' \
+            "$GITHUB_WORKSPACE/dist/g28/$GITHUB_SHA/run-$GITHUB_RUN_ATTEMPT" \
+            >> "$GITHUB_ENV"
+          printf 'COPYLASSO_RELEASE_DRAFT_TAG=%s\n' \
+            "v0.1.0-g28.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
+          printf 'COPYLASSO_RELEASE_READBACK=%s\n' \
+            "$GITHUB_WORKSPACE/dist/g28/$GITHUB_SHA/draft-release.json" \
+            >> "$GITHUB_ENV"
+
+      - name: Import protected release credentials
+        env:
+          COPYLASSO_DEVELOPER_ID_P12_BASE64: ${{ secrets.COPYLASSO_DEVELOPER_ID_P12_BASE64 }}
+          COPYLASSO_DEVELOPER_ID_P12_PASSWORD: ${{ secrets.COPYLASSO_DEVELOPER_ID_P12_PASSWORD }}
+          COPYLASSO_NOTARY_KEY_BASE64: ${{ secrets.COPYLASSO_NOTARY_KEY_BASE64 }}
+          COPYLASSO_NOTARY_KEY_ID: ${{ secrets.COPYLASSO_NOTARY_KEY_ID }}
+          COPYLASSO_NOTARY_ISSUER_ID: ${{ secrets.COPYLASSO_NOTARY_ISSUER_ID }}
+          COPYLASSO_EXPECTED_TEAM_ID: ${{ secrets.COPYLASSO_EXPECTED_TEAM_ID }}
+        run: |
+          ./scripts/prepare-release-keychain.sh \
+            --state-dir "$COPYLASSO_RELEASE_STATE"
+
+      - name: Build and verify exact release candidate
+        env:
+          COPYLASSO_EXPECTED_TEAM_ID: ${{ secrets.COPYLASSO_EXPECTED_TEAM_ID }}
+        run: |
+          ./scripts/build-release-candidate.sh \
+            --source-commit "$GITHUB_SHA" \
+            --handoff "$COPYLASSO_RELEASE_HANDOFF" \
+            --output-dir "$COPYLASSO_RELEASE_RUN_DIR"
+
+      - name: Remove protected release credentials
+        if: always()
+        run: |
+          ./scripts/cleanup-release-keychain.sh \
+            --state-dir "$COPYLASSO_RELEASE_STATE"
+
+      - name: Create verified GitHub draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ./scripts/create-draft-release.sh \
+            --repository "$GITHUB_REPOSITORY" \
+            --commit "$GITHUB_SHA" \
+            --tag "$COPYLASSO_RELEASE_DRAFT_TAG" \
+            --run-dir "$COPYLASSO_RELEASE_RUN_DIR" \
+            --readback "$COPYLASSO_RELEASE_READBACK"

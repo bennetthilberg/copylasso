@@ -45,7 +45,8 @@ unset COPYLASSO_NOTARY_KEY COPYLASSO_NOTARY_KEY_ID COPYLASSO_NOTARY_ISSUER_ID
 The profile must validate before use. Once validation succeeds, remove the downloaded private-key
 file; the credentials remain in the nonsynchronized login Keychain profile. Do not print or commit
 the account, key identifier, issuer identifier, certificate fingerprint, private key, or profile
-contents. Future protected CI credentials are a separate G28 concern.
+contents. G28's separate protected CI identity export and dedicated Team API key are documented in
+[`release-workflow.md`](release-workflow.md); they do not replace or expose this local profile.
 
 ## Archive and Export
 
@@ -147,3 +148,11 @@ signature slice matches `COPYLASSO_EXPECTED_TEAM_ID`; it never records that valu
 Preserve the exact accepted and stapled CopyLasso.app, its archive, dSYM, source commit, and
 notarization submission record outside the repository. G27 must build its DMG from this qualified
 application without rebuilding or re-signing it.
+
+## G28 Protected CI Boundary
+
+The G26 instruction not to export the private key applies to this local proof and handoff. G28 later
+requires a password-protected identity export so an ephemeral GitHub-hosted Keychain can sign the
+same Release contract. That export is stored only as a protected environment secret and its local
+temporary file is removed immediately. The release workflow also uses a dedicated Team API key
+rather than attempting to recover the one-time private key behind the local Keychain profile.

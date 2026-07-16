@@ -38,6 +38,7 @@ Record every command, artifact name, SHA-256 checksum, commit, tag, signing iden
 - [ ] Produce the signed, notarized DMG, checksum, and dSYM from the exact protected commit and run the same verification as G27.
 - [ ] Inspect workflow permissions, secret masking, cleanup, failure behavior, and logs; failed tests or verification must prevent draft creation.
 - [ ] Create and verify a draft GitHub release only. Download its artifacts and rerun local package verification; do not publish it.
+- [ ] Keep the dSYM and verification bundle restricted to the draft and remove both before any G31 public publication.
 
 ## G29 - Clean Installation Test Environment
 
