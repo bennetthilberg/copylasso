@@ -73,6 +73,14 @@ Ad hoc signing is not suitable for distribution and does not provide stable iden
 
 GitHub Actions passes `CODE_SIGNING_ALLOWED=NO`. CI executes unit tests only; it builds the UI-test bundle to catch compile and linkage failures but does not launch the unsigned UI-test runner.
 
+Developer ID distribution uses the tracked, non-secret
+`Configuration/DeveloperIDExportOptions.plist`. It selects the `developer-id` export method with
+automatic signing while deliberately omitting the team identifier, certificate subject, and all
+credentials. Ordinary Debug builds continue to use Apple Development signing. The exported Release
+application is accepted only after `scripts/verify-developer-id-app.sh` proves the production
+bundle identifier, Developer ID Application authority, secure timestamp, Hardened Runtime, reviewed
+entitlements, Universal 2 executable, nested signatures, stapled ticket, and Gatekeeper result.
+
 ## Canonical Commands
 
 Run the complete local equivalent of CI from the repository root:

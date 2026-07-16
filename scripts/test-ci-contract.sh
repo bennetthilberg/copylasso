@@ -5,6 +5,7 @@ set -euo pipefail
 readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly ci_script="$repository_root/scripts/ci.sh"
 readonly brand_audit_script="$repository_root/scripts/audit-brand-release.sh"
+readonly developer_id_audit_script="$repository_root/scripts/audit-developer-id-release.sh"
 readonly repeatability_script="$repository_root/scripts/test-repeatability.sh"
 readonly workflow="$repository_root/.github/workflows/ci.yml"
 
@@ -35,6 +36,28 @@ brand_audit_invocations="$({
 })"
 if [[ "$brand_audit_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/audit-brand-release.sh exactly once."
+fi
+
+developer_id_audit_invocations="$({
+    /usr/bin/grep -Ec '^[[:space:]]*\./scripts/audit-developer-id-release\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$developer_id_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-developer-id-release.sh exactly once."
+fi
+
+developer_id_test_invocations="$({
+    /usr/bin/grep -Ec '^[[:space:]]*\./scripts/test-developer-id-release\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$developer_id_test_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/test-developer-id-release.sh exactly once."
+fi
+
+if [[ ! -x "$developer_id_audit_script" ]] || \
+    [[ ! -x "$repository_root/scripts/verify-developer-id-app.sh" ]] || \
+    [[ ! -x "$repository_root/scripts/test-developer-id-release.sh" ]]; then
+    fail "Developer ID release verification scripts must be executable."
 fi
 
 if ! /usr/bin/grep -Fq \

@@ -123,6 +123,13 @@ fi
 
 The verified G01 environment has one valid Apple Development identity. The certificate and paired private key remain in the login keychain and are not repository artifacts.
 
+Developer ID release signing is separate from ordinary development signing. The Account Holder
+keeps the Developer ID Application certificate and paired private key in the login Keychain, and
+stores notarization authentication in the local `copylasso-notary` Keychain profile. See
+[Developer ID Signing and Notarization](developer-id-signing.md) for the non-secret setup, archive,
+verification, renewal, and failure-recovery procedure. Never use the Development identity as a
+release-signing fallback.
+
 ## Project Build and Test
 
 CopyLasso's runtime minimum is macOS 14. Reproducing the complete canonical source pipeline requires a macOS 26.4-or-newer development host because the final-brand audit invokes Icon Composer's `ictool`; the verified baseline above uses macOS 26.5.1 and Xcode 26.6.
