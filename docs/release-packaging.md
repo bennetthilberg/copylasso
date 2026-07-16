@@ -64,6 +64,8 @@ The package script calls the verifier before it reports success. It can also be 
 ```bash
 ./scripts/verify-release-package.sh \
   --payload-app "$G26_HANDOFF/export/CopyLasso.app" \
+  --payload-commit "$PAYLOAD_COMMIT" \
+  --packaging-commit "$PACKAGING_COMMIT" \
   "$PWD/dist/g27/$PACKAGING_COMMIT/run-1"
 ```
 

@@ -7,25 +7,61 @@ readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$repository_root/scripts/lib/release-package-verification.sh"
 
 usage() {
-    echo "Usage: $0 --payload-app /path/to/CopyLasso.app /path/to/release-run" >&2
+    cat >&2 <<'TEXT'
+Usage: verify-release-package.sh \
+  --payload-app /path/to/G26/<commit>/export/CopyLasso.app \
+  --payload-commit <40-character-commit> \
+  --packaging-commit <40-character-commit> \
+  /path/to/release-run
+TEXT
     exit 64
 }
 
 payload_app=""
-if [[ "${1:-}" == "--payload-app" ]]; then
-    [[ "$#" == 3 ]] || usage
-    payload_app="$2"
-    shift 2
-fi
-[[ "$#" == 1 && -n "$payload_app" ]] || usage
+expected_payload_commit=""
+expected_packaging_commit=""
+run_candidate=""
+while [[ "$#" -gt 0 ]]; do
+    case "$1" in
+        --payload-app)
+            [[ "$#" -ge 2 ]] || usage
+            payload_app="$2"
+            shift 2
+            ;;
+        --payload-commit)
+            [[ "$#" -ge 2 ]] || usage
+            expected_payload_commit="$2"
+            shift 2
+            ;;
+        --packaging-commit)
+            [[ "$#" -ge 2 ]] || usage
+            expected_packaging_commit="$2"
+            shift 2
+            ;;
+        --*) usage ;;
+        *)
+            [[ -z "$run_candidate" ]] || usage
+            run_candidate="$1"
+            shift
+            ;;
+    esac
+done
+[[ -n "$payload_app" && -n "$expected_payload_commit" && \
+    -n "$expected_packaging_commit" && -n "$run_candidate" ]] || usage
+assert_release_commit_matches \
+    "payload" "$expected_payload_commit" "$expected_payload_commit"
+assert_release_commit_matches \
+    "packaging" "$expected_packaging_commit" "$expected_packaging_commit"
 
-readonly run_candidate="$1"
 [[ -d "$run_candidate" ]] || release_package_fail "The release-package run directory is missing."
 readonly run_parent="$(cd "$(dirname "$run_candidate")" && /bin/pwd -P)"
 readonly run_directory="$run_parent/$(basename "$run_candidate")"
 [[ -d "$payload_app" ]] || release_package_fail "The qualified G26 payload application is missing."
 readonly payload_parent="$(cd "$(dirname "$payload_app")" && /bin/pwd -P)"
 readonly qualified_payload="$payload_parent/$(basename "$payload_app")"
+if [[ "$(basename "$(dirname "$payload_parent")")" != "$expected_payload_commit" ]]; then
+    release_package_fail "The qualified G26 payload path does not match the expected payload commit."
+fi
 readonly expected_team_identifier="${COPYLASSO_EXPECTED_TEAM_ID:-}"
 if [[ ! "$expected_team_identifier" =~ ^[A-Z0-9]{10}$ ]]; then
     release_package_fail \
@@ -181,10 +217,10 @@ readonly actual_submission_identifier="$(/usr/bin/plutil -extract id raw "$submi
     release_package_fail "The release evidence records the wrong dSYM UUID manifest."
 [[ "$(evidence_value notary_submission_id)" == "$actual_submission_identifier" ]] || \
     release_package_fail "The release evidence records the wrong notarization submission."
-[[ "$(evidence_value payload_commit)" =~ ^[0-9a-f]{40}$ ]] || \
-    release_package_fail "The release evidence has no exact payload commit."
-[[ "$(evidence_value packaging_commit)" =~ ^[0-9a-f]{40}$ ]] || \
-    release_package_fail "The release evidence has no exact packaging commit."
+assert_release_commit_matches \
+    "payload" "$expected_payload_commit" "$(evidence_value payload_commit)"
+assert_release_commit_matches \
+    "packaging" "$expected_packaging_commit" "$(evidence_value packaging_commit)"
 assert_release_evidence_is_portable "$evidence_record"
 
 echo "CopyLasso release-package verification passed."

@@ -243,3 +243,16 @@ assert_release_evidence_is_portable() {
         release_package_fail "The release evidence must not contain local absolute paths."
     fi
 }
+
+assert_release_commit_matches() {
+    local label="$1"
+    local expected_commit="$2"
+    local evidence_commit="$3"
+
+    [[ "$expected_commit" =~ ^[0-9a-f]{40}$ ]] || \
+        release_package_fail "The expected $label commit is invalid."
+    [[ "$evidence_commit" =~ ^[0-9a-f]{40}$ ]] || \
+        release_package_fail "The release evidence $label commit is invalid."
+    [[ "$evidence_commit" == "$expected_commit" ]] || \
+        release_package_fail "The release evidence $label commit does not match the expected commit."
+}

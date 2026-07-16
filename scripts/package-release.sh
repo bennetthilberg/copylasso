@@ -12,8 +12,7 @@ usage() {
 Usage: package-release.sh \
   --handoff /path/to/G26/<commit> \
   --payload-commit <40-character-commit> \
-  --output-dir /path/to/repository/dist/<run> \
-  [--notary-profile copylasso-notary]
+  --output-dir /path/to/repository/dist/<run>
 TEXT
     exit 64
 }
@@ -21,7 +20,7 @@ TEXT
 handoff_candidate=""
 payload_commit=""
 output_candidate=""
-notary_profile="copylasso-notary"
+readonly notary_profile="copylasso-notary"
 while [[ "$#" -gt 0 ]]; do
     case "$1" in
         --handoff)
@@ -39,11 +38,6 @@ while [[ "$#" -gt 0 ]]; do
             output_candidate="$2"
             shift 2
             ;;
-        --notary-profile)
-            [[ "$#" -ge 2 ]] || usage
-            notary_profile="$2"
-            shift 2
-            ;;
         *) usage ;;
     esac
 done
@@ -51,8 +45,6 @@ done
 [[ -n "$handoff_candidate" && -n "$payload_commit" && -n "$output_candidate" ]] || usage
 [[ "$payload_commit" =~ ^[0-9a-f]{40}$ ]] || \
     release_package_fail "The payload commit must be a full lowercase Git object identifier."
-[[ "$notary_profile" =~ ^[A-Za-z0-9._-]+$ ]] || \
-    release_package_fail "The notary profile name contains unsupported characters."
 readonly expected_team_identifier="${COPYLASSO_EXPECTED_TEAM_ID:-}"
 if [[ ! "$expected_team_identifier" =~ ^[A-Z0-9]{10}$ ]]; then
     release_package_fail \
@@ -247,6 +239,8 @@ readonly dsym_uuid_hash="$(/usr/bin/shasum -a 256 \
 COPYLASSO_EXPECTED_TEAM_ID="$expected_team_identifier" \
     "$repository_root/scripts/verify-release-package.sh" \
     --payload-app "$payload_app" \
+    --payload-commit "$payload_commit" \
+    --packaging-commit "$packaging_commit" \
     "$output_directory" > "$output_directory/release-verification.txt"
 
 echo "CopyLasso release package created and verified in $output_directory."

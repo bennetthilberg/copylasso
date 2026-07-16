@@ -20,6 +20,15 @@ for executable in "$audit_script" "$package_script" "$verifier_script" "$compara
 done
 [[ -r "$verifier_library" ]] || fail "Release-package verification library is missing."
 [[ -r "$packaging_documentation" ]] || fail "Release-packaging documentation is missing."
+if /usr/bin/grep -q -- '--notary-profile' "$package_script"; then
+    fail "Release packaging must use only the G26 copylasso-notary profile."
+fi
+for required_commit_option in --payload-commit --packaging-commit; do
+    /usr/bin/grep -Fq -- "$required_commit_option" "$verifier_script" || \
+        fail "Release verification must require $required_commit_option."
+    /usr/bin/grep -Fq -- "$required_commit_option" "$package_script" || \
+        fail "Release packaging must pass $required_commit_option to verification."
+done
 
 # shellcheck source=scripts/lib/release-package-verification.sh
 source "$verifier_library"
@@ -247,6 +256,18 @@ local_artifact=/local/build/output
 TEXT
 expect_failure "must not contain local absolute paths" \
     assert_release_evidence_is_portable "$absolute_path_evidence"
+
+assert_release_commit_matches \
+    "payload" \
+    "1111111111111111111111111111111111111111" \
+    "1111111111111111111111111111111111111111"
+expect_failure "payload commit does not match" \
+    assert_release_commit_matches \
+    "payload" \
+    "1111111111111111111111111111111111111111" \
+    "2222222222222222222222222222222222222222"
+expect_failure "expected payload commit is invalid" \
+    assert_release_commit_matches "payload" "not-a-commit" "not-a-commit"
 
 assert_release_artifact_names \
     "CopyLasso-0.1.0.dmg" \
