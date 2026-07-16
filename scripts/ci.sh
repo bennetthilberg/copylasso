@@ -52,6 +52,12 @@ echo "Auditing Developer ID release configuration"
 echo "Testing Developer ID release verification"
 ./scripts/test-developer-id-release.sh
 
+echo "Auditing reproducible release packaging"
+./scripts/audit-release-package.sh
+
+echo "Testing reproducible release packaging"
+./scripts/test-release-package.sh
+
 readonly committed_development_team_pattern='^[[:space:]]*"?DEVELOPMENT_TEAM(\[[^]]+\])?"?[[:space:]]*=[[:space:]]*[A-Z0-9]{10};'
 
 if /usr/bin/grep -Eq "$committed_development_team_pattern" \

@@ -24,6 +24,7 @@ Record every command, artifact name, SHA-256 checksum, commit, tag, signing iden
 
 ## G27 - Reproducible Release Package
 
+- [ ] Follow the version-controlled process in [`release-packaging.md`](release-packaging.md) from a clean, exact packaging commit.
 - [ ] Build the final disk image from the exact stapled application without rebuilding the app; include CopyLasso and an Applications-folder alias only.
 - [ ] Verify the read-only DMG mount, drag-to-Applications layout, production identity, Universal 2 architectures, version/build, strict signature, Gatekeeper assessment, and stapled ticket.
 - [ ] Record the DMG SHA-256 checksum, file size, embedded-app checksum, source commit, version/build, and notarization linkage.

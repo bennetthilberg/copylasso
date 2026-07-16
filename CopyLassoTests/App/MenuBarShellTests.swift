@@ -43,7 +43,7 @@ final class MenuBarShellTests: XCTestCase {
     )
 
     XCTAssertEqual(metadata.applicationName, "CopyLasso")
-    XCTAssertEqual(metadata.copyright, "Copyright © 2026 Bennett Hilberg")
+    XCTAssertEqual(metadata.creatorDescription, "Created by Bennett Hilberg")
     XCTAssertEqual(metadata.licenseName, "MIT License")
     XCTAssertEqual(
       metadata.summary,

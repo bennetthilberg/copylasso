@@ -138,6 +138,9 @@ struct CopyLassoApp: App {
       )
     }
     .menuBarExtraStyle(.menu)
+    .commands {
+      CopyLassoApplicationCommands()
+    }
 
     Settings {
       SettingsView(
@@ -183,4 +186,16 @@ struct CopyLassoApp: App {
       }
     }
   #endif
+}
+
+private struct CopyLassoApplicationCommands: Commands {
+  @Environment(\.openWindow) private var openWindow
+
+  var body: some Commands {
+    CommandGroup(replacing: .appInfo) {
+      Button("About CopyLasso") {
+        openWindow(id: "about")
+      }
+    }
+  }
 }

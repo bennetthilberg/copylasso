@@ -119,9 +119,22 @@ require_text CopyLasso/SharedUI/AboutView.swift 'NSApp.applicationIconImage'
 if /usr/bin/grep -Fq 'NSApp.applicationIconImage' CopyLasso/App/CopyLassoApp.swift; then
     fail "The About scene must defer loading the application icon until its view is presented."
 fi
-require_text CopyLasso/Models/AboutMetadata.swift 'Copyright © 2026 Bennett Hilberg'
+require_text CopyLasso/Models/AboutMetadata.swift 'Created by Bennett Hilberg'
 require_text CopyLasso/Models/AboutMetadata.swift 'https://github.com/bennetthilberg/copylasso'
 require_text CopyLasso/Models/AboutMetadata.swift 'KeyboardShortcuts 3.0.1'
+require_text CopyLasso/App/CopyLassoApp.swift 'CopyLassoApplicationCommands()'
+require_text CopyLasso/App/CopyLassoApp.swift 'CommandGroup(replacing: .appInfo)'
+
+if /usr/bin/grep -R -n -F 'All rights reserved' \
+    CopyLasso CopyLasso.xcodeproj/project.pbxproj; then
+    fail "The application must not claim all rights reserved for MIT-licensed CopyLasso."
+fi
+
+if [[ "$(/usr/bin/grep -c \
+    'INFOPLIST_KEY_NSHumanReadableCopyright = "Created by Bennett Hilberg. Open source under the MIT License.";' \
+    CopyLasso.xcodeproj/project.pbxproj)" != 2 ]]; then
+    fail "Every application configuration must embed the open-source creator description."
+fi
 
 if [[ "$(/usr/bin/grep -c 'MARKETING_VERSION = 0.1.0;' CopyLasso.xcodeproj/project.pbxproj)" != 6 ]] || \
     [[ "$(/usr/bin/grep -c 'CURRENT_PROJECT_VERSION = 1;' CopyLasso.xcodeproj/project.pbxproj)" != 6 ]] || \

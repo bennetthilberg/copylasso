@@ -44,11 +44,11 @@ struct AboutView: View {
         .foregroundStyle(.secondary)
         .multilineTextAlignment(.center)
 
-      Text(metadata.copyright)
+      Text(metadata.creatorDescription)
         .font(.caption)
         .foregroundStyle(.secondary)
-        .accessibilityLabel(metadata.copyright)
-        .accessibilityIdentifier("copylasso.about.copyright")
+        .accessibilityLabel(metadata.creatorDescription)
+        .accessibilityIdentifier("copylasso.about.creator")
 
       HStack(spacing: 16) {
         Link("Project Repository", destination: metadata.repositoryURL)

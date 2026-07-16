@@ -6,6 +6,7 @@ readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly ci_script="$repository_root/scripts/ci.sh"
 readonly brand_audit_script="$repository_root/scripts/audit-brand-release.sh"
 readonly developer_id_audit_script="$repository_root/scripts/audit-developer-id-release.sh"
+readonly release_package_audit_script="$repository_root/scripts/audit-release-package.sh"
 readonly repeatability_script="$repository_root/scripts/test-repeatability.sh"
 readonly workflow="$repository_root/.github/workflows/ci.yml"
 
@@ -54,10 +55,34 @@ if [[ "$developer_id_test_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/test-developer-id-release.sh exactly once."
 fi
 
+release_package_audit_invocations="$({
+    /usr/bin/grep -Ec '^[[:space:]]*\./scripts/audit-release-package\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$release_package_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-release-package.sh exactly once."
+fi
+
+release_package_test_invocations="$({
+    /usr/bin/grep -Ec '^[[:space:]]*\./scripts/test-release-package\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$release_package_test_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/test-release-package.sh exactly once."
+fi
+
 if [[ ! -x "$developer_id_audit_script" ]] || \
     [[ ! -x "$repository_root/scripts/verify-developer-id-app.sh" ]] || \
     [[ ! -x "$repository_root/scripts/test-developer-id-release.sh" ]]; then
     fail "Developer ID release verification scripts must be executable."
+fi
+
+if [[ ! -x "$release_package_audit_script" ]] || \
+    [[ ! -x "$repository_root/scripts/package-release.sh" ]] || \
+    [[ ! -x "$repository_root/scripts/verify-release-package.sh" ]] || \
+    [[ ! -x "$repository_root/scripts/compare-release-packages.sh" ]] || \
+    [[ ! -x "$repository_root/scripts/test-release-package.sh" ]]; then
+    fail "Release-package verification scripts must be executable."
 fi
 
 if ! /usr/bin/grep -Fq \
