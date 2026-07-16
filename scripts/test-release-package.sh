@@ -309,11 +309,21 @@ expect_failure "release artifact names" assert_release_artifact_names \
     "CopyLasso-0.1.0.dmg.sha256" \
     "CopyLasso-0.1.0.dSYM.zip"
 
+comparison_dsym="$temporary_directory/comparison-dsym/CopyLasso.app.dSYM"
+mkdir -p "$comparison_dsym/Contents/Resources/DWARF"
+cp /usr/bin/true "$comparison_dsym/Contents/Resources/DWARF/CopyLasso"
+/usr/bin/dwarfdump --uuid "$comparison_dsym" > "$temporary_directory/comparison-dsym-uuids.txt"
+normalized_release_uuids "$temporary_directory/comparison-dsym-uuids.txt" \
+    > "$temporary_directory/comparison-normalized-dsym-uuids.txt"
+comparison_dsym_uuid_hash="$(/usr/bin/shasum -a 256 \
+    "$temporary_directory/comparison-normalized-dsym-uuids.txt" | /usr/bin/awk '{print $1}')"
+
 for run_name in comparison-1 comparison-2; do
     run="$temporary_directory/$run_name"
     mkdir "$run"
     printf 'equivalent image fixture\n' > "$run/CopyLasso-0.1.0.dmg"
-    printf 'symbol fixture\n' > "$run/CopyLasso-0.1.0.dSYM.zip"
+    /usr/bin/ditto -c -k --norsrc --noextattr --keepParent \
+        "$comparison_dsym" "$run/CopyLasso-0.1.0.dSYM.zip"
     cp "$source_manifest" "$run/payload-manifest.txt"
     (
         cd "$run"
@@ -327,14 +337,28 @@ packaging_commit=2222222222222222222222222222222222222222
 dmg_identifier=io.github.bennetthilberg.copylasso.dmg
 dmg_filename=CopyLasso-0.1.0.dmg
 app_manifest_sha256=3333333333333333333333333333333333333333333333333333333333333333
-dsym_uuid_manifest_sha256=4444444444444444444444444444444444444444444444444444444444444444
 TEXT
+    printf 'dsym_uuid_manifest_sha256=%s\n' "$comparison_dsym_uuid_hash" >> \
+        "$run/release-evidence.txt"
 done
 "$comparator_script" \
     "$temporary_directory/comparison-1" \
     "$temporary_directory/comparison-2" >/dev/null
 sed -i '' 's/build=1/build=2/' "$temporary_directory/comparison-2/release-evidence.txt"
 expect_failure "normalized evidence: build" "$comparator_script" \
+    "$temporary_directory/comparison-1" \
+    "$temporary_directory/comparison-2"
+sed -i '' 's/build=2/build=1/' "$temporary_directory/comparison-2/release-evidence.txt"
+cp /usr/bin/false "$comparison_dsym/Contents/Resources/DWARF/CopyLasso"
+rm "$temporary_directory/comparison-2/CopyLasso-0.1.0.dSYM.zip"
+/usr/bin/ditto -c -k --norsrc --noextattr --keepParent \
+    "$comparison_dsym" "$temporary_directory/comparison-2/CopyLasso-0.1.0.dSYM.zip"
+expect_failure "wrong dSYM UUID manifest" "$comparator_script" \
+    "$temporary_directory/comparison-1" \
+    "$temporary_directory/comparison-2"
+printf 'corrupted dSYM archive\n' > \
+    "$temporary_directory/comparison-2/CopyLasso-0.1.0.dSYM.zip"
+expect_failure "release dSYM archive could not be expanded" "$comparator_script" \
     "$temporary_directory/comparison-1" \
     "$temporary_directory/comparison-2"
 
