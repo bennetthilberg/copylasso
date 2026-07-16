@@ -211,6 +211,10 @@ assert_release_notary_records "$valid_submission" "$valid_log"
     readonly diagnostic_log="$valid_log"
     assert_release_notary_records "$valid_submission" "$valid_log"
 )
+(
+    readonly submission_identifier="fixture-submission"
+    assert_release_notary_records "$valid_submission" "$valid_log"
+)
 
 null_issues_log="$temporary_directory/null-issues-log.json"
 cat > "$null_issues_log" <<'JSON'

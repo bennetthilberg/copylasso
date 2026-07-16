@@ -179,7 +179,7 @@ assert_release_notary_records() {
     local diagnostic_log_path="$2"
     local submission_status
     local log_status
-    local submission_identifier
+    local observed_submission_identifier
     local log_identifier
     local issues
 
@@ -190,9 +190,10 @@ assert_release_notary_records() {
     if [[ "$submission_status" != "Accepted" ]] || [[ "$log_status" != "Accepted" ]]; then
         release_package_fail "The disk-image notarization submission was not accepted."
     fi
-    submission_identifier="$(/usr/bin/plutil -extract id raw "$submission_record_path" 2>/dev/null || true)"
+    observed_submission_identifier="$(/usr/bin/plutil -extract id raw "$submission_record_path" 2>/dev/null || true)"
     log_identifier="$(/usr/bin/plutil -extract jobId raw "$diagnostic_log_path" 2>/dev/null || true)"
-    if [[ -z "$submission_identifier" ]] || [[ "$submission_identifier" != "$log_identifier" ]]; then
+    if [[ -z "$observed_submission_identifier" ]] || \
+        [[ "$observed_submission_identifier" != "$log_identifier" ]]; then
         release_package_fail "The notarization submission and diagnostic log do not match."
     fi
     issues="$(/usr/bin/plutil -extract issues json -o - "$diagnostic_log_path" 2>/dev/null || true)"
