@@ -41,8 +41,8 @@ assert_release_volume_layout() {
     if [[ "$actual_entries" != "$expected_entries" ]]; then
         release_package_fail "The release volume must contain exactly CopyLasso.app and Applications."
     fi
-    [[ -d "$volume_root/CopyLasso.app" ]] || \
-        release_package_fail "CopyLasso.app is missing from the release volume."
+    [[ -d "$volume_root/CopyLasso.app" && ! -L "$volume_root/CopyLasso.app" ]] || \
+        release_package_fail "CopyLasso.app must be a real directory in the release volume."
     [[ -L "$volume_root/Applications" ]] || \
         release_package_fail "Applications must be a symbolic link."
     if [[ "$(/usr/bin/readlink "$volume_root/Applications")" != "/Applications" ]]; then
@@ -196,7 +196,9 @@ assert_release_notary_records() {
         release_package_fail "The notarization submission and diagnostic log do not match."
     fi
     issues="$(/usr/bin/plutil -extract issues json -o - "$diagnostic_log_path" 2>/dev/null || true)"
-    if [[ "$issues" != "[]" ]]; then
+    if [[ "$issues" != "[]" ]] && \
+        ! /usr/bin/grep -Eq '"issues"[[:space:]]*:[[:space:]]*null([[:space:]]*[,}])' \
+            "$diagnostic_log_path"; then
         release_package_fail "The accepted notarization diagnostic log contains issues."
     fi
 }

@@ -62,6 +62,15 @@ ln -s /Applications "$temporary_directory/missing-app-layout/Applications"
 expect_failure "exactly CopyLasso.app and Applications" \
     assert_release_volume_layout "$temporary_directory/missing-app-layout"
 
+external_app="$temporary_directory/external/CopyLasso.app"
+mkdir -p "$external_app"
+symlink_app_layout="$temporary_directory/symlink-app-layout"
+mkdir -p "$symlink_app_layout"
+ln -s "$external_app" "$symlink_app_layout/CopyLasso.app"
+ln -s /Applications "$symlink_app_layout/Applications"
+expect_failure "must be a real directory" \
+    assert_release_volume_layout "$symlink_app_layout"
+
 source_app="$temporary_directory/source/CopyLasso.app"
 mkdir -p "$source_app/Contents/MacOS" "$source_app/Contents/Resources"
 printf 'binary fixture\n' > "$source_app/Contents/MacOS/CopyLasso"
@@ -193,6 +202,12 @@ assert_release_notary_records "$valid_submission" "$valid_log"
     readonly diagnostic_log="$valid_log"
     assert_release_notary_records "$valid_submission" "$valid_log"
 )
+
+null_issues_log="$temporary_directory/null-issues-log.json"
+cat > "$null_issues_log" <<'JSON'
+{"jobId":"00000000-0000-0000-0000-000000000000","status":"Accepted","issues":null}
+JSON
+assert_release_notary_records "$valid_submission" "$null_issues_log"
 
 sed 's/Accepted/Invalid/' "$valid_submission" > "$temporary_directory/invalid-submission.json"
 expect_failure "submission was not accepted" assert_release_notary_records \
