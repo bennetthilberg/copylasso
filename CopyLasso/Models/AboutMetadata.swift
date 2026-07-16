@@ -11,7 +11,7 @@ struct AboutMetadata: Equatable, Sendable {
   let applicationName = "CopyLasso"
   let version: String
   let build: String
-  let copyright = "Copyright © 2026 Bennett Hilberg"
+  let creatorDescription = "Created by Bennett Hilberg"
   let licenseName = "MIT License"
   let summary = "Free and open source. Private, offline, and local."
   let repositoryURL = URL(string: "https://github.com/bennetthilberg/copylasso")!

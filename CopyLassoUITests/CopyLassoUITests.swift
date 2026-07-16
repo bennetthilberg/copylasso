@@ -202,8 +202,8 @@ final class CopyLassoUITests: XCTestCase {
         app.staticTexts["copylasso.about.version"], equals: "Version 0.1.0 (1)"
       )
       assertAccessibleText(
-        app.staticTexts["copylasso.about.copyright"],
-        equals: "Copyright © 2026 Bennett Hilberg"
+        app.staticTexts["copylasso.about.creator"],
+        equals: "Created by Bennett Hilberg"
       )
       XCTAssertTrue(app.links["copylasso.about.repository"].exists)
       XCTAssertTrue(app.links["copylasso.about.license"].exists)
