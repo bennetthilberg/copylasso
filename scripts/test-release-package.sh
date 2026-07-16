@@ -214,7 +214,11 @@ assert_release_notary_records "$valid_submission" "$valid_log"
 
 null_issues_log="$temporary_directory/null-issues-log.json"
 cat > "$null_issues_log" <<'JSON'
-{"jobId":"00000000-0000-0000-0000-000000000000","status":"Accepted","issues":null}
+{
+  "jobId": "00000000-0000-0000-0000-000000000000",
+  "status": "Accepted",
+  "issues": null
+}
 JSON
 assert_release_notary_records "$valid_submission" "$null_issues_log"
 

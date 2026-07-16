@@ -197,7 +197,7 @@ assert_release_notary_records() {
     fi
     issues="$(/usr/bin/plutil -extract issues json -o - "$diagnostic_log_path" 2>/dev/null || true)"
     if [[ "$issues" != "[]" ]] && \
-        ! /usr/bin/grep -Eq '"issues"[[:space:]]*:[[:space:]]*null([[:space:]]*[,}])' \
+        ! /usr/bin/grep -Eq '"issues"[[:space:]]*:[[:space:]]*null([[:space:]]*[,}]|[[:space:]]*$)' \
             "$diagnostic_log_path"; then
         release_package_fail "The accepted notarization diagnostic log contains issues."
     fi
