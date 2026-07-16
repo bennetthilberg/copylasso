@@ -185,8 +185,6 @@ readonly actual_submission_identifier="$(/usr/bin/plutil -extract id raw "$submi
     release_package_fail "The release evidence has no exact payload commit."
 [[ "$(evidence_value packaging_commit)" =~ ^[0-9a-f]{40}$ ]] || \
     release_package_fail "The release evidence has no exact packaging commit."
-if /usr/bin/grep -Eq '=(/Users/|/private/|/tmp/)' "$evidence_record"; then
-    release_package_fail "The release evidence must not contain local absolute paths."
-fi
+assert_release_evidence_is_portable "$evidence_record"
 
 echo "CopyLasso release-package verification passed."

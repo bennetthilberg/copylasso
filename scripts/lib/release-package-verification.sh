@@ -231,3 +231,13 @@ assert_release_uuid_sets_match() {
         release_package_fail "The dSYM UUIDs do not match the release application."
     fi
 }
+
+assert_release_evidence_is_portable() {
+    local evidence_record_path="$1"
+
+    [[ -f "$evidence_record_path" ]] || \
+        release_package_fail "The release evidence record is missing."
+    if /usr/bin/grep -Eq '^[^=]+=/.*$' "$evidence_record_path"; then
+        release_package_fail "The release evidence must not contain local absolute paths."
+    fi
+}

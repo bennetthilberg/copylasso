@@ -219,6 +219,20 @@ sed 's/BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB/CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC
 expect_failure "dSYM UUIDs do not match" assert_release_uuid_sets_match \
     "$valid_app_uuids" "$temporary_directory/wrong-dsym-uuids.txt"
 
+portable_evidence="$temporary_directory/portable-evidence.txt"
+cat > "$portable_evidence" <<'TEXT'
+version=0.1.0
+build=1
+TEXT
+assert_release_evidence_is_portable "$portable_evidence"
+absolute_path_evidence="$temporary_directory/absolute-path-evidence.txt"
+cat > "$absolute_path_evidence" <<'TEXT'
+version=0.1.0
+local_artifact=/local/build/output
+TEXT
+expect_failure "must not contain local absolute paths" \
+    assert_release_evidence_is_portable "$absolute_path_evidence"
+
 assert_release_artifact_names \
     "CopyLasso-0.1.0.dmg" \
     "CopyLasso-0.1.0.dmg.sha256" \

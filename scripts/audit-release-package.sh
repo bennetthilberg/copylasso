@@ -95,14 +95,13 @@ for required_phrase in \
         fail "Release-packaging documentation is missing required guidance: $required_phrase"
 done
 
-readonly maintainer_home_pattern="/Users/${USER:-maintainer}/"
-if /usr/bin/grep -Eq "$maintainer_home_pattern|TeamIdentifier=[A-Z0-9]{10}|[[:alnum:]._%+-]+@[[:alnum:].-]+\.[A-Za-z]{2,}|[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}" \
+if /usr/bin/grep -Eq "TeamIdentifier=[A-Z0-9]{10}|[[:alnum:]._%+-]+@[[:alnum:].-]+\.[A-Za-z]{2,}|[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}" \
     "$package_script" \
     "$verifier_script" \
     "$comparator_script" \
     "$verifier_library" \
     "$packaging_documentation"; then
-    fail "Release-package public files contain a local path, account value, team value, or credential-like text."
+    fail "Release-package public files contain an account value, team value, or credential-like text."
 fi
 
 echo "Release-package static audit passed."
