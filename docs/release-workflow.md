@@ -4,7 +4,8 @@ G28 adds a manually dispatched GitHub Actions workflow that builds one signed, n
 verified CopyLasso release rehearsal from the exact protected `main` commit. It creates a draft
 prerelease and never publishes it. G29 retains a reusable clean-install procedure and partial
 Sonoma rehearsal with explicit accepted gaps; G30 immutable release-candidate qualification uses a
-fresh browser/Gatekeeper/core smoke on the maintainer host, and G31 remains the publication gate.
+fresh browser/Gatekeeper/core smoke from a disposable clean local account on the maintainer host,
+and G31 remains the publication gate.
 
 ## Trust Boundary
 

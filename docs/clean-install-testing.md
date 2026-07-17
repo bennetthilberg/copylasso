@@ -6,7 +6,10 @@ and an incomplete latest-stable setup attempt; the maintainer ended further VM
 execution before the full matrix completed. Those gaps are recorded explicitly
 and are not release passes. G30 instead performs a fresh browser-download,
 Gatekeeper, install, and core capture smoke on the maintainer's latest-stable
-host. This document does not publish a release.
+host from a disposable local macOS user account. Before download, verify that
+account has no CopyLasso application, production preferences, production
+container, login item, or Screen Recording approval. This document does not
+publish a release.
 
 ## Qualified Tool And Candidate
 

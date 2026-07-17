@@ -51,7 +51,8 @@ Record every command, artifact name, SHA-256 checksum, commit, tag, signing iden
 ## G30 - Release Candidate Qualification
 
 - [ ] Create the immutable release-candidate tag from the exact qualified commit.
-- [ ] Confirm canonical and hosted CI, package verification, host manual QA, Intel automated checks, and a fresh browser-download/Gatekeeper/install/core-capture smoke on the maintainer's latest-stable macOS host all identify that same commit and artifact checksum.
+- [ ] Confirm canonical and hosted CI, package verification, host manual QA, Intel automated checks, and a fresh browser-download/Gatekeeper/install/core-capture smoke in a disposable local macOS user account on the maintainer's latest-stable host all identify that same commit and artifact checksum.
+- [ ] Before downloading the candidate in that account, verify CopyLasso's application, production preferences, production container, login item, and Screen Recording approval are absent so stale state cannot satisfy first-launch or permission-recovery checks.
 - [ ] Carry the G29 partial rehearsal and every accepted VM/reinstall evidence gap into the candidate risk record; do not describe a Blocked row as qualified.
 - [ ] Classify every issue as release-blocking, known limitation, or deferred; any fix creates a new candidate and reruns the complete gate.
 - [ ] Prepare final release notes from the qualified implementation and evidence, then verify the draft-release artifacts through a fresh browser download.
