@@ -1,6 +1,6 @@
 # CopyLasso Release Checklist
 
-This checklist defines the ordered evidence required to publish CopyLasso. G25 creates and reviews the checklist only. Developer ID signing, notarization, packaging, clean-host qualification, release-candidate promotion, tagging, and publication belong to G26 through G31.
+This checklist defines the ordered evidence required to publish CopyLasso. G25 creates and reviews the checklist only. Developer ID signing, notarization, packaging, clean-install evidence, release-candidate promotion, tagging, and publication belong to G26 through G31.
 
 Record every command, artifact name, SHA-256 checksum, commit, tag, signing identity class, notarization submission identifier, test host, and result in the corresponding roadmap goal evidence.
 
@@ -42,23 +42,28 @@ Record every command, artifact name, SHA-256 checksum, commit, tag, signing iden
 
 ## G29 - Clean Installation Test Environment
 
-- [ ] Create untouched baseline and disposable-clone workflows for macOS 14 and the latest stable macOS; keep CopyLasso absent and unapproved on every baseline.
-- [ ] Download the exact draft-release DMG through a browser inside each clone so normal quarantine and Gatekeeper behavior remain authoritative.
-- [ ] Verify first launch, onboarding, Screen Recording denial and recovery, shortcut/menu capture, OCR, clipboard, HUD, Settings, Launch at Login, relaunch, and restart behavior.
-- [ ] Verify ordinary deletion/reinstall retains preferences, while complete uninstall removes only CopyLasso's login item, production preferences/container, and production Screen Recording entry.
-- [ ] Record host/VM details, OS build, artifact hash, steps, results, clone discard, and successful reset from a fresh baseline. Do not publish the release.
+- [ ] Preserve the version-controlled [`clean-install-testing.md`](clean-install-testing.md) procedure and classify every recorded result as a factual Pass or a reasoned accepted Blocked gap.
+- [ ] Retain the verified VirtualBuddy installation, stopped macOS 14 baseline, disposable-clone workflow, and exact candidate/isolation metadata without committing VM assets.
+- [ ] Record the exact browser-downloaded Sonoma rehearsal evidence for quarantine, checksum, Gatekeeper, first launch, permission denial and recovery, shortcut/menu capture, OCR, clipboard, and HUD behavior.
+- [ ] Record the incomplete latest-stable setup and unexecuted enabled-login restart, ordinary reinstall, complete uninstall, and clone-recreation scenarios as Blocked rather than inferring results.
+- [ ] Keep the scoped ordinary and complete uninstall procedures reusable. Do not resume VM qualification or publish the release during G29.
 
 ## G30 - Release Candidate Qualification
 
-- [ ] Create the immutable release-candidate tag from the exact qualified commit.
-- [ ] Confirm canonical and hosted CI, package verification, both clean-install VM runs, host manual QA, and Intel automated checks all identify that same commit and artifact checksum.
+- [ ] Phase 1: add reviewed RC mode support to the protected workflow, draft helper, static audit, and regression tests, then obtain separate approval to merge that source-enablement pull request to protected `main`.
+- [ ] Phase 2: dispatch the post-merge protected workflow from that exact `main` commit with a new positive `candidate_number`; require it to derive and create the immutable `v0.1.0-rc.N` tag and corresponding draft prerelease without accepting an arbitrary tag.
+- [ ] Read back the RC draft as `draft: true` and `prerelease: true`; verify its exact target commit, four required assets, DMG checksum, and refusal to overwrite an existing tag or release.
+- [ ] Download the private draft DMG and checksum with authenticated maintainer tooling, verify them, then expose only those files through a temporary loopback-only server for the disposable account's Safari download. Do not sign the disposable account in to GitHub or add quarantine manually.
+- [ ] Confirm canonical and hosted CI, package verification, host manual QA, Intel automated checks, and a fresh browser-download/Gatekeeper/install/core-capture smoke in a disposable local macOS user account on the maintainer's latest-stable host all identify that same commit and artifact checksum.
+- [ ] Before downloading the candidate in that account, verify CopyLasso's application, production preferences, production container, login item, and Screen Recording approval are absent so stale state cannot satisfy first-launch or permission-recovery checks.
+- [ ] Carry the G29 partial rehearsal and every accepted VM/reinstall evidence gap into the candidate risk record; do not describe a Blocked row as qualified.
 - [ ] Classify every issue as release-blocking, known limitation, or deferred; any fix creates a new candidate and reruns the complete gate.
 - [ ] Prepare final release notes from the qualified implementation and evidence, then verify the draft-release artifacts through a fresh browser download.
 - [ ] Confirm the release remains unpublished and the candidate tag, artifacts, notes, changelog, and documentation identify the same version/build and commit.
 
 ## G31 - Final Tag And Publication
 
-- [ ] Confirm every prior gate is green and no source or artifact has changed since clean-host qualification.
+- [ ] Confirm every required prior gate is green, every accepted evidence gap is recorded, and no source or artifact has changed since candidate qualification.
 - [ ] Create the final `v0.1.0` tag on the same commit as the qualified release candidate and verify the tag remotely.
 - [ ] Date the `0.1.0` changelog entry, update the README download link and checksum instructions, and verify the final documentation commit relationship required by the roadmap.
 - [ ] Publish only the exact qualified DMG and checksum assets; never replace an asset under an existing release tag.

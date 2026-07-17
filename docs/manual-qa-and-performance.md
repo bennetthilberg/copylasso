@@ -457,14 +457,15 @@ Blocked or accepted-residual classification.
 ## Functional And Recovery Matrix
 
 Run each row at least three times unless a larger sample is specified.
-Replace each current **Blocked** entry with fresh signed-run evidence; do not
-carry forward a historical result. Evidence must name the tested commit and
-record the observed focus, clipboard, permission, display, and cleanup state
-where those properties apply.
+Replace each current **Blocked** entry with fresh signed-run evidence unless a
+later explicit product-scope amendment classifies it as an accepted evidence
+gap; do not carry forward a historical result as a pass. Evidence must name the
+tested commit and record the observed focus, clipboard, permission, display,
+and cleanup state where those properties apply.
 
 | Scenario | Expected result | Current result and evidence |
 | --- | --- | --- |
-| First launch from a clean installation | Onboarding appears once; no unexpected window, permission request, or Dock icon | **Blocked** — app-local Debug reset reproduced onboarding without a launch-time permission request, but clean quarantined installation remains owned by G27-G29 |
+| First launch from a clean installation | Onboarding appears once; no unexpected window, permission request, or Dock icon | **Blocked with accepted G29 coverage gap** — one Sonoma run with the exact browser-downloaded DMG produced onboarding, no early permission request, and no Dock icon, but it did not meet this matrix's three-run minimum; the [G29 partial record](clean-install-testing.md) preserves that observation and the incomplete latest-stable attempt without promoting either to a matrix pass |
 | Ordinary relaunch after completed onboarding | One status item, no onboarding, Dock icon, or initial window | **Pass** — three final-clean ordinary relaunches produced one status item, no onboarding/window/Dock item, and preserved `⇧⌘2`; executable-path readback found only the exact signed artifact |
 | Cold launch | One status item within 2 seconds; no Dock icon or initial app window after completed onboarding | **Blocked** — the maintainer watched the status item disappear and reappear for ten launches with no unexpected window or Dock item, but the recorded timestamps measured process visibility rather than the visible, interactive status item required by this protocol |
 | Shortcut setup and persistence | Confirm, replace, clear, and restore `⇧⌘2`; relaunch and reboot preserve the stored choice | **Blocked** only on reboot persistence — the final-clean run confirmed the onboarding default, cleared the shortcut, proved physical `⇧⌘2` became inert, restored the suggestion, and preserved it across ordinary relaunch; the historical logout/login result remains context and no final-clean reboot followed restoration |
@@ -488,7 +489,7 @@ where those properties apply.
 | Permission revocation | Controlled likely-revoked recovery after authoritative denial | **Blocked** by one repeat — the original revocation stopped before selection; a second same-process revocation passed stale preflight into selection but the real capture denial blocked pixels, OCR, clipboard, and HUD, preserved its sentinel/change count, and presented the singleton likely-revoked panel. Re-enabling and relaunching the exact artifact restored exact fixture capture in both cases |
 | Sleep and wake during every active phase | One system-interruption cancellation, cleanup, no auto-resume, immediate reuse | **Blocked** for the complete phase matrix — exact signed pre-drag and drag-phase sleeps now pass with cleanup, sentinel preservation, no auto-resume, and successful reuse; capture, OCR, and feedback-phase sleep rows remain pending |
 | Lock and unlock during every active phase | Same lifecycle contract and no sensitive residue | **Fail with maintainer-accepted residual** — the historical pre-drag probe cleaned up, while a drag-phase lock retained an invisible selection and replaced its sentinel with an empty value. The maintainer explicitly accepted this applicable lock-only v0.1 failure and directed the run to move past further lock testing; actual sleep remains covered separately |
-| Launch at Login enabled/disabled | Correct dockless presence after real logout/login or reboot | **Blocked** for final clean promotion — the final-clean run confirms one exact enabled item after onboarding, while the historical enabled/disabled logout/login sequence remains context. Current enabled and disabled logout/login or reboot checks are pending |
+| Launch at Login enabled/disabled | Correct dockless presence after real logout/login or reboot | **Blocked with accepted G29 coverage gap** — the clean Sonoma disabled restart passed, but the enabled restart and latest-stable VM checks were not completed before the maintainer ended VM testing; see the [G29 partial record](clean-install-testing.md) |
 | Light, dark, increased contrast, reduced motion, maximum text size | Legible native UI, one thin gray dashed two-point-radius selection outline, static dash phase under Reduce Motion, no clipped text | **Pass** — Light/Dark, Increased Contrast, Reduce Motion, maximum text size, Differentiate Without Color, and Reduce Transparency retained legible unclipped UI and correct capture/HUD behavior; Reduce Motion made the dash phase static, and all settings were restored |
 | VoiceOver and Full Keyboard Access | Clear labels/order/actions across menu, onboarding, Settings, recovery, selection, and HUD | **Blocked** for complete assistive coverage — VoiceOver announced the status item, vertical menu order, Settings, About, onboarding, selection overlay, bounded success preview, and recovery title/explanation/actions clearly, but no-text and non-permission failure HUD speech were not sampled. Full Keyboard Access reached every Settings control/link and invoked, cancelled, and captured successfully, but onboarding, recovery, and reopened-singleton traversal were not physically completed |
 | Offline success | Core workflow succeeds with process networking denied | **Pass** — the signed app had no network entitlement throughout the coherent run, exposed zero internet sockets, and completed far more than three controlled captures including the dedicated process-denied fixture capture with normal HUD feedback |
@@ -496,8 +497,8 @@ where those properties apply.
 | Clipboard preservation sweep | Sentinel survives every cancellation and failure before replacement begins. A fault-injected clear-success/write-rejection reports clipboard failure; the prior clipboard may already be lost under the accepted write-only v0.1 boundary | **Blocked** for the remaining active-phase sweep — final-clean denial, unavailable retry, isolated Escape/click/tiny/no-text, protected-content, permission revocation, and active-selection Quit all preserved separately armed sentinels. Capture-, OCR-, and feedback-phase interruption preservation remains pending; the accepted lock-only residual remains explicitly excluded |
 | Success feedback privacy | HUD shows the correct normalized, truncated preview; preserves focus; clears on time; leaves no preview in logs/preferences | **Pass** — a controlled 129-character two-line fixture produced the exact normalized 80-character preview `COPYLASSO PREVIEW VALIDATION KEEPS EVERY RECOGNIZED WORD LOCAL WHILE THE BOUNDE…`; the maintainer confirmed the HUD remained nonactivating and dismissed itself after about 2.5 seconds. Earlier immediate-replacement runs passed, and final log/preference scans contained no preview text |
 | Private-data residue | Before/after app-container and temporary-directory inventory contains no image/text output; unified log contains no selected content | **Blocked** for the complete delta — retained baseline/current manifests are byte-identical across four total container entries: one container-manager metadata file plus three files under `Data`. The later “three state files” readback counted only those `Data` files. Both checks found zero image/PDF or controlled-text residue, zero open image/PDF files, zero internet sockets, and only normal LaunchServices/Metal temporary caches. No comparable pre-run temporary-directory manifest was retained, so the clean final temp scan cannot establish the required before/after delta |
-| Ordinary delete and reinstall | Onboarding remains complete when preferences remain; Launch at Login state is reconciled | **Blocked** — no installable release artifact exists yet |
-| Complete uninstall and reinstall | Login item, preferences, app-owned container data, and Screen Recording entry are removed; onboarding returns cleanly | **Blocked** — final uninstall procedure is a G25 deliverable and authoritative VM proof is G29 |
+| Ordinary delete and reinstall | Onboarding remains complete when preferences remain; Launch at Login state is reconciled | **Blocked with accepted G29 coverage gap** — the procedure is documented, but the physical reinstall was not executed before the maintainer ended VM testing |
+| Complete uninstall and reinstall | Login item, preferences, app-owned container data, and Screen Recording entry are removed; onboarding returns cleanly | **Blocked with accepted G29 coverage gap** — exact scoped removal instructions and automated state contracts remain, but the physical VM proof was not executed |
 
 ### Resolved Cursor Block
 
@@ -822,11 +823,13 @@ Exact per-capture scale/crop dimensions, one first-request Deny repeat, one
 revocation repeat, some active-phase lifecycle/busy-state cases, reboot
 persistence, VoiceOver no-text/failure feedback, Full Keyboard Access
 onboarding/recovery/reopened-singleton traversal, the pre-run temporary
-inventory, and later-goal install/uninstall work remain explicitly blocked. The applicable
+inventory, and the G29 install/uninstall rows remain explicitly blocked. The
+G29 amendment carries those installation gaps into G30's release-risk
+disposition without requiring another VM run. The applicable
 lock-only failure and stationary immediate-reuse crosshair nuance are retained
 as maintainer-accepted v0.1 residuals. Every matrix row has a current state. On
 July 14 the maintainer directed the repetitive physical run to stop and accepted
 the cold-launch timing and repeated-growth private-memory checkpoint gaps as
 blocked evidence rather than release passes. G24 is therefore **complete as an
 evidence-recording goal**; its remaining gaps stay visible for release judgment
-and later-goal validation.
+and explicit risk disposition.

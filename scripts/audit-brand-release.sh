@@ -51,6 +51,7 @@ require_file "$menu_image_set/MenuBarLasso.svg"
 require_file "$repository_root/docs/brand-assets.md"
 require_file "$repository_root/docs/developer-id-signing.md"
 require_file "$repository_root/docs/release-checklist.md"
+require_file "$repository_root/docs/clean-install-testing.md"
 
 if [[ -e CopyLasso/Assets.xcassets/AppIcon.appiconset ]]; then
     fail "The empty development AppIcon catalog must not coexist with AppIcon.icon."
@@ -163,11 +164,49 @@ require_text docs/release-checklist.md '## G26 - Developer ID Signing And Notari
 require_text docs/release-checklist.md '## G27 - Reproducible Release Package'
 require_text docs/release-checklist.md '## G28 - Protected Release Workflow'
 require_text docs/release-checklist.md '## G29 - Clean Installation Test Environment'
+require_text docs/release-checklist.md '[`clean-install-testing.md`](clean-install-testing.md)'
 require_text docs/release-checklist.md '## G30 - Release Candidate Qualification'
+require_text docs/release-checklist.md 'disposable local macOS user account'
+require_text docs/release-checklist.md 'candidate_number'
 require_text docs/release-checklist.md '## G31 - Final Tag And Publication'
+require_text docs/release-workflow.md '## G30 Protected Candidate Handoff'
+require_text docs/release-workflow.md 'In the post-merge protected run'
+require_text docs/release-workflow.md 'The G28 rehearsal draft and its assets cannot serve as G30 evidence.'
+require_text docs/clean-install-testing.md 'v0.1.0-g28.295914448081'
+require_text docs/clean-install-testing.md '0b38f85acd7507cbacfacb820d534ac60907c8d12bec08c3b7f41f6cf1d1952f'
+require_text docs/clean-install-testing.md 'io.github.bennetthilberg.copylasso'
+require_text docs/clean-install-testing.md 'COPYLASSO_CANDIDATE_DMG'
+require_text docs/clean-install-testing.md 'COPYLASSO_CANDIDATE_SHA256'
+require_text docs/clean-install-testing.md 'candidate_checksum="${candidate_dmg}.sha256"'
+require_text docs/clean-install-testing.md "'^[0-9a-f]{64}$'"
+require_text docs/clean-install-testing.md 'printf '\''%s  %s\n'\'' "$candidate_sha256" "$candidate_dmg"'
+require_text docs/clean-install-testing.md 'xattr -p com.apple.quarantine "$candidate_dmg"'
+require_text docs/clean-install-testing.md '/usr/bin/shasum -a 256 -c -'
+require_text docs/clean-install-testing.md 'tccutil reset ScreenCapture io.github.bennetthilberg.copylasso'
+require_text docs/clean-install-testing.md 'never boot it for testing'
+require_text docs/clean-install-testing.md 'download the DMG normally'
+require_text docs/clean-install-testing.md 'shared folder'
+require_text docs/clean-install-testing.md 'Do not remove quarantine, disable'
+require_text docs/clean-install-testing.md 'Reopen windows when'
+require_text docs/clean-install-testing.md 'vm_interface=bridge100'
+require_text docs/clean-install-testing.md '/usr/bin/python3 -m http.server "$vm_port"'
+require_text docs/clean-install-testing.md '## G29 Partial Rehearsal Record'
+require_text docs/clean-install-testing.md 'accepted evidence gaps'
+require_text docs/v0.1-product-contract.md 'Before download, that account must have no CopyLasso application, production'
+require_text docs/v0.1-product-contract.md 'preferences, production container, login item, or Screen Recording approval.'
 require_text docs/brand-assets.md 'The final pre-artifact exact-name review was repeated on July 14, 2026'
 require_text THIRD_PARTY_NOTICES.md 'KeyboardShortcuts 3.0.1'
 require_text THIRD_PARTY_NOTICES.md 'License: MIT'
+
+reusable_download_section="$(/usr/bin/awk '
+    /^## Duplicate, Download, And Verify$/ { include = 1 }
+    /^## Full Clean-Install Run$/ { include = 0 }
+    include { print }
+' docs/clean-install-testing.md)"
+if printf '%s\n' "$reusable_download_section" | \
+    /usr/bin/grep -Eq '[0-9a-f]{64}|CopyLasso-[0-9][A-Za-z0-9._-]*\.dmg'; then
+    fail "The reusable download procedure must not pin a historical candidate filename or digest."
+fi
 
 readonly public_copy=(
     README.md
@@ -177,6 +216,7 @@ readonly public_copy=(
     SECURITY.md
     docs/brand-assets.md
     docs/developer-id-signing.md
+    docs/clean-install-testing.md
     docs/release-checklist.md
     docs/v0.1-product-contract.md
 )
