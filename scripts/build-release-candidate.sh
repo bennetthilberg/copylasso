@@ -81,7 +81,7 @@ fi
 if ! DEVELOPMENT_TEAM="$expected_team_identifier" \
     /usr/bin/xcodebuild -exportArchive \
     -archivePath "$archive" \
-    -exportOptionsPlist Configuration/DeveloperIDExportOptions.plist \
+    -exportOptionsPlist Configuration/DeveloperIDCIExportOptions.plist \
     -exportPath "$export_directory" \
     > "$handoff_candidate/export.log" 2>&1; then
     protected_release_fail "The protected Developer ID archive could not be exported."

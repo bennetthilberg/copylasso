@@ -9,6 +9,7 @@ readonly source_verifier="$repository_root/scripts/verify-release-workflow-sourc
 readonly credential_preparer="$repository_root/scripts/prepare-release-keychain.sh"
 readonly credential_cleanup="$repository_root/scripts/cleanup-release-keychain.sh"
 readonly candidate_builder="$repository_root/scripts/build-release-candidate.sh"
+readonly ci_export_options="$repository_root/Configuration/DeveloperIDCIExportOptions.plist"
 readonly draft_creator="$repository_root/scripts/create-draft-release.sh"
 readonly verification_library="$repository_root/scripts/lib/release-workflow-verification.sh"
 readonly focused_tests="$repository_root/scripts/test-release-workflow.sh"
@@ -41,11 +42,28 @@ done
 for readable in \
     "$workflow" \
     "$ci_workflow" \
+    "$ci_export_options" \
     "$verification_library" \
     "$documentation" \
     "$release_checklist"; do
     [[ -r "$readable" ]] || \
         fail "Protected-release contract file is missing: $(basename "$readable")"
+done
+
+/usr/bin/plutil -lint "$ci_export_options" >/dev/null
+[[ "$(/usr/bin/plutil -extract method raw -o - "$ci_export_options")" == "developer-id" ]] || \
+    fail "The hosted release export method must be developer-id."
+[[ "$(/usr/bin/plutil -extract destination raw -o - "$ci_export_options")" == "export" ]] || \
+    fail "The hosted release destination must be export."
+[[ "$(/usr/bin/plutil -extract signingStyle raw -o - "$ci_export_options")" == "manual" ]] || \
+    fail "The hosted release export must use the imported identity without an Xcode account."
+[[ "$(/usr/bin/plutil -extract signingCertificate raw -o - "$ci_export_options")" == \
+    "Developer ID Application" ]] || \
+    fail "The hosted release export must select Developer ID Application."
+for prohibited_key in teamID provisioningProfiles installerSigningCertificate; do
+    if /usr/bin/plutil -extract "$prohibited_key" raw -o - "$ci_export_options" >/dev/null 2>&1; then
+        fail "Hosted release export options must not commit $prohibited_key."
+    fi
 done
 
 require_text "$workflow" 'workflow_dispatch:'
@@ -132,6 +150,7 @@ done
 for required_build_text in \
     'xcodebuild archive' \
     'xcodebuild -exportArchive' \
+    'Configuration/DeveloperIDCIExportOptions.plist' \
     'verify-developer-id-app.sh' \
     'notarytool submit' \
     'notarytool log' \
