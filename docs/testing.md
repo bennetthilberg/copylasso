@@ -295,7 +295,7 @@ Use one stably signed Debug app, keep Screen Recording enabled, and avoid inspec
 4. Search only changed/new CopyLasso files for the synthetic strings and inspect their types. Confirm no screenshot, image encoding, OCR history, preview cache, or content-bearing crash breadcrumb exists.
 5. Inspect Console entries for the CopyLasso process across idle, selection, cancellation, sleep/lock recovery, success, no text, failure, and termination. Only the four fixed lifecycle messages may originate from CopyLasso; no app name being captured, geometry, pixels, recognized text, clipboard text, preview, or raw error may appear.
 6. Run `scripts/test-offline.sh` against a freshly canonical-built bundle. Confirm 187/187 tests pass while the deny-network profile is active. Do not disable the workstation's network or interrupt other applications.
-7. Inspect the signed app entitlement and CodeDirectory flags. Confirm App Sandbox and Hardened Runtime, no network client/server, no device/file/group/temporary exception, and only development `get-task-allow`. Repeat on the final Developer ID archive in G26 and require `get-task-allow` to be absent there.
+7. Inspect the signed app entitlement and CodeDirectory flags. Confirm App Sandbox and Hardened Runtime, no network client/server, no device/file/group/temporary exception, and only development `get-task-allow`. G26 established the first Developer ID archive with `get-task-allow` absent; repeat that inspection for every later candidate rather than carrying the historical result forward.
 8. Inspect the built Release executable and bundle. Confirm Universal 2, only system-linked frameworks, no embedded third-party dynamic binary, one exact package resolution, and the matching MIT acknowledgement.
 9. Inspect Privacy & Security after real use. Screen Recording must be the only core permission; Accessibility, Input Monitoring, Microphone, Full Disk Access, Files and Folders, and automation access must not be required.
 10. Paste the success result into TextEdit, then confirm cancellation/no-text/pre-output failures preserved the sentinel in separate runs. Remember that clipboard contents become a macOS/user trust boundary after a successful write.
@@ -327,7 +327,7 @@ The minimum runner is a runtime check because KeyboardShortcuts 3.0.1 requires S
 
 Signed XCUITests remain focused on first-run, Settings, menu, recovery, and accessibility behavior. They contain no unconditional retry. Hosted CI builds the bundle but cannot truthfully execute the unsigned runner or automate TCC dialogs. A locked local session is recorded as infrastructure-blocked rather than a pass; the signed matrices earlier in this document remain required.
 
-The versioned release checklist and performance result sheet are maintained in [Manual QA and Performance](manual-qa-and-performance.md). G24 must execute that complete document from one clean, stably signed Debug state; partial or historical evidence must not be promoted into a release pass.
+The versioned release checklist and performance result sheet are maintained in [Manual QA and Performance](manual-qa-and-performance.md). G24 executed that document from one clean, stably signed Debug state; partial or historical evidence must not be promoted into a release pass. The reusable procedure, partial browser-quarantined Sonoma rehearsal, incomplete latest-stable attempt, and accepted restart/reinstall gaps are recorded separately in [Clean Installation Testing](clean-install-testing.md).
 
 The July 13, 2026 signed run completed many functional, permission, and OCR rows
 before exposing a pre-drag sleep/wake failure. G24U subsequently passed exact
@@ -362,7 +362,9 @@ one permission-revocation repeat, private-memory checkpoints, some active-phase
 lifecycle/busy-state cases, reboot persistence, remaining VoiceOver feedback
 states, Full Keyboard Access onboarding/recovery/reopened-singleton traversal,
 and the missing pre-run temporary-directory inventory remain honest blocked
-evidence gaps rather than inferred passes. Clean install and uninstall remain
-owned by their later roadmap goals. The applicable
+evidence gaps rather than inferred passes. The G29 amendment preserves partial
+clean-install evidence and the complete procedure while treating the
+unexecuted reinstall, uninstall, and latest-stable VM rows as accepted v0.1
+evidence gaps. The applicable
 lock-only failure and immediate-reuse stationary-crosshair nuance remain
 maintainer-accepted v0.1 residuals.
