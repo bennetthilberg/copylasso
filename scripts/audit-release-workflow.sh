@@ -149,8 +149,14 @@ done
 
 for required_build_text in \
     'xcodebuild archive' \
+    'CODE_SIGN_STYLE=Manual' \
+    'CODE_SIGN_IDENTITY=Developer ID Application' \
+    'DEVELOPMENT_TEAM="$expected_team_identifier"' \
+    'OTHER_CODE_SIGN_FLAGS=--keychain $keychain_path' \
     'xcodebuild -exportArchive' \
     'Configuration/DeveloperIDCIExportOptions.plist' \
+    'plutil -insert teamID -string "$expected_team_identifier"' \
+    'rm -f "$runtime_export_options"' \
     'verify-developer-id-app.sh' \
     'notarytool submit' \
     'notarytool log' \

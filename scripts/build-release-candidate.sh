@@ -68,24 +68,37 @@ readonly export_directory="$handoff_candidate/export"
 readonly application="$export_directory/CopyLasso.app"
 
 cd "$repository_root"
-if ! DEVELOPMENT_TEAM="$expected_team_identifier" \
-    /usr/bin/xcodebuild archive \
+if ! /usr/bin/xcodebuild archive \
     -project CopyLasso.xcodeproj \
     -scheme CopyLasso \
     -configuration Release \
     -destination 'generic/platform=macOS' \
     -archivePath "$archive" \
+    DEVELOPMENT_TEAM="$expected_team_identifier" \
+    CODE_SIGN_STYLE=Manual \
+    "CODE_SIGN_IDENTITY=Developer ID Application" \
+    "OTHER_CODE_SIGN_FLAGS=--keychain $keychain_path" \
     > "$handoff_candidate/archive.log" 2>&1; then
     protected_release_fail "The protected Release archive could not be created."
 fi
-if ! DEVELOPMENT_TEAM="$expected_team_identifier" \
-    /usr/bin/xcodebuild -exportArchive \
+
+readonly runtime_export_options="$handoff_candidate/DeveloperIDCIExportOptions.plist"
+cleanup_runtime_export_options() {
+    /bin/rm -f "$runtime_export_options"
+}
+trap cleanup_runtime_export_options EXIT
+/bin/cp Configuration/DeveloperIDCIExportOptions.plist "$runtime_export_options"
+/usr/bin/plutil -insert teamID -string "$expected_team_identifier" \
+    "$runtime_export_options"
+if ! /usr/bin/xcodebuild -exportArchive \
     -archivePath "$archive" \
-    -exportOptionsPlist Configuration/DeveloperIDCIExportOptions.plist \
+    -exportOptionsPlist "$runtime_export_options" \
     -exportPath "$export_directory" \
     > "$handoff_candidate/export.log" 2>&1; then
     protected_release_fail "The protected Developer ID archive could not be exported."
 fi
+cleanup_runtime_export_options
+trap - EXIT
 
 COPYLASSO_EXPECTED_TEAM_ID="$expected_team_identifier" \
     "$repository_root/scripts/verify-developer-id-app.sh" \

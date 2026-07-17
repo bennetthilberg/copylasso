@@ -57,10 +57,13 @@ Raw credential files are removed immediately after import. An unconditional clea
 the runner's original default and search-list Keychains, deletes the temporary Keychain, and must
 pass before draft creation.
 
-The hosted runner exports with `Configuration/DeveloperIDCIExportOptions.plist`. That contract uses
-manual signing only for the CI export step and selects the already imported Developer ID
-Application identity, so export does not depend on an interactive Xcode account or ask Xcode to
-create signing assets. The local G26 export contract remains automatic and separate.
+The hosted runner archives with manual signing, the imported Developer ID Application identity,
+the protected team, and the temporary Keychain selected explicitly. It then copies
+`Configuration/DeveloperIDCIExportOptions.plist` into the private handoff, adds the protected team
+to that runtime-only copy, and removes the copy immediately after export. The tracked contract has
+no account identifier. Archive and export therefore use the same protected identity without an
+interactive Xcode account or permission to create signing assets. The local G26 automatic export
+contract remains separate.
 
 ## Run The Rehearsal
 
