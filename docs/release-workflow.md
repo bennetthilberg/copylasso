@@ -86,6 +86,33 @@ The workflow uses the G26 application verifier and G27 package process. Its prot
 the application payload commit and packaging commit. The resulting draft tag uses the nonrelease
 form `v0.1.0-g28.<run>` so it cannot be mistaken for G30's `v0.1.0-rc.N` candidate.
 
+## G30 Protected Candidate Handoff
+
+At the close of G29, the checked-in protected workflow and its release helper remain intentionally
+G28-only and reject release-candidate tags. G30 therefore has two ordered phases.
+
+1. Land a reviewed source-enablement pull request that adds a distinct RC mode to the protected
+   workflow, draft helper, static audit, and regression tests. Because `workflow_dispatch` uses the
+   workflow on the default branch, this phase requires a separately approved merge to protected
+   `main` before candidate creation can begin.
+2. In the post-merge protected run, supply only a validated positive `candidate_number`; derive
+   `v0.1.0-rc.N` inside the workflow, refuse an existing tag or release, and build the exact merged
+   `main` commit through the complete quality gate and `release` environment. The job must sign,
+   notarize, staple, package, clean credentials, and transactionally create a draft prerelease with
+   the same four-asset contract. Readback must prove the exact target commit, tag, draft/prerelease
+   state, asset names, and DMG checksum. Any later tracked change abandons that candidate and uses a
+   new number.
+
+The G28 rehearsal draft and its assets cannot serve as G30 evidence. Only the RC draft created by
+the post-merge protected run supplies G30's DMG and checksum.
+
+Because that release remains a private draft, download its DMG and checksum with authenticated
+maintainer tooling into an external staging directory. Verify both against the protected readback,
+then serve only those two files temporarily on `127.0.0.1`. Download them through Safari in the
+disposable local test account so macOS creates genuine browser quarantine without signing that
+account in to GitHub. Stop the server and remove the staging copy after qualification; never add a
+quarantine attribute manually.
+
 ## Draft Assets And Local Readback
 
 The draft prerelease contains exactly:

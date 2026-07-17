@@ -124,20 +124,45 @@ ephemeral port was not retained as release evidence. In guest Safari, turn off
 automatic opening of safe downloads, navigate to
 `http://<vm-host-address>:<vm-port>/`, download the DMG normally, and download
 the checksum file the same way. Stop the host server immediately after both
-downloads. Inside the guest, run:
+downloads. Set the two candidate variables from the protected qualification
+record, not from the downloaded checksum file, then run this in the guest:
 
 ```sh
-cd "$HOME/Downloads"
-printf '%s  %s\n' \
-  '0b38f85acd7507cbacfacb820d534ac60907c8d12bec08c3b7f41f6cf1d1952f' \
-  'CopyLasso-0.1.0.dmg' | shasum -a 256 -c -
-shasum -a 256 -c CopyLasso-0.1.0.dmg.sha256
-xattr -p com.apple.quarantine CopyLasso-0.1.0.dmg
+(
+  set -eu
+
+  : "${COPYLASSO_CANDIDATE_DMG:?set the exact downloaded DMG basename}"
+  : "${COPYLASSO_CANDIDATE_SHA256:?set the trusted candidate SHA-256}"
+
+  candidate_dmg="$COPYLASSO_CANDIDATE_DMG"
+  candidate_sha256="$COPYLASSO_CANDIDATE_SHA256"
+  candidate_checksum="${candidate_dmg}.sha256"
+
+  test "$candidate_dmg" = "$(/usr/bin/basename "$candidate_dmg")"
+  case "$candidate_dmg" in
+    *.dmg) ;;
+    *)
+      echo "COPYLASSO_CANDIDATE_DMG must name a DMG." >&2
+      exit 1
+      ;;
+  esac
+  printf '%s\n' "$candidate_sha256" |
+    /usr/bin/grep -Eq '^[0-9a-f]{64}$'
+
+  cd "$HOME/Downloads"
+  test -f "$candidate_dmg"
+  test -f "$candidate_checksum"
+  printf '%s  %s\n' "$candidate_sha256" "$candidate_dmg" |
+    /usr/bin/shasum -a 256 -c -
+  /usr/bin/shasum -a 256 -c "$candidate_checksum"
+  /usr/bin/xattr -p com.apple.quarantine "$candidate_dmg"
+)
 ```
 
-Both checksum commands must succeed, and the quarantine value must be nonempty.
-If the browser download does not create genuine quarantine, stop: host copying
-or manually adding an attribute is not an acceptable substitute.
+Both checksum commands must succeed against the independently recorded digest,
+and the quarantine value must be nonempty. If the browser download does not
+create genuine quarantine, stop: host copying or manually adding an attribute
+is not an acceptable substitute.
 
 ## Full Clean-Install Run
 
