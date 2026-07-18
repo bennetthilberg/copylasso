@@ -89,6 +89,7 @@ readonly creation_record="$temporary_directory/created.json"
 readonly final_record="$temporary_directory/final.json"
 readonly notes="$temporary_directory/notes.md"
 readonly candidate_tag_record="$temporary_directory/tag.json"
+readonly release_listing="$temporary_directory/releases.json"
 readonly reviewed_candidate_notes="$repository_root/docs/release-notes/0.1.0.md"
 release_identifier=""
 candidate_tag_created="false"
@@ -119,6 +120,23 @@ if "$gh_binary" api "repos/$repository/releases/tags/$tag" >/dev/null 2>&1; then
 fi
 
 if [[ "$release_mode" == "candidate" ]]; then
+    if ! "$gh_binary" api \
+        --paginate \
+        --slurp \
+        "repos/$repository/releases?per_page=100" > "$release_listing"; then
+        protected_release_fail \
+            "Existing release candidates could not be checked before mutation."
+    fi
+    existing_release_count="$(/usr/bin/jq -er --arg tag "$tag" '
+        if type == "array" and all(.[]; type == "array") then
+            [.[][] | select(.tag_name == $tag)] | length
+        else
+            error("invalid release listing")
+        end
+    ' "$release_listing" 2>/dev/null)" || \
+        protected_release_fail "The existing-release listing is invalid."
+    [[ "$existing_release_count" == "0" ]] || \
+        protected_release_fail "A release already exists for the release-candidate tag."
     if "$gh_binary" api "repos/$repository/git/ref/tags/$tag" >/dev/null 2>&1; then
         protected_release_fail "A tag already exists for the release candidate."
     fi

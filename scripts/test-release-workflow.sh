@@ -326,6 +326,19 @@ if [[ "$1" == "api" && "$*" == *"releases/tags/"* ]]; then
     fi
     exit 1
 fi
+if [[ "$1" == "api" && "$*" == *"/releases?per_page=100"* ]]; then
+    [[ "${FAKE_GH_MODE:-success}" != "release-list-fail" ]] || exit 1
+    if [[ "${FAKE_GH_MODE:-success}" == "release-list-invalid" ]]; then
+        printf '{}\n'
+        exit 0
+    fi
+    if [[ "${FAKE_GH_MODE:-success}" == "preexisting-draft" ]]; then
+        /usr/bin/jq -n --slurpfile release "$FAKE_GH_RECORD" '[ $release ]'
+    else
+        printf '[[]]\n'
+    fi
+    exit 0
+fi
 if [[ "$1" == "api" && "$*" == *"--method DELETE"* && "$*" == *"git/refs/tags/"* ]]; then
     /bin/rm -f "$FAKE_GH_TAG_STATE"
     exit 0
@@ -418,6 +431,9 @@ assert_release_candidate_record \
 [[ -f "$fake_gh_tag_state" ]] || fail "The verified RC transaction must create its tag."
 /usr/bin/grep -Fq -- '--method POST repos/owner/repository/git/refs' "$fake_gh_log" || \
     fail "The verified RC transaction must create its tag through the Git ref API."
+/usr/bin/grep -Fq -- \
+    '--paginate --slurp repos/owner/repository/releases?per_page=100' \
+    "$fake_gh_log" || fail "The verified RC transaction must inspect every existing release."
 if /usr/bin/grep -Eq -- '--method (DELETE|PATCH)|--clobber|force=' "$fake_gh_log"; then
     fail "A successful RC transaction must not delete, overwrite, or force-update state."
 fi
@@ -434,6 +450,36 @@ expect_failure "release already exists for the release-candidate tag" \
     --readback "$temporary_directory/preexisting-release.json"
 if /usr/bin/grep -Fq -- '--method POST' "$fake_gh_log"; then
     fail "A pre-existing release must prevent every RC mutation."
+fi
+
+for failure_mode in release-list-fail release-list-invalid; do
+    : > "$fake_gh_log"
+    /bin/rm -f "$fake_gh_tag_state"
+    export FAKE_GH_MODE="$failure_mode"
+    expect_failure "release" \
+        "$draft_creator" \
+        --repository owner/repository \
+        --commit 0123456789abcdef0123456789abcdef01234567 \
+        --candidate-number 1 \
+        --run-dir "$release_run" \
+        --readback "$temporary_directory/$failure_mode.json"
+    if /usr/bin/grep -Fq -- '--method POST' "$fake_gh_log"; then
+        fail "An unavailable or invalid release listing must prevent every RC mutation."
+    fi
+done
+
+: > "$fake_gh_log"
+/bin/rm -f "$fake_gh_tag_state"
+export FAKE_GH_MODE="preexisting-draft"
+expect_failure "release already exists for the release-candidate tag" \
+    "$draft_creator" \
+    --repository owner/repository \
+    --commit 0123456789abcdef0123456789abcdef01234567 \
+    --candidate-number 1 \
+    --run-dir "$release_run" \
+    --readback "$temporary_directory/preexisting-draft.json"
+if /usr/bin/grep -Fq -- '--method POST' "$fake_gh_log"; then
+    fail "A pre-existing draft must prevent every RC mutation."
 fi
 
 : > "$fake_gh_log"

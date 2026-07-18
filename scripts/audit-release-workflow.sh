@@ -193,6 +193,8 @@ for required_draft_text in \
     'prerelease=true' \
     'make_latest=false' \
     'release upload' \
+    '--paginate' \
+    '--slurp' \
     'git/ref/tags/' \
     'git/refs' \
     '--method DELETE' \
