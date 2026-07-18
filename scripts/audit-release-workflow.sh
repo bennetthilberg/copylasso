@@ -15,6 +15,9 @@ readonly verification_library="$repository_root/scripts/lib/release-workflow-ver
 readonly focused_tests="$repository_root/scripts/test-release-workflow.sh"
 readonly documentation="$repository_root/docs/release-workflow.md"
 readonly release_checklist="$repository_root/docs/release-checklist.md"
+readonly qualification_documentation="$repository_root/docs/release-candidate-qualification.md"
+readonly release_notes="$repository_root/docs/release-notes/0.1.0.md"
+readonly product_contract="$repository_root/docs/v0.1-product-contract.md"
 
 fail() {
     echo "$1" >&2
@@ -45,7 +48,10 @@ for readable in \
     "$ci_export_options" \
     "$verification_library" \
     "$documentation" \
-    "$release_checklist"; do
+    "$release_checklist" \
+    "$qualification_documentation" \
+    "$release_notes" \
+    "$product_contract"; do
     [[ -r "$readable" ]] || \
         fail "Protected-release contract file is missing: $(basename "$readable")"
 done
@@ -67,6 +73,16 @@ for prohibited_key in teamID provisioningProfiles installerSigningCertificate; d
 done
 
 require_text "$workflow" 'workflow_dispatch:'
+require_text "$workflow" 'candidate_number:'
+require_text "$workflow" 'COPYLASSO_CANDIDATE_NUMBER: ${{ inputs.candidate_number }}'
+require_text "$workflow" 'assert_release_candidate_number "$COPYLASSO_CANDIDATE_NUMBER"'
+require_text "$workflow" 'release_candidate_tag "$COPYLASSO_CANDIDATE_NUMBER"'
+if [[ "$(/usr/bin/grep -Fc '${{ inputs.' "$workflow")" != "1" ]]; then
+    fail "candidate_number must be the protected workflow's sole dispatch input."
+fi
+if /usr/bin/grep -Eq '\$\{\{[[:space:]]*inputs\.(tag|ref|mode)' "$workflow"; then
+    fail "The protected workflow must not accept an arbitrary tag, ref, or mode input."
+fi
 for prohibited_trigger in pull_request: pull_request_target: push: repository_dispatch: workflow_run:; do
     if /usr/bin/grep -Eq "^[[:space:]]*${prohibited_trigger}[[:space:]]*$" "$workflow"; then
         fail "The protected release workflow has a prohibited trigger: $prohibited_trigger"
@@ -121,8 +137,12 @@ require_text "$workflow" 'if: always()'
 
 build_line="$(/usr/bin/grep -n './scripts/build-release-candidate.sh' "$workflow" | /usr/bin/cut -d: -f1)"
 cleanup_line="$(/usr/bin/grep -n './scripts/cleanup-release-keychain.sh' "$workflow" | /usr/bin/cut -d: -f1)"
-draft_line="$(/usr/bin/grep -n './scripts/create-draft-release.sh' "$workflow" | /usr/bin/cut -d: -f1)"
-if ((cleanup_line <= build_line || draft_line <= cleanup_line)); then
+draft_count="$(/usr/bin/grep -Fc './scripts/create-draft-release.sh' "$workflow")"
+[[ "$draft_count" == "2" ]] || \
+    fail "The protected workflow must invoke one draft helper in each validated release mode."
+first_draft_line="$(/usr/bin/grep -n './scripts/create-draft-release.sh' "$workflow" | \
+    /usr/bin/head -n 1 | /usr/bin/cut -d: -f1)"
+if ((cleanup_line <= build_line || first_draft_line <= cleanup_line)); then
     fail "Credential cleanup must follow packaging and precede draft creation."
 fi
 
@@ -167,18 +187,33 @@ for required_build_text in \
 done
 
 for required_draft_text in \
+    '--candidate-number' \
+    'release_candidate_tag' \
     'draft=true' \
     'prerelease=true' \
     'make_latest=false' \
     'release upload' \
+    'git/ref/tags/' \
+    'git/refs' \
     '--method DELETE' \
-    'assert_release_draft_record'; do
+    'assert_release_draft_record' \
+    'assert_release_candidate_record' \
+    'assert_release_candidate_tag_record'; do
     require_text "$draft_creator" "$required_draft_text"
 done
+for required_candidate_verification_text in \
+    'assert_release_candidate_number' \
+    'release_candidate_tag' \
+    'assert_release_candidate_record' \
+    'assert_release_candidate_tag_record' \
+    'sha256:' \
+    'uploaded release asset digest does not match'; do
+    require_text "$verification_library" "$required_candidate_verification_text"
+done
 if /usr/bin/grep -Eiq -- \
-    'release (publish|edit.+--draft=false)|--clobber|make_latest=true' \
+    'release (publish|edit.+--draft=false)|--clobber|make_latest=true|--method PATCH|force=true' \
     "$draft_creator" "$workflow"; then
-    fail "The G28 workflow must never publish, overwrite, or promote its draft."
+    fail "The protected workflow must never publish, overwrite, force-update, or promote a draft."
 fi
 
 for required_documentation_text in \
@@ -193,11 +228,37 @@ for required_documentation_text in \
     'credential cleanup' \
     'Draft creation is transactional' \
     'Never publish the G28 rehearsal' \
+    'v0.1.0-rc.N' \
+    'candidate_number' \
+    'asset digests' \
+    'tag is created last' \
     'G29' \
     'G30'; do
     require_text "$documentation" "$required_documentation_text"
 done
 require_text "$release_checklist" 'Keep the dSYM and verification bundle restricted to the draft'
+for required_qualification_text in \
+    'Disposable Local Account Preflight' \
+    'Exact Candidate Smoke Matrix' \
+    'Accepted Evidence Gaps' \
+    'Release-blocking' \
+    'Known limitation' \
+    'Deferred' \
+    '127.0.0.1' \
+    'Do not resume VirtualBuddy'; do
+    require_text "$qualification_documentation" "$required_qualification_text"
+done
+for required_release_note_text in \
+    'CopyLasso 0.1.0' \
+    'Free and open source' \
+    'Private, offline, and local' \
+    'Locking the Mac during an active drag' \
+    'clipboard'; do
+    require_text "$release_notes" "$required_release_note_text"
+done
+require_text "$product_contract" '**Implementation status:** Release-candidate qualification'
+require_text "$product_contract" 'lock during an active drag'
+require_text "$product_contract" 'clipboard may change'
 
 if /usr/bin/grep -Eq 'set -x|TeamIdentifier=[A-Z0-9]{10}|[[:alnum:]._%+-]+@[[:alnum:].-]+\.[A-Za-z]{2,}|[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}' \
     "$workflow" \

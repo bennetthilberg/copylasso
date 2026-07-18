@@ -14,7 +14,7 @@ usage() {
 Usage: build-release-candidate.sh \
   --source-commit <40-character-commit> \
   --handoff /path/under/RUNNER_TEMP/<commit> \
-  --output-dir /path/to/repository/dist/g28/<commit>/run
+  --output-dir /path/to/repository/dist/<release-mode>/<commit>/run
 TEXT
     exit 64
 }

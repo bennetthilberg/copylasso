@@ -56,7 +56,7 @@ See the [privacy policy](PRIVACY.md), [security and privacy review](docs/securit
 - A selection belongs to the display where the drag begins and clamps at that display's edge. Start another capture to select text on a different display.
 - Protected or DRM-restricted content can appear blank or unavailable to screen capture. CopyLasso follows macOS capture restrictions and does not bypass them.
 - Immediately reusing capture without moving the pointer can briefly leave the ordinary pointer visible. Moving the pointer or pressing the mouse button restores the crosshair; selection remains functional.
-- Locking the Mac during an active drag is a narrow recovery edge case. After unlocking, quit and reopen CopyLasso before the next capture if selection does not return to idle.
+- Locking the Mac during an active drag can leave selection pending after unlock. Quit and reopen CopyLasso before another pointer action; if the retained selection is allowed to complete, the clipboard may change.
 - In the rare event that macOS accepts clearing the pasteboard but rejects the subsequent text write, the previous clipboard contents have already been cleared. CopyLasso reports failure and does not read or reconstruct the prior contents.
 - Updates are manual in version 0.1.
 

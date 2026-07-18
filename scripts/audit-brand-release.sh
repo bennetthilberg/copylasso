@@ -52,6 +52,8 @@ require_file "$repository_root/docs/brand-assets.md"
 require_file "$repository_root/docs/developer-id-signing.md"
 require_file "$repository_root/docs/release-checklist.md"
 require_file "$repository_root/docs/clean-install-testing.md"
+require_file "$repository_root/docs/release-candidate-qualification.md"
+require_file "$repository_root/docs/release-notes/0.1.0.md"
 
 if [[ -e CopyLasso/Assets.xcassets/AppIcon.appiconset ]]; then
     fail "The empty development AppIcon catalog must not coexist with AppIcon.icon."
@@ -194,6 +196,12 @@ require_text docs/clean-install-testing.md '## G29 Partial Rehearsal Record'
 require_text docs/clean-install-testing.md 'accepted evidence gaps'
 require_text docs/v0.1-product-contract.md 'Before download, that account must have no CopyLasso application, production'
 require_text docs/v0.1-product-contract.md 'preferences, production container, login item, or Screen Recording approval.'
+require_text docs/v0.1-product-contract.md '**Implementation status:** Release-candidate qualification'
+require_text docs/v0.1-product-contract.md 'clipboard may change'
+require_text docs/release-candidate-qualification.md '## Exact Candidate Smoke Matrix'
+require_text docs/release-candidate-qualification.md 'Do not resume VirtualBuddy'
+require_text docs/release-notes/0.1.0.md 'CopyLasso 0.1.0'
+require_text docs/release-notes/0.1.0.md 'Locking the Mac during an active drag'
 require_text docs/brand-assets.md 'The final pre-artifact exact-name review was repeated on July 14, 2026'
 require_text THIRD_PARTY_NOTICES.md 'KeyboardShortcuts 3.0.1'
 require_text THIRD_PARTY_NOTICES.md 'License: MIT'
@@ -217,7 +225,9 @@ readonly public_copy=(
     docs/brand-assets.md
     docs/developer-id-signing.md
     docs/clean-install-testing.md
+    docs/release-candidate-qualification.md
     docs/release-checklist.md
+    docs/release-notes/0.1.0.md
     docs/v0.1-product-contract.md
 )
 readonly prohibited_public_pattern='TODO|example\.com|your organization|template organization|[Tt]ext[Ss]niper|[Oo][Cc][Rr][Aa][Cc][Yy]'

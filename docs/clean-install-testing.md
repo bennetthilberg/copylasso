@@ -11,6 +11,18 @@ account has no CopyLasso application, production preferences, production
 container, login item, or Screen Recording approval. This document does not
 publish a release.
 
+## G30 Host Account Substitution
+
+G30 follows the bounded
+[`release-candidate-qualification.md`](release-candidate-qualification.md)
+procedure instead of this document's VM bridge steps. The maintainer account
+downloads and verifies all four private draft assets, then serves only the DMG
+and checksum on `127.0.0.1`. Safari in the disposable local account performs
+the genuine quarantined download after the system-wide Applications directory
+and that account's CopyLasso-owned state have been proved clean. The account is
+not signed in to GitHub, quarantine is not fabricated, and the accepted G29 VM
+gaps remain blocked. Do not resume VirtualBuddy for v0.1.
+
 ## Qualified Tool And Candidate
 
 The G29 host uses VirtualBuddy 2.1 build 325 from the project's official

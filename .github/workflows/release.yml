@@ -2,6 +2,11 @@ name: Protected Release Candidate
 
 on:
   workflow_dispatch:
+    inputs:
+      candidate_number:
+        description: Positive G30 candidate number; leave blank only for a G28 rehearsal
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -28,6 +33,7 @@ jobs:
       contents: write
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      COPYLASSO_CANDIDATE_NUMBER: ${{ inputs.candidate_number }}
     steps:
       - name: Check out exact protected commit
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
@@ -47,6 +53,18 @@ jobs:
 
       - name: Initialize ephemeral release paths
         run: |
+          source ./scripts/lib/release-workflow-verification.sh
+          release_goal=G28
+          release_subdirectory=g28
+          release_mode=rehearsal
+          release_tag="v0.1.0-g28.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"
+          if [[ -n "$COPYLASSO_CANDIDATE_NUMBER" ]]; then
+            assert_release_candidate_number "$COPYLASSO_CANDIDATE_NUMBER"
+            release_tag="$(release_candidate_tag "$COPYLASSO_CANDIDATE_NUMBER")"
+            release_goal=G30
+            release_subdirectory=g30
+            release_mode=candidate
+          fi
           release_keychain_password="$(/usr/bin/openssl rand -hex 32)"
           echo "::add-mask::$release_keychain_password"
           printf 'COPYLASSO_RELEASE_KEYCHAIN_PASSWORD=%s\n' \
@@ -57,14 +75,14 @@ jobs:
             "$RUNNER_TEMP/copylasso-release-state/copylasso-release.keychain-db" \
             >> "$GITHUB_ENV"
           printf 'COPYLASSO_RELEASE_HANDOFF=%s\n' \
-            "$RUNNER_TEMP/CopyLasso/G28/$GITHUB_SHA" >> "$GITHUB_ENV"
+            "$RUNNER_TEMP/CopyLasso/$release_goal/$GITHUB_SHA" >> "$GITHUB_ENV"
           printf 'COPYLASSO_RELEASE_RUN_DIR=%s\n' \
-            "$GITHUB_WORKSPACE/dist/g28/$GITHUB_SHA/run-$GITHUB_RUN_ATTEMPT" \
+            "$GITHUB_WORKSPACE/dist/$release_subdirectory/$GITHUB_SHA/run-$GITHUB_RUN_ATTEMPT" \
             >> "$GITHUB_ENV"
-          printf 'COPYLASSO_RELEASE_DRAFT_TAG=%s\n' \
-            "v0.1.0-g28.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
+          printf 'COPYLASSO_RELEASE_DRAFT_TAG=%s\n' "$release_tag" >> "$GITHUB_ENV"
+          printf 'COPYLASSO_RELEASE_MODE=%s\n' "$release_mode" >> "$GITHUB_ENV"
           printf 'COPYLASSO_RELEASE_READBACK=%s\n' \
-            "$GITHUB_WORKSPACE/dist/g28/$GITHUB_SHA/draft-release.json" \
+            "$GITHUB_WORKSPACE/dist/$release_subdirectory/$GITHUB_SHA/draft-release.json" \
             >> "$GITHUB_ENV"
 
       - name: Import protected release credentials
@@ -98,9 +116,18 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          ./scripts/create-draft-release.sh \
-            --repository "$GITHUB_REPOSITORY" \
-            --commit "$GITHUB_SHA" \
-            --tag "$COPYLASSO_RELEASE_DRAFT_TAG" \
-            --run-dir "$COPYLASSO_RELEASE_RUN_DIR" \
-            --readback "$COPYLASSO_RELEASE_READBACK"
+          if [[ "$COPYLASSO_RELEASE_MODE" == "candidate" ]]; then
+            ./scripts/create-draft-release.sh \
+              --repository "$GITHUB_REPOSITORY" \
+              --commit "$GITHUB_SHA" \
+              --candidate-number "$COPYLASSO_CANDIDATE_NUMBER" \
+              --run-dir "$COPYLASSO_RELEASE_RUN_DIR" \
+              --readback "$COPYLASSO_RELEASE_READBACK"
+          else
+            ./scripts/create-draft-release.sh \
+              --repository "$GITHUB_REPOSITORY" \
+              --commit "$GITHUB_SHA" \
+              --tag "$COPYLASSO_RELEASE_DRAFT_TAG" \
+              --run-dir "$COPYLASSO_RELEASE_RUN_DIR" \
+              --readback "$COPYLASSO_RELEASE_READBACK"
+          fi
