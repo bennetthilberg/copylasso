@@ -199,7 +199,12 @@ if [[ "$release_mode" == "candidate" ]]; then
         -f "ref=refs/tags/$tag" \
         -f "sha=$commit" \
         >/dev/null; then
-        protected_release_fail "The release-candidate transaction could not create its immutable tag."
+        if ! "$gh_binary" api \
+            "repos/$repository/git/ref/tags/$tag" > "$candidate_tag_record"; then
+            protected_release_fail \
+                "The release-candidate transaction could not create its immutable tag."
+        fi
+        assert_release_candidate_tag_record "$candidate_tag_record" "$commit" "$tag"
     fi
     candidate_tag_created="true"
     if ! "$gh_binary" api \

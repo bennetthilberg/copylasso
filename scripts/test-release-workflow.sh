@@ -357,6 +357,7 @@ fi
 if [[ "$1" == "api" && "$*" == *"--method POST"* && "$*" == *"git/refs"* ]]; then
     [[ "${FAKE_GH_MODE:-success}" != "tag-create-fail" ]] || exit 1
     : > "$FAKE_GH_TAG_STATE"
+    [[ "${FAKE_GH_MODE:-success}" != "tag-create-uncertain" ]] || exit 1
     /bin/cat "$FAKE_GH_TAG_RECORD"
     exit 0
 fi
@@ -436,6 +437,21 @@ assert_release_candidate_record \
     "$fake_gh_log" || fail "The verified RC transaction must inspect every existing release."
 if /usr/bin/grep -Eq -- '--method (DELETE|PATCH)|--clobber|force=' "$fake_gh_log"; then
     fail "A successful RC transaction must not delete, overwrite, or force-update state."
+fi
+
+: > "$fake_gh_log"
+/bin/rm -f "$fake_gh_tag_state"
+export FAKE_GH_MODE="tag-create-uncertain"
+"$draft_creator" \
+    --repository owner/repository \
+    --commit 0123456789abcdef0123456789abcdef01234567 \
+    --candidate-number 1 \
+    --run-dir "$release_run" \
+    --readback "$temporary_directory/uncertain-tag-readback.json"
+[[ -f "$fake_gh_tag_state" ]] || \
+    fail "An ambiguously created exact tag must be retained after successful readback."
+if /usr/bin/grep -Fq -- '--method DELETE' "$fake_gh_log"; then
+    fail "An ambiguously created exact tag must complete without rollback."
 fi
 
 : > "$fake_gh_log"
