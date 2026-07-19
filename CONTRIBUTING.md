@@ -1,6 +1,6 @@
 # Contributing to CopyLasso
 
-Thank you for helping build CopyLasso. The project is still in early pre-release development, so focused changes that preserve the approved v0.1 scope are the easiest to review.
+Thank you for helping build CopyLasso. CopyLasso 0.1.0 is publicly released. Focused changes that preserve its privacy and reliability contracts are the easiest to review; new product scope requires a separately approved post-v0.1 roadmap and product-contract update.
 
 ## Before Making a Change
 

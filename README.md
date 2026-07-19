@@ -4,7 +4,7 @@
 
 CopyLasso is a free and open-source macOS utility for copying visible text from anywhere on screen. Press `⇧⌘2`, drag around text, and receive recognized plain text on the clipboard. Recognition runs locally with Apple's Vision framework, and CopyLasso does not retain a screenshot or OCR history.
 
-> **Pre-release status:** Version 0.1.0 is being prepared and is not available for public download yet. This page previews the installation and usage flow that the signed, notarized release will provide.
+CopyLasso 0.1.0 is the latest public release.
 
 ## Requirements
 
@@ -12,17 +12,25 @@ CopyLasso is a free and open-source macOS utility for copying visible text from 
 - An Apple silicon or Intel Mac; the release is a native Universal 2 application
 - Screen Recording permission for region capture
 
-## Installation Preview
+## Install CopyLasso
 
-The public release will be distributed as a signed and notarized disk image from this repository's GitHub Releases page. When it is published:
+Download CopyLasso 0.1.0 from the [release page](https://github.com/bennetthilberg/copylasso/releases/tag/v0.1.0):
 
-1. Download `CopyLasso-0.1.0.dmg` and compare its SHA-256 checksum with the value on the release page.
-2. Open the disk image and drag CopyLasso into Applications.
-3. Open CopyLasso. It runs in the menu bar and does not add a Dock icon.
-4. Complete the short first-run setup and keep the suggested `⇧⌘2` shortcut or record another one.
-5. The first capture asks macOS for Screen Recording permission. Approve CopyLasso, then choose **Quit & Reopen** if macOS offers it.
+- [CopyLasso-0.1.0.dmg](https://github.com/bennetthilberg/copylasso/releases/download/v0.1.0/CopyLasso-0.1.0.dmg)
+- [CopyLasso-0.1.0.dmg.sha256](https://github.com/bennetthilberg/copylasso/releases/download/v0.1.0/CopyLasso-0.1.0.dmg.sha256)
 
-No unsigned download or placeholder release link is provided before the qualified artifact is published.
+Place both files in the same folder, then verify the download before opening it:
+
+```sh
+shasum -a 256 -c CopyLasso-0.1.0.dmg.sha256
+```
+
+The result must report `CopyLasso-0.1.0.dmg: OK`. Then:
+
+1. Open `CopyLasso-0.1.0.dmg` and drag CopyLasso into Applications.
+2. Open CopyLasso. It runs in the menu bar and does not add a Dock icon.
+3. Complete the short first-run setup and keep the suggested `⇧⌘2` shortcut or record another one.
+4. The first capture asks macOS for Screen Recording permission. Approve CopyLasso, then choose **Quit & Reopen** if macOS offers it.
 
 ## Use CopyLasso
 
