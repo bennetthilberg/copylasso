@@ -100,8 +100,23 @@ G28-only and reject release-candidate tags. G30 therefore has two ordered phases
    `main` commit through the complete quality gate and `release` environment. The job must sign,
    notarize, staple, package, clean credentials, and transactionally create a draft prerelease with
    the same four-asset contract. Readback must prove the exact target commit, tag, draft/prerelease
-   state, asset names, and DMG checksum. Any later tracked change abandons that candidate and uses a
-   new number.
+   state, asset names, GitHub asset digests, and DMG checksum. Any later tracked change abandons that
+   candidate and uses a new number.
+
+`candidate_number` is the workflow's sole input. Leaving it blank preserves the completed G28
+rehearsal path; a positive canonical integer selects G30. Values with a sign, leading zero, decimal,
+whitespace, or tag text are rejected before they influence a tag or path. No arbitrary tag, ref, or
+mode input exists.
+
+The G30 helper derives the RC tag independently, refuses both an existing release and an existing
+Git ref, and uploads without replacement. It reads back the draft body from the reviewed
+[`release-notes/0.1.0.md`](release-notes/0.1.0.md), the exact four asset names, and every available
+`sha256:` asset digest. The checksum record must agree with both the local DMG and its uploaded
+digest. Only after those checks pass is the lightweight tag created directly on the exact commit;
+the tag is created last so an upload or validation failure cannot strand an RC ref. Final tag and
+release readback completes the transaction. On a later failure, cleanup deletes only the draft and
+tag created by that invocation. The helper never patches, force-updates, moves, or overwrites a ref
+or release.
 
 The G28 rehearsal draft and its assets cannot serve as G30 evidence. Only the RC draft created by
 the post-merge protected run supplies G30's DMG and checksum.
@@ -112,6 +127,13 @@ then serve only those two files temporarily on `127.0.0.1`. Download them throug
 disposable local test account so macOS creates genuine browser quarantine without signing that
 account in to GitHub. Stop the server and remove the staging copy after qualification; never add a
 quarantine attribute manually.
+
+The reviewed release notes and qualification procedure land before candidate creation. Therefore
+the Safari qualification download occurs after the final draft body exists and also serves as the
+fresh browser readback required by G30; an older G28/G29 download or a second inferred download does
+not count. Follow [`release-candidate-qualification.md`](release-candidate-qualification.md) for the
+clean-account preflight, exact smoke matrix, accepted gaps, risk classification, and evidence
+boundary.
 
 ## Draft Assets And Local Readback
 

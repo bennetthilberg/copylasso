@@ -25,6 +25,6 @@ All notable changes to CopyLasso will be documented in this file.
 - OCR targets ordinary horizontal single-column U.S. English text; complex layouts, handwriting, and strongly rotated text are outside the initial release target.
 - Selection is confined to the display where the drag begins, and protected content can be blank or unavailable under macOS capture restrictions.
 - Immediate stationary-pointer reuse can briefly delay the visible crosshair until movement or mouse-down.
-- Locking during an active drag can require quitting and reopening CopyLasso after unlock.
+- Locking during an active drag can leave selection pending after unlock. Quit and reopen CopyLasso before another pointer action; if the retained selection completes, the clipboard may change.
 - A rare pasteboard clear-success followed by text-write rejection can leave the clipboard empty; CopyLasso does not read or restore prior contents.
 - Updates are manual.

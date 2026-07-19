@@ -95,6 +95,28 @@ assert_release_draft_tag() {
         protected_release_fail "The G28 draft tag name is invalid."
 }
 
+assert_release_candidate_number() {
+    local candidate_number="$1"
+
+    [[ "$candidate_number" =~ ^[1-9][0-9]*$ ]] || \
+        protected_release_fail \
+            "The release-candidate number must be a positive canonical integer."
+}
+
+release_candidate_tag() {
+    local candidate_number="$1"
+
+    assert_release_candidate_number "$candidate_number"
+    printf 'v0.1.0-rc.%s\n' "$candidate_number"
+}
+
+assert_release_candidate_tag() {
+    local candidate_tag="$1"
+
+    [[ "$candidate_tag" =~ ^v0\.1\.0-rc\.[1-9][0-9]*$ ]] || \
+        protected_release_fail "The release-candidate tag name is invalid."
+}
+
 assert_release_workflow_assets() {
     local g28_asset_run_directory="$1"
     local g28_asset_verification_bundle="$2"
@@ -127,36 +149,121 @@ release_draft_asset_names() {
         ' | LC_ALL=C /usr/bin/sort
 }
 
-assert_release_draft_record() {
-    local g28_record="$1"
-    local g28_expected_commit="$2"
-    local g28_expected_tag="$3"
-    local g28_expected_assets
-    local g28_actual_assets
+assert_release_record_metadata() {
+    local release_record="$1"
+    local expected_commit="$2"
+    local expected_tag="$3"
+    local expected_assets
+    local actual_assets
 
-    [[ -f "$g28_record" ]] || protected_release_fail "The draft-release readback is missing."
-    /usr/bin/plutil -p "$g28_record" >/dev/null || \
+    [[ -f "$release_record" ]] || protected_release_fail "The draft-release readback is missing."
+    /usr/bin/plutil -p "$release_record" >/dev/null || \
         protected_release_fail "The draft-release readback is not valid JSON."
-    assert_full_release_commit "$g28_expected_commit"
-    assert_release_draft_tag "$g28_expected_tag"
+    assert_full_release_commit "$expected_commit"
 
-    [[ "$(/usr/bin/plutil -extract draft raw -o - "$g28_record" 2>/dev/null || true)" == "true" ]] || \
+    [[ "$(/usr/bin/plutil -extract draft raw -o - "$release_record" 2>/dev/null || true)" == "true" ]] || \
         protected_release_fail "The GitHub release is not a draft."
-    [[ "$(/usr/bin/plutil -extract prerelease raw -o - "$g28_record" 2>/dev/null || true)" == "true" ]] || \
+    [[ "$(/usr/bin/plutil -extract prerelease raw -o - "$release_record" 2>/dev/null || true)" == "true" ]] || \
         protected_release_fail "The GitHub release is not marked as a prerelease."
-    [[ "$(/usr/bin/plutil -extract tag_name raw -o - "$g28_record" 2>/dev/null || true)" == "$g28_expected_tag" ]] || \
+    [[ "$(/usr/bin/plutil -extract tag_name raw -o - "$release_record" 2>/dev/null || true)" == "$expected_tag" ]] || \
         protected_release_fail "The draft release has the wrong tag name."
-    [[ "$(/usr/bin/plutil -extract target_commitish raw -o - "$g28_record" 2>/dev/null || true)" == "$g28_expected_commit" ]] || \
+    [[ "$(/usr/bin/plutil -extract target_commitish raw -o - "$release_record" 2>/dev/null || true)" == "$expected_commit" ]] || \
         protected_release_fail "The draft release targets the wrong commit."
 
-    g28_expected_assets="$(printf '%s\n' \
+    expected_assets="$(printf '%s\n' \
         "$COPYLASSO_G28_CHECKSUM" \
         "$COPYLASSO_G28_DMG" \
         "$COPYLASSO_G28_DSYM" \
         "$COPYLASSO_G28_VERIFICATION" | LC_ALL=C /usr/bin/sort)"
-    g28_actual_assets="$(release_draft_asset_names "$g28_record")"
-    [[ "$g28_actual_assets" == "$g28_expected_assets" ]] || \
+    actual_assets="$(release_draft_asset_names "$release_record")"
+    [[ "$actual_assets" == "$expected_assets" ]] || \
         protected_release_fail "The draft release has an incomplete or unexpected asset set."
+}
+
+assert_release_draft_record() {
+    local g28_record="$1"
+    local g28_expected_commit="$2"
+    local g28_expected_tag="$3"
+    assert_release_draft_tag "$g28_expected_tag"
+    assert_release_record_metadata "$g28_record" "$g28_expected_commit" "$g28_expected_tag"
+}
+
+assert_release_candidate_record() {
+    local candidate_record="$1"
+    local expected_commit="$2"
+    local candidate_number="$3"
+    local release_run_directory="$4"
+    local reviewed_notes="$5"
+    local candidate_tag
+    local expected_notes
+    local actual_notes
+    local candidate_asset_name
+    local candidate_asset_path
+    local expected_digest
+    local actual_digest
+    local expected_checksum_line
+    local actual_checksum_line
+
+    candidate_tag="$(release_candidate_tag "$candidate_number")"
+    assert_release_record_metadata "$candidate_record" "$expected_commit" "$candidate_tag"
+    assert_release_workflow_assets \
+        "$release_run_directory" \
+        "$release_run_directory/$COPYLASSO_G28_VERIFICATION"
+    [[ -f "$reviewed_notes" ]] || \
+        protected_release_fail "The reviewed release notes are missing."
+    expected_notes="$(/bin/cat "$reviewed_notes")"
+    actual_notes="$(/usr/bin/plutil -extract body raw -o - "$candidate_record" 2>/dev/null || true)"
+    [[ "$actual_notes" == "$expected_notes" ]] || \
+        protected_release_fail "The release notes differ from the reviewed source."
+
+    for candidate_asset_name in \
+        "$COPYLASSO_G28_DMG" \
+        "$COPYLASSO_G28_CHECKSUM" \
+        "$COPYLASSO_G28_DSYM" \
+        "$COPYLASSO_G28_VERIFICATION"; do
+        candidate_asset_path="$release_run_directory/$candidate_asset_name"
+        expected_digest="sha256:$(/usr/bin/shasum -a 256 "$candidate_asset_path" | \
+            /usr/bin/awk '{print $1}')"
+        actual_digest="$(/usr/bin/jq -er --arg asset_name "$candidate_asset_name" '
+            [.assets[] | select(.name == $asset_name) | .digest]
+            | if length == 1 then .[0] else empty end
+        ' "$candidate_record" 2>/dev/null || true)"
+        [[ "$actual_digest" == "$expected_digest" ]] || \
+            protected_release_fail \
+                "An uploaded release asset digest does not match the qualified local asset."
+    done
+
+    expected_checksum_line="$(/usr/bin/shasum -a 256 \
+        "$release_run_directory/$COPYLASSO_G28_DMG" | \
+        /usr/bin/awk -v name="$COPYLASSO_G28_DMG" '{print $1 "  " name}')"
+    actual_checksum_line="$(/bin/cat \
+        "$release_run_directory/$COPYLASSO_G28_CHECKSUM")"
+    [[ "$actual_checksum_line" == "$expected_checksum_line" ]] || \
+        protected_release_fail \
+            "The release-candidate checksum does not match the qualified disk image."
+}
+
+assert_release_candidate_tag_record() {
+    local tag_record="$1"
+    local expected_commit="$2"
+    local expected_tag="$3"
+
+    [[ -f "$tag_record" ]] || protected_release_fail "The release-candidate tag readback is missing."
+    /usr/bin/plutil -p "$tag_record" >/dev/null || \
+        protected_release_fail "The release-candidate tag readback is not valid JSON."
+    assert_full_release_commit "$expected_commit"
+    assert_release_candidate_tag "$expected_tag"
+    [[ "$(/usr/bin/plutil -extract ref raw -o - "$tag_record" 2>/dev/null || true)" == \
+        "refs/tags/$expected_tag" ]] || \
+        protected_release_fail "The release-candidate tag readback has the wrong ref."
+    [[ "$(/usr/bin/plutil -extract object.type raw -o - "$tag_record" 2>/dev/null || true)" == \
+        "commit" ]] || \
+        protected_release_fail \
+            "The release-candidate tag does not point directly to the candidate commit."
+    [[ "$(/usr/bin/plutil -extract object.sha raw -o - "$tag_record" 2>/dev/null || true)" == \
+        "$expected_commit" ]] || \
+        protected_release_fail \
+            "The release-candidate tag does not point directly to the candidate commit."
 }
 
 assert_release_log_is_public_safe() {

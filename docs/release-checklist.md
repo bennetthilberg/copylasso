@@ -50,15 +50,21 @@ Record every command, artifact name, SHA-256 checksum, commit, tag, signing iden
 
 ## G30 - Release Candidate Qualification
 
+For G30, "remaining" means the rows in this section plus exact-candidate revalidation of the
+applicable automated G25-G29 gates. Earlier unchecked template boxes retain their recorded goal
+evidence and are not silently reclassified. Use
+[`release-candidate-qualification.md`](release-candidate-qualification.md) for the bounded host
+matrix and accepted-risk record.
+
 - [ ] Phase 1: add reviewed RC mode support to the protected workflow, draft helper, static audit, and regression tests, then obtain separate approval to merge that source-enablement pull request to protected `main`.
 - [ ] Phase 2: dispatch the post-merge protected workflow from that exact `main` commit with a new positive `candidate_number`; require it to derive and create the immutable `v0.1.0-rc.N` tag and corresponding draft prerelease without accepting an arbitrary tag.
-- [ ] Read back the RC draft as `draft: true` and `prerelease: true`; verify its exact target commit, four required assets, DMG checksum, and refusal to overwrite an existing tag or release.
+- [ ] Read back the RC draft as `draft: true` and `prerelease: true`; verify its reviewed notes, exact target commit, four required assets, GitHub asset digests, DMG checksum, and refusal to overwrite an existing tag or release. Collision and rollback behavior is proven through focused fake-GitHub regressions rather than a second privileged live dispatch.
 - [ ] Download the private draft DMG and checksum with authenticated maintainer tooling, verify them, then expose only those files through a temporary loopback-only server for the disposable account's Safari download. Do not sign the disposable account in to GitHub or add quarantine manually.
 - [ ] Confirm canonical and hosted CI, package verification, host manual QA, Intel automated checks, and a fresh browser-download/Gatekeeper/install/core-capture smoke in a disposable local macOS user account on the maintainer's latest-stable host all identify that same commit and artifact checksum.
 - [ ] Before downloading the candidate in that account, verify CopyLasso's application, production preferences, production container, login item, and Screen Recording approval are absent so stale state cannot satisfy first-launch or permission-recovery checks.
 - [ ] Carry the G29 partial rehearsal and every accepted VM/reinstall evidence gap into the candidate risk record; do not describe a Blocked row as qualified.
 - [ ] Classify every issue as release-blocking, known limitation, or deferred; any fix creates a new candidate and reruns the complete gate.
-- [ ] Prepare final release notes from the qualified implementation and evidence, then verify the draft-release artifacts through a fresh browser download.
+- [ ] Land final release notes and the risk template before candidate creation, then use the disposable account's one fresh Safari download after draft creation as the candidate qualification and final browser readback.
 - [ ] Confirm the release remains unpublished and the candidate tag, artifacts, notes, changelog, and documentation identify the same version/build and commit.
 
 ## G31 - Final Tag And Publication
