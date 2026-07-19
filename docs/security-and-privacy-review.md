@@ -1,6 +1,6 @@
 # Security And Privacy Review
 
-This review describes CopyLasso's pre-release v0.1 implementation boundary. It reconciles the source, built products, dependency graph, entitlements, persistence, and public privacy promises.
+This review describes the public CopyLasso 0.1.0 implementation boundary. It reconciles the source, built products, dependency graph, entitlements, persistence, and public privacy promises.
 
 ## Result
 
@@ -49,7 +49,7 @@ An inspected development container contained preference/window metadata, one 240
 
 Settings links ask macOS to open the user's default browser. CopyLasso itself does not fetch those URLs. Releases are downloaded manually; v0.1 has no automatic updater.
 
-Local Apple Development signing adds `com.apple.security.get-task-allow` to both audited development-signed products. That key is not present in the tracked product entitlement. G26 must read back the final Developer ID-signed archive and reject `get-task-allow` or any entitlement beyond App Sandbox before notarization.
+Local Apple Development signing adds `com.apple.security.get-task-allow` to audited development-signed products. That key is not present in the tracked product entitlement or shipped Developer ID artifact. The released application was verified to contain only the Boolean App Sandbox entitlement, with no `get-task-allow` or unreviewed capability, before and after notarization.
 
 ## Trust Boundaries And Misuse Cases
 

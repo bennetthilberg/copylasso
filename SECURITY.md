@@ -2,7 +2,11 @@
 
 ## Supported Versions
 
-CopyLasso is in pre-release development and does not yet have a supported public release. Security reports about the source, planned application behavior, build process, or repository configuration are still welcome.
+CopyLasso 0.1.x is the currently supported public release line. Security reports about the released application, source, build process, or repository configuration are welcome.
+
+| Version | Supported |
+| --- | --- |
+| 0.1.x | Yes |
 
 ## Report a Vulnerability Privately
 

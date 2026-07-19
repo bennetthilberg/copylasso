@@ -69,10 +69,10 @@ matrix and accepted-risk record.
 
 ## G31 - Final Tag And Publication
 
-- [ ] Confirm every required prior gate is green, every accepted evidence gap is recorded, and no source or artifact has changed since candidate qualification.
-- [ ] Create the final `v0.1.0` tag on the same commit as the qualified release candidate and verify the tag remotely.
-- [ ] Date the `0.1.0` changelog entry, update the README download link and checksum instructions, and verify the final documentation commit relationship required by the roadmap.
-- [ ] Publish only the exact qualified DMG and checksum assets; never replace an asset under an existing release tag.
-- [ ] Download the public artifacts in a fresh browser session, verify hashes, signatures, notarization, version/build, and successful launch, then record the public URLs and results.
-- [ ] Confirm the release page, repository homepage, security policy, contribution link, privacy policy, license, and third-party notices are reachable.
-- [ ] Announce completion only after the post-publication smoke check is green.
+- [x] Confirm every required prior gate is green, every accepted evidence gap is recorded, and no source or artifact has changed since candidate qualification.
+- [x] Create the final `v0.1.0` tag on the same commit as the qualified release candidate and verify the tag remotely.
+- [x] Date the `0.1.0` changelog entry, update the README download link and checksum instructions, and verify the final documentation commit relationship required by the roadmap.
+- [x] Publish only the exact qualified DMG and checksum assets; never replace an asset under an existing release tag.
+- [x] Download the public artifacts in a fresh browser session, verify hashes, signatures, notarization, version/build, and successful launch, then record the public URLs and results.
+- [x] Confirm the release page, repository homepage, security policy, contribution link, privacy policy, license, and third-party notices are reachable.
+- [x] Announce completion only after the post-publication smoke check is green.

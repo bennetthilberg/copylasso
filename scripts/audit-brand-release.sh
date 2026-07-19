@@ -147,7 +147,7 @@ fi
 
 for text in \
     '## Requirements' \
-    '## Installation Preview' \
+    '## Install CopyLasso' \
     '## Use CopyLasso' \
     '## Permission and Recovery' \
     '## Privacy' \
@@ -160,8 +160,14 @@ for text in \
     require_text README.md "$text"
 done
 
-require_text CHANGELOG.md '## 0.1.0 - Unreleased'
+require_text README.md 'https://github.com/bennetthilberg/copylasso/releases/tag/v0.1.0'
+require_text README.md 'https://github.com/bennetthilberg/copylasso/releases/download/v0.1.0/CopyLasso-0.1.0.dmg'
+require_text README.md 'https://github.com/bennetthilberg/copylasso/releases/download/v0.1.0/CopyLasso-0.1.0.dmg.sha256'
+require_text CHANGELOG.md '## 0.1.0 - 2026-07-19'
 require_text CHANGELOG.md 'pasteboard clear-success followed by text-write rejection'
+require_text SECURITY.md 'CopyLasso 0.1.x'
+require_text CONTRIBUTING.md 'CopyLasso 0.1.0 is publicly released.'
+require_text PRIVACY.md '**Status:** Approved privacy contract for CopyLasso 0.1.0.'
 require_text docs/release-checklist.md '## G26 - Developer ID Signing And Notarization'
 require_text docs/release-checklist.md '## G27 - Reproducible Release Package'
 require_text docs/release-checklist.md '## G28 - Protected Release Workflow'
@@ -196,12 +202,18 @@ require_text docs/clean-install-testing.md '## G29 Partial Rehearsal Record'
 require_text docs/clean-install-testing.md 'accepted evidence gaps'
 require_text docs/v0.1-product-contract.md 'Before download, that account must have no CopyLasso application, production'
 require_text docs/v0.1-product-contract.md 'preferences, production container, login item, or Screen Recording approval.'
-require_text docs/v0.1-product-contract.md '**Implementation status:** Release-candidate qualification'
+require_text docs/v0.1-product-contract.md '**Implementation status:** Released as 0.1.0 on July 19, 2026'
 require_text docs/v0.1-product-contract.md 'clipboard may change'
+require_text docs/security-and-privacy-review.md \
+    'This review describes the public CopyLasso 0.1.0 implementation boundary.'
 require_text docs/release-candidate-qualification.md '## Exact Candidate Smoke Matrix'
 require_text docs/release-candidate-qualification.md 'Do not resume VirtualBuddy'
 require_text docs/release-notes/0.1.0.md 'CopyLasso 0.1.0'
 require_text docs/release-notes/0.1.0.md 'Locking the Mac during an active drag'
+if [[ "$(/usr/bin/sed -n '/^## G31 - Final Tag And Publication$/,$p' \
+    docs/release-checklist.md | /usr/bin/grep -c '^- \[x\]')" != 7 ]]; then
+    fail "Every G31 publication checklist row must be complete."
+fi
 require_text docs/brand-assets.md 'The final pre-artifact exact-name review was repeated on July 14, 2026'
 require_text THIRD_PARTY_NOTICES.md 'KeyboardShortcuts 3.0.1'
 require_text THIRD_PARTY_NOTICES.md 'License: MIT'

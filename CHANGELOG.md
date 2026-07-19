@@ -4,7 +4,7 @@ All notable changes to CopyLasso will be documented in this file.
 
 ## Unreleased
 
-## 0.1.0 - Unreleased
+## 0.1.0 - 2026-07-19
 
 ### Added
 
