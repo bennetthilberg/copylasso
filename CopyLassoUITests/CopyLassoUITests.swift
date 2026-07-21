@@ -220,6 +220,21 @@ final class CopyLassoUITests: XCTestCase {
   }
 
   @MainActor
+  func testSettingsOpenedFromMenuWhileFinderIsFrontmostAppearsImmediately() {
+    let app = completedApp()
+    app.launch()
+    defer { app.terminate() }
+
+    XCUIApplication(bundleIdentifier: "com.apple.finder").activate()
+    openMenu(in: app)
+    menuItem("Settings…", in: app).click()
+
+    XCTAssertTrue(
+      app.staticTexts["copylasso.settings.title"].waitForExistence(timeout: 5)
+    )
+  }
+
+  @MainActor
   private func assertAccessibleText(
     _ element: XCUIElement,
     equals expected: String,

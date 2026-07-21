@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct MenuBarMenuView: View {
+  @Environment(\.openSettings) private var openSettings
   @Environment(\.openWindow) private var openWindow
 
   let commandHandler: MenuBarCommandHandler
@@ -14,8 +15,10 @@ struct MenuBarMenuView: View {
 
     Divider()
 
-    SettingsLink {
-      Text("Settings…")
+    Button("Settings…") {
+      commandHandler.openSettings {
+        openSettings()
+      }
     }
     .keyboardShortcut(",", modifiers: .command)
     .accessibilityIdentifier("copylasso.menu.settings")
