@@ -53,6 +53,9 @@ fi
 /usr/bin/grep -Fq 'Settings now appears immediately' \
     "$repository_root/docs/release-notes/0.1.1.md" || \
     fail "The 0.1.1 notes must describe the Settings presentation fix."
+/usr/bin/grep -Fq '| Build number | `2` |' \
+    "$repository_root/docs/architecture/build-configuration.md" || \
+    fail "The public build-configuration reference must identify build 2."
 
 (
     # shellcheck source=scripts/lib/developer-id-verification.sh
