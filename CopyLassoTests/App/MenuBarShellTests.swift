@@ -56,8 +56,8 @@ final class MenuBarShellTests: XCTestCase {
   func testAboutMetadataProvidesFinalBrandAndLegalDetails() {
     let metadata = AboutMetadata(
       infoDictionary: [
-        "CFBundleShortVersionString": "0.1.0",
-        "CFBundleVersion": "1",
+        "CFBundleShortVersionString": "0.1.1",
+        "CFBundleVersion": "2",
       ]
     )
 

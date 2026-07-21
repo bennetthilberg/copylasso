@@ -48,9 +48,9 @@ The script deliberately uses the saved `copylasso-notary` profile. It never acce
 
 Each run produces:
 
-- `CopyLasso-0.1.0.dmg`, a signed, notarized, stapled, read-only UDZO image;
-- `CopyLasso-0.1.0.dmg.sha256`, the public-form SHA-256 checksum record;
-- `CopyLasso-0.1.0.dSYM.zip`, the matching private symbol archive;
+- `CopyLasso-0.1.1.dmg`, a signed, notarized, stapled, read-only UDZO image;
+- `CopyLasso-0.1.1.dmg.sha256`, the public-form SHA-256 checksum record;
+- `CopyLasso-0.1.1.dSYM.zip`, the matching private symbol archive;
 - the accepted submission record and complete Apple diagnostic log;
 - payload, UUID, signature, stapling, and final-verification evidence; and
 - `release-evidence.txt`, containing only portable metadata rather than local paths or account values.
@@ -69,7 +69,7 @@ The package script calls the verifier before it reports success. It can also be 
   "$PWD/dist/g27/$PACKAGING_COMMIT/run-1"
 ```
 
-Verification covers the checksum, Developer ID disk-image signature and timestamp, accepted notarization records, stapled ticket, Gatekeeper disk-image assessment, UDZO format, read-only mount, exact volume layout, embedded application identity and signatures, payload manifest, version `0.1.0`, build `1`, production bundle identifier, both architectures, and dSYM UUIDs.
+Verification covers the checksum, Developer ID disk-image signature and timestamp, accepted notarization records, stapled ticket, Gatekeeper disk-image assessment, UDZO format, read-only mount, exact volume layout, embedded application identity and signatures, payload manifest, version `0.1.1`, build `2`, production bundle identifier, both architectures, and dSYM UUIDs.
 
 Compare the two complete runs:
 
@@ -81,7 +81,7 @@ Compare the two complete runs:
 
 The comparison requires identical mounted application manifests and normalized provenance. The DMG byte streams, checksums, sizes, filesystem metadata, signatures, tickets, and submission identifiers may differ because each run is independently signed and notarized.
 
-Finally, mount the selected verified image in Finder, confirm that it is read-only, drag CopyLasso through its Applications link only if no existing installation would be overwritten, launch that installed copy, verify `Version 0.1.0 (1)`, then quit it. Preserve the selected DMG, checksum, dSYM archive, and evidence under ignored `dist/`.
+Finally, mount the selected verified image in Finder, confirm that it is read-only, drag CopyLasso through its Applications link only if no existing installation would be overwritten, launch that installed copy, verify `Version 0.1.1 (2)`, then quit it. Preserve the selected DMG, checksum, dSYM archive, and evidence under ignored `dist/`.
 
 ## Recovery and handoff
 

@@ -3,6 +3,8 @@
 set -euo pipefail
 
 readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=scripts/lib/release-metadata.sh
+source "$repository_root/scripts/lib/release-metadata.sh"
 readonly workflow="$repository_root/.github/workflows/release.yml"
 readonly ci_workflow="$repository_root/.github/workflows/ci.yml"
 readonly source_verifier="$repository_root/scripts/verify-release-workflow-source.sh"
@@ -16,7 +18,7 @@ readonly focused_tests="$repository_root/scripts/test-release-workflow.sh"
 readonly documentation="$repository_root/docs/release-workflow.md"
 readonly release_checklist="$repository_root/docs/release-checklist.md"
 readonly qualification_documentation="$repository_root/docs/release-candidate-qualification.md"
-readonly release_notes="$repository_root/docs/release-notes/0.1.0.md"
+readonly release_notes="$repository_root/docs/release-notes/$COPYLASSO_RELEASE_VERSION.md"
 readonly product_contract="$repository_root/docs/v0.1-product-contract.md"
 
 fail() {
@@ -77,6 +79,7 @@ require_text "$workflow" 'candidate_number:'
 require_text "$workflow" 'COPYLASSO_CANDIDATE_NUMBER: ${{ inputs.candidate_number }}'
 require_text "$workflow" 'assert_release_candidate_number "$COPYLASSO_CANDIDATE_NUMBER"'
 require_text "$workflow" 'release_candidate_tag "$COPYLASSO_CANDIDATE_NUMBER"'
+require_text "$workflow" 'release_tag="v${COPYLASSO_G28_VERSION}-g32.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"'
 if [[ "$(/usr/bin/grep -Fc '${{ inputs.' "$workflow")" != "1" ]]; then
     fail "candidate_number must be the protected workflow's sole dispatch input."
 fi
@@ -229,13 +232,12 @@ for required_documentation_text in \
     'pull-request workflow has no release trigger' \
     'credential cleanup' \
     'Draft creation is transactional' \
-    'Never publish the G28 rehearsal' \
-    'v0.1.0-rc.N' \
+    'Never publish a private rehearsal' \
+    'v0.1.1-rc.N' \
     'candidate_number' \
     'asset digests' \
     'tag is created last' \
-    'G29' \
-    'G30'; do
+    'G32'; do
     require_text "$documentation" "$required_documentation_text"
 done
 require_text "$release_checklist" 'Keep the dSYM and verification bundle restricted to the draft'
@@ -251,11 +253,11 @@ for required_qualification_text in \
     require_text "$qualification_documentation" "$required_qualification_text"
 done
 for required_release_note_text in \
-    'CopyLasso 0.1.0' \
-    'Free and open source' \
-    'Private, offline, and local' \
-    'Locking the Mac during an active drag' \
-    'clipboard'; do
+    'CopyLasso 0.1.1' \
+    'free and open-source' \
+    'private, offline, and local' \
+    'Settings now appears immediately' \
+    'Updates remain manual'; do
     require_text "$release_notes" "$required_release_note_text"
 done
 require_text "$product_contract" \

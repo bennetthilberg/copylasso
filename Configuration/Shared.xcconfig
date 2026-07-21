@@ -1,4 +1,5 @@
 // Shared, non-secret build configuration.
 // Local.xcconfig is optional and ignored by Git.
+#include "ReleaseMetadata.xcconfig"
 CODE_SIGN_STYLE = Automatic
 #include? "../Local.xcconfig"

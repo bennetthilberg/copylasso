@@ -22,8 +22,8 @@ The application is a dockless SwiftUI menu-bar utility. Debug and Release compil
 | Warnings | Treated as errors |
 | Debug bundle identifier | `io.github.bennetthilberg.copylasso.debug` |
 | Release bundle identifier | `io.github.bennetthilberg.copylasso` |
-| Marketing version | `0.1.0` |
-| Build number | `1` |
+| Marketing version | `0.1.1` |
+| Build number | `2` |
 | Release architectures | `arm64`, `x86_64` |
 | App Sandbox | Enabled |
 | Hardened Runtime | Enabled |

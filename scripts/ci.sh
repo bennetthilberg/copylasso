@@ -8,6 +8,9 @@ readonly scheme="CopyLasso"
 readonly requested_architecture="${COPYLASSO_CI_ARCH:-$(uname -m)}"
 readonly derived_data="${COPYLASSO_DERIVED_DATA_PATH:-$repository_root/.build/ci-$requested_architecture}"
 
+# shellcheck source=scripts/lib/release-metadata.sh
+source "$repository_root/scripts/lib/release-metadata.sh"
+
 case "$requested_architecture" in
     arm64 | x86_64) ;;
     *)
@@ -45,6 +48,9 @@ xcrun swift-format lint --recursive --strict \
 
 echo "Auditing privacy, security, entitlements, and dependencies"
 ./scripts/audit-privacy-security.sh
+
+echo "Testing release metadata"
+./scripts/test-release-metadata.sh
 
 echo "Auditing Developer ID release configuration"
 ./scripts/audit-developer-id-release.sh
@@ -443,12 +449,16 @@ assert_setting "$derived_data/debug-build-settings.txt" CODE_SIGN_ENTITLEMENTS C
 assert_setting "$derived_data/debug-build-settings.txt" PRODUCT_BUNDLE_IDENTIFIER io.github.bennetthilberg.copylasso.debug
 assert_setting "$derived_data/debug-build-settings.txt" INFOPLIST_FILE Configuration/CopyLasso-Info.plist
 assert_setting "$derived_data/debug-build-settings.txt" INFOPLIST_KEY_LSUIElement YES
+assert_setting "$derived_data/debug-build-settings.txt" MARKETING_VERSION "$COPYLASSO_RELEASE_VERSION"
+assert_setting "$derived_data/debug-build-settings.txt" CURRENT_PROJECT_VERSION "$COPYLASSO_RELEASE_BUILD"
 assert_setting "$derived_data/release-build-settings.txt" PRODUCT_BUNDLE_IDENTIFIER io.github.bennetthilberg.copylasso
 assert_setting "$derived_data/release-build-settings.txt" ENABLE_APP_SANDBOX YES
 assert_setting "$derived_data/release-build-settings.txt" CODE_SIGN_ENTITLEMENTS CopyLasso/CopyLasso.entitlements
 assert_setting "$derived_data/release-build-settings.txt" ENABLE_HARDENED_RUNTIME YES
 assert_setting "$derived_data/release-build-settings.txt" INFOPLIST_FILE Configuration/CopyLasso-Info.plist
 assert_setting "$derived_data/release-build-settings.txt" INFOPLIST_KEY_LSUIElement YES
+assert_setting "$derived_data/release-build-settings.txt" MARKETING_VERSION "$COPYLASSO_RELEASE_VERSION"
+assert_setting "$derived_data/release-build-settings.txt" CURRENT_PROJECT_VERSION "$COPYLASSO_RELEASE_BUILD"
 assert_setting "$derived_data/release-build-settings.txt" ARCHS "arm64 x86_64"
 assert_setting "$derived_data/release-build-settings.txt" ONLY_ACTIVE_ARCH NO
 
@@ -459,6 +469,11 @@ if [[ "$(/usr/bin/plutil -extract LSUIElement raw -o - "$debug_info_plist")" != 
 fi
 if [[ "$(/usr/bin/plutil -extract NSScreenCaptureUsageDescription raw -o - "$debug_info_plist")" != "CopyLasso captures the screen region you select to recognize text locally." ]]; then
     echo "The Debug application is missing its screen-capture usage description." >&2
+    exit 1
+fi
+if [[ "$(/usr/bin/plutil -extract CFBundleShortVersionString raw -o - "$debug_info_plist")" != "$COPYLASSO_RELEASE_VERSION" ]] || \
+    [[ "$(/usr/bin/plutil -extract CFBundleVersion raw -o - "$debug_info_plist")" != "$COPYLASSO_RELEASE_BUILD" ]]; then
+    echo "The Debug application does not match the shared release metadata." >&2
     exit 1
 fi
 
@@ -479,6 +494,11 @@ if [[ "$(/usr/bin/plutil -extract LSUIElement raw -o - "$release_info_plist")" !
 fi
 if [[ "$(/usr/bin/plutil -extract NSScreenCaptureUsageDescription raw -o - "$release_info_plist")" != "CopyLasso captures the screen region you select to recognize text locally." ]]; then
     echo "The Release application is missing its screen-capture usage description." >&2
+    exit 1
+fi
+if [[ "$(/usr/bin/plutil -extract CFBundleShortVersionString raw -o - "$release_info_plist")" != "$COPYLASSO_RELEASE_VERSION" ]] || \
+    [[ "$(/usr/bin/plutil -extract CFBundleVersion raw -o - "$release_info_plist")" != "$COPYLASSO_RELEASE_BUILD" ]]; then
+    echo "The Release application does not match the shared release metadata." >&2
     exit 1
 fi
 

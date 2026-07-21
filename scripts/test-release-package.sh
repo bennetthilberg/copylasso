@@ -98,9 +98,9 @@ create_release_payload_manifest "$source_app" "$changed_manifest"
 expect_failure "payload differs from the qualified G26 application" \
     assert_release_payload_manifests_match "$source_manifest" "$changed_manifest"
 
-dmg_fixture="$temporary_directory/CopyLasso-0.1.0.dmg"
+dmg_fixture="$temporary_directory/CopyLasso-0.1.1.dmg"
 printf 'disk image fixture\n' > "$dmg_fixture"
-checksum_fixture="$temporary_directory/CopyLasso-0.1.0.dmg.sha256"
+checksum_fixture="$temporary_directory/CopyLasso-0.1.1.dmg.sha256"
 (
     cd "$temporary_directory"
     /usr/bin/shasum -a 256 "$(basename "$dmg_fixture")" > "$(basename "$checksum_fixture")"
@@ -113,13 +113,13 @@ assert_release_checksum "$dmg_fixture" "$checksum_fixture"
 )
 
 wrong_checksum="$temporary_directory/wrong.sha256"
-printf '%064d  CopyLasso-0.1.0.dmg\n' 0 > "$wrong_checksum"
+printf '%064d  CopyLasso-0.1.1.dmg\n' 0 > "$wrong_checksum"
 expect_failure "checksum does not match" assert_release_checksum "$dmg_fixture" "$wrong_checksum"
 
 wrong_name_checksum="$temporary_directory/wrong-name.sha256"
 checksum_value="$(/usr/bin/shasum -a 256 "$dmg_fixture" | /usr/bin/awk '{print $1}')"
 printf '%s  Other.dmg\n' "$checksum_value" > "$wrong_name_checksum"
-expect_failure "must name CopyLasso-0.1.0.dmg" \
+expect_failure "must name CopyLasso-0.1.1.dmg" \
     assert_release_checksum "$dmg_fixture" "$wrong_name_checksum"
 
 valid_signature="$temporary_directory/valid-dmg-signature.txt"
@@ -156,7 +156,7 @@ expect_failure "approved release team" assert_release_dmg_signature \
 
 valid_gatekeeper="$temporary_directory/valid-dmg-gatekeeper.txt"
 cat > "$valid_gatekeeper" <<'TEXT'
-/private/example/CopyLasso-0.1.0.dmg: accepted
+/private/example/CopyLasso-0.1.1.dmg: accepted
 source=Notarized Developer ID
 origin=Developer ID Application: Redacted
 TEXT
@@ -253,13 +253,13 @@ expect_failure "dSYM UUIDs do not match" assert_release_uuid_sets_match \
 
 portable_evidence="$temporary_directory/portable-evidence.txt"
 cat > "$portable_evidence" <<'TEXT'
-version=0.1.0
-build=1
+version=0.1.1
+build=2
 TEXT
 assert_release_evidence_is_portable "$portable_evidence"
 absolute_path_evidence="$temporary_directory/absolute-path-evidence.txt"
 cat > "$absolute_path_evidence" <<'TEXT'
-version=0.1.0
+version=0.1.1
 local_artifact=/local/build/output
 TEXT
 expect_failure "must not contain local absolute paths" \
@@ -301,13 +301,13 @@ expect_failure "payload commit is not an ancestor" \
     "$commit_repository" "$fixture_packaging_commit" "$fixture_payload_commit"
 
 assert_release_artifact_names \
-    "CopyLasso-0.1.0.dmg" \
-    "CopyLasso-0.1.0.dmg.sha256" \
-    "CopyLasso-0.1.0.dSYM.zip"
+    "CopyLasso-0.1.1.dmg" \
+    "CopyLasso-0.1.1.dmg.sha256" \
+    "CopyLasso-0.1.1.dSYM.zip"
 expect_failure "release artifact names" assert_release_artifact_names \
     "CopyLasso-latest.dmg" \
-    "CopyLasso-0.1.0.dmg.sha256" \
-    "CopyLasso-0.1.0.dSYM.zip"
+    "CopyLasso-0.1.1.dmg.sha256" \
+    "CopyLasso-0.1.1.dSYM.zip"
 
 comparison_dsym="$temporary_directory/comparison-dsym/CopyLasso.app.dSYM"
 mkdir -p "$comparison_dsym/Contents/Resources/DWARF"
@@ -321,21 +321,21 @@ comparison_dsym_uuid_hash="$(/usr/bin/shasum -a 256 \
 for run_name in comparison-1 comparison-2; do
     run="$temporary_directory/$run_name"
     mkdir "$run"
-    printf 'equivalent image fixture\n' > "$run/CopyLasso-0.1.0.dmg"
+    printf 'equivalent image fixture\n' > "$run/CopyLasso-0.1.1.dmg"
     /usr/bin/ditto -c -k --norsrc --noextattr --keepParent \
-        "$comparison_dsym" "$run/CopyLasso-0.1.0.dSYM.zip"
+        "$comparison_dsym" "$run/CopyLasso-0.1.1.dSYM.zip"
     cp "$source_manifest" "$run/payload-manifest.txt"
     (
         cd "$run"
-        /usr/bin/shasum -a 256 CopyLasso-0.1.0.dmg > CopyLasso-0.1.0.dmg.sha256
+        /usr/bin/shasum -a 256 CopyLasso-0.1.1.dmg > CopyLasso-0.1.1.dmg.sha256
     )
     cat > "$run/release-evidence.txt" <<'TEXT'
-version=0.1.0
-build=1
+version=0.1.1
+build=2
 payload_commit=1111111111111111111111111111111111111111
 packaging_commit=2222222222222222222222222222222222222222
 dmg_identifier=io.github.bennetthilberg.copylasso.dmg
-dmg_filename=CopyLasso-0.1.0.dmg
+dmg_filename=CopyLasso-0.1.1.dmg
 app_manifest_sha256=3333333333333333333333333333333333333333333333333333333333333333
 TEXT
     printf 'dsym_uuid_manifest_sha256=%s\n' "$comparison_dsym_uuid_hash" >> \
@@ -344,20 +344,20 @@ done
 "$comparator_script" \
     "$temporary_directory/comparison-1" \
     "$temporary_directory/comparison-2" >/dev/null
-sed -i '' 's/build=1/build=2/' "$temporary_directory/comparison-2/release-evidence.txt"
+sed -i '' 's/build=2/build=3/' "$temporary_directory/comparison-2/release-evidence.txt"
 expect_failure "normalized evidence: build" "$comparator_script" \
     "$temporary_directory/comparison-1" \
     "$temporary_directory/comparison-2"
-sed -i '' 's/build=2/build=1/' "$temporary_directory/comparison-2/release-evidence.txt"
+sed -i '' 's/build=3/build=2/' "$temporary_directory/comparison-2/release-evidence.txt"
 cp /usr/bin/false "$comparison_dsym/Contents/Resources/DWARF/CopyLasso"
-rm "$temporary_directory/comparison-2/CopyLasso-0.1.0.dSYM.zip"
+rm "$temporary_directory/comparison-2/CopyLasso-0.1.1.dSYM.zip"
 /usr/bin/ditto -c -k --norsrc --noextattr --keepParent \
-    "$comparison_dsym" "$temporary_directory/comparison-2/CopyLasso-0.1.0.dSYM.zip"
+    "$comparison_dsym" "$temporary_directory/comparison-2/CopyLasso-0.1.1.dSYM.zip"
 expect_failure "wrong dSYM UUID manifest" "$comparator_script" \
     "$temporary_directory/comparison-1" \
     "$temporary_directory/comparison-2"
 printf 'corrupted dSYM archive\n' > \
-    "$temporary_directory/comparison-2/CopyLasso-0.1.0.dSYM.zip"
+    "$temporary_directory/comparison-2/CopyLasso-0.1.1.dSYM.zip"
 expect_failure "release dSYM archive could not be expanded" "$comparator_script" \
     "$temporary_directory/comparison-1" \
     "$temporary_directory/comparison-2"

@@ -5,6 +5,7 @@ set -euo pipefail
 readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly ci_script="$repository_root/scripts/ci.sh"
 readonly brand_audit_script="$repository_root/scripts/audit-brand-release.sh"
+readonly release_metadata_test_script="$repository_root/scripts/test-release-metadata.sh"
 readonly developer_id_audit_script="$repository_root/scripts/audit-developer-id-release.sh"
 readonly release_package_audit_script="$repository_root/scripts/audit-release-package.sh"
 readonly release_workflow_audit_script="$repository_root/scripts/audit-release-workflow.sh"
@@ -38,6 +39,14 @@ brand_audit_invocations="$({
 })"
 if [[ "$brand_audit_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/audit-brand-release.sh exactly once."
+fi
+
+release_metadata_test_invocations="$({
+    /usr/bin/grep -Ec '^[[:space:]]*\./scripts/test-release-metadata\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$release_metadata_test_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/test-release-metadata.sh exactly once."
 fi
 
 developer_id_audit_invocations="$({
@@ -92,6 +101,10 @@ if [[ ! -x "$developer_id_audit_script" ]] || \
     [[ ! -x "$repository_root/scripts/verify-developer-id-app.sh" ]] || \
     [[ ! -x "$repository_root/scripts/test-developer-id-release.sh" ]]; then
     fail "Developer ID release verification scripts must be executable."
+fi
+
+if [[ ! -x "$release_metadata_test_script" ]]; then
+    fail "Release metadata contract tests must be executable."
 fi
 
 if [[ ! -x "$release_package_audit_script" ]] || \

@@ -13,7 +13,7 @@ readonly verifier_library="$repository_root/scripts/lib/release-workflow-verific
 readonly workflow="$repository_root/.github/workflows/release.yml"
 readonly documentation="$repository_root/docs/release-workflow.md"
 readonly qualification_documentation="$repository_root/docs/release-candidate-qualification.md"
-readonly release_notes="$repository_root/docs/release-notes/0.1.0.md"
+readonly release_notes="$repository_root/docs/release-notes/0.1.1.md"
 
 fail() {
     echo "$1" >&2
@@ -64,7 +64,7 @@ assert_protected_release_ref "refs/heads/main"
 expect_failure "only from protected main" \
     assert_protected_release_ref "refs/heads/feature"
 expect_failure "only from protected main" \
-    assert_protected_release_ref "refs/tags/v0.1.0-rc.1"
+    assert_protected_release_ref "refs/tags/v0.1.1-rc.1"
 assert_full_release_commit "0123456789abcdef0123456789abcdef01234567"
 expect_failure "full lowercase Git object identifier" \
     assert_full_release_commit "0123456789abcdef"
@@ -122,9 +122,9 @@ readonly second_fixture_commit="$(/usr/bin/git -C "$repository_fixture" rev-pars
 expect_failure "not the protected origin/main commit" \
     assert_release_source_state "$repository_fixture" "refs/heads/main" "$fixture_commit"
 
-assert_release_draft_tag "v0.1.0-g28.12345"
+assert_release_draft_tag "v0.1.1-g32.12345"
 expect_failure "draft tag name is invalid" \
-    assert_release_draft_tag "v0.1.0-rc.1"
+    assert_release_draft_tag "v0.1.1-rc.1"
 
 assert_release_candidate_number "1"
 assert_release_candidate_number "42"
@@ -132,32 +132,32 @@ for invalid_candidate_number in "" 0 01 +1 -1 1.0 " 1" "1 " rc.1 arbitrary; do
     expect_failure "candidate number must be a positive canonical integer" \
         assert_release_candidate_number "$invalid_candidate_number"
 done
-[[ "$(release_candidate_tag "1")" == "v0.1.0-rc.1" ]] || \
-    fail "Candidate 1 must derive the exact v0.1.0-rc.1 tag."
-[[ "$(release_candidate_tag "42")" == "v0.1.0-rc.42" ]] || \
-    fail "Candidate 42 must derive the exact v0.1.0-rc.42 tag."
-assert_release_candidate_tag "v0.1.0-rc.1"
+[[ "$(release_candidate_tag "1")" == "v0.1.1-rc.1" ]] || \
+    fail "Candidate 1 must derive the exact v0.1.1-rc.1 tag."
+[[ "$(release_candidate_tag "42")" == "v0.1.1-rc.42" ]] || \
+    fail "Candidate 42 must derive the exact v0.1.1-rc.42 tag."
+assert_release_candidate_tag "v0.1.1-rc.1"
 expect_failure "release-candidate tag name is invalid" \
-    assert_release_candidate_tag "v0.1.0-g28.12345"
+    assert_release_candidate_tag "v0.1.1-g32.12345"
 
 readonly valid_draft="$temporary_directory/valid-draft.json"
 printf '%s\n' "{
   \"id\": 123,
   \"draft\": true,
   \"prerelease\": true,
-  \"tag_name\": \"v0.1.0-g28.12345\",
+  \"tag_name\": \"v0.1.1-g32.12345\",
   \"target_commitish\": \"0123456789abcdef0123456789abcdef01234567\",
   \"assets\": [
-    {\"name\": \"CopyLasso-0.1.0.dmg\"},
-    {\"name\": \"CopyLasso-0.1.0.dmg.sha256\"},
-    {\"name\": \"CopyLasso-0.1.0.dSYM.zip\"},
-    {\"name\": \"CopyLasso-0.1.0-verification.zip\"}
+    {\"name\": \"CopyLasso-0.1.1.dmg\"},
+    {\"name\": \"CopyLasso-0.1.1.dmg.sha256\"},
+    {\"name\": \"CopyLasso-0.1.1.dSYM.zip\"},
+    {\"name\": \"CopyLasso-0.1.1-verification.zip\"}
   ]
 }" > "$valid_draft"
 assert_release_draft_record \
     "$valid_draft" \
     "0123456789abcdef0123456789abcdef01234567" \
-    "v0.1.0-g28.12345"
+    "v0.1.1-g32.12345"
 
 /usr/bin/sed 's/\"draft\": true/\"draft\": false/' \
     "$valid_draft" > "$temporary_directory/published.json"
@@ -165,14 +165,14 @@ expect_failure "not a draft" \
     assert_release_draft_record \
     "$temporary_directory/published.json" \
     "0123456789abcdef0123456789abcdef01234567" \
-    "v0.1.0-g28.12345"
-/usr/bin/sed '/CopyLasso-0.1.0.dSYM.zip/d' \
+    "v0.1.1-g32.12345"
+/usr/bin/sed '/CopyLasso-0.1.1.dSYM.zip/d' \
     "$valid_draft" > "$temporary_directory/missing-asset.json"
 expect_failure "incomplete or unexpected asset set" \
     assert_release_draft_record \
     "$temporary_directory/missing-asset.json" \
     "0123456789abcdef0123456789abcdef01234567" \
-    "v0.1.0-g28.12345"
+    "v0.1.1-g32.12345"
 
 printf 'Fixed content-free release diagnostic.\n' > "$temporary_directory/safe.log"
 assert_release_log_is_public_safe "$temporary_directory/safe.log"
@@ -183,38 +183,38 @@ expect_failure "credential or account material" \
 readonly release_run="$temporary_directory/release-run"
 /bin/mkdir "$release_run"
 for asset in \
-    CopyLasso-0.1.0.dmg \
-    CopyLasso-0.1.0.dmg.sha256 \
-    CopyLasso-0.1.0.dSYM.zip \
-    CopyLasso-0.1.0-verification.zip; do
+    CopyLasso-0.1.1.dmg \
+    CopyLasso-0.1.1.dmg.sha256 \
+    CopyLasso-0.1.1.dSYM.zip \
+    CopyLasso-0.1.1-verification.zip; do
     : > "$release_run/$asset"
 done
 assert_release_workflow_assets \
     "$release_run" \
-    "$release_run/CopyLasso-0.1.0-verification.zip"
-/bin/rm "$release_run/CopyLasso-0.1.0.dSYM.zip"
+    "$release_run/CopyLasso-0.1.1-verification.zip"
+/bin/rm "$release_run/CopyLasso-0.1.1.dSYM.zip"
 expect_failure "protected release asset is missing" \
     assert_release_workflow_assets \
     "$release_run" \
-    "$release_run/CopyLasso-0.1.0-verification.zip"
-: > "$release_run/CopyLasso-0.1.0.dSYM.zip"
+    "$release_run/CopyLasso-0.1.1-verification.zip"
+: > "$release_run/CopyLasso-0.1.1.dSYM.zip"
 
-printf 'qualified candidate disk image\n' > "$release_run/CopyLasso-0.1.0.dmg"
+printf 'qualified candidate disk image\n' > "$release_run/CopyLasso-0.1.1.dmg"
 (
     cd "$release_run"
-    /usr/bin/shasum -a 256 CopyLasso-0.1.0.dmg > CopyLasso-0.1.0.dmg.sha256
+    /usr/bin/shasum -a 256 CopyLasso-0.1.1.dmg > CopyLasso-0.1.1.dmg.sha256
 )
-printf 'qualified candidate symbols\n' > "$release_run/CopyLasso-0.1.0.dSYM.zip"
-printf 'qualified candidate verification\n' > "$release_run/CopyLasso-0.1.0-verification.zip"
+printf 'qualified candidate symbols\n' > "$release_run/CopyLasso-0.1.1.dSYM.zip"
+printf 'qualified candidate verification\n' > "$release_run/CopyLasso-0.1.1-verification.zip"
 
 readonly candidate_dmg_digest="$(/usr/bin/shasum -a 256 \
-    "$release_run/CopyLasso-0.1.0.dmg" | /usr/bin/awk '{print $1}')"
+    "$release_run/CopyLasso-0.1.1.dmg" | /usr/bin/awk '{print $1}')"
 readonly candidate_checksum_digest="$(/usr/bin/shasum -a 256 \
-    "$release_run/CopyLasso-0.1.0.dmg.sha256" | /usr/bin/awk '{print $1}')"
+    "$release_run/CopyLasso-0.1.1.dmg.sha256" | /usr/bin/awk '{print $1}')"
 readonly candidate_dsym_digest="$(/usr/bin/shasum -a 256 \
-    "$release_run/CopyLasso-0.1.0.dSYM.zip" | /usr/bin/awk '{print $1}')"
+    "$release_run/CopyLasso-0.1.1.dSYM.zip" | /usr/bin/awk '{print $1}')"
 readonly candidate_verification_digest="$(/usr/bin/shasum -a 256 \
-    "$release_run/CopyLasso-0.1.0-verification.zip" | /usr/bin/awk '{print $1}')"
+    "$release_run/CopyLasso-0.1.1-verification.zip" | /usr/bin/awk '{print $1}')"
 readonly valid_candidate="$temporary_directory/valid-candidate.json"
 /usr/bin/jq -n \
     --rawfile body "$release_notes" \
@@ -227,14 +227,14 @@ readonly valid_candidate="$temporary_directory/valid-candidate.json"
         id: 124,
         draft: true,
         prerelease: true,
-        tag_name: "v0.1.0-rc.1",
+        tag_name: "v0.1.1-rc.1",
         target_commitish: $commit,
         body: $body,
         assets: [
-            {name: "CopyLasso-0.1.0.dmg", digest: $dmg_digest},
-            {name: "CopyLasso-0.1.0.dmg.sha256", digest: $checksum_digest},
-            {name: "CopyLasso-0.1.0.dSYM.zip", digest: $dsym_digest},
-            {name: "CopyLasso-0.1.0-verification.zip", digest: $verification_digest}
+            {name: "CopyLasso-0.1.1.dmg", digest: $dmg_digest},
+            {name: "CopyLasso-0.1.1.dmg.sha256", digest: $checksum_digest},
+            {name: "CopyLasso-0.1.1.dSYM.zip", digest: $dsym_digest},
+            {name: "CopyLasso-0.1.1-verification.zip", digest: $verification_digest}
         ]
     }' > "$valid_candidate"
 assert_release_candidate_record \
@@ -244,7 +244,7 @@ assert_release_candidate_record \
     "$release_run" \
     "$release_notes"
 
-/usr/bin/jq '(.assets[] | select(.name == "CopyLasso-0.1.0.dmg") | .digest) =
+/usr/bin/jq '(.assets[] | select(.name == "CopyLasso-0.1.1.dmg") | .digest) =
     "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"' \
     "$valid_candidate" > "$temporary_directory/bad-candidate-digest.json"
 expect_failure "uploaded release asset digest does not match" \
@@ -265,12 +265,12 @@ expect_failure "release notes differ from the reviewed source" \
     "$release_run" \
     "$release_notes"
 
-printf '%064d  %s\n' 0 CopyLasso-0.1.0.dmg > \
-    "$release_run/CopyLasso-0.1.0.dmg.sha256"
+printf '%064d  %s\n' 0 CopyLasso-0.1.1.dmg > \
+    "$release_run/CopyLasso-0.1.1.dmg.sha256"
 readonly mismatched_checksum_digest="$(/usr/bin/shasum -a 256 \
-    "$release_run/CopyLasso-0.1.0.dmg.sha256" | /usr/bin/awk '{print $1}')"
+    "$release_run/CopyLasso-0.1.1.dmg.sha256" | /usr/bin/awk '{print $1}')"
 /usr/bin/jq --arg digest "sha256:$mismatched_checksum_digest" '
-    (.assets[] | select(.name == "CopyLasso-0.1.0.dmg.sha256") | .digest) = $digest
+    (.assets[] | select(.name == "CopyLasso-0.1.1.dmg.sha256") | .digest) = $digest
 ' "$valid_candidate" > "$temporary_directory/bad-candidate-checksum.json"
 expect_failure "checksum does not match the qualified disk image" \
     assert_release_candidate_record \
@@ -281,12 +281,12 @@ expect_failure "checksum does not match the qualified disk image" \
     "$release_notes"
 (
     cd "$release_run"
-    /usr/bin/shasum -a 256 CopyLasso-0.1.0.dmg > CopyLasso-0.1.0.dmg.sha256
+    /usr/bin/shasum -a 256 CopyLasso-0.1.1.dmg > CopyLasso-0.1.1.dmg.sha256
 )
 
 readonly valid_candidate_tag="$temporary_directory/valid-candidate-tag.json"
 printf '%s\n' '{
-  "ref": "refs/tags/v0.1.0-rc.1",
+  "ref": "refs/tags/v0.1.1-rc.1",
   "object": {
     "type": "commit",
     "sha": "0123456789abcdef0123456789abcdef01234567"
@@ -295,14 +295,14 @@ printf '%s\n' '{
 assert_release_candidate_tag_record \
     "$valid_candidate_tag" \
     "0123456789abcdef0123456789abcdef01234567" \
-    "v0.1.0-rc.1"
+    "v0.1.1-rc.1"
 /usr/bin/sed 's/"type": "commit"/"type": "tag"/' \
     "$valid_candidate_tag" > "$temporary_directory/annotated-candidate-tag.json"
 expect_failure "does not point directly to the candidate commit" \
     assert_release_candidate_tag_record \
     "$temporary_directory/annotated-candidate-tag.json" \
     "0123456789abcdef0123456789abcdef01234567" \
-    "v0.1.0-rc.1"
+    "v0.1.1-rc.1"
 /usr/bin/sed \
     's/0123456789abcdef0123456789abcdef01234567/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/' \
     "$valid_candidate_tag" > "$temporary_directory/wrong-candidate-tag.json"
@@ -310,7 +310,7 @@ expect_failure "does not point directly to the candidate commit" \
     assert_release_candidate_tag_record \
     "$temporary_directory/wrong-candidate-tag.json" \
     "0123456789abcdef0123456789abcdef01234567" \
-    "v0.1.0-rc.1"
+    "v0.1.1-rc.1"
 
 readonly fake_gh="$temporary_directory/gh"
 readonly fake_gh_log="$temporary_directory/gh.log"
@@ -387,18 +387,18 @@ export FAKE_GH_MODE="success"
 "$draft_creator" \
     --repository owner/repository \
     --commit 0123456789abcdef0123456789abcdef01234567 \
-    --tag v0.1.0-g28.12345 \
+    --tag v0.1.1-g32.12345 \
     --run-dir "$release_run" \
     --readback "$temporary_directory/readback.json"
 assert_release_draft_record \
     "$temporary_directory/readback.json" \
     "0123456789abcdef0123456789abcdef01234567" \
-    "v0.1.0-g28.12345"
+    "v0.1.1-g32.12345"
 if /usr/bin/grep -Fq -- '--method DELETE' "$fake_gh_log"; then
     fail "A successful draft must not be rolled back."
 fi
 if /usr/bin/grep -Fq -- 'git/refs' "$fake_gh_log"; then
-    fail "The G28 rehearsal must not create or inspect a Git tag ref."
+    fail "A private rehearsal must not create or inspect a Git tag ref."
 fi
 
 : > "$fake_gh_log"
@@ -407,7 +407,7 @@ expect_failure "asset set could not be uploaded" \
     "$draft_creator" \
     --repository owner/repository \
     --commit 0123456789abcdef0123456789abcdef01234567 \
-    --tag v0.1.0-g28.12345 \
+    --tag v0.1.1-g32.12345 \
     --run-dir "$release_run" \
     --readback "$temporary_directory/failed-readback.json"
 /usr/bin/grep -Fq -- '--method DELETE' "$fake_gh_log" || \
@@ -527,7 +527,7 @@ for failure_mode in upload-fail tag-create-fail tag-readback-fail; do
         "$fake_gh_log" || fail "A failed RC transaction must delete its incomplete draft."
     if [[ "$failure_mode" == "tag-readback-fail" ]]; then
         /usr/bin/grep -Fq -- \
-            '--method DELETE repos/owner/repository/git/refs/tags/v0.1.0-rc.1' \
+            '--method DELETE repos/owner/repository/git/refs/tags/v0.1.1-rc.1' \
             "$fake_gh_log" || fail "A failed RC tag readback must delete its newly created tag."
     fi
     [[ ! -f "$fake_gh_tag_state" ]] || \
