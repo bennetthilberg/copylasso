@@ -4,6 +4,10 @@ All notable changes to CopyLasso will be documented in this file.
 
 ## Unreleased
 
+### Fixed
+
+- Settings now appears immediately when opened from the menu instead of surfacing during the next capture.
+
 ## 0.1.0 - 2026-07-19
 
 ### Added

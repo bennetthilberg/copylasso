@@ -5,6 +5,25 @@ import XCTest
 
 @MainActor
 final class MenuBarShellTests: XCTestCase {
+  func testOpeningSettingsActivatesApplicationBeforeOpeningSettings() {
+    var events: [String] = []
+    let coordinator = CaptureCoordinator()
+    let handler = MenuBarCommandHandler(
+      captureCommand: makeTestCaptureCommand(
+        coordinator: coordinator,
+        scheduleWork: { _ in }
+      ),
+      applicationTerminator: SpyApplicationTerminator(),
+      activateApplication: { events.append("activate") }
+    )
+
+    handler.openSettings {
+      events.append("open settings")
+    }
+
+    XCTAssertEqual(events, ["activate", "open settings"])
+  }
+
   func testQuitRoutesToTheInjectedApplicationTerminatorExactlyOnce() {
     let terminator = SpyApplicationTerminator()
     let coordinator = CaptureCoordinator()
