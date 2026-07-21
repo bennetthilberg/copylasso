@@ -1,5 +1,29 @@
 # Release Candidate Qualification
 
+## G32 v0.1.1 Maintenance Qualification
+
+For the Settings-presentation hotfix, the same protected trust boundary applies
+with version `0.1.1`, build `2`, tag `v0.1.1-rc.N`, and artifacts named
+`CopyLasso-0.1.1.dmg`, `CopyLasso-0.1.1.dmg.sha256`,
+`CopyLasso-0.1.1.dSYM.zip`, and `CopyLasso-0.1.1-verification.zip`. The reviewed
+draft body is [`release-notes/0.1.1.md`](release-notes/0.1.1.md).
+
+The candidate must contain merged fix commit `83990ef162cd94c22fa8a7ad14bb095050517dcc`
+in its ancestry and no later application behavior beyond the release-metadata
+change. Independently verify the four draft assets, exact target commit,
+checksum, Developer ID signatures, notarization tickets, Gatekeeper acceptance,
+Universal 2 slices, production bundle identifier, version/build, and two-item
+read-only DMG layout. Smoke opening Settings from the status menu, closing it,
+and starting a capture; Settings must appear for the menu command and must not
+surface during the later capture.
+
+After explicit approval of the exact candidate, create a signed annotated
+`v0.1.1` tag on that same commit and publish only the qualified DMG and checksum.
+Never publish a private rehearsal, move `v0.1.0`, replace an existing asset, or
+make the dSYM or verification bundle public.
+
+The original `0.1.0` qualification record below remains historical evidence.
+
 This procedure qualifies one immutable CopyLasso 0.1.0 release candidate. It
 supplements the partial Sonoma rehearsal retained by G29 and replaces further
 VirtualBuddy execution with one exact-candidate smoke test in a disposable

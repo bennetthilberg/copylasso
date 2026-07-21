@@ -12,7 +12,7 @@ usage() {
 Usage: create-draft-release.sh \
   --repository owner/repository \
   --commit <40-character-commit> \
-  (--tag v0.1.0-g28.<run> | --candidate-number <positive-integer>) \
+  (--tag v<version>-g32.<run> | --candidate-number <positive-integer>) \
   --run-dir /path/to/release-run \
   --readback /path/to/draft-release.json
 TEXT
@@ -90,7 +90,7 @@ readonly final_record="$temporary_directory/final.json"
 readonly notes="$temporary_directory/notes.md"
 readonly candidate_tag_record="$temporary_directory/tag.json"
 readonly release_listing="$temporary_directory/releases.json"
-readonly reviewed_candidate_notes="$repository_root/docs/release-notes/0.1.0.md"
+readonly reviewed_candidate_notes="$repository_root/docs/release-notes/$COPYLASSO_G28_VERSION.md"
 release_identifier=""
 candidate_tag_created="false"
 draft_committed="false"
@@ -116,7 +116,7 @@ if "$gh_binary" api "repos/$repository/releases/tags/$tag" >/dev/null 2>&1; then
     if [[ "$release_mode" == "candidate" ]]; then
         protected_release_fail "A release already exists for the release-candidate tag."
     fi
-    protected_release_fail "A release already exists for the G28 rehearsal tag."
+    protected_release_fail "A release already exists for the private rehearsal tag."
 fi
 
 if [[ "$release_mode" == "candidate" ]]; then
@@ -143,14 +143,14 @@ if [[ "$release_mode" == "candidate" ]]; then
     [[ -f "$reviewed_candidate_notes" ]] || \
         protected_release_fail "The reviewed release-candidate notes are missing."
     /bin/cp "$reviewed_candidate_notes" "$notes"
-    release_name="CopyLasso 0.1.0 release candidate $candidate_number"
+    release_name="CopyLasso $COPYLASSO_G28_VERSION release candidate $candidate_number"
 else
     printf '%s\n\n%s\n\n%s\n' \
-        'Protected G28 workflow rehearsal for CopyLasso 0.1.0.' \
+        "Protected G32 workflow rehearsal for CopyLasso $COPYLASSO_G28_VERSION." \
         "Exact source commit: $commit" \
-        'Draft only. Do not publish; G29 and G30 remain separate release gates.' \
+        'Draft only. Do not publish; use candidate mode for release qualification.' \
         > "$notes"
-    release_name="CopyLasso 0.1.0 protected workflow rehearsal"
+    release_name="CopyLasso $COPYLASSO_G28_VERSION protected workflow rehearsal"
 fi
 readonly release_name
 

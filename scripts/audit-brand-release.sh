@@ -3,6 +3,8 @@
 set -euo pipefail
 
 readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=scripts/lib/release-metadata.sh
+source "$repository_root/scripts/lib/release-metadata.sh"
 readonly built_app="${COPYLASSO_BRAND_APP:-}"
 readonly active_developer_directory="${DEVELOPER_DIR:-$(/usr/bin/xcode-select -p)}"
 readonly xcode_contents_directory="$(cd "$active_developer_directory/.." && /bin/pwd -P)"
@@ -54,6 +56,7 @@ require_file "$repository_root/docs/release-checklist.md"
 require_file "$repository_root/docs/clean-install-testing.md"
 require_file "$repository_root/docs/release-candidate-qualification.md"
 require_file "$repository_root/docs/release-notes/0.1.0.md"
+require_file "$repository_root/docs/release-notes/$COPYLASSO_RELEASE_VERSION.md"
 
 if [[ -e CopyLasso/Assets.xcassets/AppIcon.appiconset ]]; then
     fail "The empty development AppIcon catalog must not coexist with AppIcon.icon."
@@ -139,10 +142,13 @@ if [[ "$(/usr/bin/grep -c \
     fail "Every application configuration must embed the open-source creator description."
 fi
 
-if [[ "$(/usr/bin/grep -c 'MARKETING_VERSION = 0.1.0;' CopyLasso.xcodeproj/project.pbxproj)" != 6 ]] || \
-    [[ "$(/usr/bin/grep -c 'CURRENT_PROJECT_VERSION = 1;' CopyLasso.xcodeproj/project.pbxproj)" != 6 ]] || \
+if [[ "$COPYLASSO_RELEASE_VERSION" != "0.1.1" ]] || \
+    [[ "$COPYLASSO_RELEASE_BUILD" != "2" ]] || \
+    /usr/bin/grep -Eq \
+        '^[[:space:]]+(MARKETING_VERSION|CURRENT_PROJECT_VERSION)[[:space:]]*=' \
+        CopyLasso.xcodeproj/project.pbxproj || \
     [[ "$(/usr/bin/grep -c 'PRODUCT_BUNDLE_IDENTIFIER = io.github.bennetthilberg.copylasso;' CopyLasso.xcodeproj/project.pbxproj)" != 1 ]]; then
-    fail "Version 0.1.0, build 1, and the production bundle identifier must remain final."
+    fail "Version 0.1.1, build 2, and the production bundle identifier must remain final."
 fi
 
 for text in \
@@ -163,6 +169,7 @@ done
 require_text README.md 'https://github.com/bennetthilberg/copylasso/releases/tag/v0.1.0'
 require_text README.md 'https://github.com/bennetthilberg/copylasso/releases/download/v0.1.0/CopyLasso-0.1.0.dmg'
 require_text README.md 'https://github.com/bennetthilberg/copylasso/releases/download/v0.1.0/CopyLasso-0.1.0.dmg.sha256'
+require_text CHANGELOG.md '## 0.1.1 - Unreleased'
 require_text CHANGELOG.md '## 0.1.0 - 2026-07-19'
 require_text CHANGELOG.md 'pasteboard clear-success followed by text-write rejection'
 require_text SECURITY.md 'CopyLasso 0.1.x'
@@ -177,6 +184,7 @@ require_text docs/release-checklist.md '## G30 - Release Candidate Qualification
 require_text docs/release-checklist.md 'disposable local macOS user account'
 require_text docs/release-checklist.md 'candidate_number'
 require_text docs/release-checklist.md '## G31 - Final Tag And Publication'
+require_text docs/release-checklist.md '## G32 - v0.1.1 Settings Hotfix'
 require_text docs/release-workflow.md '## G30 Protected Candidate Handoff'
 require_text docs/release-workflow.md 'In the post-merge protected run'
 require_text docs/release-workflow.md 'The G28 rehearsal draft and its assets cannot serve as G30 evidence.'
@@ -207,9 +215,11 @@ require_text docs/v0.1-product-contract.md 'clipboard may change'
 require_text docs/security-and-privacy-review.md \
     'This review describes the public CopyLasso 0.1.0 implementation boundary.'
 require_text docs/release-candidate-qualification.md '## Exact Candidate Smoke Matrix'
+require_text docs/release-candidate-qualification.md '## G32 v0.1.1 Maintenance Qualification'
 require_text docs/release-candidate-qualification.md 'Do not resume VirtualBuddy'
 require_text docs/release-notes/0.1.0.md 'CopyLasso 0.1.0'
 require_text docs/release-notes/0.1.0.md 'Locking the Mac during an active drag'
+require_text docs/release-notes/0.1.1.md 'Settings now appears immediately'
 if [[ "$(/usr/bin/sed -n '/^## G31 - Final Tag And Publication$/,$p' \
     docs/release-checklist.md | /usr/bin/grep -c '^- \[x\]')" != 7 ]]; then
     fail "Every G31 publication checklist row must be complete."
@@ -240,6 +250,7 @@ readonly public_copy=(
     docs/release-candidate-qualification.md
     docs/release-checklist.md
     docs/release-notes/0.1.0.md
+    docs/release-notes/0.1.1.md
     docs/v0.1-product-contract.md
 )
 readonly prohibited_public_pattern='TODO|example\.com|your organization|template organization|[Tt]ext[Ss]niper|[Oo][Cc][Rr][Aa][Cc][Yy]'
@@ -279,8 +290,8 @@ require_file "$built_resources/Assets.car"
 
 if [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconName' "$built_info")" != 'AppIcon' ]] || \
     [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$built_info")" != 'AppIcon' ]] || \
-    [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$built_info")" != '0.1.0' ]] || \
-    [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$built_info")" != '1' ]]; then
+    [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$built_info")" != "$COPYLASSO_RELEASE_VERSION" ]] || \
+    [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$built_info")" != "$COPYLASSO_RELEASE_BUILD" ]]; then
     fail "The built app does not contain the final icon, version, and build metadata."
 fi
 

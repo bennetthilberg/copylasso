@@ -63,9 +63,9 @@ cat > "$valid_info" <<'PLIST'
     <key>CFBundleIdentifier</key>
     <string>io.github.bennetthilberg.copylasso</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.1.0</string>
+    <string>0.1.1</string>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>2</string>
 </dict>
 </plist>
 PLIST
@@ -81,11 +81,11 @@ expect_failure "production bundle identifier" assert_release_metadata \
 cp "$valid_info" "$temporary_directory/wrong-version.plist"
 /usr/libexec/PlistBuddy -c 'Set :CFBundleShortVersionString 0.2.0' \
     "$temporary_directory/wrong-version.plist"
-expect_failure "version 0.1.0" assert_release_metadata "$temporary_directory/wrong-version.plist"
+expect_failure "version 0.1.1" assert_release_metadata "$temporary_directory/wrong-version.plist"
 
 cp "$valid_info" "$temporary_directory/wrong-build.plist"
-/usr/libexec/PlistBuddy -c 'Set :CFBundleVersion 2' "$temporary_directory/wrong-build.plist"
-expect_failure "build 1" assert_release_metadata "$temporary_directory/wrong-build.plist"
+/usr/libexec/PlistBuddy -c 'Set :CFBundleVersion 3' "$temporary_directory/wrong-build.plist"
+expect_failure "build 2" assert_release_metadata "$temporary_directory/wrong-build.plist"
 
 cp "$valid_info" "$temporary_directory/missing-bundle.plist"
 /usr/libexec/PlistBuddy -c 'Delete :CFBundleIdentifier' "$temporary_directory/missing-bundle.plist"

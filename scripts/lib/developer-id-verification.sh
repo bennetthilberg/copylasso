@@ -1,5 +1,11 @@
 #!/bin/bash
 
+readonly developer_id_verification_library_root="$(
+    cd "$(dirname "${BASH_SOURCE[0]}")/../.." && /bin/pwd -P
+)"
+# shellcheck source=scripts/lib/release-metadata.sh
+source "$developer_id_verification_library_root/scripts/lib/release-metadata.sh"
+
 release_verification_fail() {
     echo "$1" >&2
     return 1
@@ -40,12 +46,14 @@ assert_release_metadata() {
         release_verification_fail "The application must use the production bundle identifier."
         return 1
     fi
-    if [[ "$version" != "0.1.0" ]]; then
-        release_verification_fail "The application must use version 0.1.0."
+    if [[ "$version" != "$COPYLASSO_RELEASE_VERSION" ]]; then
+        release_verification_fail \
+            "The application must use version $COPYLASSO_RELEASE_VERSION."
         return 1
     fi
-    if [[ "$build" != "1" ]]; then
-        release_verification_fail "The application must use build 1."
+    if [[ "$build" != "$COPYLASSO_RELEASE_BUILD" ]]; then
+        release_verification_fail \
+            "The application must use build $COPYLASSO_RELEASE_BUILD."
         return 1
     fi
 }

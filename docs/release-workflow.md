@@ -1,11 +1,11 @@
 # Protected Release Workflow
 
-G28 adds a manually dispatched GitHub Actions workflow that builds one signed, notarized, and
-verified CopyLasso release rehearsal from the exact protected `main` commit. It creates a draft
-prerelease and never publishes it. G29 retains a reusable clean-install procedure and partial
-Sonoma rehearsal with explicit accepted gaps; G30 immutable release-candidate qualification uses a
-fresh browser/Gatekeeper/core smoke from a disposable clean local account on the maintainer host,
-and G31 remains the publication gate.
+The manually dispatched workflow builds one signed, notarized, and verified
+CopyLasso release from the exact protected `main` commit. It creates a private
+draft prerelease and never publishes it. G32 uses that existing trust boundary
+for the `0.1.1` Settings-presentation hotfix. A final release is published only
+after the draft, asset digests, checksum, signed application, Gatekeeper result,
+and smoke test have been independently read back.
 
 ## Trust Boundary
 
@@ -67,9 +67,9 @@ no account identifier. Archive and export therefore use the same protected ident
 interactive Xcode account or permission to create signing assets. The local G26 automatic export
 contract remains separate.
 
-## Run The Rehearsal
+## Run A Private Rehearsal
 
-After the G28 source pull request is reviewed, green, and separately merged:
+After the G32 source pull request is reviewed, green, and separately merged:
 
 1. Open **Actions > Protected Release Candidate > Run workflow** and select `main`.
 2. Confirm the run's commit is the intended protected `main` commit.
@@ -82,35 +82,45 @@ Only one protected release run may execute at a time. A failure is never promote
 a later step: correct the cause, create a new green commit if tracked code changed, and dispatch the
 complete workflow again.
 
-The workflow uses the G26 application verifier and G27 package process. Its protected commit is both
-the application payload commit and packaging commit. The resulting draft tag uses the nonrelease
-form `v0.1.0-g28.<run>` so it cannot be mistaken for G30's `v0.1.0-rc.N` candidate.
+The workflow uses the established Developer ID application verifier and release
+package process. Its protected commit is both the application payload commit
+and packaging commit. A blank candidate number uses the nonrelease form
+`v0.1.1-g32.<run>` so it cannot be mistaken for G32's `v0.1.1-rc.N` candidate.
 
 ## G30 Protected Candidate Handoff
 
-At the close of G29, the checked-in protected workflow and its release helper remain intentionally
-G28-only and reject release-candidate tags. G30 therefore has two ordered phases.
+G30 introduced the two-phase protected candidate handoff used for the public
+`0.1.0` release: first merge the reviewed workflow enablement, then dispatch a
+candidate from that exact protected `main` commit.
+
+The G28 rehearsal draft and its assets cannot serve as G30 evidence. That historical release
+record remains immutable; G32 reuses the same trust boundary with new version-derived names.
+
+## G32 Maintenance Candidate Handoff
+
+G32 has two ordered phases.
 
 1. Land a reviewed source-enablement pull request that adds a distinct RC mode to the protected
    workflow, draft helper, static audit, and regression tests. Because `workflow_dispatch` uses the
    workflow on the default branch, this phase requires a separately approved merge to protected
    `main` before candidate creation can begin.
 2. In the post-merge protected run, supply only a validated positive `candidate_number`; derive
-   `v0.1.0-rc.N` inside the workflow, refuse an existing tag or release, and build the exact merged
+   `v0.1.1-rc.N` inside the workflow, refuse an existing tag or release, and build the exact merged
    `main` commit through the complete quality gate and `release` environment. The job must sign,
    notarize, staple, package, clean credentials, and transactionally create a draft prerelease with
    the same four-asset contract. Readback must prove the exact target commit, tag, draft/prerelease
    state, asset names, GitHub asset digests, and DMG checksum. Any later tracked change abandons that
    candidate and uses a new number.
 
-`candidate_number` is the workflow's sole input. Leaving it blank preserves the completed G28
-rehearsal path; a positive canonical integer selects G30. Values with a sign, leading zero, decimal,
+`candidate_number` is the workflow's sole input. Leaving it blank selects a
+private G32 rehearsal; a positive canonical integer selects the G32 candidate
+path. Values with a sign, leading zero, decimal,
 whitespace, or tag text are rejected before they influence a tag or path. No arbitrary tag, ref, or
 mode input exists.
 
-The G30 helper derives the RC tag independently, refuses both an existing release and an existing
+The helper derives the RC tag independently, refuses both an existing release and an existing
 Git ref, and uploads without replacement. It reads back the draft body from the reviewed
-[`release-notes/0.1.0.md`](release-notes/0.1.0.md), the exact four asset names, and every available
+[`release-notes/0.1.1.md`](release-notes/0.1.1.md), the exact four asset names, and every available
 `sha256:` asset digest. The checksum record must agree with both the local DMG and its uploaded
 digest. Only after those checks pass is the lightweight tag created directly on the exact commit;
 the tag is created last so an upload or validation failure cannot strand an RC ref. Final tag and
@@ -118,8 +128,9 @@ release readback completes the transaction. On a later failure, cleanup deletes 
 tag created by that invocation. The helper never patches, force-updates, moves, or overwrites a ref
 or release.
 
-The G28 rehearsal draft and its assets cannot serve as G30 evidence. Only the RC draft created by
-the post-merge protected run supplies G30's DMG and checksum.
+Historical private rehearsal drafts and their assets cannot serve as G32
+evidence. Only the RC draft created by the post-merge protected run supplies
+G32's DMG and checksum.
 
 Because that release remains a private draft, download its DMG and checksum with authenticated
 maintainer tooling into an external staging directory. Verify both against the protected readback,
@@ -130,8 +141,8 @@ quarantine attribute manually.
 
 The reviewed release notes and qualification procedure land before candidate creation. Therefore
 the Safari qualification download occurs after the final draft body exists and also serves as the
-fresh browser readback required by G30; an older G28/G29 download or a second inferred download does
-not count. Follow [`release-candidate-qualification.md`](release-candidate-qualification.md) for the
+fresh browser readback for the candidate; an older historical download or a second inferred download
+does not count. Follow [`release-candidate-qualification.md`](release-candidate-qualification.md) for the
 clean-account preflight, exact smoke matrix, accepted gaps, risk classification, and evidence
 boundary.
 
@@ -139,10 +150,10 @@ boundary.
 
 The draft prerelease contains exactly:
 
-- `CopyLasso-0.1.0.dmg`;
-- `CopyLasso-0.1.0.dmg.sha256`;
-- `CopyLasso-0.1.0.dSYM.zip`; and
-- `CopyLasso-0.1.0-verification.zip`.
+- `CopyLasso-0.1.1.dmg`;
+- `CopyLasso-0.1.1.dmg.sha256`;
+- `CopyLasso-0.1.1.dSYM.zip`; and
+- `CopyLasso-0.1.1-verification.zip`.
 
 The verification bundle contains the exact stapled source application and the portable records
 needed to reconstruct the release-run directory after downloading the other three assets. Download
@@ -156,8 +167,9 @@ target the exact commit, and contain exactly the four assets above. Recompute th
 and rerun the complete local package verifier. Preserve the downloaded dSYM and verification bundle
 as restricted maintainer evidence.
 
-The dSYM and verification bundle are intentionally draft-only. Remove them from the eventual G31
-public release; only the already-qualified DMG and checksum become public release assets. Never publish the G28 rehearsal.
+The dSYM and verification bundle are intentionally draft-only. Remove them from
+the eventual public release; only the already-qualified DMG and checksum become
+public release assets. Never publish a private rehearsal.
 
 ## Log And Failure Review
 
@@ -185,5 +197,6 @@ notarization, stapling, package verification, or credential cleanup prevent draf
 - **Stale draft:** delete the incomplete rehearsal through GitHub Releases. Never overwrite assets
   under an existing draft tag.
 
-G28 stops after one exact workflow run, downloaded local re-verification, log and cleanup inspection,
-and a verified draft release. It does not configure a clean VM or publish a download.
+G32 stops its protected-workflow phase after one exact run, downloaded local
+re-verification, log and cleanup inspection, and a verified draft release. It
+does not publish until the separately verified promotion step.

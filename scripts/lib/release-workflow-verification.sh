@@ -2,11 +2,16 @@
 
 set -euo pipefail
 
-readonly COPYLASSO_G28_VERSION="0.1.0"
-readonly COPYLASSO_G28_DMG="CopyLasso-0.1.0.dmg"
-readonly COPYLASSO_G28_CHECKSUM="CopyLasso-0.1.0.dmg.sha256"
-readonly COPYLASSO_G28_DSYM="CopyLasso-0.1.0.dSYM.zip"
-readonly COPYLASSO_G28_VERIFICATION="CopyLasso-0.1.0-verification.zip"
+readonly release_workflow_verification_library_root="$(
+    cd "$(dirname "${BASH_SOURCE[0]}")/../.." && /bin/pwd -P
+)"
+# shellcheck source=scripts/lib/release-metadata.sh
+source "$release_workflow_verification_library_root/scripts/lib/release-metadata.sh"
+readonly COPYLASSO_G28_VERSION="$COPYLASSO_RELEASE_VERSION"
+readonly COPYLASSO_G28_DMG="$COPYLASSO_RELEASE_DMG"
+readonly COPYLASSO_G28_CHECKSUM="$COPYLASSO_RELEASE_CHECKSUM"
+readonly COPYLASSO_G28_DSYM="$COPYLASSO_RELEASE_DSYM"
+readonly COPYLASSO_G28_VERIFICATION="$COPYLASSO_RELEASE_VERIFICATION"
 
 protected_release_fail() {
     echo "$1" >&2
@@ -24,7 +29,7 @@ assert_protected_release_ref() {
     local g28_git_ref="$1"
 
     [[ "$g28_git_ref" == "refs/heads/main" ]] || \
-        protected_release_fail "G28 releases may be dispatched only from protected main."
+        protected_release_fail "Protected releases may be dispatched only from protected main."
 }
 
 assert_release_source_state() {
@@ -90,9 +95,10 @@ assert_release_state_directory() {
 
 assert_release_draft_tag() {
     local g28_tag="$1"
+    local escaped_version="${COPYLASSO_G28_VERSION//./\\.}"
 
-    [[ "$g28_tag" =~ ^v0\.1\.0-g28\.[1-9][0-9]*$ ]] || \
-        protected_release_fail "The G28 draft tag name is invalid."
+    [[ "$g28_tag" =~ ^v${escaped_version}-g32\.[1-9][0-9]*$ ]] || \
+        protected_release_fail "The G32 draft tag name is invalid."
 }
 
 assert_release_candidate_number() {
@@ -107,13 +113,14 @@ release_candidate_tag() {
     local candidate_number="$1"
 
     assert_release_candidate_number "$candidate_number"
-    printf 'v0.1.0-rc.%s\n' "$candidate_number"
+    printf 'v%s-rc.%s\n' "$COPYLASSO_G28_VERSION" "$candidate_number"
 }
 
 assert_release_candidate_tag() {
     local candidate_tag="$1"
+    local escaped_version="${COPYLASSO_G28_VERSION//./\\.}"
 
-    [[ "$candidate_tag" =~ ^v0\.1\.0-rc\.[1-9][0-9]*$ ]] || \
+    [[ "$candidate_tag" =~ ^v${escaped_version}-rc\.[1-9][0-9]*$ ]] || \
         protected_release_fail "The release-candidate tag name is invalid."
 }
 

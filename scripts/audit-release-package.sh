@@ -7,6 +7,7 @@ readonly package_script="$repository_root/scripts/package-release.sh"
 readonly verifier_script="$repository_root/scripts/verify-release-package.sh"
 readonly comparator_script="$repository_root/scripts/compare-release-packages.sh"
 readonly test_script="$repository_root/scripts/test-release-package.sh"
+readonly metadata_library="$repository_root/scripts/lib/release-metadata.sh"
 readonly verifier_library="$repository_root/scripts/lib/release-package-verification.sh"
 readonly packaging_documentation="$repository_root/docs/release-packaging.md"
 readonly release_checklist="$repository_root/docs/release-checklist.md"
@@ -19,7 +20,11 @@ fail() {
 for executable in "$package_script" "$verifier_script" "$comparator_script" "$test_script"; do
     [[ -x "$executable" ]] || fail "Release-package script is missing or not executable: $(basename "$executable")"
 done
-for readable in "$verifier_library" "$packaging_documentation" "$release_checklist"; do
+for readable in \
+    "$metadata_library" \
+    "$verifier_library" \
+    "$packaging_documentation" \
+    "$release_checklist"; do
     [[ -r "$readable" ]] || fail "Release-package contract file is missing: $(basename "$readable")"
 done
 
@@ -45,8 +50,8 @@ for required_pattern in \
     'notarytool log' \
     'stapler staple' \
     'stapler validate' \
-    'CopyLasso-0.1.0.dmg.sha256' \
-    'CopyLasso-0.1.0.dSYM.zip' \
+    '$COPYLASSO_RELEASE_CHECKSUM' \
+    '$COPYLASSO_RELEASE_DSYM' \
     'release-evidence.txt'; do
     /usr/bin/grep -Fq -- "$required_pattern" "$package_script" "$verifier_library" || \
         fail "The package script is missing a required release step: $required_pattern"
@@ -82,9 +87,9 @@ done
 for required_phrase in \
     'exact G26' \
     'copylasso-notary' \
-    'CopyLasso-0.1.0.dmg' \
-    'CopyLasso-0.1.0.dmg.sha256' \
-    'CopyLasso-0.1.0.dSYM.zip' \
+    'CopyLasso-0.1.1.dmg' \
+    'CopyLasso-0.1.1.dmg.sha256' \
+    'CopyLasso-0.1.1.dSYM.zip' \
     'two complete runs' \
     'payload commit' \
     'packaging commit' \

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       candidate_number:
-        description: Positive G30 candidate number; leave blank only for a G28 rehearsal
+        description: Positive release-candidate number; leave blank only for a private G32 rehearsal
         required: false
         type: string
 
@@ -54,15 +54,15 @@ jobs:
       - name: Initialize ephemeral release paths
         run: |
           source ./scripts/lib/release-workflow-verification.sh
-          release_goal=G28
-          release_subdirectory=g28
+          release_goal=G32
+          release_subdirectory=g32
           release_mode=rehearsal
-          release_tag="v0.1.0-g28.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"
+          release_tag="v${COPYLASSO_G28_VERSION}-g32.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"
           if [[ -n "$COPYLASSO_CANDIDATE_NUMBER" ]]; then
             assert_release_candidate_number "$COPYLASSO_CANDIDATE_NUMBER"
             release_tag="$(release_candidate_tag "$COPYLASSO_CANDIDATE_NUMBER")"
-            release_goal=G30
-            release_subdirectory=g30
+            release_goal=G32
+            release_subdirectory=g32
             release_mode=candidate
           fi
           release_keychain_password="$(/usr/bin/openssl rand -hex 32)"

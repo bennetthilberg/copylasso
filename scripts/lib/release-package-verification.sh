@@ -2,11 +2,11 @@
 
 set -euo pipefail
 
-readonly COPYLASSO_RELEASE_VERSION="0.1.0"
-readonly COPYLASSO_RELEASE_BUILD="1"
-readonly COPYLASSO_RELEASE_DMG="CopyLasso-0.1.0.dmg"
-readonly COPYLASSO_RELEASE_CHECKSUM="CopyLasso-0.1.0.dmg.sha256"
-readonly COPYLASSO_RELEASE_DSYM="CopyLasso-0.1.0.dSYM.zip"
+readonly release_package_verification_library_root="$(
+    cd "$(dirname "${BASH_SOURCE[0]}")/../.." && /bin/pwd -P
+)"
+# shellcheck source=scripts/lib/release-metadata.sh
+source "$release_package_verification_library_root/scripts/lib/release-metadata.sh"
 readonly COPYLASSO_RELEASE_DMG_IDENTIFIER="io.github.bennetthilberg.copylasso.dmg"
 
 release_package_fail() {
@@ -22,7 +22,8 @@ assert_release_artifact_names() {
     if [[ "$dmg_name" != "$COPYLASSO_RELEASE_DMG" ]] || \
         [[ "$checksum_name" != "$COPYLASSO_RELEASE_CHECKSUM" ]] || \
         [[ "$dsym_name" != "$COPYLASSO_RELEASE_DSYM" ]]; then
-        release_package_fail "The release artifact names must be versioned exactly for CopyLasso 0.1.0."
+        release_package_fail \
+            "The release artifact names must be versioned exactly for CopyLasso $COPYLASSO_RELEASE_VERSION."
     fi
 }
 
@@ -110,13 +111,13 @@ assert_release_checksum() {
     [[ -f "$image_path" ]] || release_package_fail "The release disk image is missing."
     [[ -f "$checksum_path" ]] || release_package_fail "The release checksum is missing."
     if [[ "$(basename "$image_path")" != "$COPYLASSO_RELEASE_DMG" ]]; then
-        release_package_fail "The checksum target must be CopyLasso-0.1.0.dmg."
+        release_package_fail "The checksum target must be $COPYLASSO_RELEASE_DMG."
     fi
     expected_hash="$(/usr/bin/shasum -a 256 "$image_path" | /usr/bin/awk '{print $1}')"
     expected_line="$expected_hash  $COPYLASSO_RELEASE_DMG"
     actual_line="$(/bin/cat "$checksum_path")"
     if [[ "$actual_line" != *"  $COPYLASSO_RELEASE_DMG" ]]; then
-        release_package_fail "The checksum record must name CopyLasso-0.1.0.dmg."
+        release_package_fail "The checksum record must name $COPYLASSO_RELEASE_DMG."
     fi
     if [[ "$actual_line" != "$expected_line" ]]; then
         release_package_fail "The release disk-image checksum does not match."
