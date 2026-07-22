@@ -22,6 +22,24 @@
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
+      <PostActions>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Unregister generated Release product"
+               scriptText = "&quot;$SRCROOT/scripts/unregister-generated-release.sh&quot;">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "AACED2EA30004BEB001F9909"
+                     BuildableName = "CopyLasso.app"
+                     BlueprintName = "CopyLasso"
+                     ReferencedContainer = "container:CopyLasso.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PostActions>
    </BuildAction>
    <TestAction
       buildConfiguration = "Debug"

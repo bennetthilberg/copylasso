@@ -49,26 +49,26 @@ jobs:
           COPYLASSO_CI_FAILURE_PROBE: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-failure-probe') }}
         run: ./scripts/ci.sh
 
-      - name: Package minimum-OS runtime artifact
+      - name: Package maintained-runtime artifact
         if: matrix.architecture == 'arm64'
         run: |
-          /usr/bin/tar -czf "$RUNNER_TEMP/copylasso-macos14-runtime.tar.gz" \
+          /usr/bin/tar -czf "$RUNNER_TEMP/copylasso-maintained-runtime.tar.gz" \
             -C "$GITHUB_WORKSPACE/.build/ci-arm64/Build/Products/Release" \
             CopyLasso.app
 
-      - name: Upload minimum-OS runtime artifact
+      - name: Upload maintained-runtime artifact
         if: matrix.architecture == 'arm64'
         uses: actions/upload-artifact@v7
         with:
-          name: copylasso-macos14-runtime
-          path: ${{ runner.temp }}/copylasso-macos14-runtime.tar.gz
+          name: copylasso-maintained-runtime
+          path: ${{ runner.temp }}/copylasso-maintained-runtime.tar.gz
           if-no-files-found: error
           retention-days: 1
 
-  minimum-os-runtime:
-    name: minimum OS runtime (macOS 14 arm64)
+  maintained-os-runtime:
+    name: maintained OS runtime (macOS 15 arm64)
     needs: build-and-test
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 10
     steps:
       - name: Check out repository
@@ -76,16 +76,16 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Download minimum-OS runtime artifact
+      - name: Download maintained-runtime artifact
         uses: actions/download-artifact@v7
         with:
-          name: copylasso-macos14-runtime
+          name: copylasso-maintained-runtime
           path: ${{ runner.temp }}
 
-      - name: Run on the minimum supported macOS
+      - name: Run on the maintained hosted macOS
         run: |
-          /bin/mkdir -p "$RUNNER_TEMP/copylasso-minimum-os"
-          /usr/bin/tar -xzf "$RUNNER_TEMP/copylasso-macos14-runtime.tar.gz" \
-            -C "$RUNNER_TEMP/copylasso-minimum-os"
+          /bin/mkdir -p "$RUNNER_TEMP/copylasso-maintained-runtime"
+          /usr/bin/tar -xzf "$RUNNER_TEMP/copylasso-maintained-runtime.tar.gz" \
+            -C "$RUNNER_TEMP/copylasso-maintained-runtime"
           ./scripts/test-minimum-macos.sh \
-            "$RUNNER_TEMP/copylasso-minimum-os/CopyLasso.app"
+            "$RUNNER_TEMP/copylasso-maintained-runtime/CopyLasso.app"

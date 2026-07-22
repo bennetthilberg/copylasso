@@ -11,6 +11,58 @@ account has no CopyLasso application, production preferences, production
 container, login item, or Screen Recording approval. This document does not
 publish a release.
 
+## G33 Current Public-Release Qualification
+
+G33 applies the reusable install and removal boundaries below to the exact
+public CopyLasso 0.1.1 release: version `0.1.1`, build `2`, DMG
+`CopyLasso-0.1.1.dmg`, and SHA-256
+`8e2c139ee13d181a7928c9b29b37d9367f5f7296cf069404f12c0c5df5a389dc`.
+The procedure defines the maintainer's latest-stable host plus a freshly
+recreated disposable local macOS user as the clean-state boundary. The
+application in `/Applications` is shared across users, but preferences, the
+sandbox container, login-item approval, and TCC state are account-scoped. The
+maintainer stopped the G33 run after deleting the retained disposable account
+and before recreating it, so the account-isolation row remains explicitly
+skipped rather than inferred from the completed maintainer-account checks.
+
+This replaces the unexecuted VirtualBuddy clone recreation row. It does not
+claim virtual-machine, APFS-clone, or additional operating-system coverage. A
+macOS 15 hosted smoke does not qualify macOS 14 behavior. Real macOS 14
+qualification remains a manual release gate using the preserved Sonoma evidence
+and a fresh real-host run before a future release when runtime-sensitive code or
+packaging changes.
+
+The G33 sequence is:
+
+1. Verify the installed app and public DMG identity, version/build, Developer ID
+   signature, notarization, Gatekeeper result, and Universal 2 slices.
+2. With production preferences retained, reinstall the exact app and confirm
+   onboarding, shortcut, Settings, capture, and the selected Launch at Login
+   state remain reconciled.
+3. Enable Launch at Login and sign out/in or restart; confirm the dockless app
+   returns. Disable it, repeat the transition, and confirm it stays absent until
+   manually launched.
+4. Perform only the documented CopyLasso uninstall: disable Launch at Login,
+   quit, remove the application, delete the production preference domain and
+   production container, and reset only `ScreenCapture` for
+   `io.github.bennetthilberg.copylasso`. Reinstall and confirm clean onboarding,
+   absent prior preference/container/login approval, and a fresh permission
+   transition.
+5. Recreate the disposable user, verify clean account-scoped state, install or
+   use the shared public app, complete one capture, remove the user, recreate it,
+   and prove the account-scoped state is clean again. Restore the exact public
+   app and intended maintainer settings afterward.
+
+| G33 scenario | Result |
+| --- | --- |
+| Exact public 0.1.1 artifact and installed-app identity | **Pass** - trusted DMG digest and disk-image verification matched; the installed app passed strict signing, stapled-ticket, Gatekeeper, production identity, `0.1.1 (2)`, and Universal 2 checks |
+| Ordinary reinstall retains preferences and reconciles Launch at Login | **Pass** - Finder replaced the app from the exact DMG; preferences remained byte-identical, Settings and capture worked, and the enabled login item remained reconciled |
+| Enabled Launch at Login survives sign-in or restart | **Pass** - the menu agent returned automatically after a real sign-out/sign-in and Background Task Management remained enabled |
+| Disabled Launch at Login stays disabled across sign-in or restart | **Pass** - the menu agent stayed absent after a second real sign-out/sign-in and Background Task Management remained disabled |
+| Complete scoped uninstall/reinstall returns clean state | **Pass** - only the production app, preference domain, container, login item, and scoped Screen Recording decision were removed; exact-DMG reinstall returned clean onboarding and a fresh permission transition, then capture succeeded |
+| Recreated disposable user proves account isolation | **Skipped by maintainer** - the retained disposable account and home were deleted, but the maintainer stopped before replacement-account creation or testing; no account-isolation pass is claimed |
+| Maintainer's exact public installation and intended settings restored | **Pass** - exact public app, default shortcut, enabled login item, granted Screen Recording access, working capture, and one production Launch Services registration were restored |
+
 ## G30 Host Account Substitution
 
 G30 follows the bounded
