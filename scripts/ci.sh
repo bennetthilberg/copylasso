@@ -76,6 +76,9 @@ echo "Auditing platform and reinstall qualification"
 echo "Testing platform and reinstall qualification"
 ./scripts/test-platform-qualification.sh
 
+echo "Auditing the approved v0.2 product contract"
+./scripts/audit-v02-contract.sh
+
 readonly committed_development_team_pattern='^[[:space:]]*"?DEVELOPMENT_TEAM(\[[^]]+\])?"?[[:space:]]*=[[:space:]]*[A-Z0-9]{10};'
 
 if /usr/bin/grep -Eq "$committed_development_team_pattern" \

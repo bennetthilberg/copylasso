@@ -95,3 +95,11 @@ matrix and accepted-risk record.
 - [x] Qualify ordinary reinstall with preferences retained and enabled/disabled Launch at Login across sign-in or restart using the exact public CopyLasso 0.1.1 DMG.
 - [x] Qualify the complete scoped uninstall/reinstall; record the maintainer-stopped disposable-account recreation as skipped rather than an account-isolation or VM-clone pass.
 - [x] Restore the exact public installation and intended maintainer settings, confirm it is the sole production Launch Services registration, and close issue #41 through the ready G33 pull request.
+
+## G34 - v0.2 Product Contract
+
+- [x] Preserve the historical v0.1 contract and document v0.2 as approved planned scope rather than shipped 0.1.1 behavior.
+- [x] Lock automatic-update, success-sound, separate capture-command, QR/barcode, conditional LaTeX, privacy, accessibility, and version/build decisions.
+- [x] Add the focused v0.2 contract audit and enforce exactly one canonical CI invocation.
+- [x] Narrow issue #38 to on-screen QR/barcode recognition and create separate issues for file/PDF input, configurable success sound, and conditional offline LaTeX recognition.
+- [ ] Pass both canonical architectures, hosted checks, exact-head review, and final ready-PR readback without changing application source, dependencies, entitlements, release metadata, feeds, tags, or public artifacts.

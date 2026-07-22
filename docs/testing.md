@@ -338,6 +338,28 @@ Signed XCUITests remain focused on first-run, Settings, menu, recovery, and acce
 
 The versioned release checklist and performance result sheet are maintained in [Manual QA and Performance](manual-qa-and-performance.md). G24 executed that document from one clean, stably signed Debug state; partial or historical evidence must not be promoted into a release pass. The reusable procedure, partial browser-quarantined Sonoma rehearsal, incomplete latest-stable attempt, and accepted restart/reinstall gaps are recorded separately in [Clean Installation Testing](clean-install-testing.md).
 
+## v0.2 Product Contract Audit
+
+`scripts/audit-v02-contract.sh` is the documentation gate for the approved
+[v0.2 product contract](v0.2-product-contract.md). Canonical CI invokes it
+exactly once, and `scripts/test-ci-contract.sh` enforces that invocation. The
+audit checks the approved update, sound, command, QR/barcode, LaTeX, privacy,
+accessibility, and version/build decisions while also proving the shipped
+0.1.1 release metadata, current no-updater documentation, and one-key sandbox
+entitlement remain unchanged.
+
+Run the focused gate with:
+
+```sh
+./scripts/audit-v02-contract.sh
+./scripts/test-ci-contract.sh
+```
+
+This is a documentation and scope gate. It does not qualify an updater,
+network entitlement, new capture mode, sound asset, recognition dependency, or
+v0.2 release. Those require their later approved goals and direct behavioral
+tests.
+
 The July 13, 2026 signed run completed many functional, permission, and OCR rows
 before exposing a pre-drag sleep/wake failure. G24U subsequently passed exact
 signed pre-drag and drag-phase sleep interruption with full cleanup, clipboard
