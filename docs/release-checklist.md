@@ -91,7 +91,7 @@ matrix and accepted-risk record.
 
 - [x] Prevent canonical ordinary Release builds from retaining generated production-identifier Launch Services registrations while refusing every installed, symlinked, or out-of-root app.
 - [x] Run the platform-qualification audit and behavior tests exactly once through canonical CI, including successful-build and failed-build cleanup.
-- [ ] Move continuous artifact launch smoke to maintained macOS 15 while retaining deployment target 14.0, Mach-O minimum-version verification, Universal 2 output, and real macOS 14 as a manual release gate.
+- [x] Move continuous artifact launch smoke to maintained macOS 15 while retaining deployment target 14.0, Mach-O minimum-version verification, Universal 2 output, and real macOS 14 as a manual release gate.
 - [x] Qualify ordinary reinstall with preferences retained and enabled/disabled Launch at Login across sign-in or restart using the exact public CopyLasso 0.1.1 DMG.
 - [x] Qualify the complete scoped uninstall/reinstall; record the maintainer-stopped disposable-account recreation as skipped rather than an account-isolation or VM-clone pass.
-- [ ] Restore the exact public installation and intended maintainer settings, confirm it is the sole production Launch Services registration, and close issue #41 through the ready G33 pull request.
+- [x] Restore the exact public installation and intended maintainer settings, confirm it is the sole production Launch Services registration, and close issue #41 through the ready G33 pull request.
