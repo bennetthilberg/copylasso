@@ -382,8 +382,10 @@ COPYLASSO_SPARKLE_TOOLS_DIR=/path/to/Sparkle/bin \
 
 The signature fixture runs under a process sandbox that denies networking. It
 creates two ephemeral Ed25519 keys, proves a valid archive and appcast, rejects
-in-envelope feed mutation, archive mutation, and the wrong key, checks the
-official feed tool is runnable, and removes the entire temporary directory. The
+in-envelope feed mutation, archive mutation, and the wrong key, then proves
+Sparkle's real parser rejects a signed malformed appcast. It checks the
+official feed tool is runnable, supports tool paths containing spaces, and
+removes the entire temporary directory. The
 static audit verifies the exact source revision and artifact checksum record,
 test-only target confinement, one-key product sandbox, no shipping updater
 configuration, no feed/key material, and the unchanged 0.1.1 (2) release.

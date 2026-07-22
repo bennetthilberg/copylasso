@@ -34,6 +34,8 @@ for executable in \
     "$repository_root/scripts/test-secure-update-signatures.sh"; do
     [[ -x "$executable" ]] || fail "Missing executable secure-update proof: $(basename "$executable")"
 done
+[[ -f "$repository_root/scripts/fixtures/SignedAppcastParserProbe.m" ]] || \
+    fail "The signed malformed-appcast parser probe is missing."
 
 require_literal "$project" 'repositoryURL = "https://github.com/sparkle-project/Sparkle";' \
     "Sparkle must come from the reviewed upstream repository."

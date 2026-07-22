@@ -105,7 +105,9 @@ The G35 proof uses Sparkle's real `SUStandardVersionComparator`, real
 The fixture creates a fresh test-only Ed25519 key in a temporary directory,
 signs and verifies an archive and appcast with Sparkle's shipped tools while
 network access is denied, rejects mutations inside the signed feed bytes,
-archive tampering, and a second key, then destroys all fixture material.
+archive tampering, and a second key. It also authenticates deliberately
+malformed XML and proves Sparkle's real appcast parser rejects it before any
+selection decision, then destroys all fixture material.
 Sparkle's signed-feed envelope authenticates an explicit content length and
 parses only those verified bytes; data appended after that envelope cannot alter
 the authenticated appcast. No production key or public feed exists in G35.

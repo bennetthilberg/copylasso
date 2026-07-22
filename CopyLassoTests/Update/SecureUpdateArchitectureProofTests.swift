@@ -63,6 +63,8 @@ final class SecureUpdateArchitectureProofTests: XCTestCase {
       "https://github.com/bennetthilberg/copylasso/archive/CopyLasso-0.2.0.dmg",
       "https://github.com/bennetthilberg/copylasso/releases/download/v0.2.0/update.zip",
       "https://github.com/bennetthilberg/copylasso/releases/download/v0.2.0/CopyLasso-0.2.0.dmg?tracking=1",
+      "https://github.com/bennetthilberg/copylasso/releases/download/tag/%2e%2e/%2e%2e/evil/CopyLasso-0.2.0.dmg",
+      "https://github.com/bennetthilberg/copylasso/releases/download//v0.2.0/CopyLasso-0.2.0.dmg",
     ] {
       var malformed = SecureUpdateProofCandidate.valid
       malformed.downloadURL = URL(string: location)!
@@ -249,7 +251,12 @@ private struct SecureUpdateProofPolicy {
     guard candidate.expectedDownloadBytes == candidate.actualDownloadBytes else {
       return .rejected(.sizeMismatch)
     }
-    guard isApprovedDownloadLocation(candidate.downloadURL) else {
+    guard
+      isApprovedDownloadLocation(
+        candidate.downloadURL,
+        displayVersion: candidate.displayVersion
+      )
+    else {
       return .rejected(.invalidDownloadLocation)
     }
 
@@ -276,7 +283,18 @@ private struct SecureUpdateProofPolicy {
     return version.utf8.allSatisfy { (48...57).contains($0) }
   }
 
-  private func isApprovedDownloadLocation(_ url: URL) -> Bool {
+  private func isApprovedDownloadLocation(_ url: URL, displayVersion: String) -> Bool {
+    let expectedPath =
+      "/bennetthilberg/copylasso/releases/download/v\(displayVersion)/CopyLasso-\(displayVersion).dmg"
+    let expectedComponents = [
+      "/",
+      "bennetthilberg",
+      "copylasso",
+      "releases",
+      "download",
+      "v\(displayVersion)",
+      "CopyLasso-\(displayVersion).dmg",
+    ]
     guard url.scheme == "https",
       url.host == "github.com",
       url.user == nil,
@@ -284,9 +302,8 @@ private struct SecureUpdateProofPolicy {
       url.port == nil,
       url.query == nil,
       url.fragment == nil,
-      url.path.hasPrefix("/bennetthilberg/copylasso/releases/download/"),
-      url.lastPathComponent.hasPrefix("CopyLasso-"),
-      url.pathExtension == "dmg"
+      url.path(percentEncoded: true) == expectedPath,
+      url.pathComponents == expectedComponents
     else {
       return false
     }
