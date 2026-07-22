@@ -8,6 +8,7 @@ readonly workflow="$repository_root/.github/workflows/ci.yml"
 readonly cleanup_library="$repository_root/scripts/lib/launch-services-cleanup.sh"
 readonly cleanup_runner="$repository_root/scripts/run-with-generated-app-cleanup.sh"
 readonly ordinary_release_cleanup="$repository_root/scripts/unregister-generated-release.sh"
+readonly runtime_smoke="$repository_root/scripts/test-minimum-macos.sh"
 readonly shared_scheme="$repository_root/CopyLasso.xcodeproj/xcshareddata/xcschemes/CopyLasso.xcscheme"
 
 fail() {
@@ -18,6 +19,7 @@ fail() {
 [[ -r "$cleanup_library" ]] || fail "Launch Services cleanup library is missing."
 [[ -x "$cleanup_runner" ]] || fail "Generated-app cleanup runner is missing."
 [[ -x "$ordinary_release_cleanup" ]] || fail "Ordinary Release cleanup is missing."
+[[ -x "$runtime_smoke" ]] || fail "Maintained runtime smoke is missing."
 
 /usr/bin/grep -Fq '/Applications/*)' "$cleanup_library" || \
     fail "Generated-product cleanup must explicitly refuse installed applications."
@@ -49,6 +51,20 @@ fi
     fail "The maintained runtime smoke must expect its macOS 15 host."
 /usr/bin/grep -Fq './scripts/test-minimum-macos.sh' "$workflow" || \
     fail "The maintained hosted smoke must retain deployment-target verification."
+/usr/bin/grep -Fq 'for architecture in arm64 x86_64; do' "$runtime_smoke" || \
+    fail "The runtime smoke must validate every Universal 2 executable slice."
+/usr/bin/grep -Fq 'vtool -arch "$architecture" -show-build' "$runtime_smoke" || \
+    fail "The runtime smoke must inspect minimum-version metadata per architecture."
+
+for document in \
+    "$repository_root/docs/architecture/build-configuration.md" \
+    "$repository_root/docs/coverage-review.md"; do
+    /usr/bin/grep -Fq 'macOS 15 arm64' "$document" || \
+        fail "Maintained-runtime documentation is stale: ${document#"$repository_root/"}"
+    if /usr/bin/grep -Fq 'macOS 14 arm64 runner' "$document"; then
+        fail "Retired hosted macOS 14 wording remains: ${document#"$repository_root/"}"
+    fi
+done
 
 for required_contract in \
     'A macOS 15 hosted smoke does not qualify macOS 14 behavior.' \

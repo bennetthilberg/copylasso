@@ -32,16 +32,17 @@ if [[ "$(/usr/bin/plutil -extract LSMinimumSystemVersion raw -o - "$info_plist")
 fi
 
 readonly architectures="$(/usr/bin/lipo -archs "$executable")"
-if [[ " $architectures " != *" arm64 "* ]]; then
-    echo "The minimum-OS artifact is missing arm64." >&2
-    exit 1
-fi
-
-if [[ "$(/usr/bin/xcrun vtool -show-build "$executable" | \
-    /usr/bin/grep -c 'minos 14\.0')" -lt 1 ]]; then
-    echo "The executable does not declare a macOS 14.0 minimum runtime." >&2
-    exit 1
-fi
+for architecture in arm64 x86_64; do
+    if [[ " $architectures " != *" $architecture "* ]]; then
+        echo "The runtime artifact is missing $architecture." >&2
+        exit 1
+    fi
+    if [[ "$(/usr/bin/xcrun vtool -arch "$architecture" -show-build "$executable" | \
+        /usr/bin/grep -c 'minos 14\.0')" != 1 ]]; then
+        echo "The $architecture executable slice does not declare a macOS 14.0 minimum runtime." >&2
+        exit 1
+    fi
+done
 
 /usr/bin/codesign \
     --force \
