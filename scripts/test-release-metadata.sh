@@ -48,8 +48,8 @@ fi
 
 [[ -r "$repository_root/docs/release-notes/0.1.1.md" ]] || \
     fail "Reviewed 0.1.1 release notes are missing."
-/usr/bin/grep -Fq '## 0.1.1 - Unreleased' "$repository_root/CHANGELOG.md" || \
-    fail "The changelog must contain the undated 0.1.1 hotfix entry."
+/usr/bin/grep -Fq '## 0.1.1 - 2026-07-21' "$repository_root/CHANGELOG.md" || \
+    fail "The changelog must date the published 0.1.1 hotfix entry."
 /usr/bin/grep -Fq 'Settings now appears immediately' \
     "$repository_root/docs/release-notes/0.1.1.md" || \
     fail "The 0.1.1 notes must describe the Settings presentation fix."

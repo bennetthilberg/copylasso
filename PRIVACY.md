@@ -1,6 +1,6 @@
 # CopyLasso Privacy
 
-**Status:** Approved privacy contract for CopyLasso 0.1.0.
+**Status:** Approved privacy contract for CopyLasso 0.1.x, including the current 0.1.1 release.
 
 CopyLasso is designed as a local-first macOS utility. Its core job is to capture a user-selected screen region, recognize visible text, and place the result on the clipboard without uploading or retaining the captured content.
 

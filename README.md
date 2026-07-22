@@ -4,7 +4,7 @@
 
 CopyLasso is a free and open-source macOS utility for copying visible text from anywhere on screen. Press `⇧⌘2`, drag around text, and receive recognized plain text on the clipboard. Recognition runs locally with Apple's Vision framework, and CopyLasso does not retain a screenshot or OCR history.
 
-CopyLasso 0.1.0 is the latest public release.
+CopyLasso 0.1.1 is the latest public release.
 
 ## Requirements
 
@@ -14,20 +14,20 @@ CopyLasso 0.1.0 is the latest public release.
 
 ## Install CopyLasso
 
-Download CopyLasso 0.1.0 from the [release page](https://github.com/bennetthilberg/copylasso/releases/tag/v0.1.0):
+Download CopyLasso 0.1.1 from the [release page](https://github.com/bennetthilberg/copylasso/releases/tag/v0.1.1):
 
-- [CopyLasso-0.1.0.dmg](https://github.com/bennetthilberg/copylasso/releases/download/v0.1.0/CopyLasso-0.1.0.dmg)
-- [CopyLasso-0.1.0.dmg.sha256](https://github.com/bennetthilberg/copylasso/releases/download/v0.1.0/CopyLasso-0.1.0.dmg.sha256)
+- [CopyLasso-0.1.1.dmg](https://github.com/bennetthilberg/copylasso/releases/download/v0.1.1/CopyLasso-0.1.1.dmg)
+- [CopyLasso-0.1.1.dmg.sha256](https://github.com/bennetthilberg/copylasso/releases/download/v0.1.1/CopyLasso-0.1.1.dmg.sha256)
 
 Place both files in the same folder, then verify the download before opening it:
 
 ```sh
-shasum -a 256 -c CopyLasso-0.1.0.dmg.sha256
+shasum -a 256 -c CopyLasso-0.1.1.dmg.sha256
 ```
 
-The result must report `CopyLasso-0.1.0.dmg: OK`. Then:
+The result must report `CopyLasso-0.1.1.dmg: OK`. Then:
 
-1. Open `CopyLasso-0.1.0.dmg` and drag CopyLasso into Applications.
+1. Open `CopyLasso-0.1.1.dmg` and drag CopyLasso into Applications.
 2. Open CopyLasso. It runs in the menu bar and does not add a Dock icon.
 3. Complete the short first-run setup and keep the suggested `⇧⌘2` shortcut or record another one.
 4. The first capture asks macOS for Screen Recording permission. Approve CopyLasso, then choose **Quit & Reopen** if macOS offers it.
