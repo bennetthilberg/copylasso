@@ -10,6 +10,15 @@ The production appcast will live at
 GitHub Release assets. DNS and public feed publication are later, separately
 approved work.
 
+The enclosure starts at the exact immutable `github.com` release URL recorded
+in the authenticated feed. GitHub may return the asset directly or issue one
+redirect. Only an HTTPS redirect to `release-assets.githubusercontent.com` with
+the reviewed release-asset path shape, no credentials/custom port/fragment,
+and a nonempty signed query is allowed. No second redirect is followed. A host
+change is a fail-closed incident and requires a reviewed contract update; it is
+not learned dynamically. Enclosure authentication and metadata checks remain
+mandatory after the transport handoff.
+
 Automatic checks default on, run no more often than every 24 hours, and can be
 disabled. A user command may check immediately. Requests contain no system
 profile, hardware data, stable identifier, cookies, custom headers, screen or

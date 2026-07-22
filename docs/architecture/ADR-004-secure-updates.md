@@ -56,6 +56,17 @@ of the form
 `https://github.com/bennetthilberg/copylasso/releases/download/<tag>/CopyLasso-<version>.dmg`.
 G35 neither publishes nor requests either endpoint.
 
+[GitHub's release-asset API](https://docs.github.com/en/rest/releases/assets#get-a-release-asset)
+documents that an asset request may return the bytes directly or redirect the
+client. G36 may follow exactly one redirect from an already validated enclosure
+URL to HTTPS `release-assets.githubusercontent.com`, with no user information,
+custom port, fragment, or further redirect. The destination must retain
+GitHub's `github-production-release-asset/<numeric repository>/<opaque asset>`
+path shape and a nonempty signed query. A different host or shape fails closed
+until a separately reviewed architecture change. The downloaded bytes still
+must pass length, Ed25519, Developer ID, notarization, version, and architecture
+checks; transport location never authorizes installation.
+
 G36 will use these non-secret settings:
 
 - `SUFeedURL = https://updates.copylasso.com/appcast.xml` and the reviewed
@@ -97,6 +108,8 @@ The G35 proof uses Sparkle's real `SUStandardVersionComparator`, real
   exposure.
 - Only the fixed HTTPS GitHub Releases owner, repository, tag path, DMG naming,
   and a URL without user info, port, query, or fragment are accepted.
+- The sole allowed redirect is the bounded GitHub release-asset CDN handoff
+  above; all other and follow-on redirects fail closed.
 - Offline, timeout, malformed feed, invalid signature, cancellation, disk-full,
   and interruption paths remove staging and preserve the installed build.
 - Installation commits only after a verified download and explicit final user
@@ -107,7 +120,9 @@ signs and verifies an archive and appcast with Sparkle's shipped tools while
 network access is denied, rejects mutations inside the signed feed bytes,
 archive tampering, and a second key. It also authenticates deliberately
 malformed XML and proves Sparkle's real appcast parser rejects it before any
-selection decision, then destroys all fixture material.
+selection decision. A signed well-formed appcast must pass the same parser as a
+positive control before that negative result is accepted, then the fixture
+destroys all material.
 Sparkle's signed-feed envelope authenticates an explicit content length and
 parses only those verified bytes; data appended after that envelope cannot alter
 the authenticated appcast. No production key or public feed exists in G35.

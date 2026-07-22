@@ -96,7 +96,9 @@ readonly parser_probe="$temporary_directory/signed-appcast-parser-probe"
     -framework Sparkle \
     "$parser_probe_source" \
     -o "$parser_probe"
-DYLD_FRAMEWORK_PATH="$sparkle_frameworks" "$parser_probe" "$malformed_feed" || \
+DYLD_FRAMEWORK_PATH="$sparkle_frameworks" "$parser_probe" accept "$feed" || \
+    fail "Sparkle did not parse the authenticated well-formed appcast control."
+DYLD_FRAMEWORK_PATH="$sparkle_frameworks" "$parser_probe" reject "$malformed_feed" || \
     fail "Sparkle parsed an authenticated malformed appcast fixture."
 
 # The package must expose the reviewed feed-generation tool even though G35

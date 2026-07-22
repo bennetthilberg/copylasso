@@ -13,11 +13,17 @@
 
 int main(int argc, const char *argv[]) {
     @autoreleasepool {
-        if (argc != 2) {
+        if (argc != 3) {
             return 64;
         }
 
-        NSString *path = [NSString stringWithUTF8String:argv[1]];
+        NSString *expectation = [NSString stringWithUTF8String:argv[1]];
+        BOOL shouldParse = [expectation isEqualToString:@"accept"];
+        if (!shouldParse && ![expectation isEqualToString:@"reject"]) {
+            return 64;
+        }
+
+        NSString *path = [NSString stringWithUTF8String:argv[2]];
         NSData *data = [NSData dataWithContentsOfFile:path];
         if (data == nil) {
             return 66;
@@ -30,9 +36,9 @@ int main(int argc, const char *argv[]) {
               stateResolver:nil
     signingValidationStatus:SPUAppcastSigningValidationStatusSucceeded
                       error:&error];
-        if (appcast != nil || error == nil) {
-            return 1;
+        if (shouldParse) {
+            return appcast != nil && error == nil ? 0 : 1;
         }
-        return 0;
+        return appcast == nil && error != nil ? 0 : 1;
     }
 }

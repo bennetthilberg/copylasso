@@ -384,7 +384,8 @@ The signature fixture runs under a process sandbox that denies networking. It
 creates two ephemeral Ed25519 keys, proves a valid archive and appcast, rejects
 in-envelope feed mutation, archive mutation, and the wrong key, then proves
 Sparkle's real parser rejects a signed malformed appcast. It checks the
-official feed tool is runnable, supports tool paths containing spaces, and
+same parser first accepts a signed well-formed control, checks the official feed
+tool is runnable, supports tool paths containing spaces, and
 removes the entire temporary directory. The
 static audit verifies the exact source revision and artifact checksum record,
 test-only target confinement, one-key product sandbox, no shipping updater
