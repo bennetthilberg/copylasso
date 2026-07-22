@@ -79,10 +79,10 @@ matrix and accepted-risk record.
 
 ## G32 - v0.1.1 Settings Hotfix
 
-- [ ] Confirm the exact protected commit contains the merged Settings presentation fix, version `0.1.1`, build `2`, and no unrelated application behavior.
-- [ ] Pass the release-metadata, Developer ID, package, protected-workflow, brand, privacy, CI-contract, canonical arm64/x86_64, and macOS 14 gates.
-- [ ] After separate pull-request merge approval, dispatch candidate `v0.1.1-rc.N` from that exact protected `main` commit and approve only the protected release environment.
-- [ ] Read back the private draft, four exact assets, reviewed `0.1.1` notes, checksums, GitHub digests, target commit, signed application, notarization, Gatekeeper result, version/build, Universal 2 slices, and two-item DMG layout.
-- [ ] Create a signed annotated `v0.1.1` tag on the qualified commit, publish only the exact DMG and checksum as the latest non-prerelease release, and leave `v0.1.0` plus all private historical drafts unchanged.
-- [ ] Download the public DMG with genuine quarantine, repeat checksum/signature/notarization/Gatekeeper/install verification, and smoke Settings plus one capture.
-- [ ] With action-time confirmation, reset only `ScreenCapture` for `io.github.bennetthilberg.copylasso`, grant the public app once, and verify one current CopyLasso privacy row.
+- [x] Confirm the exact protected commit contains the merged Settings presentation fix, version `0.1.1`, build `2`, and no unrelated application behavior.
+- [x] Pass the release-metadata, Developer ID, package, protected-workflow, brand, privacy, CI-contract, canonical arm64/x86_64, and macOS 14 gates.
+- [x] After separate pull-request merge approval, dispatch candidate `v0.1.1-rc.N` from that exact protected `main` commit and approve only the protected release environment.
+- [x] Read back the private draft, four exact assets, reviewed `0.1.1` notes, checksums, GitHub digests, target commit, signed application, notarization, Gatekeeper result, version/build, Universal 2 slices, and two-item DMG layout.
+- [x] Create a signed annotated `v0.1.1` tag on the qualified commit, publish only the exact DMG and checksum as the latest non-prerelease release, and leave `v0.1.0` plus all private historical drafts unchanged.
+- [x] Download the public DMG with genuine quarantine, repeat checksum/signature/notarization/Gatekeeper/install verification, and smoke Settings plus one capture.
+- [x] With action-time confirmation, reset only `ScreenCapture` for `io.github.bennetthilberg.copylasso`, grant the public app once, and verify one current CopyLasso privacy row.

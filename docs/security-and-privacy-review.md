@@ -1,6 +1,6 @@
 # Security And Privacy Review
 
-This review describes the public CopyLasso 0.1.0 implementation boundary. It reconciles the source, built products, dependency graph, entitlements, persistence, and public privacy promises.
+This review describes the public CopyLasso 0.1.x implementation boundary, including the current 0.1.1 release. It reconciles the source, built products, dependency graph, entitlements, persistence, and public privacy promises.
 
 ## Result
 

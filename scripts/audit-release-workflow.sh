@@ -261,7 +261,7 @@ for required_release_note_text in \
     require_text "$release_notes" "$required_release_note_text"
 done
 require_text "$product_contract" \
-    '**Implementation status:** Released as 0.1.0 on July 19, 2026'
+    '**Implementation status:** Released as 0.1.0 on July 19, 2026; maintained as 0.1.1 on July 21, 2026'
 require_text "$product_contract" 'lock during an active drag'
 require_text "$product_contract" 'clipboard may change'
 
