@@ -25,4 +25,18 @@ done
 [[ -f "$repository_root/CopyLassoTests/Update/SecureUpdateArchitectureProofTests.swift" ]] || \
     fail "Secure-update behavior proof tests are missing."
 
+if ! /usr/bin/grep -Fq 'sparkle_package_reference="$(package_reference_block' \
+    "$audit_script"; then
+    fail "The audit must scope Sparkle's exact requirement to its package-reference block."
+fi
+
+ambient_marker_output="$({
+    COPYLASSO_SECURE_UPDATE_FIXTURE_INNER=1 \
+        COPYLASSO_SPARKLE_TOOLS_DIR=/private/tmp/copylasso-invalid-sparkle-tools \
+        "$fixture_script" 2>&1
+} || true)"
+if [[ "$ambient_marker_output" != *'COPYLASSO_SECURE_UPDATE_FIXTURE_INNER must not be preset.'* ]]; then
+    fail "The signature proof must reject an ambient inner-process marker."
+fi
+
 echo "CopyLasso secure-update architecture contract passed."

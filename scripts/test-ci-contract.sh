@@ -212,9 +212,14 @@ if ! /usr/bin/grep -Fq \
     fail "Canonical CI must run the signature proof with its resolved Sparkle tools."
 fi
 if ! /usr/bin/grep -Fq \
-    'COPYLASSO_SECURE_UPDATE_APP="$derived_data/Build/Products/Debug/CopyLasso.app" \' \
+    'COPYLASSO_SECURE_UPDATE_DEBUG_APP="$derived_data/Build/Products/Debug/CopyLasso.app" \' \
     "$ci_script"; then
-    fail "Canonical CI must audit that its built application excludes Sparkle."
+    fail "Canonical CI must audit that its Debug application excludes Sparkle."
+fi
+if ! /usr/bin/grep -Fq \
+    'The Release application must not configure an updater.' \
+    "$ci_script"; then
+    fail "Canonical CI must audit that its Release application excludes updater configuration."
 fi
 
 if ! /usr/bin/grep -Fq \

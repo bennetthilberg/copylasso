@@ -31,18 +31,47 @@ done
 
 for executable in \
     "$repository_root/scripts/test-secure-update-architecture.sh" \
-    "$repository_root/scripts/test-secure-update-signatures.sh"; do
+    "$repository_root/scripts/test-secure-update-signatures.sh" \
+    "$repository_root/scripts/fixtures/run-secure-update-signatures.sh"; do
     [[ -x "$executable" ]] || fail "Missing executable secure-update proof: $(basename "$executable")"
 done
 [[ -f "$repository_root/scripts/fixtures/SignedAppcastParserProbe.m" ]] || \
     fail "The signed malformed-appcast parser probe is missing."
 
-require_literal "$project" 'repositoryURL = "https://github.com/sparkle-project/Sparkle";' \
-    "Sparkle must come from the reviewed upstream repository."
-require_literal "$project" 'kind = exactVersion;' \
-    "Swift packages must retain exact version requirements."
-require_literal "$project" 'version = 2.9.4;' \
-    "Sparkle must remain pinned to 2.9.4."
+package_reference_block() {
+    local repository_url="$1"
+    /usr/bin/awk -v repository_url="$repository_url" '
+        /\/\* Begin XCRemoteSwiftPackageReference section \*\// { in_section = 1; next }
+        /\/\* End XCRemoteSwiftPackageReference section \*\// { in_section = 0 }
+        in_section && /^\t\t[A-F0-9]+ \/\* .* \*\/ = \{$/ {
+            capture = 1
+            block = $0 ORS
+            next
+        }
+        capture { block = block $0 ORS }
+        capture && /^\t\t};$/ {
+            if (index(block, "repositoryURL = \"" repository_url "\";") > 0) {
+                printf "%s", block
+                exit
+            }
+            capture = 0
+            block = ""
+        }
+    ' "$project"
+}
+
+readonly sparkle_repository='https://github.com/sparkle-project/Sparkle'
+if [[ "$(/usr/bin/grep -Fc "repositoryURL = \"$sparkle_repository\";" "$project")" != "1" ]]; then
+    fail "The project must contain exactly one reviewed Sparkle package reference."
+fi
+sparkle_package_reference="$(package_reference_block "$sparkle_repository")"
+[[ -n "$sparkle_package_reference" ]] || fail "The Sparkle package reference is missing."
+if ! /usr/bin/grep -Fq $'\t\t\t\tkind = exactVersion;' <<< "$sparkle_package_reference"; then
+    fail "Sparkle must use an exact version requirement."
+fi
+if ! /usr/bin/grep -Fq $'\t\t\t\tversion = 2.9.4;' <<< "$sparkle_package_reference"; then
+    fail "Sparkle must remain pinned to 2.9.4."
+fi
 require_literal "$package_lock" '"identity" : "sparkle"' \
     "Package.resolved must include Sparkle."
 require_literal "$package_lock" '"revision" : "b6496a74a087257ef5e6da1c5b29a447a60f5bd7"' \
@@ -101,8 +130,10 @@ if /usr/bin/grep -Fqi 'Sparkle' "$notices"; then
     fail "Test-only Sparkle must not be represented as a shipped dependency in G35."
 fi
 
-if [[ -n "${COPYLASSO_SECURE_UPDATE_APP:-}" ]]; then
-    application="$COPYLASSO_SECURE_UPDATE_APP"
+for application in \
+    "${COPYLASSO_SECURE_UPDATE_DEBUG_APP:-}" \
+    "${COPYLASSO_SECURE_UPDATE_RELEASE_APP:-}"; do
+    [[ -n "$application" ]] || continue
     [[ -d "$application" ]] || fail "The secure-update app audit requires a built application."
     if /usr/bin/find "$application" -iname '*Sparkle*' -print -quit | \
         /usr/bin/grep -q .; then
@@ -115,9 +146,9 @@ if [[ -n "${COPYLASSO_SECURE_UPDATE_APP:-}" ]]; then
     fi
     if /usr/bin/plutil -p "$application/Contents/Info.plist" | \
         /usr/bin/grep -Eq '"SU[A-Za-z]+'; then
-        fail "The G35 built application must not configure Sparkle."
+        fail "The G35 built application must not configure an updater."
     fi
-fi
+done
 
 require_literal "$release_metadata" 'COPYLASSO_RELEASE_VERSION = 0.1.1' \
     "G35 must not change the released version."

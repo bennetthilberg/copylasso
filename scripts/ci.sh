@@ -386,7 +386,7 @@ xcodebuild build \
     "${common_arguments[@]}" \
     -configuration Debug
 
-COPYLASSO_SECURE_UPDATE_APP="$derived_data/Build/Products/Debug/CopyLasso.app" \
+COPYLASSO_SECURE_UPDATE_DEBUG_APP="$derived_data/Build/Products/Debug/CopyLasso.app" \
     ./scripts/audit-secure-update-architecture.sh
 
 echo "Auditing final brand assets and release documentation"
@@ -520,6 +520,10 @@ readonly release_application="$derived_data/Build/Products/Release/CopyLasso.app
         CODE_SIGNING_ALLOWED=NO
 
 readonly release_info_plist="$release_application/Contents/Info.plist"
+if /usr/bin/plutil -p "$release_info_plist" | /usr/bin/grep -Eq '"SU[A-Za-z]+'; then
+    echo "The Release application must not configure an updater." >&2
+    exit 1
+fi
 if [[ "$(/usr/bin/plutil -extract LSUIElement raw -o - "$release_info_plist")" != "true" ]]; then
     echo "The Release application is not configured as a dockless agent." >&2
     exit 1
