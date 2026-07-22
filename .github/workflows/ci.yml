@@ -83,6 +83,8 @@ jobs:
           path: ${{ runner.temp }}
 
       - name: Run on the maintained hosted macOS
+        env:
+          COPYLASSO_MINIMUM_OS_MAJOR: "15"
         run: |
           /bin/mkdir -p "$RUNNER_TEMP/copylasso-maintained-runtime"
           /usr/bin/tar -xzf "$RUNNER_TEMP/copylasso-maintained-runtime.tar.gz" \

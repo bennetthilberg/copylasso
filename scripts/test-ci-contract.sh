@@ -254,6 +254,7 @@ fi
 
 if /usr/bin/grep -Eq 'runs-on:[[:space:]]*macos-14([[:space:]]|$)' "$workflow" || \
     ! /usr/bin/grep -Fq 'runs-on: macos-15' "$workflow" || \
+    ! /usr/bin/grep -Fq 'COPYLASSO_MINIMUM_OS_MAJOR: "15"' "$workflow" || \
     ! /usr/bin/grep -Fq './scripts/test-minimum-macos.sh' "$workflow"; then
     fail "Hosted runtime smoke must use macOS 15 while retaining minimum-version checks."
 fi
