@@ -7,6 +7,7 @@ readonly contract="$repository_root/docs/v0.2-product-contract.md"
 readonly baseline_contract="$repository_root/docs/v0.1-product-contract.md"
 readonly release_metadata="$repository_root/Configuration/ReleaseMetadata.xcconfig"
 readonly entitlements="$repository_root/CopyLasso/CopyLasso.entitlements"
+readonly expected_baseline_contract_digest='3426807f08168cec2aaca337b80d7657a8a2d8569d48ecaafe0ec75672f92291'
 
 fail() {
     echo "$1" >&2
@@ -22,6 +23,11 @@ require_contract_text() {
 
 [[ -f "$contract" ]] || fail "Required v0.2 contract file is missing: docs/v0.2-product-contract.md"
 [[ -f "$baseline_contract" ]] || fail "The historical v0.1 product contract must remain present."
+
+baseline_contract_digest="$(/usr/bin/shasum -a 256 "$baseline_contract" | /usr/bin/awk '{print $1}')"
+if [[ "$baseline_contract_digest" != "$expected_baseline_contract_digest" ]]; then
+    fail "G34 must preserve the reviewed historical v0.1 product contract byte for byte."
+fi
 
 for required_text in \
     '# CopyLasso v0.2 Product Contract' \
@@ -54,6 +60,11 @@ for required_text in \
     'macOS 14 or newer' \
     'Universal 2' \
     'redistributable licensing' \
+    '## Privacy, Security, and Data Lifetime' \
+    'Text, code payloads, LaTeX output, clipboard data, and HUD previews never' \
+    '## Accessibility, Focus, and Failure Behavior' \
+    'Keyboard-only and VoiceOver users can check, defer, confirm, cancel, and retry' \
+    'No outcome relies on sound or color alone.' \
     '0.1.1 (2)' \
     'G41 may freeze `0.2.0 (3)`' \
     'G40 is omitted if G39 concludes no-go' \
@@ -78,10 +89,10 @@ if /usr/bin/grep -Eq 'com\.apple\.security\.network\.(client|server)' "$entitlem
     fail "G34 must not add a network entitlement."
 fi
 
-/usr/bin/grep -Fq 'automatic updater' "$repository_root/README.md" || \
-    fail "README current-state copy must still say the 0.1.1 app has no updater."
-/usr/bin/grep -Fq 'network-client implementation' "$repository_root/README.md" || \
-    fail "README current-state copy must still say the 0.1.1 app has no network client."
+/usr/bin/grep -Fq \
+    'The application has no accounts, analytics, telemetry, cloud OCR, automatic updater, or network-client implementation.' \
+    "$repository_root/README.md" || \
+    fail "README current-state copy must still deny updater and network-client behavior."
 /usr/bin/grep -Fq \
     'no network-client or server entitlement, networking implementation, telemetry service, or automatic updater' \
     "$repository_root/PRIVACY.md" || \
