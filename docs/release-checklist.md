@@ -102,4 +102,4 @@ matrix and accepted-risk record.
 - [x] Lock automatic-update, success-sound, separate capture-command, QR/barcode, conditional LaTeX, privacy, accessibility, and version/build decisions.
 - [x] Add the focused v0.2 contract audit and enforce exactly one canonical CI invocation.
 - [x] Narrow issue #38 to on-screen QR/barcode recognition and create separate issues for file/PDF input, configurable success sound, and conditional offline LaTeX recognition.
-- [ ] Pass both canonical architectures, hosted checks, exact-head review, and final ready-PR readback without changing application source, dependencies, entitlements, release metadata, feeds, tags, or public artifacts.
+- [x] Pass both canonical architectures, hosted checks, exact-head review, and final ready-PR readback without changing application source, dependencies, entitlements, release metadata, feeds, tags, or public artifacts.
