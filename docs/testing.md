@@ -6,7 +6,7 @@ CopyLasso's canonical unsigned build and unit-test pipeline is:
 ./scripts/ci.sh
 ```
 
-The pipeline lints all Swift source, resolves the exact package dependency, builds Debug and both XCTest bundles, runs the unit suite serially with timeouts, inspects required build and privacy boundaries, builds Universal 2 Release, and verifies both executable slices. It does not launch the unsigned UI-test runner or alter macOS privacy state.
+The pipeline lints all Swift source, resolves the exact package dependencies, builds Debug and both XCTest bundles, runs the unit suite serially with timeouts, inspects required build and privacy boundaries, builds Universal 2 Release, and verifies both executable slices. It does not launch the unsigned UI-test runner or alter macOS privacy state.
 
 ## Controlled Permission And Selection UI Coverage
 
@@ -296,7 +296,7 @@ Use one stably signed Debug app, keep Screen Recording enabled, and avoid inspec
 5. Inspect Console entries for the CopyLasso process across idle, selection, cancellation, sleep/lock recovery, success, no text, failure, and termination. Only the four fixed lifecycle messages may originate from CopyLasso; no app name being captured, geometry, pixels, recognized text, clipboard text, preview, or raw error may appear.
 6. Run `scripts/test-offline.sh` against a freshly canonical-built bundle. Confirm 187/187 tests pass while the deny-network profile is active. Do not disable the workstation's network or interrupt other applications.
 7. Inspect the signed app entitlement and CodeDirectory flags. Confirm App Sandbox and Hardened Runtime, no network client/server, no device/file/group/temporary exception, and only development `get-task-allow`. G26 established the first Developer ID archive with `get-task-allow` absent; repeat that inspection for every later candidate rather than carrying the historical result forward.
-8. Inspect the built Release executable and bundle. Confirm Universal 2, only system-linked frameworks, no embedded third-party dynamic binary, one exact package resolution, and the matching MIT acknowledgement.
+8. Inspect the built Release executable and bundle. Confirm Universal 2, only system-linked frameworks, no embedded third-party dynamic binary, the exact shipping package resolution, and the matching MIT acknowledgement. Test-only packages must remain outside the application bundle.
 9. Inspect Privacy & Security after real use. Screen Recording must be the only core permission; Accessibility, Input Monitoring, Microphone, Full Disk Access, Files and Folders, and automation access must not be required.
 10. Paste the success result into TextEdit, then confirm cancellation/no-text/pre-output failures preserved the sentinel in separate runs. Remember that clipboard contents become a macOS/user trust boundary after a successful write.
 
@@ -359,6 +359,38 @@ This is a documentation and scope gate. It does not qualify an updater,
 network entitlement, new capture mode, sound asset, recognition dependency, or
 v0.2 release. Those require their later approved goals and direct behavioral
 tests.
+
+## G35 Secure-Update Architecture Proof
+
+G35 pins Sparkle 2.9.4 only to the unit-test target. The application target,
+Release bundle, entitlements, Info.plist, version/build, public feed state, and
+shipping acknowledgements remain unchanged. The focused proof uses Sparkle's
+real standard version comparator and covers current, newer, downgrade, replay,
+feed/archive signature failure, version mismatch, URL policy, empty/oversized/
+length-mismatched downloads, offline, timeout, disk exhaustion, interruption,
+cancellation, deferral, and explicit commit behavior.
+
+Canonical CI runs each of these exactly once per architecture after resolving
+the pinned artifact:
+
+```sh
+./scripts/test-secure-update-architecture.sh
+./scripts/audit-secure-update-architecture.sh
+COPYLASSO_SPARKLE_TOOLS_DIR=/path/to/Sparkle/bin \
+  ./scripts/test-secure-update-signatures.sh
+```
+
+The signature fixture runs under a process sandbox that denies networking. It
+creates two ephemeral Ed25519 keys, proves a valid archive and appcast, rejects
+in-envelope feed mutation, archive mutation, and the wrong key, checks the
+official feed tool is runnable, and removes the entire temporary directory. The
+static audit verifies the exact source revision and artifact checksum record,
+test-only target confinement, one-key product sandbox, no shipping updater
+configuration, no feed/key material, and the unchanged 0.1.1 (2) release.
+
+This evidence selects an architecture; it does not exercise an update UI,
+network request, production key, public feed, staged production package, or
+installation. Those are G36 gates.
 
 The July 13, 2026 signed run completed many functional, permission, and OCR rows
 before exposing a pre-drag sleep/wake failure. G24U subsequently passed exact

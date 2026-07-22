@@ -103,3 +103,12 @@ matrix and accepted-risk record.
 - [x] Add the focused v0.2 contract audit and enforce exactly one canonical CI invocation.
 - [x] Narrow issue #38 to on-screen QR/barcode recognition and create separate issues for file/PDF input, configurable success sound, and conditional offline LaTeX recognition.
 - [x] Pass both canonical architectures, hosted checks, exact-head review, and final ready-PR readback without changing application source, dependencies, entitlements, release metadata, feeds, tags, or public artifacts.
+
+## G35 - Secure Update Architecture Proof
+
+- [ ] Compare a maintained permissive updater with a first-party implementation and record the accepted architecture, scope, dependency pin, license, and acknowledgement gate.
+- [ ] Threat-model feed, hosting, transport, workflow, signing-key, replay/downgrade, malformed input, interruption, disk, cancellation, privacy, and recovery boundaries.
+- [ ] Prove real comparator and offline Ed25519 archive/appcast behavior with only ephemeral fixture keys; reject tampering, wrong keys, mismatched metadata, unapproved URLs, replay, downgrade, malformed/oversized input, and interrupted transactions.
+- [ ] Confirm Sparkle remains test-only, CopyLasso.app has no updater configuration or network entitlement, release metadata remains `0.1.1 (2)`, and no key, appcast, or public update artifact is created.
+- [ ] Run focused proofs, privacy/security and secure-update audits, canonical arm64/x86_64 pipelines, hosted checks, exact-head review, and ready-PR readback.
+- [ ] Preserve the operations and 0.1.x manual-bootstrap record for G36; do not create production key material, publish a feed, install an update, or start G36.

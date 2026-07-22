@@ -12,6 +12,9 @@ readonly release_workflow_audit_script="$repository_root/scripts/audit-release-w
 readonly platform_qualification_audit_script="$repository_root/scripts/audit-platform-qualification.sh"
 readonly platform_qualification_test_script="$repository_root/scripts/test-platform-qualification.sh"
 readonly v02_contract_audit_script="$repository_root/scripts/audit-v02-contract.sh"
+readonly secure_update_audit_script="$repository_root/scripts/audit-secure-update-architecture.sh"
+readonly secure_update_test_script="$repository_root/scripts/test-secure-update-architecture.sh"
+readonly secure_update_signature_script="$repository_root/scripts/test-secure-update-signatures.sh"
 readonly generated_app_cleanup_runner="$repository_root/scripts/run-with-generated-app-cleanup.sh"
 readonly ordinary_release_cleanup="$repository_root/scripts/unregister-generated-release.sh"
 readonly repeatability_script="$repository_root/scripts/test-repeatability.sh"
@@ -134,6 +137,33 @@ if [[ "$v02_contract_audit_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/audit-v02-contract.sh exactly once."
 fi
 
+secure_update_audit_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/audit-secure-update-architecture\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$secure_update_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-secure-update-architecture.sh exactly once."
+fi
+
+secure_update_test_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/test-secure-update-architecture\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$secure_update_test_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/test-secure-update-architecture.sh exactly once."
+fi
+
+secure_update_signature_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/test-secure-update-signatures\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$secure_update_signature_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/test-secure-update-signatures.sh exactly once."
+fi
+
 if [[ ! -x "$developer_id_audit_script" ]] || \
     [[ ! -x "$repository_root/scripts/verify-developer-id-app.sh" ]] || \
     [[ ! -x "$repository_root/scripts/test-developer-id-release.sh" ]]; then
@@ -168,6 +198,23 @@ fi
 
 if [[ ! -x "$v02_contract_audit_script" ]]; then
     fail "The v0.2 product-contract audit must be executable."
+fi
+
+if [[ ! -x "$secure_update_audit_script" ]] || \
+    [[ ! -x "$secure_update_test_script" ]] || \
+    [[ ! -x "$secure_update_signature_script" ]]; then
+    fail "Secure-update architecture proof scripts must be executable."
+fi
+
+if ! /usr/bin/grep -Fq \
+    'COPYLASSO_SPARKLE_TOOLS_DIR="$(/usr/bin/dirname "$sparkle_sign_update")" \' \
+    "$ci_script"; then
+    fail "Canonical CI must run the signature proof with its resolved Sparkle tools."
+fi
+if ! /usr/bin/grep -Fq \
+    'COPYLASSO_SECURE_UPDATE_APP="$derived_data/Build/Products/Debug/CopyLasso.app" \' \
+    "$ci_script"; then
+    fail "Canonical CI must audit that its built application excludes Sparkle."
 fi
 
 if ! /usr/bin/grep -Fq \

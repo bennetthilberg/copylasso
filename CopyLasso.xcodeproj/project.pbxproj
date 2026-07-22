@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		C0B1A0033002000000000003 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = C0B1A0013002000000000001 /* KeyboardShortcuts */; };
 		C0B1A0043002000000000004 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = C0B1A0023002000000000002 /* KeyboardShortcuts */; };
+		C0D35A033500000000000003 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = C0D35A023500000000000002 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -68,6 +69,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C0B1A0043002000000000004 /* KeyboardShortcuts in Frameworks */,
+				C0D35A033500000000000003 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -156,6 +158,7 @@
 			name = CopyLassoTests;
 			packageProductDependencies = (
 				C0B1A0023002000000000002 /* KeyboardShortcuts */,
+				C0D35A023500000000000002 /* Sparkle */,
 			);
 			productName = CopyLassoTests;
 			productReference = AACED2F830004BEC001F9909 /* CopyLassoTests.xctest */;
@@ -218,6 +221,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				C0B1A0053002000000000005 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+				C0D35A013500000000000001 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AACED2EC30004BEB001F9909 /* Products */;
@@ -604,6 +608,14 @@
 				version = 3.0.1;
 			};
 		};
+		C0D35A013500000000000001 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = exactVersion;
+				version = 2.9.4;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -616,6 +628,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C0B1A0053002000000000005 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
 			productName = KeyboardShortcuts;
+		};
+		C0D35A023500000000000002 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0D35A013500000000000001 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
