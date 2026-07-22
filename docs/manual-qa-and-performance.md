@@ -833,3 +833,24 @@ the cold-launch timing and repeated-growth private-memory checkpoint gaps as
 blocked evidence rather than release passes. G24 is therefore **complete as an
 evidence-recording goal**; its remaining gaps stay visible for release judgment
 and explicit risk disposition.
+
+## G33 Public-Release Qualification
+
+G33 revisits only the deferred installation and account-isolation rows against
+the exact public CopyLasso 0.1.1 DMG. It does not reopen the G24 performance
+matrix or promote historical VirtualBuddy gaps. Its planned fresh-state
+boundary was a newly recreated disposable local macOS user on the maintainer's
+current host. The maintainer stopped after deleting the old account and before
+recreation, so this is neither an account-isolation pass nor VM, APFS-clone, or
+additional operating-system evidence. The exact steps and artifact identity are
+recorded in [Clean Installation Testing](clean-install-testing.md).
+
+| Scenario | Current result |
+| --- | --- |
+| Exact public artifact and installed identity | **Pass** - exact public DMG and installed app passed digest, image integrity, signature, notarization, Gatekeeper, identity, version/build, and Universal 2 checks |
+| Ordinary reinstall with retained preferences | **Pass** - exact-DMG replacement preserved preferences and the enabled login item; Settings and capture worked |
+| Launch at Login enabled across sign-in or restart | **Pass** - agent returned automatically after real sign-out/sign-in |
+| Launch at Login disabled across sign-in or restart | **Pass** - agent stayed absent after real sign-out/sign-in |
+| Complete scoped uninstall and clean reinstall | **Pass** - clean onboarding, fresh permission recovery, and successful capture followed removal of only production CopyLasso state |
+| Disposable user deletion and recreation | **Skipped by maintainer** - old account and home deleted; replacement creation and account-isolation test not run |
+| Restored maintainer installation and settings | **Pass** - exact app, shortcut, login item, permission, capture, and sole production registration restored |

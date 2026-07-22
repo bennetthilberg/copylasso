@@ -226,7 +226,7 @@ if [[ "$(/usr/bin/sed -n '/^## G31 - Final Tag And Publication$/,/^## G32 - v0.1
     docs/release-checklist.md | /usr/bin/grep -c '^- \[x\]')" != 7 ]]; then
     fail "Every G31 publication checklist row must be complete."
 fi
-if [[ "$(/usr/bin/sed -n '/^## G32 - v0.1.1 Settings Hotfix$/,$p' \
+if [[ "$(/usr/bin/sed -n '/^## G32 - v0.1.1 Settings Hotfix$/,/^## G33 - Platform And Reinstall Qualification$/p' \
     docs/release-checklist.md | /usr/bin/grep -c '^- \[x\]')" != 7 ]]; then
     fail "Every G32 maintenance-release checklist row must be complete."
 fi

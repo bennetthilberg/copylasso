@@ -321,9 +321,18 @@ GitHub's current matrix has three responsibilities:
 
 1. `build and test (arm64)` runs the complete compile/test/coverage/offline/repeatability/Release gate with Xcode 26.6 on macOS 26 arm64 and packages the exact Universal 2 Release artifact.
 2. `build and test (x86_64)` runs the same compile/test/coverage/offline/repeatability/Release gate with Xcode 26.6 on a macOS 26 Intel runner.
-3. `minimum OS runtime (macOS 14 arm64)` downloads the arm64 job's artifact onto an actual macOS 14 runner, verifies `LSMinimumSystemVersion` and Mach-O `minos` 14.0, ad-hoc signs the app with its reviewed sandbox entitlement, launches it directly, holds the process for two seconds, and terminates it. It does not request Screen Recording or claim real capture coverage.
+3. `maintained OS runtime (macOS 15 arm64)` downloads the arm64 job's artifact onto a maintained macOS 15 runner, verifies `LSMinimumSystemVersion` and Mach-O `minos` 14.0, ad-hoc signs the app with its reviewed sandbox entitlement, launches it directly, holds the process for two seconds, and terminates it. It does not request Screen Recording or claim real capture coverage.
 
-The minimum runner is a runtime check because KeyboardShortcuts 3.0.1 requires Swift tools 6.2 and the macOS 14 hosted image offers Xcode 16.2 at most. Re-resolving or compiling that package there is unsupported and would not test the shipped artifact. GitHub has announced macOS 14 image removal on November 2, 2026; migrate this smoke to a maintained macOS 14 VM/runner before then.
+GitHub deprecated its hosted macOS 14 image in July 2026 and announced its removal for November 2026. The maintained runner is an artifact smoke because KeyboardShortcuts 3.0.1 requires Swift tools 6.2; re-resolving or rebuilding with a different host toolchain would not test the same shipped artifact. A macOS 15 hosted smoke does not qualify macOS 14 behavior. Real macOS 14 qualification remains a manual release gate: retain the signed Sonoma evidence and repeat it on real Sonoma before a future release whenever runtime-sensitive application or packaging behavior changes.
+
+Canonical Release builds use the production identifier and Xcode registers their
+generated app with Launch Services. The build wrapper always attempts cleanup,
+even when `xcodebuild` fails, and accepts only a direct
+`Build/Products/<configuration>/CopyLasso.app` beneath the approved DerivedData
+root with the production bundle identifier. It rejects symbolic links and all
+installed or out-of-root applications. The focused platform-qualification test
+uses a fake registration tool to prove success, failure, missing-product,
+identity, traversal, and installed-app boundaries without mutating the host.
 
 Signed XCUITests remain focused on first-run, Settings, menu, recovery, and accessibility behavior. They contain no unconditional retry. Hosted CI builds the bundle but cannot truthfully execute the unsigned runner or automate TCC dialogs. A locked local session is recorded as infrastructure-blocked rather than a pass; the signed matrices earlier in this document remain required.
 
@@ -364,7 +373,13 @@ states, Full Keyboard Access onboarding/recovery/reopened-singleton traversal,
 and the missing pre-run temporary-directory inventory remain honest blocked
 evidence gaps rather than inferred passes. The G29 amendment preserves partial
 clean-install evidence and the complete procedure while treating the
-unexecuted reinstall, uninstall, and latest-stable VM rows as accepted v0.1
-evidence gaps. The applicable
+then-unexecuted reinstall, uninstall, and latest-stable VM rows as accepted
+v0.1 publication evidence gaps. G33 defines a freshly recreated disposable
+local macOS user as the replacement for the abandoned VM-clone boundary, but
+the maintainer stopped after deleting the old account and before recreation.
+The account-isolation row therefore remains explicitly skipped while the
+current public release's maintainer-account reinstall, login-item, uninstall,
+and permission transitions are qualified without claiming additional OS
+coverage. The applicable
 lock-only failure and immediate-reuse stationary-crosshair nuance remain
 maintainer-accepted v0.1 residuals.

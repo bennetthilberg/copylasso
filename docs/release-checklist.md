@@ -86,3 +86,12 @@ matrix and accepted-risk record.
 - [x] Create a signed annotated `v0.1.1` tag on the qualified commit, publish only the exact DMG and checksum as the latest non-prerelease release, and leave `v0.1.0` plus all private historical drafts unchanged.
 - [x] Download the public DMG with genuine quarantine, repeat checksum/signature/notarization/Gatekeeper/install verification, and smoke Settings plus one capture.
 - [x] With action-time confirmation, reset only `ScreenCapture` for `io.github.bennetthilberg.copylasso`, grant the public app once, and verify one current CopyLasso privacy row.
+
+## G33 - Platform And Reinstall Qualification
+
+- [x] Prevent canonical ordinary Release builds from retaining generated production-identifier Launch Services registrations while refusing every installed, symlinked, or out-of-root app.
+- [x] Run the platform-qualification audit and behavior tests exactly once through canonical CI, including successful-build and failed-build cleanup.
+- [x] Move continuous artifact launch smoke to maintained macOS 15 while retaining deployment target 14.0, Mach-O minimum-version verification, Universal 2 output, and real macOS 14 as a manual release gate.
+- [x] Qualify ordinary reinstall with preferences retained and enabled/disabled Launch at Login across sign-in or restart using the exact public CopyLasso 0.1.1 DMG.
+- [x] Qualify the complete scoped uninstall/reinstall; record the maintainer-stopped disposable-account recreation as skipped rather than an account-isolation or VM-clone pass.
+- [x] Restore the exact public installation and intended maintainer settings, confirm it is the sole production Launch Services registration, and close issue #41 through the ready G33 pull request.

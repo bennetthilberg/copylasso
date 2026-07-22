@@ -61,4 +61,4 @@ Canonical CI already proves determinism with three fresh result bundles. Re-run 
 ./scripts/test-repeatability.sh
 ```
 
-CI runs the coverage and three-pass repeatability gates on the macOS 26 arm64 and Intel jobs. A separate macOS 14 arm64 job downloads the exact Xcode 26.6 Release artifact, verifies deployment metadata, signs it ad hoc on that runner, and holds a live process for the smoke interval without invoking protected resources.
+CI runs the coverage and three-pass repeatability gates on the macOS 26 arm64 and Intel jobs. A separate macOS 15 arm64 job downloads the exact Xcode 26.6 Release artifact, verifies macOS 14.0 deployment metadata for both Universal 2 slices, signs it ad hoc on that runner, and holds a live process for the smoke interval without invoking protected resources. Real macOS 14 behavior remains a separate manual release gate.

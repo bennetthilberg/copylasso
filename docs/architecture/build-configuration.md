@@ -89,6 +89,6 @@ Run the complete local equivalent of CI from the repository root:
 ./scripts/ci.sh
 ```
 
-The script requires Xcode 26.6, starts with clean DerivedData under `.build`, lints Swift, resolves dependencies, builds Debug, builds both test bundles, runs nonparallel timeout-bounded unit tests with explicit coverage, audits reviewed coverage floors, repeats the complete bundle with networking denied, checks required settings, builds Universal 2 Release, and verifies the executable's two architecture slices. GitHub runs that pipeline on macOS 26 arm64 and Intel, then launches the exact Release artifact on a macOS 14 arm64 runner.
+The script requires Xcode 26.6, starts with clean DerivedData under `.build`, lints Swift, resolves dependencies, builds Debug, builds both test bundles, runs nonparallel timeout-bounded unit tests with explicit coverage, audits reviewed coverage floors, repeats the complete bundle with networking denied, checks required settings, builds Universal 2 Release, and verifies the executable's two architecture slices. GitHub runs that pipeline on macOS 26 arm64 and Intel, then verifies both slices' macOS 14.0 deployment metadata and launches the exact Release artifact on a macOS 15 arm64 runner. Real macOS 14 behavior remains a separate manual release gate.
 
 Execute UI tests through Xcode with runnable local signing. The unsigned CI command intentionally does not launch them.

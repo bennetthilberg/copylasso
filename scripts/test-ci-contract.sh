@@ -9,6 +9,10 @@ readonly release_metadata_test_script="$repository_root/scripts/test-release-met
 readonly developer_id_audit_script="$repository_root/scripts/audit-developer-id-release.sh"
 readonly release_package_audit_script="$repository_root/scripts/audit-release-package.sh"
 readonly release_workflow_audit_script="$repository_root/scripts/audit-release-workflow.sh"
+readonly platform_qualification_audit_script="$repository_root/scripts/audit-platform-qualification.sh"
+readonly platform_qualification_test_script="$repository_root/scripts/test-platform-qualification.sh"
+readonly generated_app_cleanup_runner="$repository_root/scripts/run-with-generated-app-cleanup.sh"
+readonly ordinary_release_cleanup="$repository_root/scripts/unregister-generated-release.sh"
 readonly repeatability_script="$repository_root/scripts/test-repeatability.sh"
 readonly workflow="$repository_root/.github/workflows/ci.yml"
 
@@ -39,6 +43,11 @@ brand_audit_invocations="$({
 })"
 if [[ "$brand_audit_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/audit-brand-release.sh exactly once."
+fi
+if ! /usr/bin/grep -Fq \
+    "'/^## G32 - v0.1.1 Settings Hotfix$/,/^## G33 - Platform And Reinstall Qualification$/p'" \
+    "$brand_audit_script"; then
+    fail "The brand audit must bound historical G32 checklist accounting at G33."
 fi
 
 release_metadata_test_invocations="$({
@@ -97,6 +106,24 @@ if [[ "$release_workflow_test_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/test-release-workflow.sh exactly once."
 fi
 
+platform_qualification_audit_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/audit-platform-qualification\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$platform_qualification_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-platform-qualification.sh exactly once."
+fi
+
+platform_qualification_test_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/test-platform-qualification\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$platform_qualification_test_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/test-platform-qualification.sh exactly once."
+fi
+
 if [[ ! -x "$developer_id_audit_script" ]] || \
     [[ ! -x "$repository_root/scripts/verify-developer-id-app.sh" ]] || \
     [[ ! -x "$repository_root/scripts/test-developer-id-release.sh" ]]; then
@@ -120,6 +147,13 @@ if [[ ! -x "$release_workflow_audit_script" ]] || \
     [[ ! -x "$repository_root/scripts/build-release-candidate.sh" ]] || \
     [[ ! -x "$repository_root/scripts/create-draft-release.sh" ]]; then
     fail "Protected-release workflow scripts must be executable."
+fi
+
+if [[ ! -x "$platform_qualification_audit_script" ]] || \
+    [[ ! -x "$platform_qualification_test_script" ]] || \
+    [[ ! -x "$generated_app_cleanup_runner" ]] || \
+    [[ ! -x "$ordinary_release_cleanup" ]]; then
+    fail "Platform-qualification and generated-app cleanup scripts must be executable."
 fi
 
 if ! /usr/bin/grep -Fq \
@@ -180,6 +214,17 @@ if ((repeatability_line <= build_for_testing_line || repeatability_line >= relea
     fail "Repeatability must reuse the built unit bundle before the Release build."
 fi
 
+generated_app_cleanup_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/run-with-generated-app-cleanup\.sh[[:space:]]*\\$' \
+        "$ci_script" || true
+})"
+if [[ "$generated_app_cleanup_invocations" != "1" ]] || \
+    ! /usr/bin/grep -Fq '"$release_application" \' "$ci_script" || \
+    ! /usr/bin/grep -Fq 'COPYLASSO_GENERATED_CLEANUP_WRAPPED=1 \' "$ci_script"; then
+    fail "Canonical CI must safely clean its generated Release registration exactly once."
+fi
+
 offline_block="$(/usr/bin/sed -n "$((offline_line - 2)),${offline_line}p" "$ci_script")"
 if ! /usr/bin/grep -Fq 'COPYLASSO_CI_ARCH="$requested_architecture" \' \
     <<< "$offline_block" || \
@@ -205,6 +250,13 @@ if [[ "$workflow_ci_invocations" != "1" ]] || \
     ! /usr/bin/grep -Fq 'architecture: x86_64' "$workflow" || \
     ! /usr/bin/grep -Fq 'COPYLASSO_CI_ARCH: ${{ matrix.architecture }}' "$workflow"; then
     fail "Both GitHub architecture jobs must enter through canonical CI."
+fi
+
+if /usr/bin/grep -Eq 'runs-on:[[:space:]]*macos-14([[:space:]]|$)' "$workflow" || \
+    ! /usr/bin/grep -Fq 'runs-on: macos-15' "$workflow" || \
+    ! /usr/bin/grep -Fq 'COPYLASSO_MINIMUM_OS_MAJOR: "15"' "$workflow" || \
+    ! /usr/bin/grep -Fq './scripts/test-minimum-macos.sh' "$workflow"; then
+    fail "Hosted runtime smoke must use macOS 15 while retaining minimum-version checks."
 fi
 
 "$repository_root/scripts/test-xctest-harness-retry.sh"

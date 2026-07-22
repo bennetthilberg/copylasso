@@ -70,6 +70,12 @@ echo "Auditing protected release workflow"
 echo "Testing protected release workflow"
 ./scripts/test-release-workflow.sh
 
+echo "Auditing platform and reinstall qualification"
+./scripts/audit-platform-qualification.sh
+
+echo "Testing platform and reinstall qualification"
+./scripts/test-platform-qualification.sh
+
 readonly committed_development_team_pattern='^[[:space:]]*"?DEVELOPMENT_TEAM(\[[^]]+\])?"?[[:space:]]*=[[:space:]]*[A-Z0-9]{10};'
 
 if /usr/bin/grep -Eq "$committed_development_team_pattern" \
@@ -478,16 +484,22 @@ if [[ "$(/usr/bin/plutil -extract CFBundleShortVersionString raw -o - "$debug_in
 fi
 
 echo "Building Universal 2 Release"
-xcodebuild build \
-    -project "$project_path" \
-    -scheme "$scheme" \
-    -configuration Release \
-    -destination 'generic/platform=macOS' \
-    -derivedDataPath "$derived_data" \
-    -clonedSourcePackagesDirPath "$derived_data/SourcePackages" \
-    CODE_SIGNING_ALLOWED=NO
+readonly release_application="$derived_data/Build/Products/Release/CopyLasso.app"
+./scripts/run-with-generated-app-cleanup.sh \
+    "$derived_data" \
+    "$release_application" \
+    -- \
+    xcodebuild build \
+        -project "$project_path" \
+        -scheme "$scheme" \
+        -configuration Release \
+        -destination 'generic/platform=macOS' \
+        -derivedDataPath "$derived_data" \
+        -clonedSourcePackagesDirPath "$derived_data/SourcePackages" \
+        COPYLASSO_GENERATED_CLEANUP_WRAPPED=1 \
+        CODE_SIGNING_ALLOWED=NO
 
-readonly release_info_plist="$derived_data/Build/Products/Release/CopyLasso.app/Contents/Info.plist"
+readonly release_info_plist="$release_application/Contents/Info.plist"
 if [[ "$(/usr/bin/plutil -extract LSUIElement raw -o - "$release_info_plist")" != "true" ]]; then
     echo "The Release application is not configured as a dockless agent." >&2
     exit 1
@@ -502,7 +514,7 @@ if [[ "$(/usr/bin/plutil -extract CFBundleShortVersionString raw -o - "$release_
     exit 1
 fi
 
-readonly release_executable="$derived_data/Build/Products/Release/CopyLasso.app/Contents/MacOS/CopyLasso"
+readonly release_executable="$release_application/Contents/MacOS/CopyLasso"
 if [[ ! -x "$release_executable" ]]; then
     echo "Release executable was not produced." >&2
     exit 1
