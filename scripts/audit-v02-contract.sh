@@ -40,28 +40,33 @@ for required_text in \
     'disable automatic checks in Settings' \
     'Check for Updates' \
     'static, cryptographically signed update metadata' \
-    'stable user or device identifier' \
+    'It sends no stable user or device identifier.' \
     'Downloading, installing, and relaunching always require explicit user confirmation.' \
     'Success sound is enabled by default' \
     'only after the clipboard write succeeds' \
     'Capture Text, Capture Code, and Capture LaTeX are separate commands.' \
     '`Shift-Command-2` (`⇧⌘2`) remains assigned only to Capture Text.' \
     'Capture Code and Capture LaTeX shortcuts are unset by default.' \
-    'unique payloads in visual top-to-bottom, left-to-right' \
-    'one newline between payloads' \
-    'If a multi-code result contains any line break' \
+    'Eligible observations are sorted in visual top-to-bottom, left-to-right order' \
+    'Deduplication happens before any single-result, multiline, or' \
+    'retained visual order with one newline' \
+    'If multiple unique payloads remain and any contains a line break' \
     'mode-specific ambiguity' \
     'never opens a URL' \
     'at least 300 samples' \
     'at least 200 positive math samples' \
     'at least 100 negative selections' \
     'at least 15 examples' \
+    'blind evaluation corpus' \
+    'Any change after unblinding invalidates the result' \
     'at least 95% structurally correct' \
     'Accuracy over all positive math samples is at least 85%' \
     'no reported positive class is below 70% normalized exact match' \
     'no more than 1% false-success rate' \
-    'p95 recognition latency no greater than 2 seconds on Apple Silicon' \
-    'no greater than 4 seconds on Intel' \
+    'p95 recognition latency no greater than 2' \
+    'base M1 MacBook Air with 8 GB memory' \
+    '2018 MacBook Air with a 1.6 GHz dual-core Intel Core i5 and 8 GB' \
+    'hardware cannot be measured, the candidate cannot receive a go' \
     'no more than 750 MiB of added peak memory' \
     'no more than 200 MiB of installed-size growth' \
     'macOS 14 or newer' \
@@ -87,9 +92,13 @@ if /usr/bin/grep -Eq '(^|[^0-9])0\.2\.0[[:space:]]*\([[:space:]]*[12][[:space:]]
     fail "The planned v0.2 contract must not reuse a released build number."
 fi
 
-/usr/bin/grep -Fq 'COPYLASSO_RELEASE_VERSION = 0.1.1' "$release_metadata" || \
+/usr/bin/grep -Eq \
+    '^COPYLASSO_RELEASE_VERSION[[:space:]]*=[[:space:]]*0\.1\.1[[:space:]]*$' \
+    "$release_metadata" || \
     fail "G34 must leave the current release version at 0.1.1."
-/usr/bin/grep -Fq 'COPYLASSO_RELEASE_BUILD = 2' "$release_metadata" || \
+/usr/bin/grep -Eq \
+    '^COPYLASSO_RELEASE_BUILD[[:space:]]*=[[:space:]]*2[[:space:]]*$' \
+    "$release_metadata" || \
     fail "G34 must leave the current release build at 2."
 
 [[ -f "$entitlements" ]] || fail "G34 must preserve the reviewed App Sandbox entitlements file."
