@@ -50,16 +50,32 @@ require_literal "$package_lock" '"revision" : "b6496a74a087257ef5e6da1c5b29a447a
 require_literal "$package_lock" '"version" : "2.9.4"' \
     "Package.resolved must lock Sparkle 2.9.4."
 
-app_target="$(/usr/bin/awk '
-    /^\t\tAACED2EA30004BEB001F9909 \/\* CopyLasso \*\/ = \{$/ { capture = 1 }
-    capture { print }
-    capture && /^\t\t};$/ { exit }
-' "$project")"
-test_target="$(/usr/bin/awk '
-    /^\t\tAACED2F730004BEC001F9909 \/\* CopyLassoTests \*\/ = \{$/ { capture = 1 }
-    capture { print }
-    capture && /^\t\t};$/ { exit }
-' "$project")"
+target_block() {
+    local target_name="$1"
+    /usr/bin/awk -v target_name="$target_name" '
+        /\/\* Begin PBXNativeTarget section \*\// { in_section = 1; next }
+        /\/\* End PBXNativeTarget section \*\// { in_section = 0 }
+        in_section && /^\t\t[A-F0-9]+ \/\* .* \*\/ = \{$/ {
+            capture = 1
+            block = $0 ORS
+            next
+        }
+        capture { block = block $0 ORS }
+        capture && /^\t\t};$/ {
+            if (block ~ "\\n\\t\\t\\tname = " target_name ";\\n") {
+                printf "%s", block
+                exit
+            }
+            capture = 0
+            block = ""
+        }
+    ' "$project"
+}
+
+app_target="$(target_block CopyLasso)"
+test_target="$(target_block CopyLassoTests)"
+[[ -n "$app_target" ]] || fail "The secure-update audit could not resolve the CopyLasso target."
+[[ -n "$test_target" ]] || fail "The secure-update audit could not resolve the CopyLassoTests target."
 if /usr/bin/grep -Fq 'Sparkle' <<< "$app_target"; then
     fail "G35 must not link Sparkle into the CopyLasso application target."
 fi
@@ -114,6 +130,16 @@ require_literal "$repository_root/docs/architecture/ADR-004-secure-updates.md" \
 require_literal "$repository_root/docs/architecture/ADR-004-secure-updates.md" \
     'cb6fdbdc8884f15d62a616e79face92b08322410fd2d425edc6596ccbf4ba3b0' \
     "The ADR must record the official Sparkle artifact checksum."
+require_literal "$repository_root/docs/architecture/ADR-004-secure-updates.md" \
+    'SUSignedFeedFailureExpirationInterval = 0' \
+    "The ADR must retain Sparkle 2.9.4's fail-closed signed-feed expiration key."
+require_literal "$repository_root/docs/architecture/ADR-004-secure-updates.md" \
+    'no per-redirect decision hook' \
+    "The ADR must retain Sparkle's actual redirect integration boundary."
+if /usr/bin/grep -Fq 'allowsEnclosureRedirect' \
+    "$repository_root/CopyLassoTests/Update/SecureUpdateArchitectureProofTests.swift"; then
+    fail "The G35 proof must not claim an unconnected redirect guard."
+fi
 require_literal "$repository_root/docs/secure-update-threat-model.md" \
     'highest authenticated build' \
     "The threat model must cover authenticated rollback state."

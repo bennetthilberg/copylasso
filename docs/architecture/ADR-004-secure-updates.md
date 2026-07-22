@@ -58,14 +58,20 @@ G35 neither publishes nor requests either endpoint.
 
 [GitHub's release-asset API](https://docs.github.com/en/rest/releases/assets#get-a-release-asset)
 documents that an asset request may return the bytes directly or redirect the
-client. G36 may follow exactly one redirect from an already validated enclosure
-URL to HTTPS `release-assets.githubusercontent.com`, with no user information,
-custom port, fragment, or further redirect. The destination must retain
-GitHub's `github-production-release-asset/<numeric repository>/<opaque asset>`
-path shape and a nonempty signed query. A different host or shape fails closed
-until a separately reviewed architecture change. The downloaded bytes still
-must pass length, Ed25519, Developer ID, notarization, version, and architecture
-checks; transport location never authorizes installation.
+client. Sparkle 2.9.4 constructs the initial enclosure request from
+`SUAppcastItem.fileURL`, exposes that request through
+`updater:willDownloadUpdate:withRequest:`, and then downloads it with an
+internal `NSURLSession`. Its public API exposes no per-redirect decision hook;
+the session therefore follows ordinary HTTPS redirects. G36 must validate the
+exact initial enclosure URL from the `SUAppcastItem` passed to
+`SPUUserDriver.showUpdateFound` before returning the Install choice that begins
+the download, but it must not claim that CopyLasso can enforce a
+destination-host or redirect-count allowlist through Sparkle's supported API.
+Every response body remains untrusted until the signed enclosure length and
+Ed25519 signature pass, followed by Developer ID, notarization, version, and
+architecture checks. If redirect-level policy becomes a requirement, the
+architecture must be amended before shipping rather than relying on an
+unconnected policy helper or Sparkle private API.
 
 G36 will use these non-secret settings:
 
@@ -79,6 +85,11 @@ G36 will use these non-secret settings:
 - `SURequireSignedFeed = YES`;
 - `SUSignedFeedFailureExpirationInterval = 0`; and
 - `SUEnableInstallerLauncherService = YES`, without the downloader service.
+
+The signed-feed expiration spelling above is locked to the pinned 2.9.4 source:
+`SUConstants.m` maps `SUSignedFeedFailureExpirationIntervalKey` to that exact
+Info.plist key, and `SUAppcastDriver.m` treats zero as never recovering from a
+failed feed signature.
 
 The app will add `com.apple.security.network.client` and one
 `com.apple.security.temporary-exception.mach-lookup.global-name` array containing
@@ -108,8 +119,10 @@ The G35 proof uses Sparkle's real `SUStandardVersionComparator`, real
   exposure.
 - Only the fixed HTTPS GitHub Releases owner, repository, tag path, DMG naming,
   and a URL without user info, port, query, or fragment are accepted.
-- The sole allowed redirect is the bounded GitHub release-asset CDN handoff
-  above; all other and follow-on redirects fail closed.
+- Redirect destinations are transport, not trust inputs. Sparkle's supported
+  integration surface does not expose a redirect-policy callback, so enclosure
+  signature and metadata verification must fail closed regardless of the final
+  response URL.
 - Offline, timeout, malformed feed, invalid signature, cancellation, disk-full,
   and interruption paths remove staging and preserve the installed build.
 - Installation commits only after a verified download and explicit final user

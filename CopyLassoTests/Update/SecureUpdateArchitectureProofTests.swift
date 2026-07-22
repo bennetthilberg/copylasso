@@ -51,52 +51,6 @@ final class SecureUpdateArchitectureProofTests: XCTestCase {
     assertRejected(\.actualDownloadBytes, value: 4_095, reason: .sizeMismatch)
   }
 
-  func testOnlyExpectedSingleGitHubAssetRedirectIsAccepted() {
-    let source = SecureUpdateProofCandidate.valid.downloadURL
-    let destination = URL(
-      string:
-        "https://release-assets.githubusercontent.com/github-production-release-asset/12345/01234567-89ab-cdef-0123-456789abcdef?sp=r&sig=fixture"
-    )!
-
-    XCTAssertTrue(
-      policy.allowsEnclosureRedirect(
-        from: source,
-        to: destination,
-        redirectNumber: 1,
-        displayVersion: "0.2.0"
-      )
-    )
-    XCTAssertFalse(
-      policy.allowsEnclosureRedirect(
-        from: source,
-        to: destination,
-        redirectNumber: 2,
-        displayVersion: "0.2.0"
-      )
-    )
-
-    for location in [
-      "http://release-assets.githubusercontent.com/github-production-release-asset/12345/01234567-89ab-cdef-0123-456789abcdef?sig=fixture",
-      "https://objects.githubusercontent.com/github-production-release-asset/12345/01234567-89ab-cdef-0123-456789abcdef?sig=fixture",
-      "https://user@release-assets.githubusercontent.com/github-production-release-asset/12345/01234567-89ab-cdef-0123-456789abcdef?sig=fixture",
-      "https://release-assets.githubusercontent.com:443/github-production-release-asset/12345/01234567-89ab-cdef-0123-456789abcdef?sig=fixture",
-      "https://release-assets.githubusercontent.com/github-production-release-asset/12345/01234567-89ab-cdef-0123-456789abcdef",
-      "https://release-assets.githubusercontent.com/other/12345/01234567-89ab-cdef-0123-456789abcdef?sig=fixture",
-      "https://release-assets.githubusercontent.com/github-production-release-asset/not-numeric/01234567-89ab-cdef-0123-456789abcdef?sig=fixture",
-      "https://release-assets.githubusercontent.com/github-production-release-asset/12345/%2e%2e?sig=fixture",
-    ] {
-      XCTAssertFalse(
-        policy.allowsEnclosureRedirect(
-          from: source,
-          to: URL(string: location)!,
-          redirectNumber: 1,
-          displayVersion: "0.2.0"
-        ),
-        location
-      )
-    }
-  }
-
   func testDowngradeReplayAndMalformedLocationFailClosed() {
     var downgrade = SecureUpdateProofCandidate.valid
     downgrade.feedBuild = "1"
@@ -331,37 +285,6 @@ private struct SecureUpdateProofPolicy {
     return .installAllowed
   }
 
-  func allowsEnclosureRedirect(
-    from source: URL,
-    to destination: URL,
-    redirectNumber: Int,
-    displayVersion: String
-  ) -> Bool {
-    guard redirectNumber == 1,
-      isApprovedDownloadLocation(source, displayVersion: displayVersion),
-      destination.scheme == "https",
-      destination.host == "release-assets.githubusercontent.com",
-      destination.user == nil,
-      destination.password == nil,
-      destination.port == nil,
-      destination.query?.isEmpty == false,
-      destination.fragment == nil
-    else {
-      return false
-    }
-
-    let pathComponents = destination.pathComponents
-    guard pathComponents.count == 4,
-      pathComponents[0] == "/",
-      pathComponents[1] == "github-production-release-asset",
-      isASCIIDecimal(pathComponents[2]),
-      isOpaqueAssetIdentifier(pathComponents[3])
-    else {
-      return false
-    }
-    return true
-  }
-
   private func isCanonicalBuild(_ version: String) -> Bool {
     guard (1...18).contains(version.utf8.count),
       version.utf8.first.map({ (49...57).contains($0) }) == true
@@ -398,16 +321,6 @@ private struct SecureUpdateProofPolicy {
     return true
   }
 
-  private func isASCIIDecimal(_ value: String) -> Bool {
-    !value.isEmpty && value.utf8.allSatisfy { (48...57).contains($0) }
-  }
-
-  private func isOpaqueAssetIdentifier(_ value: String) -> Bool {
-    guard (1...128).contains(value.utf8.count) else { return false }
-    return value.utf8.allSatisfy {
-      (48...57).contains($0) || (65...90).contains($0) || (97...122).contains($0) || $0 == 45
-    }
-  }
 }
 
 private enum SecureUpdateProofFailure: CaseIterable, Equatable {

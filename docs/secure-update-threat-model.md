@@ -21,7 +21,7 @@ fail closed before replacing any installed bytes.
 | --- | --- | --- |
 | Feed or CDN compromise | Require signed appcast; reject malformed XML, unknown fields that weaken policy, and unsigned or invalid data | No update; current app remains usable |
 | GitHub release compromise or artifact substitution | Verify enclosure Ed25519 signature, exact length, immutable release URL, Developer ID identity, notarization, version, and architecture | No install; compromised release account can cause denial of service but not authorize unsigned bytes |
-| DNS, TLS interception, redirect, or alternate host | Fixed HTTPS feed; exact initial enclosure path; at most one HTTPS redirect to `release-assets.githubusercontent.com` with GitHub's release-asset path shape and a signed query; no credentials or follow-on redirect; signature checks independent of transport | Network failure or rejected candidate; a future GitHub CDN change requires review before allow-list expansion |
+| DNS, TLS interception, redirect, or alternate host | Fixed HTTPS feed; exact initial enclosure path validated before download; no credentials or custom request data; signed length and Ed25519 checks independent of the final response URL | Network failure or rejected candidate; Sparkle follows ordinary HTTPS redirects and exposes no public redirect-policy callback, so a compromised transport may observe the request or cause denial of service but cannot authorize installation |
 | Replay or downgrade | Compare numeric `CFBundleVersion` with installed and highest authenticated build; preserve the authenticated high-water mark | Older authenticated release is rejected; local preference deletion can remove the extra high-water defense, but never the installed-build defense |
 | Version or archive metadata mismatch | Feed build/display version must equal verified archive metadata | Candidate rejected before install |
 | Oversized, empty, truncated, or length-mismatched archive | Signed declared length, actual-length equality, 256 MiB cap, bounded temporary staging | Candidate rejected and staging removed |
@@ -43,8 +43,9 @@ the current application runnable and removes transient update bytes. A feed
 outage can never disable capture. Update failures never inspect, log, persist, or
 transmit screenshots, recognized text, clipboard text, or HUD previews.
 
-The app does not accept arbitrary feed overrides, enclosure domains, redirects
-outside the single bounded GitHub release-asset handoff, or release-channel
-identifiers. G35 contains no
-production public key, private key, public feed, published update artifact, or
-shipping network entitlement.
+The app does not accept arbitrary feed overrides, initial enclosure domains, or
+release-channel identifiers. Redirect destinations remain untrusted transport;
+G35 claims no redirect guard that Sparkle's public API cannot enforce and relies
+on the independently verified enclosure signature before installation. G35
+contains no production public key, private key, public feed, published update
+artifact, or shipping network entitlement.

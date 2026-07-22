@@ -11,13 +11,18 @@ GitHub Release assets. DNS and public feed publication are later, separately
 approved work.
 
 The enclosure starts at the exact immutable `github.com` release URL recorded
-in the authenticated feed. GitHub may return the asset directly or issue one
-redirect. Only an HTTPS redirect to `release-assets.githubusercontent.com` with
-the reviewed release-asset path shape, no credentials/custom port/fragment,
-and a nonempty signed query is allowed. No second redirect is followed. A host
-change is a fail-closed incident and requires a reviewed contract update; it is
-not learned dynamically. Enclosure authentication and metadata checks remain
-mandatory after the transport handoff.
+in the authenticated feed, and CopyLasso validates that initial URL before the
+user can authorize download: with automatic downloads disabled, the custom
+`SPUUserDriver` receives the `SUAppcastItem` before its Install reply begins
+retrieval. GitHub may return the asset directly or redirect Sparkle's internal
+`NSURLSession`. Sparkle 2.9.4 exposes the initial mutable request to its updater
+delegate but no supported callback for accepting or rejecting each redirect.
+G36 therefore must not implement or advertise a redirect allowlist that it
+cannot connect to the real downloader. It treats the final response location
+and all downloaded bytes as untrusted transport until the signed length and
+Ed25519 enclosure verification succeed. A future need for redirect-level
+enforcement requires an architecture amendment or an upstream supported seam
+before implementation.
 
 Automatic checks default on, run no more often than every 24 hours, and can be
 disabled. A user command may check immediately. Requests contain no system
