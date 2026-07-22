@@ -27,10 +27,12 @@ before implementation.
 Automatic checks default on, run no more often than every 24 hours, and can be
 disabled. A user command may check immediately. Requests contain no system
 profile, hardware data, stable identifier, cookies, custom headers, screen or
-clipboard content, or delegate-provided query parameters. Sparkle's ordinary
-user agent contains only the application/display version and Sparkle version.
-The server therefore observes only normal transport metadata such as IP address
-and request time.
+clipboard content, delegate-provided query parameters, or external release-note
+fetches. Release notes are required as nonempty inline plain text inside the
+signed appcast; external/full release-note URLs, HTML notes, and missing notes
+reject the candidate before consent. Sparkle's ordinary user agent contains
+only the application/display version and Sparkle version. The server therefore
+observes only normal transport metadata such as IP address and request time.
 
 ## Signing-Key Lifecycle
 
@@ -69,6 +71,13 @@ highest authenticated build. It does not persist feed bodies or release notes.
 The installed build is always the minimum accepted baseline; the authenticated
 high-water mark rejects replay after a deferral.
 
+An absent high-water record is initialized and persisted before the first
+network check in the first updater-enabled launch, using the canonical running
+`CFBundleVersion`. A present record is never silently repaired: malformed data
+fails closed, while a valid record remains the replay authority. This lets a
+manual 0.1.x bootstrap receive the following update without weakening
+corruption detection.
+
 A candidate must be strictly newer than the installed build, not below the
 high-water mark, metadata-consistent, correctly signed, and within the approved
 immutable GitHub URL and 256 MiB size policy. The high-water mark advances only
@@ -77,6 +86,12 @@ after the candidate feed and enclosure metadata authenticate.
 ## Staging, Cancellation, and Recovery
 
 Downloaded bytes exist only in Sparkle's bounded temporary update transaction.
+The custom user driver retains Sparkle's
+`showDownloadInitiatedWithCancellation:` closure for that transaction. It
+cancels exactly once when an expected-content-length callback disagrees with
+the signed size or exceeds 256 MiB, or when the overflow-checked sum of
+`showDownloadDidReceiveDataOfLength:` deltas first exceeds either boundary.
+Extraction is never authorized until the final length equals the signed value.
 Cancellation, signature or metadata rejection, download failure, timeout,
 offline state, disk exhaustion, interrupted extraction, and failed installation
 must leave the installed application untouched and remove staging. Startup

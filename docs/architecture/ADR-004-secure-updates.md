@@ -56,6 +56,13 @@ of the form
 `https://github.com/bennetthilberg/copylasso/releases/download/<tag>/CopyLasso-<version>.dmg`.
 G35 neither publishes nor requests either endpoint.
 
+Release notes must be nonempty inline plain text in the signed appcast. G36
+rejects `releaseNotesURL`, `fullReleaseNotesURL`, HTML descriptions, and missing
+notes before presenting update consent, and its updater delegate returns false
+from `updater:shouldDownloadReleaseNotesForUpdate:`. This keeps the text shown
+to the user inside the authenticated feed envelope and prevents a second
+content or network origin from entering the update flow.
+
 [GitHub's release-asset API](https://docs.github.com/en/rest/releases/assets#get-a-release-asset)
 documents that an asset request may return the bytes directly or redirect the
 client. Sparkle 2.9.4 constructs the initial enclosure request from
@@ -91,6 +98,16 @@ The signed-feed expiration spelling above is locked to the pinned 2.9.4 source:
 Info.plist key, and `SUAppcastDriver.m` treats zero as never recovering from a
 failed feed signature.
 
+With automatic downloads disabled, the custom user driver receives
+`showDownloadInitiatedWithCancellation:` before bytes arrive. It retains that
+cancellation closure only for the active transaction, verifies every
+`showDownloadDidReceiveExpectedContentLength:` value against the signed length
+and 256 MiB ceiling, and sums each
+`showDownloadDidReceiveDataOfLength:` delta with overflow checking. The first
+callback that would exceed either boundary invokes cancellation exactly once,
+removes staging, and rejects the candidate. The final downloaded length must
+still equal the signed length before extraction or installation is authorized.
+
 The app will add `com.apple.security.network.client` and one
 `com.apple.security.temporary-exception.mach-lookup.global-name` array containing
 exactly `$(PRODUCT_BUNDLE_IDENTIFIER)-spks` and
@@ -117,6 +134,8 @@ The G35 proof uses Sparkle's real `SUStandardVersionComparator`, real
   must match, and an enclosure must be 1 byte through 256 MiB. This conservative
   ceiling is far above current CopyLasso packages while bounding disk and parser
   exposure.
+- Only nonempty inline plain-text release notes inside the signed feed are
+  accepted; remote, HTML, and missing notes fail before consent.
 - Only the fixed HTTPS GitHub Releases owner, repository, tag path, DMG naming,
   and a URL without user info, port, query, or fragment are accepted.
 - Redirect destinations are transport, not trust inputs. Sparkle's supported
@@ -127,6 +146,10 @@ The G35 proof uses Sparkle's real `SUStandardVersionComparator`, real
   and interruption paths remove staging and preserve the installed build.
 - Installation commits only after a verified download and explicit final user
   confirmation. Deferral leaves the current application untouched.
+- On the first updater-enabled launch only, an absent authenticated high-water
+  record is initialized from the canonical running `CFBundleVersion` before a
+  network check. A present malformed record fails closed rather than being
+  replaced.
 
 The fixture creates a fresh test-only Ed25519 key in a temporary directory,
 signs and verifies an archive and appcast with Sparkle's shipped tools while

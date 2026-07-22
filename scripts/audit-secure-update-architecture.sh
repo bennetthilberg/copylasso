@@ -136,6 +136,15 @@ require_literal "$repository_root/docs/architecture/ADR-004-secure-updates.md" \
 require_literal "$repository_root/docs/architecture/ADR-004-secure-updates.md" \
     'no per-redirect decision hook' \
     "The ADR must retain Sparkle's actual redirect integration boundary."
+require_literal "$repository_root/docs/architecture/ADR-004-secure-updates.md" \
+    'showDownloadDidReceiveDataOfLength:' \
+    "The ADR must bind the byte cap to Sparkle's streaming callback."
+require_literal "$repository_root/docs/architecture/ADR-004-secure-updates.md" \
+    'Release notes must be nonempty inline plain text in the signed appcast.' \
+    "The ADR must reject unauthenticated external release notes."
+require_literal "$repository_root/docs/secure-update-operations.md" \
+    'An absent high-water record is initialized and persisted' \
+    "Operations must define first-launch replay-state initialization."
 if /usr/bin/grep -Fq 'allowsEnclosureRedirect' \
     "$repository_root/CopyLassoTests/Update/SecureUpdateArchitectureProofTests.swift"; then
     fail "The G35 proof must not claim an unconnected redirect guard."

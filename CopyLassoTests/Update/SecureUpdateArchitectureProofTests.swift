@@ -43,12 +43,43 @@ final class SecureUpdateArchitectureProofTests: XCTestCase {
     )
   }
 
+  func testFirstUpdaterLaunchSeedsHighWaterFromAuthenticatedInstalledBuild() {
+    XCTAssertEqual(
+      policy.initialHighWaterBuild(installedBuild: "2", persistedBuild: nil),
+      "2"
+    )
+    XCTAssertEqual(
+      policy.decision(for: .valid, installedBuild: "2", highestAuthenticatedBuild: nil),
+      .installAllowed
+    )
+    XCTAssertEqual(
+      policy.decision(for: .valid, installedBuild: "2", highestAuthenticatedBuild: ""),
+      .rejected(.invalidVersion)
+    )
+  }
+
   func testUntrustedOrMismatchedCandidatesFailClosed() {
     assertRejected(\.feedAuthenticated, value: false, reason: .invalidFeedSignature)
     assertRejected(\.archiveAuthenticated, value: false, reason: .invalidArchiveSignature)
     assertRejected(\.archiveBuild, value: "4", reason: .versionMismatch)
     assertRejected(\.archiveDisplayVersion, value: "0.2.1", reason: .versionMismatch)
     assertRejected(\.actualDownloadBytes, value: 4_095, reason: .sizeMismatch)
+  }
+
+  func testOnlySignedInlinePlainTextReleaseNotesAreAccepted() {
+    for source in [
+      SecureUpdateProofReleaseNotes.externalURL,
+      .inlineHTML,
+      .inlinePlainText(" \n"),
+      .missing,
+    ] {
+      var candidate = SecureUpdateProofCandidate.valid
+      candidate.releaseNotes = source
+      XCTAssertEqual(
+        policy.decision(for: candidate, installedBuild: "2", highestAuthenticatedBuild: "2"),
+        .rejected(.invalidReleaseNotes)
+      )
+    }
   }
 
   func testDowngradeReplayAndMalformedLocationFailClosed() {
@@ -129,6 +160,36 @@ final class SecureUpdateArchitectureProofTests: XCTestCase {
     }
   }
 
+  func testStreamingDownloadCancelsAtSignedLengthAndAbsoluteCap() {
+    var signedLengthCancellationCount = 0
+    var signedLengthBudget = SecureUpdateProofDownloadBudget(
+      signedExpectedBytes: 4_096,
+      maximumBytes: 256 * 1_024 * 1_024
+    )
+    signedLengthBudget.begin {
+      signedLengthCancellationCount += 1
+    }
+    signedLengthBudget.receiveData(length: 4_096)
+    XCTAssertFalse(signedLengthBudget.cancelled)
+    signedLengthBudget.receiveData(length: 1)
+    XCTAssertTrue(signedLengthBudget.cancelled)
+    XCTAssertEqual(signedLengthCancellationCount, 1)
+    signedLengthBudget.receiveData(length: UInt64.max)
+    XCTAssertEqual(signedLengthCancellationCount, 1)
+
+    var capCancellationCount = 0
+    var capBudget = SecureUpdateProofDownloadBudget(
+      signedExpectedBytes: 256 * 1_024 * 1_024,
+      maximumBytes: 256 * 1_024 * 1_024
+    )
+    capBudget.begin {
+      capCancellationCount += 1
+    }
+    capBudget.receiveExpectedContentLength(300 * 1_024 * 1_024)
+    XCTAssertTrue(capBudget.cancelled)
+    XCTAssertEqual(capCancellationCount, 1)
+  }
+
   func testCancellationInterruptionAndOfflineFailureRemoveStagingAndPreserveInstall() {
     for failure in SecureUpdateProofFailure.allCases {
       var transaction = SecureUpdateProofTransaction(installedBuild: "2")
@@ -192,6 +253,7 @@ private struct SecureUpdateProofCandidate {
   var archiveBuild: String
   var displayVersion: String
   var archiveDisplayVersion: String
+  var releaseNotes: SecureUpdateProofReleaseNotes
   var expectedDownloadBytes: Int
   var actualDownloadBytes: Int
   var downloadURL: URL
@@ -203,6 +265,7 @@ private struct SecureUpdateProofCandidate {
     archiveBuild: "3",
     displayVersion: "0.2.0",
     archiveDisplayVersion: "0.2.0",
+    releaseNotes: .inlinePlainText("Security and reliability improvements."),
     expectedDownloadBytes: 4_096,
     actualDownloadBytes: 4_096,
     downloadURL: URL(
@@ -212,12 +275,20 @@ private struct SecureUpdateProofCandidate {
   )
 }
 
+private enum SecureUpdateProofReleaseNotes: Equatable {
+  case externalURL
+  case inlineHTML
+  case inlinePlainText(String)
+  case missing
+}
+
 private enum SecureUpdateProofRejection: Equatable {
   case downgrade
   case invalidArchiveSignature
   case invalidDownloadLocation
   case invalidDownloadSize
   case invalidFeedSignature
+  case invalidReleaseNotes
   case invalidVersion
   case replay
   case sizeMismatch
@@ -236,14 +307,16 @@ private struct SecureUpdateProofPolicy {
   func decision(
     for candidate: SecureUpdateProofCandidate,
     installedBuild: String,
-    highestAuthenticatedBuild: String
+    highestAuthenticatedBuild: String?
   ) -> SecureUpdateProofDecision {
     let comparator = SUStandardVersionComparator.default
 
     guard isCanonicalBuild(candidate.feedBuild),
       isCanonicalBuild(candidate.archiveBuild),
-      isCanonicalBuild(installedBuild),
-      isCanonicalBuild(highestAuthenticatedBuild)
+      let resolvedHighWaterBuild = initialHighWaterBuild(
+        installedBuild: installedBuild,
+        persistedBuild: highestAuthenticatedBuild
+      )
     else {
       return .rejected(.invalidVersion)
     }
@@ -253,6 +326,11 @@ private struct SecureUpdateProofPolicy {
       candidate.displayVersion == candidate.archiveDisplayVersion
     else {
       return .rejected(.versionMismatch)
+    }
+    guard case .inlinePlainText(let releaseNotes) = candidate.releaseNotes,
+      !releaseNotes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    else {
+      return .rejected(.invalidReleaseNotes)
     }
     guard candidate.expectedDownloadBytes > 0,
       candidate.expectedDownloadBytes <= maximumDownloadBytes
@@ -276,13 +354,20 @@ private struct SecureUpdateProofPolicy {
       toVersion: installedBuild
     )
     if installedComparison == .orderedAscending { return .rejected(.downgrade) }
-    if comparator.compareVersion(candidate.feedBuild, toVersion: highestAuthenticatedBuild)
+    if comparator.compareVersion(candidate.feedBuild, toVersion: resolvedHighWaterBuild)
       == .orderedAscending
     {
       return .rejected(.replay)
     }
     if installedComparison == .orderedSame { return .noUpdate }
     return .installAllowed
+  }
+
+  func initialHighWaterBuild(installedBuild: String, persistedBuild: String?) -> String? {
+    guard isCanonicalBuild(installedBuild) else { return nil }
+    guard let persistedBuild else { return installedBuild }
+    guard isCanonicalBuild(persistedBuild) else { return nil }
+    return persistedBuild
   }
 
   private func isCanonicalBuild(_ version: String) -> Bool {
@@ -321,6 +406,52 @@ private struct SecureUpdateProofPolicy {
     return true
   }
 
+}
+
+private struct SecureUpdateProofDownloadBudget {
+  let signedExpectedBytes: UInt64
+  let maximumBytes: UInt64
+
+  private(set) var cancelled = false
+  private(set) var receivedBytes: UInt64 = 0
+  private var cancellation: (() -> Void)?
+
+  init(signedExpectedBytes: UInt64, maximumBytes: UInt64) {
+    self.signedExpectedBytes = signedExpectedBytes
+    self.maximumBytes = maximumBytes
+  }
+
+  mutating func begin(cancellation: @escaping () -> Void) {
+    self.cancellation = cancellation
+  }
+
+  mutating func receiveExpectedContentLength(_ length: UInt64) {
+    guard length == signedExpectedBytes, length <= maximumBytes else {
+      cancel()
+      return
+    }
+  }
+
+  mutating func receiveData(length: UInt64) {
+    guard !cancelled else { return }
+    let (nextReceivedBytes, overflowed) = receivedBytes.addingReportingOverflow(length)
+    guard !overflowed,
+      nextReceivedBytes <= signedExpectedBytes,
+      nextReceivedBytes <= maximumBytes
+    else {
+      cancel()
+      return
+    }
+    receivedBytes = nextReceivedBytes
+  }
+
+  private mutating func cancel() {
+    guard !cancelled else { return }
+    cancelled = true
+    let cancellation = self.cancellation
+    self.cancellation = nil
+    cancellation?()
+  }
 }
 
 private enum SecureUpdateProofFailure: CaseIterable, Equatable {
