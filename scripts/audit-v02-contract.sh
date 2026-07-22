@@ -8,6 +8,7 @@ readonly baseline_contract="$repository_root/docs/v0.1-product-contract.md"
 readonly release_metadata="$repository_root/Configuration/ReleaseMetadata.xcconfig"
 readonly entitlements="$repository_root/CopyLasso/CopyLasso.entitlements"
 readonly expected_baseline_contract_digest='3426807f08168cec2aaca337b80d7657a8a2d8569d48ecaafe0ec75672f92291'
+readonly expected_entitlements_digest='b746c74b201e6af4e0864fbd1f4f629f96156a7ec4b7208bc995d0a5089bb592'
 
 fail() {
     echo "$1" >&2
@@ -46,12 +47,18 @@ for required_text in \
     'Capture Text, Capture Code, and Capture LaTeX are separate commands.' \
     '`Shift-Command-2` (`⇧⌘2`) remains assigned only to Capture Text.' \
     'Capture Code and Capture LaTeX shortcuts are unset by default.' \
-    'unique payloads in visual top-to-bottom, left-to-right order' \
+    'unique payloads in visual top-to-bottom, left-to-right' \
     'one newline between payloads' \
+    'If a multi-code result contains any line break' \
+    'mode-specific ambiguity' \
     'never opens a URL' \
-    'at least 200 controlled samples' \
+    'at least 300 samples' \
+    'at least 200 positive math samples' \
+    'at least 100 negative selections' \
+    'at least 15 examples' \
     'at least 95% structurally correct' \
-    'at least 85% normalized exact match' \
+    'Accuracy over all positive math samples is at least 85%' \
+    'no reported positive class is below 70% normalized exact match' \
     'no more than 1% false-success rate' \
     'p95 recognition latency no greater than 2 seconds on Apple Silicon' \
     'no greater than 4 seconds on Intel' \
@@ -84,6 +91,12 @@ fi
     fail "G34 must leave the current release version at 0.1.1."
 /usr/bin/grep -Fq 'COPYLASSO_RELEASE_BUILD = 2' "$release_metadata" || \
     fail "G34 must leave the current release build at 2."
+
+[[ -f "$entitlements" ]] || fail "G34 must preserve the reviewed App Sandbox entitlements file."
+entitlements_digest="$(/usr/bin/shasum -a 256 "$entitlements" | /usr/bin/awk '{print $1}')"
+if [[ "$entitlements_digest" != "$expected_entitlements_digest" ]]; then
+    fail "G34 must preserve the reviewed one-key App Sandbox entitlement byte for byte."
+fi
 
 if /usr/bin/grep -Eq 'com\.apple\.security\.network\.(client|server)' "$entitlements"; then
     fail "G34 must not add a network entitlement."
