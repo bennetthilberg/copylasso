@@ -11,6 +11,7 @@ readonly release_package_audit_script="$repository_root/scripts/audit-release-pa
 readonly release_workflow_audit_script="$repository_root/scripts/audit-release-workflow.sh"
 readonly platform_qualification_audit_script="$repository_root/scripts/audit-platform-qualification.sh"
 readonly platform_qualification_test_script="$repository_root/scripts/test-platform-qualification.sh"
+readonly v02_contract_audit_script="$repository_root/scripts/audit-v02-contract.sh"
 readonly generated_app_cleanup_runner="$repository_root/scripts/run-with-generated-app-cleanup.sh"
 readonly ordinary_release_cleanup="$repository_root/scripts/unregister-generated-release.sh"
 readonly repeatability_script="$repository_root/scripts/test-repeatability.sh"
@@ -124,6 +125,15 @@ if [[ "$platform_qualification_test_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/test-platform-qualification.sh exactly once."
 fi
 
+v02_contract_audit_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/audit-v02-contract\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$v02_contract_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-v02-contract.sh exactly once."
+fi
+
 if [[ ! -x "$developer_id_audit_script" ]] || \
     [[ ! -x "$repository_root/scripts/verify-developer-id-app.sh" ]] || \
     [[ ! -x "$repository_root/scripts/test-developer-id-release.sh" ]]; then
@@ -154,6 +164,10 @@ if [[ ! -x "$platform_qualification_audit_script" ]] || \
     [[ ! -x "$generated_app_cleanup_runner" ]] || \
     [[ ! -x "$ordinary_release_cleanup" ]]; then
     fail "Platform-qualification and generated-app cleanup scripts must be executable."
+fi
+
+if [[ ! -x "$v02_contract_audit_script" ]]; then
+    fail "The v0.2 product-contract audit must be executable."
 fi
 
 if ! /usr/bin/grep -Fq \

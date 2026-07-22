@@ -1,10 +1,11 @@
 # Contributing to CopyLasso
 
-Thank you for helping build CopyLasso. CopyLasso 0.1.1 is publicly released. Focused changes that preserve its privacy and reliability contracts are the easiest to review; new product scope requires a separately approved post-v0.1 roadmap and product-contract update.
+Thank you for helping build CopyLasso. CopyLasso 0.1.1 is publicly released. Focused changes that preserve its privacy and reliability contracts are the easiest to review. The v0.2 product contract approves planned scope, but every implementation goal still requires its own bounded plan and approval.
 
 ## Before Making a Change
 
 - Read the [v0.1 product contract](docs/v0.1-product-contract.md) for supported behavior, privacy guarantees, and non-goals.
+- Read the [v0.2 product contract](docs/v0.2-product-contract.md) when proposing updater, sound, QR/barcode, or conditional LaTeX work. It describes planned behavior, not features currently present in 0.1.1.
 - Review the [development environment](docs/development-environment.md) and use the documented stable Xcode toolchain.
 - Open an issue before starting a large feature, architectural change, new dependency, or product-scope change.
 - Never include credentials, signing material, captured screen content, recognized private text, or other sensitive data in a commit, issue, test fixture, screenshot, or log.
