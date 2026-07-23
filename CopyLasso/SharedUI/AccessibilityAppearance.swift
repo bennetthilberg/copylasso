@@ -80,10 +80,13 @@ enum FeedbackPanelLayout {
 
 enum AccessibilityAuditCopy {
   static let menuBarHelp =
-    "Open the CopyLasso menu to capture screen text or change settings."
+    "Open the CopyLasso menu to capture screen text or codes, or change settings."
   static let shortcutRecorderLabel = "Capture Text keyboard shortcut"
+  static let codeShortcutRecorderLabel = "Capture Code keyboard shortcut"
   static let shortcutRecorderHelp =
     "Record a global keyboard shortcut, or clear it to use only the menu command."
+  static let codeShortcutRecorderHelp =
+    "Record an optional global keyboard shortcut for Capture Code, or leave it clear."
   static let launchAtLoginHelp =
     "Choose whether CopyLasso starts automatically when you log in."
   static let suggestedShortcutHelp =

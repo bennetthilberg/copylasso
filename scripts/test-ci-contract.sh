@@ -12,6 +12,7 @@ readonly release_workflow_audit_script="$repository_root/scripts/audit-release-w
 readonly platform_qualification_audit_script="$repository_root/scripts/audit-platform-qualification.sh"
 readonly platform_qualification_test_script="$repository_root/scripts/test-platform-qualification.sh"
 readonly v02_contract_audit_script="$repository_root/scripts/audit-v02-contract.sh"
+readonly code_recognition_audit_script="$repository_root/scripts/audit-code-recognition.sh"
 readonly success_sound_audit_script="$repository_root/scripts/audit-success-sound.sh"
 readonly secure_update_audit_script="$repository_root/scripts/audit-secure-update-architecture.sh"
 readonly secure_update_test_script="$repository_root/scripts/test-secure-update-architecture.sh"
@@ -139,6 +140,15 @@ if [[ "$v02_contract_audit_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/audit-v02-contract.sh exactly once."
 fi
 
+code_recognition_audit_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/audit-code-recognition\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$code_recognition_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-code-recognition.sh exactly once."
+fi
+
 success_sound_audit_invocations="$({
     /usr/bin/grep -Ec \
         '^[[:space:]]*\./scripts/audit-success-sound\.sh[[:space:]]*$' \
@@ -218,6 +228,11 @@ fi
 
 if [[ ! -x "$v02_contract_audit_script" ]]; then
     fail "The v0.2 product-contract audit must be executable."
+fi
+
+if [[ ! -x "$code_recognition_audit_script" ]] || \
+    [[ ! -x "$repository_root/scripts/generate-code-fixtures.swift" ]]; then
+    fail "The code-recognition audit and deterministic fixture generator must be executable."
 fi
 
 if [[ ! -x "$success_sound_audit_script" ]] || \

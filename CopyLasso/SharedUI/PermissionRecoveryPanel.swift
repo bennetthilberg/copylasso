@@ -136,7 +136,7 @@ final class PermissionRecoveryPanelController: PermissionRecoveryPresenting {
       tryAgain: { [weak self] in
         guard let self else { return }
         model.beginRetry()
-        guard case .transitioned = captureRequester?.perform() else {
+        guard case .transitioned = captureRequester?.retryLastRequest() else {
           model.recordRetryRejection()
           return
         }

@@ -7,14 +7,14 @@ enum GlobalShortcutEvent: Equatable, Sendable {
 
 @MainActor
 protocol GlobalShortcutEventSourcing: AnyObject {
-  func events() -> AsyncStream<GlobalShortcutEvent>
+  func events(for mode: CaptureMode) -> AsyncStream<GlobalShortcutEvent>
 }
 
 @MainActor
 final class GlobalShortcutController {
   private let captureCommand: CaptureCommand
   private let eventSource: any GlobalShortcutEventSourcing
-  private var listenerTask: Task<Void, Never>?
+  private var listenerTasks: [Task<Void, Never>] = []
 
   init(
     captureCommand: CaptureCommand,
@@ -26,29 +26,35 @@ final class GlobalShortcutController {
 
   func start() {
     stop()
-    let stream = eventSource.events()
-    listenerTask = Task { @MainActor [weak self] in
-      for await event in stream where event == .keyUp {
-        guard !Task.isCancelled else {
-          return
+    for mode in [CaptureMode.text, .code] {
+      let stream = eventSource.events(for: mode)
+      let task = Task { @MainActor [weak self] in
+        for await event in stream where event == .keyUp {
+          guard !Task.isCancelled else {
+            return
+          }
+          self?.captureCommand.perform(mode: mode)
         }
-        self?.captureCommand.perform()
       }
+      listenerTasks.append(task)
     }
   }
 
   func stop() {
-    listenerTask?.cancel()
-    listenerTask = nil
+    for task in listenerTasks {
+      task.cancel()
+    }
+    listenerTasks.removeAll()
   }
 }
 
 @MainActor
 final class KeyboardShortcutsEventSource: GlobalShortcutEventSourcing {
-  func events() -> AsyncStream<GlobalShortcutEvent> {
+  func events(for mode: CaptureMode) -> AsyncStream<GlobalShortcutEvent> {
     AsyncStream { continuation in
       let task = Task { @MainActor in
-        for await event in KeyboardShortcuts.events(for: .captureText) {
+        let name: KeyboardShortcuts.Name = mode == .text ? .captureText : .captureCode
+        for await event in KeyboardShortcuts.events(for: name) {
           switch event {
           case .keyDown:
             continuation.yield(.keyDown)

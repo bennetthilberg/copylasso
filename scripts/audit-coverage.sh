@@ -90,6 +90,7 @@ required_file_minimums=(
     "CaptureCommand.swift|9000"
     "CaptureCoordinator.swift|10000"
     "ClipboardService.swift|9500"
+    "CodePayloadAssembler.swift|9500"
     "FeedbackPresentationContent.swift|10000"
     "FeedbackPreview.swift|10000"
     "GlobalShortcutStore.swift|10000"
@@ -104,6 +105,7 @@ required_file_minimums=(
     "TextAssembler.swift|9000"
     "UpdateService.swift|7500"
     "VisionOCRService.swift|9000"
+    "VisionBarcodeService.swift|9000"
 )
 
 for requirement in "${required_file_minimums[@]}"; do

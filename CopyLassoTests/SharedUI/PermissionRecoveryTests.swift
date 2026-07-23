@@ -190,9 +190,17 @@ private final class SpyPermissionRecoveryPanelHost: PermissionRecoveryPanelHosti
 private final class SpyCaptureRequester: CaptureRequesting {
   var result: CaptureTransitionResult = .transitioned(from: .idle, to: .requestingPermission)
   private(set) var performCallCount = 0
+  private(set) var requestedModes: [CaptureMode] = []
 
   @discardableResult
-  func perform() -> CaptureTransitionResult {
+  func perform(mode: CaptureMode) -> CaptureTransitionResult {
+    performCallCount += 1
+    requestedModes.append(mode)
+    return result
+  }
+
+  @discardableResult
+  func retryLastRequest() -> CaptureTransitionResult {
     performCallCount += 1
     return result
   }

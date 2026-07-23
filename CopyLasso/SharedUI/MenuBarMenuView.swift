@@ -16,6 +16,13 @@ struct MenuBarMenuView: View {
     .globalKeyboardShortcut(.captureText)
     .accessibilityIdentifier("copylasso.menu.capture")
 
+    Button("Capture Code") {
+      commandHandler.captureCode()
+    }
+    .disabled(!commandHandler.isCaptureEnabled)
+    .globalKeyboardShortcut(.captureCode)
+    .accessibilityIdentifier("copylasso.menu.capture-code")
+
     Divider()
 
     Button("Check for Updates…") {

@@ -14,7 +14,7 @@ final class AppConfigurationTests: XCTestCase {
     XCTAssertEqual(appBundleURL.lastPathComponent, "CopyLasso.app")
     XCTAssertEqual(
       appBundle.object(forInfoDictionaryKey: "NSScreenCaptureUsageDescription") as? String,
-      "CopyLasso captures the screen region you select to recognize text locally."
+      "CopyLasso captures the screen region you select to recognize text or codes locally."
     )
   }
 }

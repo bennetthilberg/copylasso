@@ -35,7 +35,7 @@ struct SettingsView: View {
         }
       }
 
-      Section("Shortcut") {
+      Section("Shortcuts") {
         KeyboardShortcuts.Recorder(
           "Capture Text",
           shortcut: Binding(
@@ -55,6 +55,17 @@ struct SettingsView: View {
         } label: {
           Text("Default")
         }
+
+        KeyboardShortcuts.Recorder(
+          "Capture Code",
+          shortcut: Binding(
+            get: { settingsController.captureCodeShortcut },
+            set: { settingsController.setCaptureCodeShortcut($0) }
+          )
+        )
+        .accessibilityLabel(AccessibilityAuditCopy.codeShortcutRecorderLabel)
+        .accessibilityHint(AccessibilityAuditCopy.codeShortcutRecorderHelp)
+        .accessibilityIdentifier("copylasso.settings.code-shortcut")
       }
 
       Section("General") {

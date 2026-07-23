@@ -36,6 +36,28 @@ final class FeedbackPanelControllerTests: XCTestCase {
         accessibilityLabel: "Copy Failed. Text recognition could not be completed."
       )
     )
+    XCTAssertEqual(
+      FeedbackPresentationContent(feedback: .codeSuccess(preview: "CODE")),
+      FeedbackPresentationContent(
+        symbolName: "checkmark.circle.fill",
+        menuBarAccessibilityLabel: "CopyLasso, code copied",
+        title: "Copied Code",
+        message: "CODE",
+        accessibilityLabel: "Copied Code: CODE"
+      )
+    )
+    XCTAssertEqual(
+      FeedbackPresentationContent(feedback: .noCode).title,
+      "No Code Found"
+    )
+    XCTAssertEqual(
+      FeedbackPresentationContent(feedback: .ambiguousCodes).title,
+      "Capture Codes Separately"
+    )
+    XCTAssertEqual(
+      FeedbackPresentationContent(feedback: .codeFailure(.recognition)).message,
+      "Code recognition could not be completed."
+    )
   }
 
   func testEveryFailureStageUsesBoundedUserSafeGenericContent() {
@@ -49,6 +71,24 @@ final class FeedbackPanelControllerTests: XCTestCase {
       XCTAssertEqual(content.title, "Copy Failed")
       XCTAssertEqual(content.symbolName, "exclamationmark.triangle.fill")
       XCTAssertEqual(content.menuBarAccessibilityLabel, "CopyLasso, capture failed")
+      XCTAssertFalse(content.message.isEmpty)
+      XCTAssertLessThanOrEqual(content.message.count, FeedbackPreview.maximumCharacterCount)
+      XCTAssertFalse(content.message.localizedCaseInsensitiveContains("error domain"))
+      XCTAssertFalse(content.message.localizedCaseInsensitiveContains("underlying"))
+    }
+  }
+
+  func testEveryCodeFailureStageUsesBoundedModeSpecificContent() {
+    let stages: [CaptureFailureStage] = [
+      .permission, .selection, .capture, .recognition, .formatting, .clipboard, .feedback,
+      .internal,
+    ]
+
+    for stage in stages {
+      let content = FeedbackPresentationContent(feedback: .codeFailure(stage))
+      XCTAssertEqual(content.title, "Code Capture Failed")
+      XCTAssertEqual(content.symbolName, "exclamationmark.triangle.fill")
+      XCTAssertEqual(content.menuBarAccessibilityLabel, "CopyLasso, code capture failed")
       XCTAssertFalse(content.message.isEmpty)
       XCTAssertLessThanOrEqual(content.message.count, FeedbackPreview.maximumCharacterCount)
       XCTAssertFalse(content.message.localizedCaseInsensitiveContains("error domain"))
@@ -176,7 +216,11 @@ final class FeedbackPanelControllerTests: XCTestCase {
     let feedbackCases: [CaptureFeedback] = [
       .success(preview: "first"),
       .noText,
+      .codeSuccess(preview: "code"),
+      .noCode,
+      .ambiguousCodes,
       .failure(.recognition),
+      .codeFailure(.recognition),
     ]
 
     for feedback in feedbackCases {

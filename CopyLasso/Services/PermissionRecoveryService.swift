@@ -7,5 +7,14 @@ protocol PermissionRecoveryPresenting: AnyObject {
 @MainActor
 protocol CaptureRequesting: AnyObject {
   @discardableResult
-  func perform() -> CaptureTransitionResult
+  func perform(mode: CaptureMode) -> CaptureTransitionResult
+  @discardableResult
+  func retryLastRequest() -> CaptureTransitionResult
+}
+
+extension CaptureRequesting {
+  @discardableResult
+  func perform() -> CaptureTransitionResult {
+    perform(mode: .text)
+  }
 }

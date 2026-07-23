@@ -35,8 +35,8 @@ final class CopyLassoUITests: XCTestCase {
       earlierItem, laterItem in
       laterItem.frame.minY - earlierItem.frame.maxY
     }
-    XCTAssertGreaterThan(commandGaps[0], commandGaps[1])
-    XCTAssertGreaterThan(commandGaps[3], commandGaps[2])
+    XCTAssertGreaterThan(commandGaps[1], commandGaps[0])
+    XCTAssertGreaterThan(commandGaps[4], commandGaps[3])
   }
 
   @MainActor
@@ -47,6 +47,7 @@ final class CopyLassoUITests: XCTestCase {
 
     openMenu(in: app)
     let clearedShortcutMenuWidth = menuItem("Capture Text", in: app).frame.width
+    let clearedCodeShortcutMenuWidth = menuItem("Capture Code", in: app).frame.width
     app.typeKey(XCUIKeyboardKey.escape, modifierFlags: [])
 
     openMenu(in: app)
@@ -74,6 +75,83 @@ final class CopyLassoUITests: XCTestCase {
     let customShortcutMenuWidth = menuItem("Capture Text", in: app).frame.width
     XCTAssertGreaterThan(customShortcutMenuWidth, clearedShortcutMenuWidth)
     retainScreenshot(named: "CopyLasso menu with custom Capture Text shortcut")
+    app.typeKey(XCUIKeyboardKey.escape, modifierFlags: [])
+
+    openMenu(in: app)
+    menuItem("Settings…", in: app).click()
+    let codeShortcutRecorder = app.descendants(matching: .any)[
+      "copylasso.settings.code-shortcut"
+    ]
+    XCTAssertTrue(codeShortcutRecorder.waitForExistence(timeout: 5))
+    codeShortcutRecorder.click()
+    app.typeKey("b", modifierFlags: [.control, .option])
+    app.typeKey("w", modifierFlags: .command)
+
+    openMenu(in: app)
+    let customCodeShortcutMenuWidth = menuItem("Capture Code", in: app).frame.width
+    XCTAssertGreaterThan(customCodeShortcutMenuWidth, clearedCodeShortcutMenuWidth)
+    retainScreenshot(named: "CopyLasso menu with custom Capture Code shortcut")
+  }
+
+  @MainActor
+  func testCaptureCodePresentsModeSpecificSuccessNoCodeAndAmbiguityFeedback() {
+    let cases = [
+      ("success", "Copied Code", "COPYLASSO UI CODE"),
+      ("no-code", "No Code Found", "Try selecting a clearer or larger area around the code."),
+      (
+        "ambiguous",
+        "Capture Codes Separately",
+        "The selection contains multiple codes with multiline content."
+      ),
+    ]
+
+    for (result, expectedTitle, expectedMessage) in cases {
+      let app = completedApp(
+        extraArguments: [
+          "--g38-selection=selected",
+          "--g38-code-result=\(result)",
+        ]
+      )
+      app.launch()
+
+      openMenu(in: app)
+      menuItem("Capture Code", in: app).click()
+
+      let title = app.staticTexts["copylasso.feedback.title"]
+      XCTAssertTrue(title.waitForExistence(timeout: 5))
+      assertAccessibleText(title, equals: expectedTitle)
+      assertAccessibleText(
+        app.staticTexts["copylasso.feedback.message"],
+        equals: expectedMessage
+      )
+      retainScreenshot(named: "CopyLasso Capture Code \(result) feedback")
+      app.terminate()
+    }
+  }
+
+  @MainActor
+  func testPermissionRecoveryRetriesCaptureCodeRatherThanCaptureText() {
+    let app = completedApp(
+      extraArguments: [
+        "--g12-permission-sequence=after-request,granted",
+        "--g38-selection=selected",
+        "--g38-code-result=success",
+      ]
+    )
+    app.launch()
+    defer { app.terminate() }
+
+    openMenu(in: app)
+    menuItem("Capture Code", in: app).click()
+    XCTAssertTrue(
+      app.staticTexts["copylasso.permission-recovery.title"]
+        .waitForExistence(timeout: 5)
+    )
+
+    app.buttons["copylasso.permission-recovery.try-again"].click()
+    let title = app.staticTexts["copylasso.feedback.title"]
+    XCTAssertTrue(title.waitForExistence(timeout: 5))
+    assertAccessibleText(title, equals: "Copied Code")
   }
 
   @MainActor
@@ -370,11 +448,14 @@ final class CopyLassoUITests: XCTestCase {
     openMenu(in: app)
     statusItem(in: app).typeKey(",", modifierFlags: .command)
     let shortcut = app.descendants(matching: .any)["copylasso.settings.shortcut"]
+    let codeShortcut = app.descendants(matching: .any)["copylasso.settings.code-shortcut"]
     let launchAtLogin = app.descendants(matching: .any)[
       "copylasso.settings.launch-at-login"
     ]
     XCTAssertTrue(shortcut.waitForExistence(timeout: 5))
     XCTAssertEqual(shortcut.label, "Capture Text keyboard shortcut")
+    XCTAssertTrue(codeShortcut.exists)
+    XCTAssertEqual(codeShortcut.label, "Capture Code keyboard shortcut")
     XCTAssertEqual(launchAtLogin.label, "Launch CopyLasso at Login")
     XCTAssertNotNil(launchAtLogin.value)
 
@@ -462,6 +543,9 @@ final class CopyLassoUITests: XCTestCase {
     XCTAssertTrue(
       app.descendants(matching: .any)["copylasso.settings.shortcut"]
         .waitForExistence(timeout: 5)
+    )
+    XCTAssertTrue(
+      app.descendants(matching: .any)["copylasso.settings.code-shortcut"].exists
     )
     XCTAssertTrue(app.buttons["copylasso.settings.use-suggested-shortcut"].exists)
     let launchAtLogin = app.descendants(matching: .any)[
@@ -766,6 +850,7 @@ final class CopyLassoUITests: XCTestCase {
 
   private static let requiredMenuLabels = [
     "Capture Text",
+    "Capture Code",
     "Check for Updates…",
     "Settings…",
     "About CopyLasso",

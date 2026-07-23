@@ -98,13 +98,18 @@ final class AccessibilityAppearanceTests: XCTestCase {
   func testCompoundControlAccessibilityCopyIsSpecificAndActionable() {
     XCTAssertEqual(
       AccessibilityAuditCopy.menuBarHelp,
-      "Open the CopyLasso menu to capture screen text or change settings."
+      "Open the CopyLasso menu to capture screen text or codes, or change settings."
     )
     XCTAssertEqual(
       AccessibilityAuditCopy.shortcutRecorderLabel,
       "Capture Text keyboard shortcut"
     )
     XCTAssertTrue(AccessibilityAuditCopy.shortcutRecorderHelp.contains("clear"))
+    XCTAssertEqual(
+      AccessibilityAuditCopy.codeShortcutRecorderLabel,
+      "Capture Code keyboard shortcut"
+    )
+    XCTAssertTrue(AccessibilityAuditCopy.codeShortcutRecorderHelp.contains("optional"))
     XCTAssertEqual(
       AccessibilityAuditCopy.suggestedShortcutHelp,
       "Restore the suggested Shift-Command-2 shortcut."

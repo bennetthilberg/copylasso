@@ -77,11 +77,13 @@ final class StubLaunchAtLoginService: LaunchAtLoginServicing {
 @MainActor
 final class StubGlobalShortcutStore: GlobalShortcutStoring {
   var captureShortcut: KeyboardShortcuts.Shortcut?
+  var captureCodeShortcut: KeyboardShortcuts.Shortcut?
   private(set) var resetCallCount = 0
 
   func reset() {
     resetCallCount += 1
     captureShortcut = nil
+    captureCodeShortcut = nil
   }
 }
 
@@ -119,13 +121,13 @@ final class StubLaunchAtLoginBackend: LaunchAtLoginBackend {
 
 @MainActor
 final class StubGlobalShortcutEventSource: GlobalShortcutEventSourcing {
-  private var continuation: AsyncStream<GlobalShortcutEvent>.Continuation?
+  private var continuations: [CaptureMode: AsyncStream<GlobalShortcutEvent>.Continuation] = [:]
   private var cancellationWaiters: [CheckedContinuation<Void, Never>] = []
   private(set) var wasCancelled = false
 
-  func events() -> AsyncStream<GlobalShortcutEvent> {
+  func events(for mode: CaptureMode) -> AsyncStream<GlobalShortcutEvent> {
     AsyncStream { continuation in
-      self.continuation = continuation
+      continuations[mode] = continuation
       continuation.onTermination = { [weak self] _ in
         Task { @MainActor in
           self?.markCancelled()
@@ -134,8 +136,8 @@ final class StubGlobalShortcutEventSource: GlobalShortcutEventSourcing {
     }
   }
 
-  func emit(_ event: GlobalShortcutEvent) {
-    continuation?.yield(event)
+  func emit(_ event: GlobalShortcutEvent, mode: CaptureMode = .text) {
+    continuations[mode]?.yield(event)
   }
 
   func waitForCancellation() async {

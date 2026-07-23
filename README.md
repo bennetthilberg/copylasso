@@ -43,6 +43,8 @@ Open **Settings…** from the menu to change or clear the shortcut, enable Launc
 
 Current source also includes the configurable success sound planned for the first v0.2 release. It is enabled by default and can be disabled with **Settings > Play Sound After Copying**. It plays only after recognized content reaches the clipboard; cancellation, no result, permission denial, recognition failure, and clipboard failure remain silent. The public CopyLasso 0.1.1 download retains its original silent feedback behavior.
 
+Current source also adds a separate **Capture Code** command for QR, Code 128, Data Matrix, PDF417, and Aztec codes visible on screen. It shares the established local selection and capture workflow, copies recognized payloads as inert plain text, and never opens a URL or otherwise acts on a payload. Its optional shortcut is unset by default. Capture Code is present in current source but is not part of the public CopyLasso 0.1.1 download.
+
 ## Permission and Recovery
 
 Screen Recording is the only macOS privacy permission required for core capture. CopyLasso does not require Accessibility, Input Monitoring, microphone, camera, location, contacts, or network access.
@@ -58,6 +60,7 @@ CopyLasso's capture workflow is private, offline, and local by design:
 - The application has no accounts, analytics, telemetry, cloud OCR, or content-upload service.
 - Current source includes the user-controlled secure updater planned for the first v0.2 release. It checks one fixed, cryptographically authenticated feed, sends no screen, OCR, clipboard, hardware-profile, or stable-identifier data, and is independent from capture.
 - Current source's optional success sound receives no captured pixels, recognized content, or clipboard text and requests no microphone or notification permission.
+- Current source recognizes supported code payloads locally with Vision, keeps complete payloads only in the active operation, and treats them only as clipboard text.
 - Clipboard access is write-only and plain-text-only. CopyLasso never reads the existing clipboard to preserve or restore its contents.
 
 See the [privacy policy](PRIVACY.md), [security and privacy review](docs/security-and-privacy-review.md), and [v0.1 product contract](docs/v0.1-product-contract.md) for the reviewed guarantees and boundaries.

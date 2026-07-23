@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-CopyLasso 0.1.x is the currently supported public release line. Current source also contains the user-controlled secure updater and configurable success sound planned for the first v0.2 release; no public updater feed or updater-enabled release exists yet. Security reports about the released application, updater or audio trust boundaries, source, build process, protected release workflow, or repository configuration are welcome.
+CopyLasso 0.1.x is the currently supported public release line. Current source also contains the user-controlled secure updater, configurable success sound, and on-screen Capture Code workflow planned for the first v0.2 release; public CopyLasso 0.1.1 contains none of those features. No public updater feed or updater-enabled release exists yet. Security reports about the released application, updater, audio or code-recognition trust boundaries, source, build process, protected release workflow, or repository configuration are welcome.
 
 | Version | Supported |
 | --- | --- |
@@ -24,3 +24,5 @@ Remove passwords, tokens, signing credentials, private keys, personal screen cap
 General defects without a security impact may be reported through the repository's public issue tracker.
 
 For updater reports, include whether the issue affects feed or enclosure authentication, version/replay ordering, download-size enforcement, staging, installer services, consent or deferral, relaunch, private release metadata, or the fixed feed/enclosure URL policy. Do not attach a private signing seed, protected appcast, Developer ID credential, notarization credential, or private release artifact to a public issue. Use the private advisory route above.
+
+For Capture Code reports, include the affected symbology and whether the issue concerns payload ordering, duplicate removal, clipboard preservation, automatic payload actions, content retention, logging, or unexpected network or file access. CopyLasso never opens or acts on a recognized code payload.

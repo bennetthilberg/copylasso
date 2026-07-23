@@ -24,7 +24,12 @@ final class MenuBarCommandHandler {
 
   @discardableResult
   func captureText() -> CaptureTransitionResult {
-    captureCommand.perform()
+    captureCommand.perform(mode: .text)
+  }
+
+  @discardableResult
+  func captureCode() -> CaptureTransitionResult {
+    captureCommand.perform(mode: .code)
   }
 
   func openSettings(_ open: () -> Void) {
