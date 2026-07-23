@@ -13,6 +13,7 @@ readonly update_service="$repository_root/CopyLasso/Services/SparkleUpdateServic
 readonly update_session="$repository_root/CopyLasso/Services/SecureUpdateSession.swift"
 readonly update_policy="$repository_root/CopyLasso/Models/SecureUpdatePolicy.swift"
 readonly sparkle_license="$repository_root/CopyLasso/Resources/Sparkle-2.9.4-LICENSE.txt"
+readonly public_key_deriver="$repository_root/scripts/lib/derive-sparkle-public-key.swift"
 
 fail() {
     echo "$1" >&2
@@ -42,6 +43,8 @@ for executable in \
     "$repository_root/scripts/fixtures/run-secure-update-signatures.sh"; do
     [[ -x "$executable" ]] || fail "Missing executable secure-update proof: $(basename "$executable")"
 done
+[[ -f "$public_key_deriver" ]] || \
+    fail "The reviewed Sparkle public-key derivation source is missing."
 [[ -f "$repository_root/scripts/fixtures/SignedAppcastParserProbe.m" ]] || \
     fail "The signed malformed-appcast parser probe is missing."
 
@@ -328,9 +331,25 @@ require_literal "$repository_root/scripts/generate-draft-appcast.sh" \
 require_literal "$repository_root/scripts/generate-draft-appcast.sh" \
     'unset COPYLASSO_SPARKLE_PRIVATE_KEY' \
     "The protected private key must be removed from the child-process environment immediately."
+require_literal "$repository_root/scripts/generate-draft-appcast.sh" \
+    'SUPublicEDKey' \
+    "Authenticated metadata generation must read the public key shipped in CopyLasso."
+require_literal "$repository_root/scripts/generate-draft-appcast.sh" \
+    'derived_public_key' \
+    "Authenticated metadata generation must derive the signing seed's public key."
+require_literal "$repository_root/scripts/generate-draft-appcast.sh" \
+    'derive-sparkle-public-key.swift' \
+    "Authenticated metadata generation must use the reviewed public-key derivation source."
+require_literal "$repository_root/scripts/generate-draft-appcast.sh" \
+    'does not match the public key shipped in CopyLasso' \
+    "Authenticated metadata generation must fail closed on a signing-key mismatch."
 require_literal "$repository_root/.github/workflows/release.yml" \
     'COPYLASSO_SPARKLE_PRIVATE_KEY: ${{ secrets.COPYLASSO_SPARKLE_PRIVATE_KEY }}' \
     "Only the protected workflow may inject the production Sparkle private key."
+[[ "$(/usr/bin/grep -Fc \
+    'COPYLASSO_SPARKLE_PRIVATE_KEY: ${{ secrets.COPYLASSO_SPARKLE_PRIVATE_KEY }}' \
+    "$repository_root/.github/workflows/release.yml")" == "1" ]] || \
+    fail "The protected workflow must expose the Sparkle private key to exactly one narrow step."
 
 if /usr/bin/git -C "$repository_root" ls-files | \
     /usr/bin/grep -Eq '(^|/)(appcast[^/]*\.xml|[^/]*\.(pem|p12|key))$'; then

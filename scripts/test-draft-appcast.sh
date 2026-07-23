@@ -60,6 +60,7 @@ readonly public_key="$(
 
 missing_secret_output="$({
     env -u COPYLASSO_SPARKLE_PRIVATE_KEY "$generator" \
+        --application "$app" \
         --dmg "$dmg" \
         --release-notes "$notes" \
         --output "$appcast" \
@@ -68,7 +69,23 @@ missing_secret_output="$({
 [[ "$missing_secret_output" == 'The protected Sparkle signing secret is unavailable.' ]] || \
     fail "The draft appcast generator must fail closed without its protected secret."
 
+readonly mismatched_private_key="$(/usr/bin/openssl rand -base64 32 | /usr/bin/tr -d '\n')"
+mismatched_key_output="$({
+    COPYLASSO_SPARKLE_PRIVATE_KEY="$mismatched_private_key" "$generator" \
+        --application "$app" \
+        --dmg "$dmg" \
+        --release-notes "$notes" \
+        --output "$appcast" \
+        --sparkle-tools-dir "$tools_directory" 2>&1
+} || true)"
+[[ "$mismatched_key_output" == \
+    'The protected Sparkle signing secret does not match the public key shipped in CopyLasso.' ]] || \
+    fail "The generator must reject a signing seed that does not match the shipped public key."
+[[ ! -e "$appcast" ]] || \
+    fail "A mismatched signing seed must not create authenticated update metadata."
+
 COPYLASSO_SPARKLE_PRIVATE_KEY="$private_key" "$generator" \
+    --application "$app" \
     --dmg "$dmg" \
     --release-notes "$notes" \
     --output "$appcast" \
@@ -80,6 +97,7 @@ fi
 
 existing_output="$({
     COPYLASSO_SPARKLE_PRIVATE_KEY="$private_key" "$generator" \
+        --application "$app" \
         --dmg "$dmg" \
         --release-notes "$notes" \
         --output "$appcast" \

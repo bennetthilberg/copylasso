@@ -13,16 +13,22 @@ fail() {
 }
 
 usage() {
-    echo "Usage: generate-draft-appcast.sh --dmg <dmg> --release-notes <text> --output <appcast> --sparkle-tools-dir <dir>" >&2
+    echo "Usage: generate-draft-appcast.sh --application <app> --dmg <dmg> --release-notes <text> --output <appcast> --sparkle-tools-dir <dir>" >&2
     exit 64
 }
 
+application=""
 dmg=""
 release_notes=""
 output=""
 tools_directory=""
 while [[ "$#" -gt 0 ]]; do
     case "$1" in
+        --application)
+            [[ "$#" -ge 2 ]] || usage
+            application="$2"
+            shift 2
+            ;;
         --dmg)
             [[ "$#" -ge 2 ]] || usage
             dmg="$2"
@@ -46,13 +52,48 @@ while [[ "$#" -gt 0 ]]; do
         *) usage ;;
     esac
 done
-[[ -n "$dmg" && -n "$release_notes" && -n "$output" && -n "$tools_directory" ]] || usage
+[[ -n "$application" && -n "$dmg" && -n "$release_notes" && -n "$output" && \
+    -n "$tools_directory" ]] || usage
 
 readonly private_key="${COPYLASSO_SPARKLE_PRIVATE_KEY:-}"
 unset COPYLASSO_SPARKLE_PRIVATE_KEY
 [[ -n "$private_key" ]] || fail "The protected Sparkle signing secret is unavailable."
 private_key_bytes="$(printf '%s' "$private_key" | /usr/bin/base64 -D 2>/dev/null | /usr/bin/wc -c | /usr/bin/tr -d ' ')"
 [[ "$private_key_bytes" == "32" ]] || fail "The protected Sparkle signing secret is invalid."
+
+readonly temporary_directory="$(/usr/bin/mktemp -d "${TMPDIR:-/private/tmp}/copylasso-g36-appcast.XXXXXX")"
+cleanup() {
+    /bin/rm -rf "$temporary_directory"
+}
+trap cleanup EXIT
+readonly public_key_deriver="$temporary_directory/derive-sparkle-public-key"
+if ! /usr/bin/xcrun swiftc \
+    "$repository_root/scripts/lib/derive-sparkle-public-key.swift" \
+    -o "$public_key_deriver" \
+    >"$temporary_directory/public-key-deriver-build.log" 2>&1; then
+    fail "The reviewed Sparkle public-key verifier could not be prepared."
+fi
+
+[[ -d "$application" && ! -L "$application" ]] || \
+    fail "The qualified CopyLasso application is unavailable."
+readonly application_info="$application/Contents/Info.plist"
+[[ -f "$application_info" && ! -L "$application_info" ]] || \
+    fail "The qualified CopyLasso application has no readable metadata."
+readonly shipped_public_key="$(
+    /usr/bin/plutil -extract SUPublicEDKey raw -o - "$application_info" 2>/dev/null || true
+)"
+shipped_public_key_bytes="$(
+    printf '%s' "$shipped_public_key" | /usr/bin/base64 -D 2>/dev/null | \
+        /usr/bin/wc -c | /usr/bin/tr -d ' '
+)"
+[[ "$shipped_public_key_bytes" == "32" ]] || \
+    fail "The qualified CopyLasso application has an invalid Sparkle public key."
+readonly derived_public_key="$(
+    printf '%s' "$private_key" | /usr/bin/base64 -D 2>/dev/null | \
+        "$public_key_deriver" 2>/dev/null
+)" || fail "The protected Sparkle signing secret is invalid."
+[[ "$derived_public_key" == "$shipped_public_key" ]] || \
+    fail "The protected Sparkle signing secret does not match the public key shipped in CopyLasso."
 
 [[ -f "$dmg" && ! -L "$dmg" ]] || fail "The qualified release DMG is unavailable."
 [[ "$(/usr/bin/basename "$dmg")" == "$COPYLASSO_RELEASE_DMG" ]] || \
@@ -71,11 +112,6 @@ readonly sign_update="$tools_directory/sign_update"
 [[ -x "$generate_appcast" && -x "$sign_update" ]] || \
     fail "The reviewed Sparkle signing tools are unavailable."
 
-readonly temporary_directory="$(/usr/bin/mktemp -d "${TMPDIR:-/private/tmp}/copylasso-g36-appcast.XXXXXX")"
-cleanup() {
-    /bin/rm -rf "$temporary_directory"
-}
-trap cleanup EXIT
 readonly archives="$temporary_directory/archives"
 readonly generated_appcast="$temporary_directory/$COPYLASSO_RELEASE_APPCAST"
 /bin/mkdir -p "$archives"

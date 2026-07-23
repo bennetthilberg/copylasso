@@ -431,11 +431,15 @@ message while leaving capture outside the update dependency graph.
 
 Canonical CI also runs `test-draft-appcast.sh` exactly once. It creates an
 ephemeral key and signed candidate DMG, proves the protected generator fails
-closed without its secret, verifies feed and enclosure signatures, rejects
-replacement and mutation, and removes all fixture material. The protected
-release workflow receives `COPYLASSO_SPARKLE_PRIVATE_KEY` only after ordinary
-tests pass and generates the exact signed appcast inside the restricted
-verification bundle. It never uploads a standalone appcast or publishes a feed.
+closed without its secret or when a different valid seed does not match the
+public key in the qualified application, verifies feed and enclosure
+signatures, rejects replacement and mutation, and removes all fixture
+material. The protected release workflow receives
+`COPYLASSO_SPARKLE_PRIVATE_KEY` only in a dedicated metadata-finalization step,
+after ordinary tests, archive/export/notarization/packaging, and protected
+credential cleanup pass. It generates the exact signed appcast inside the
+restricted verification bundle. It never uploads a standalone appcast or
+publishes a feed.
 
 Local signed qualification owns the behavior automation cannot faithfully
 drive in ordinary CI: accessible menu and Settings controls, the two native

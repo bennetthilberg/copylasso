@@ -100,7 +100,6 @@ jobs:
       - name: Build and verify exact release candidate
         env:
           COPYLASSO_EXPECTED_TEAM_ID: ${{ secrets.COPYLASSO_EXPECTED_TEAM_ID }}
-          COPYLASSO_SPARKLE_PRIVATE_KEY: ${{ secrets.COPYLASSO_SPARKLE_PRIVATE_KEY }}
         run: |
           ./scripts/build-release-candidate.sh \
             --source-commit "$GITHUB_SHA" \
@@ -112,6 +111,15 @@ jobs:
         run: |
           ./scripts/cleanup-release-keychain.sh \
             --state-dir "$COPYLASSO_RELEASE_STATE"
+
+      - name: Generate authenticated update metadata
+        env:
+          COPYLASSO_SPARKLE_PRIVATE_KEY: ${{ secrets.COPYLASSO_SPARKLE_PRIVATE_KEY }}
+        run: |
+          ./scripts/finalize-release-candidate.sh \
+            --source-commit "$GITHUB_SHA" \
+            --handoff "$COPYLASSO_RELEASE_HANDOFF" \
+            --output-dir "$COPYLASSO_RELEASE_RUN_DIR"
 
       - name: Create verified GitHub draft release
         env:

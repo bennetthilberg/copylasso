@@ -56,8 +56,11 @@ file. A personal Apple ID password or app-specific password is not used by this 
 
 Generate the Sparkle Ed25519 identity once with the pinned Sparkle 2.9.4 tooling. Keep its private
 seed in the maintainer's nonsynchronized login Keychain and an encrypted offline recovery copy.
-Supply the raw 32-byte Base64 value to `COPYLASSO_SPARKLE_PRIVATE_KEY` only through protected secret
-standard input. The application and repository contain only the public key. Never write the private
+Supply the raw 32-byte Base64 value to `COPYLASSO_SPARKLE_PRIVATE_KEY` only as a protected
+environment secret. The protected workflow injects it into one dedicated post-build metadata step,
+which removes it from the process environment immediately and passes it to Sparkle only over
+standard input. The archive, export, notarization, packaging, and credential-cleanup steps never
+receive it. The application and repository contain only the public key. Never write the private
 value into a workflow input, environment readback, shell argument, log, appcast, issue, or tracked
 file.
 
@@ -175,8 +178,10 @@ The appcast inside the restricted verification bundle is evidence, not a publica
 protected job requires exactly one candidate entry, inline plain-text release notes, the canonical
 version/build, exact immutable GitHub enclosure URL and byte length, and valid feed plus enclosure
 Ed25519 signatures. It verifies both signatures with the public key compiled into CopyLasso before
-draft creation. The standalone appcast is never uploaded among the four draft assets and no file is
-published to `updates.copylasso.com` in G36.
+draft creation: the signing seed's derived public key must byte-match `SUPublicEDKey` in the exact
+exported application before either signature is accepted. A wrong but otherwise valid seed fails
+closed without creating metadata. The standalone appcast is never uploaded among the four draft assets
+and no file is published to `updates.copylasso.com` in G36.
 
 Read back the draft through GitHub after upload. It must remain `draft: true` and `prerelease: true`,
 target the exact commit, and contain exactly the four assets above. Recompute the public checksum
