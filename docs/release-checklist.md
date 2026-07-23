@@ -124,3 +124,12 @@ matrix and accepted-risk record.
 - [x] Generate and verify one exact signed appcast inside the protected candidate verification bundle; do not upload a standalone appcast, publish a feed, create a public update artifact, or modify the public 0.1.x release.
 - [x] Qualify a private signed older-to-newer update, deferral, cancel/failure preservation, install/relaunch, preference retention, Launch at Login reconciliation, post-update capture, rollback rejection, and update networking denied while capture remains usable.
 - [x] Run focused updater tests, privacy/security and dependency audits, canonical arm64/x86_64 pipelines, hosted macOS checks, Developer ID/notarization/Gatekeeper verification, exact-head review, and ready-PR readback.
+
+## G37 - Configurable Success Sound
+
+- [x] Ship exactly one original, deterministic, documented success-sound asset and verify its source, format, digest, and bytes in Debug plus Universal 2 Release products.
+- [x] Default the versioned preference on while preserving explicit opt-out, expose one native accessible Settings toggle, and verify persistence plus Debug reset.
+- [x] Request sound exactly once only after a successful nonempty clipboard write; keep cancellation, no text, permission, selection, capture, OCR, formatting, and clipboard-failure paths silent.
+- [x] Confirm playback receives no private content, fails silently when unavailable, never requests recording or notification permission, never activates the app, and never delays or fails capture.
+- [x] Verify rapid reuse restarts one short sound without stacking and lifecycle cancellation/termination performs idempotent cleanup.
+- [ ] Run focused service/workflow/settings tests, deterministic asset and privacy audits, canonical arm64/x86_64 pipelines, hosted checks, signed manual audibility/accessibility/output checks, exact-head review, and ready-PR readback.

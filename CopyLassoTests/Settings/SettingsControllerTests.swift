@@ -10,12 +10,31 @@ final class SettingsControllerTests: XCTestCase {
   func testFreshStateNeedsOnboardingAndPresentsOnlyOncePerProcess() {
     let context = makeContext()
 
+    XCTAssertTrue(context.controller.isSuccessSoundEnabled)
+    XCTAssertEqual(
+      context.store.successSoundPreferenceVersion,
+      UserDefaultsSettingsStore.currentSuccessSoundPreferenceVersion
+    )
     XCTAssertTrue(context.controller.needsOnboarding)
     XCTAssertEqual(context.controller.onboardingShortcutDraft, suggestedShortcut)
     XCTAssertTrue(context.controller.onboardingLaunchAtLoginDraft)
     XCTAssertTrue(context.controller.takeInitialOnboardingPresentationRequest())
     XCTAssertFalse(context.controller.takeInitialOnboardingPresentationRequest())
     XCTAssertTrue(context.controller.requestOnboardingFromSettings())
+  }
+
+  func testSuccessSoundSettingUpdatesImmediatelyAndPersistsThroughTheStore() {
+    let context = makeContext()
+
+    context.controller.setSuccessSoundEnabled(false)
+
+    XCTAssertFalse(context.controller.isSuccessSoundEnabled)
+    XCTAssertFalse(context.store.isSuccessSoundEnabled)
+
+    context.controller.setSuccessSoundEnabled(true)
+
+    XCTAssertTrue(context.controller.isSuccessSoundEnabled)
+    XCTAssertTrue(context.store.isSuccessSoundEnabled)
   }
 
   func testClosingOnboardingDoesNotCompleteItOrApplyDraftChoices() {
@@ -314,6 +333,7 @@ final class SettingsControllerTests: XCTestCase {
     XCTAssertEqual(context.store.resetCallCount, 1)
     XCTAssertEqual(context.shortcutStore.resetCallCount, 1)
     XCTAssertTrue(context.controller.needsOnboarding)
+    XCTAssertTrue(context.controller.isSuccessSoundEnabled)
 
     context.store.completedOnboardingVersion = 1
     context.shortcutStore.captureShortcut = suggestedShortcut

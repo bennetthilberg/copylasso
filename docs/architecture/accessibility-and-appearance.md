@@ -6,11 +6,17 @@ CopyLasso uses native SwiftUI and AppKit presentation while keeping every essent
 
 - The template-rendered menu-bar symbol exposes a changing text label plus stable help. Success, no-text, and failure states are announced in words.
 - Menu commands, onboarding actions, Settings controls, links, and permission-recovery actions use native controls with accessible names. The third-party shortcut recorder receives an explicit `Capture Text keyboard shortcut` label and actionable help in both onboarding and Settings.
+- The Capture Text status-menu row uses the shortcut package's native global-menu presentation, so its trailing key glyphs track the saved shortcut and disappear when the shortcut is cleared.
+- The native success-sound toggle exposes its on/off value, a complete label, and help that states the sound follows a successful clipboard write.
+- Settings keeps concise visible labels while retaining complete accessibility
+  help for the shortcut recorder, success-sound toggle, and update controls.
 - Launch at Login exposes its native on/off value plus a full textual status and issue description. Symbols and foreground colors only reinforce that copy.
 - The recovery panel reads title, neutral authorization status, manual path, retry result, and three explicitly named actions in visual order. Each action has help describing its effect.
 - Feedback is one combined accessibility element with bounded success, no-text, or user-safe failure copy. The selection overlay remains one labeled group with Escape help. v0.1 does not promise a VoiceOver-driven replacement for the visual drag gesture.
 
 Native tab traversal, default/cancel actions, `Command-,`, and `Command-W` provide keyboard operation. CopyLasso adds no custom focus loop that could conflict with Full Keyboard Access.
+
+Sound is supplementary feedback only. CopyLasso continues to expose success through the visual HUD and menu-bar accessibility label, so muted output, unavailable audio, a disabled preference, and Deaf or hard-of-hearing use never remove the only indication of an outcome.
 
 ## Appearance Policy
 
@@ -28,6 +34,6 @@ Feedback remains mouse-transparent and transient. Its complete bounded message i
 
 ## Verification Boundary
 
-Unit tests cover both selection line weights, animated and Reduce Motion-static dash behavior, linear phase timing, drag-path synchronization, cleanup, both feedback-background decisions, reusable-host refresh from the current appearance, every live `NSWorkspace` accessibility flag, fixed accessibility copy, motion-free panel configuration, and real hosted feedback expansion. Signed UI coverage checks compound-control labels, native keyboard completion/closure, menu availability, light/dark launches, recovery actions, and overlay semantics.
+Unit tests cover both selection line weights, animated and Reduce Motion-static dash behavior, linear phase timing, drag-path synchronization, cleanup, both feedback-background decisions, reusable-host refresh from the current appearance, every live `NSWorkspace` accessibility flag, fixed accessibility copy, sound-toggle state and help, motion-free panel configuration, and real hosted feedback expansion. Signed UI coverage checks compound-control labels, native keyboard completion/closure, the compact menu grouping and Settings copy, light/dark launches, recovery actions, and overlay semantics.
 
 The physical checklist in [Testing](../testing.md) remains necessary for VoiceOver speech/order, Accessibility Inspector hierarchy, Full Keyboard Access traversal, maximum text size, system Increased Contrast, Reduce Transparency, Differentiate Without Color, Reduce Motion, and actual light/dark rendering. An unavailable graphical session is recorded as pending rather than treated as a pass.

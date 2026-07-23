@@ -27,6 +27,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     XCTAssertEqual(recognitionCallCount, 25)
     XCTAssertEqual(context.textAssembler.inputs.count, 25)
     XCTAssertEqual(context.clipboard.writtenTexts, Array(repeating: "assembled", count: 25))
+    XCTAssertEqual(context.sound.playCallCount, 25)
     XCTAssertEqual(
       context.feedback.presentedFeedback,
       Array(repeating: .success(preview: "assembled"), count: 25)
@@ -52,6 +53,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     XCTAssertEqual(capturedSelections.count, 10)
     XCTAssertEqual(recognitionCallCount, 10)
     XCTAssertEqual(context.clipboard.writtenTexts.count, 10)
+    XCTAssertEqual(context.sound.playCallCount, 10)
     XCTAssertEqual(context.feedback.presentedFeedback.count, 10)
     XCTAssertTrue(
       context.feedback.presentedFeedback.allSatisfy { $0 == .success(preview: "assembled") })
@@ -62,16 +64,19 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     await runOne(selectionFailure)
     XCTAssertEqual(selectionFailure.feedback.presentedFeedback, [.failure(.selection)])
     XCTAssertEqual(selectionFailure.clipboard.writtenTexts, [])
+    XCTAssertEqual(selectionFailure.sound.playCallCount, 0)
 
     let captureFailure = try makeContext(captureResult: .failure(.injected))
     await runOne(captureFailure)
     XCTAssertEqual(captureFailure.feedback.presentedFeedback, [.failure(.capture)])
     XCTAssertEqual(captureFailure.clipboard.writtenTexts, [])
+    XCTAssertEqual(captureFailure.sound.playCallCount, 0)
 
     let recognitionFailure = try makeContext(ocrResult: .failure(.injected))
     await runOne(recognitionFailure)
     XCTAssertEqual(recognitionFailure.feedback.presentedFeedback, [.failure(.recognition)])
     XCTAssertEqual(recognitionFailure.clipboard.writtenTexts, [])
+    XCTAssertEqual(recognitionFailure.sound.playCallCount, 0)
   }
 
   func testEverySelectionCancellationReasonIsNonErrorFeedbackFreeAndClipboardSafe()
@@ -86,6 +91,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
       await runOne(context)
       XCTAssertEqual(context.feedback.presentedFeedback, [], "Reason: \(reason)")
       XCTAssertEqual(context.clipboard.writtenTexts, [], "Reason: \(reason)")
+      XCTAssertEqual(context.sound.playCallCount, 0, "Reason: \(reason)")
       let capturedSelections = await context.screenCapture.selections
       XCTAssertEqual(capturedSelections, [], "Reason: \(reason)")
     }
@@ -209,6 +215,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     await context.scheduler.runNext()
 
     XCTAssertEqual(context.clipboard.writtenTexts, ["assembled", "assembled"])
+    XCTAssertEqual(context.sound.playCallCount, 2)
     XCTAssertEqual(
       context.feedback.presentedFeedback,
       [.success(preview: "assembled"), .success(preview: "assembled")]
@@ -250,6 +257,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     let ocr = StubOCRService(result: ocrResult ?? .success([observation()]))
     let textAssembler = SpyTextAssembler(result: "assembled")
     let clipboard = SpyClipboardService()
+    let sound = SpySuccessSoundPlayer()
     let feedback = SpyFeedbackService()
     let recovery = SpyPermissionRecoveryPresenter()
     let scheduler = IntegrationWorkScheduler()
@@ -261,6 +269,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
       ocrService: ocr,
       textAssembler: textAssembler,
       clipboardService: clipboard,
+      successSoundPlayer: sound,
       feedbackService: feedback,
       recoveryPresenter: recovery,
       scheduleWork: scheduler.schedule
@@ -273,6 +282,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
       ocr: ocr,
       textAssembler: textAssembler,
       clipboard: clipboard,
+      sound: sound,
       feedback: feedback,
       recovery: recovery,
       scheduler: scheduler,
@@ -326,6 +336,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     let ocr: StubOCRService
     let textAssembler: SpyTextAssembler
     let clipboard: SpyClipboardService
+    let sound: SpySuccessSoundPlayer
     let feedback: SpyFeedbackService
     let recovery: SpyPermissionRecoveryPresenter
     let scheduler: IntegrationWorkScheduler

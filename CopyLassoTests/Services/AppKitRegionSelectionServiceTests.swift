@@ -524,37 +524,51 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     let notificationCenter = NotificationCenter()
     let observedApplication = NSObject()
     var activateCallCount = 0
+    var deactivateCallCount = 0
     var readyCallCount = 0
+    var restoredCallCount = 0
     let manager = SystemSelectionApplicationActivationManager(
       notificationCenter: notificationCenter,
       observedApplication: observedApplication,
       isApplicationActive: { true },
-      activateApplication: { activateCallCount += 1 }
+      activateApplication: { activateCallCount += 1 },
+      deactivateApplication: { deactivateCallCount += 1 }
     )
 
     manager.activateForSelection {
       readyCallCount += 1
     }
+    manager.restorePreviousApplication {
+      restoredCallCount += 1
+    }
 
     XCTAssertEqual(activateCallCount, 0)
+    XCTAssertEqual(deactivateCallCount, 0)
     XCTAssertEqual(readyCallCount, 1)
+    XCTAssertEqual(restoredCallCount, 1)
   }
 
   func testSystemActivationManagerWaitsForDidResignActiveBeforeCompletingRestoration() {
     let notificationCenter = NotificationCenter()
     let observedApplication = NSObject()
+    var isActive = false
     var deactivateCallCount = 0
     var inactiveCallCount = 0
     let manager = SystemSelectionApplicationActivationManager(
       notificationCenter: notificationCenter,
       observedApplication: observedApplication,
-      isApplicationActive: { true },
+      isApplicationActive: { isActive },
       activateApplication: {},
       deactivateApplication: { deactivateCallCount += 1 },
       frontmostApplication: { nil }
     )
 
     manager.activateForSelection {}
+    isActive = true
+    notificationCenter.post(
+      name: NSApplication.didBecomeActiveNotification,
+      object: observedApplication
+    )
     manager.restorePreviousApplication {
       inactiveCallCount += 1
     }

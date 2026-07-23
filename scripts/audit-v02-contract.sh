@@ -33,7 +33,7 @@ for required_text in \
     '# CopyLasso v0.2 Product Contract' \
     '**Status:** Approved scope for the planned v0.2 release' \
     '**Approved:** July 22, 2026' \
-    '**Implementation status:** Planned; these features are not present in CopyLasso 0.1.1' \
+    '**Implementation status:** In progress; the secure updater and configurable success sound are present in source but not in public CopyLasso 0.1.1' \
     '[v0.1 product contract](v0.1-product-contract.md)' \
     'automatic update checks are enabled by default' \
     'disable automatic checks in Settings' \
@@ -124,7 +124,7 @@ for documentation_contract in \
     "$repository_root/README.md:The public CopyLasso 0.1.1 download still updates manually." \
     "$repository_root/PRIVACY.md:Update requests send no screen pixels" \
     "$repository_root/PRIVACY.md:The public CopyLasso 0.1.x line still updates manually." \
-    "$repository_root/docs/security-and-privacy-review.md:The public 0.1.1 artifact remains the current release and contains no updater."; do
+    "$repository_root/docs/security-and-privacy-review.md:The public 0.1.1 artifact remains the current release and contains neither feature."; do
     documentation_file="${documentation_contract%%:*}"
     required_text="${documentation_contract#*:}"
     /usr/bin/grep -Fq "$required_text" "$documentation_file" || \

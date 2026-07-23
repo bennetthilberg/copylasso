@@ -119,6 +119,21 @@ final class CaptureCommandTests: XCTestCase {
 
     XCTAssertEqual(coordinator.state, .failed(.permission))
   }
+
+  func testLifecycleCancellationStopsTransientSuccessSoundEvenWhenNoCaptureIsActive() {
+    let coordinator = CaptureCoordinator()
+    let scheduler = ManualCaptureCompletionScheduler()
+    let sound = SpySuccessSoundPlayer()
+    let command = makeTestCaptureCommand(
+      coordinator: coordinator,
+      scheduleWork: scheduler.schedule,
+      successSoundPlayer: sound
+    )
+
+    XCTAssertFalse(command.cancelActiveOperation(reason: .applicationTerminated))
+    XCTAssertEqual(sound.stopCallCount, 1)
+    XCTAssertEqual(coordinator.state, .idle)
+  }
 }
 
 @MainActor

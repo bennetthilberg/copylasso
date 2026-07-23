@@ -1,3 +1,4 @@
+import KeyboardShortcuts
 import SwiftUI
 
 struct MenuBarMenuView: View {
@@ -12,7 +13,10 @@ struct MenuBarMenuView: View {
       commandHandler.captureText()
     }
     .disabled(!commandHandler.isCaptureEnabled)
+    .globalKeyboardShortcut(.captureText)
     .accessibilityIdentifier("copylasso.menu.capture")
+
+    Divider()
 
     Button("Check for Updates…") {
       updateController.checkForUpdates()
@@ -20,8 +24,6 @@ struct MenuBarMenuView: View {
     .disabled(!updateController.canCheckForUpdates)
     .accessibilityHint(AccessibilityAuditCopy.checkForUpdatesHelp)
     .accessibilityIdentifier("copylasso.menu.check-for-updates")
-
-    Divider()
 
     Button("Settings…") {
       commandHandler.openSettings {

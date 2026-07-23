@@ -30,6 +30,50 @@ final class CopyLassoUITests: XCTestCase {
 
     let verticalPositions = requiredItems.map { $0.frame.minY }
     XCTAssertEqual(verticalPositions, verticalPositions.sorted())
+
+    let commandGaps = zip(requiredItems, requiredItems.dropFirst()).map {
+      earlierItem, laterItem in
+      laterItem.frame.minY - earlierItem.frame.maxY
+    }
+    XCTAssertGreaterThan(commandGaps[0], commandGaps[1])
+    XCTAssertGreaterThan(commandGaps[3], commandGaps[2])
+  }
+
+  @MainActor
+  func testMenuShowsTheSavedCaptureShortcut() {
+    let app = completedApp()
+    app.launch()
+    defer { app.terminate() }
+
+    openMenu(in: app)
+    let clearedShortcutMenuWidth = menuItem("Capture Text", in: app).frame.width
+    app.typeKey(XCUIKeyboardKey.escape, modifierFlags: [])
+
+    openMenu(in: app)
+    menuItem("Settings…", in: app).click()
+    let useSuggestedShortcut = app.buttons["copylasso.settings.use-suggested-shortcut"]
+    XCTAssertTrue(useSuggestedShortcut.waitForExistence(timeout: 5))
+    useSuggestedShortcut.click()
+    app.typeKey("w", modifierFlags: .command)
+
+    openMenu(in: app)
+    let savedShortcutMenuWidth = menuItem("Capture Text", in: app).frame.width
+    XCTAssertGreaterThan(savedShortcutMenuWidth, clearedShortcutMenuWidth)
+    retainScreenshot(named: "CopyLasso menu with saved Capture Text shortcut")
+    app.typeKey(XCUIKeyboardKey.escape, modifierFlags: [])
+
+    openMenu(in: app)
+    menuItem("Settings…", in: app).click()
+    let shortcutRecorder = app.descendants(matching: .any)["copylasso.settings.shortcut"]
+    XCTAssertTrue(shortcutRecorder.waitForExistence(timeout: 5))
+    shortcutRecorder.click()
+    app.typeKey("k", modifierFlags: [.control, .option])
+    app.typeKey("w", modifierFlags: .command)
+
+    openMenu(in: app)
+    let customShortcutMenuWidth = menuItem("Capture Text", in: app).frame.width
+    XCTAssertGreaterThan(customShortcutMenuWidth, clearedShortcutMenuWidth)
+    retainScreenshot(named: "CopyLasso menu with custom Capture Text shortcut")
   }
 
   @MainActor
@@ -429,6 +473,11 @@ final class CopyLassoUITests: XCTestCase {
     ]
     XCTAssertTrue(automaticUpdates.exists)
     XCTAssertTrue(switchIsOn(automaticUpdates))
+    let successSound = app.descendants(matching: .any)[
+      "copylasso.settings.success-sound"
+    ]
+    XCTAssertTrue(successSound.exists)
+    XCTAssertTrue(switchIsOn(successSound))
     XCTAssertTrue(app.buttons["copylasso.settings.check-for-updates"].isEnabled)
     XCTAssertTrue(
       app.descendants(matching: .any)["copylasso.login.status"].exists
@@ -439,6 +488,21 @@ final class CopyLassoUITests: XCTestCase {
     XCTAssertTrue(app.links["Project Repository"].exists)
     XCTAssertTrue(app.links["Privacy Policy"].exists)
     XCTAssertTrue(app.links["MIT License"].exists)
+    XCTAssertFalse(
+      app.staticTexts[
+        "Clear the shortcut to keep Capture Text available only from the menu bar."
+      ].exists
+    )
+    XCTAssertFalse(
+      app.staticTexts[
+        "The sound plays only after recognized content reaches the clipboard."
+      ].exists
+    )
+    XCTAssertFalse(
+      app.staticTexts[
+        "Checks retrieve only signed update information. CopyLasso never sends screen, OCR, or clipboard content."
+      ].exists
+    )
     retainScreenshot(named: "CopyLasso Settings")
 
   }

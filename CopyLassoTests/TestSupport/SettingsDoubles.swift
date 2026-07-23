@@ -11,6 +11,8 @@ final class StubAppSettingsStore: AppSettingsStoring {
   var completedOnboardingVersion: Int
   var hasConfiguredCaptureShortcut = false
   var hasConfiguredLaunchAtLogin = false
+  var successSoundPreferenceVersion = 0
+  var isSuccessSoundEnabled = true
   var history = ScreenCapturePermissionHistory()
   private(set) var resetCallCount = 0
 
@@ -18,11 +20,24 @@ final class StubAppSettingsStore: AppSettingsStoring {
     self.completedOnboardingVersion = completedOnboardingVersion
   }
 
+  func migrateSuccessSoundPreferenceIfNeeded() {
+    guard
+      successSoundPreferenceVersion
+        < UserDefaultsSettingsStore.currentSuccessSoundPreferenceVersion
+    else {
+      return
+    }
+    successSoundPreferenceVersion =
+      UserDefaultsSettingsStore.currentSuccessSoundPreferenceVersion
+  }
+
   func reset() {
     resetCallCount += 1
     completedOnboardingVersion = 0
     hasConfiguredCaptureShortcut = false
     hasConfiguredLaunchAtLogin = false
+    successSoundPreferenceVersion = 0
+    isSuccessSoundEnabled = true
     history = ScreenCapturePermissionHistory()
   }
 }

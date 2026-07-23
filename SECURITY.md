@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-CopyLasso 0.1.x is the currently supported public release line. Current source also contains the user-controlled secure updater planned for the first v0.2 release; no public updater feed or updater-enabled release exists yet. Security reports about the released application, updater trust boundary, source, build process, protected release workflow, or repository configuration are welcome.
+CopyLasso 0.1.x is the currently supported public release line. Current source also contains the user-controlled secure updater and configurable success sound planned for the first v0.2 release; no public updater feed or updater-enabled release exists yet. Security reports about the released application, updater or audio trust boundaries, source, build process, protected release workflow, or repository configuration are welcome.
 
 | Version | Supported |
 | --- | --- |

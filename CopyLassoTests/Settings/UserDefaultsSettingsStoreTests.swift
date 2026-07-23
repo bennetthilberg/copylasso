@@ -12,6 +12,75 @@ final class UserDefaultsSettingsStoreTests: XCTestCase {
     XCTAssertFalse(store.hasConfiguredCaptureShortcut)
     XCTAssertFalse(store.hasConfiguredLaunchAtLogin)
     XCTAssertEqual(store.history, ScreenCapturePermissionHistory())
+    XCTAssertEqual(store.successSoundPreferenceVersion, 0)
+    XCTAssertTrue(store.isSuccessSoundEnabled)
+  }
+
+  func testSoundPreferenceMigrationDefaultsNewAndUpgradedUsersToEnabled() throws {
+    let store = makeStore()
+
+    store.migrateSuccessSoundPreferenceIfNeeded()
+
+    XCTAssertEqual(
+      store.successSoundPreferenceVersion,
+      UserDefaultsSettingsStore.currentSuccessSoundPreferenceVersion
+    )
+    XCTAssertTrue(store.isSuccessSoundEnabled)
+  }
+
+  func testSoundPreferenceMigrationPreservesAnExplicitDisabledChoice() throws {
+    let defaults = try makeDefaults()
+    defaults.set(false, forKey: UserDefaultsSettingsStore.successSoundEnabledKey)
+    let store = UserDefaultsSettingsStore(userDefaults: defaults)
+
+    store.migrateSuccessSoundPreferenceIfNeeded()
+
+    XCTAssertEqual(
+      store.successSoundPreferenceVersion,
+      UserDefaultsSettingsStore.currentSuccessSoundPreferenceVersion
+    )
+    XCTAssertFalse(store.isSuccessSoundEnabled)
+  }
+
+  func testCurrentSoundPreferenceMigrationIsIdempotent() {
+    let store = makeStore()
+    store.migrateSuccessSoundPreferenceIfNeeded()
+    store.isSuccessSoundEnabled = false
+
+    store.migrateSuccessSoundPreferenceIfNeeded()
+
+    XCTAssertEqual(
+      store.successSoundPreferenceVersion,
+      UserDefaultsSettingsStore.currentSuccessSoundPreferenceVersion
+    )
+    XCTAssertFalse(store.isSuccessSoundEnabled)
+  }
+
+  func testSoundPreferencePersistsAcrossStoreReconstruction() throws {
+    let defaults = try makeDefaults()
+    var store = UserDefaultsSettingsStore(userDefaults: defaults)
+    store.migrateSuccessSoundPreferenceIfNeeded()
+    store.isSuccessSoundEnabled = false
+
+    store = UserDefaultsSettingsStore(userDefaults: defaults)
+
+    XCTAssertEqual(
+      store.successSoundPreferenceVersion,
+      UserDefaultsSettingsStore.currentSuccessSoundPreferenceVersion
+    )
+    XCTAssertFalse(store.isSuccessSoundEnabled)
+  }
+
+  func testWritingSoundPreferenceBeforeMigrationAdvancesTheSchema() {
+    let store = makeStore()
+
+    store.isSuccessSoundEnabled = false
+
+    XCTAssertFalse(store.isSuccessSoundEnabled)
+    XCTAssertEqual(
+      store.successSoundPreferenceVersion,
+      UserDefaultsSettingsStore.currentSuccessSoundPreferenceVersion
+    )
   }
 
   func testValuesPersistAcrossStoreReconstruction() throws {
@@ -20,6 +89,8 @@ final class UserDefaultsSettingsStoreTests: XCTestCase {
     store.completedOnboardingVersion = 1
     store.hasConfiguredCaptureShortcut = true
     store.hasConfiguredLaunchAtLogin = true
+    store.migrateSuccessSoundPreferenceIfNeeded()
+    store.isSuccessSoundEnabled = false
     store.history = ScreenCapturePermissionHistory(
       hasRequested: true,
       hasObservedGranted: true
@@ -54,6 +125,8 @@ final class UserDefaultsSettingsStoreTests: XCTestCase {
     XCTAssertEqual(store.completedOnboardingVersion, 0)
     XCTAssertFalse(store.hasConfiguredCaptureShortcut)
     XCTAssertFalse(store.hasConfiguredLaunchAtLogin)
+    XCTAssertEqual(store.successSoundPreferenceVersion, 0)
+    XCTAssertTrue(store.isSuccessSoundEnabled)
     XCTAssertEqual(store.history, ScreenCapturePermissionHistory())
     XCTAssertNil(updateStore.highestAuthenticatedBuild)
     XCTAssertNil(updateStore.deferredBuild)
