@@ -6,6 +6,7 @@ CopyLasso uses native SwiftUI and AppKit presentation while keeping every essent
 
 - The template-rendered menu-bar symbol exposes a changing text label plus stable help. Success, no-text, and failure states are announced in words.
 - Menu commands, onboarding actions, Settings controls, links, and permission-recovery actions use native controls with accessible names. The third-party shortcut recorder receives an explicit `Capture Text keyboard shortcut` label and actionable help in both onboarding and Settings.
+- The Capture Text status-menu row uses the shortcut package's native global-menu presentation, so its trailing key glyphs track the saved shortcut and disappear when the shortcut is cleared.
 - The native success-sound toggle exposes its on/off value, a complete label, and help that states the sound follows a successful clipboard write.
 - Settings keeps concise visible labels while retaining complete accessibility
   help for the shortcut recorder, success-sound toggle, and update controls.

@@ -40,6 +40,43 @@ final class CopyLassoUITests: XCTestCase {
   }
 
   @MainActor
+  func testMenuShowsTheSavedCaptureShortcut() {
+    let app = completedApp()
+    app.launch()
+    defer { app.terminate() }
+
+    openMenu(in: app)
+    let clearedShortcutMenuWidth = menuItem("Capture Text", in: app).frame.width
+    app.typeKey(XCUIKeyboardKey.escape, modifierFlags: [])
+
+    openMenu(in: app)
+    menuItem("Settings…", in: app).click()
+    let useSuggestedShortcut = app.buttons["copylasso.settings.use-suggested-shortcut"]
+    XCTAssertTrue(useSuggestedShortcut.waitForExistence(timeout: 5))
+    useSuggestedShortcut.click()
+    app.typeKey("w", modifierFlags: .command)
+
+    openMenu(in: app)
+    let savedShortcutMenuWidth = menuItem("Capture Text", in: app).frame.width
+    XCTAssertGreaterThan(savedShortcutMenuWidth, clearedShortcutMenuWidth)
+    retainScreenshot(named: "CopyLasso menu with saved Capture Text shortcut")
+    app.typeKey(XCUIKeyboardKey.escape, modifierFlags: [])
+
+    openMenu(in: app)
+    menuItem("Settings…", in: app).click()
+    let shortcutRecorder = app.descendants(matching: .any)["copylasso.settings.shortcut"]
+    XCTAssertTrue(shortcutRecorder.waitForExistence(timeout: 5))
+    shortcutRecorder.click()
+    app.typeKey("k", modifierFlags: [.control, .option])
+    app.typeKey("w", modifierFlags: .command)
+
+    openMenu(in: app)
+    let customShortcutMenuWidth = menuItem("Capture Text", in: app).frame.width
+    XCTAssertGreaterThan(customShortcutMenuWidth, clearedShortcutMenuWidth)
+    retainScreenshot(named: "CopyLasso menu with custom Capture Text shortcut")
+  }
+
+  @MainActor
   func testCaptureCommandRemainsUsableForThreeInvocations() {
     let app = completedApp()
     app.launch()

@@ -1,3 +1,4 @@
+import KeyboardShortcuts
 import SwiftUI
 
 struct MenuBarMenuView: View {
@@ -12,6 +13,7 @@ struct MenuBarMenuView: View {
       commandHandler.captureText()
     }
     .disabled(!commandHandler.isCaptureEnabled)
+    .globalKeyboardShortcut(.captureText)
     .accessibilityIdentifier("copylasso.menu.capture")
 
     Divider()
