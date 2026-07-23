@@ -57,7 +57,7 @@ Settings links ask macOS to open the user's default browser. CopyLasso itself do
 
 The feed server and GitHub can observe ordinary transport metadata, including IP address, request time, and the CopyLasso/Sparkle versions in the ordinary user agent. Requests contain no pixels, geometry, recognized text, clipboard data, HUD preview, frontmost-application identity, hardware profile, stable identifier, analytics event, or telemetry. The public 0.1.x line remains a manual-update bootstrap; G36 creates no public feed or release.
 
-Local Apple Development signing adds `com.apple.security.get-task-allow` to audited development-signed products. That key is not present in the tracked product entitlement or shipped Developer ID artifact. The released application was verified to contain only the Boolean App Sandbox entitlement, with no `get-task-allow` or unreviewed capability, before and after notarization.
+Local Apple Development signing adds `com.apple.security.get-task-allow` to audited development-signed products. That key is not present in the tracked product entitlement or a Developer ID artifact. The public 0.1.1 application was verified to contain only the Boolean App Sandbox entitlement before and after notarization. Every G36 Developer ID candidate must instead verify exactly Boolean App Sandbox, Boolean outbound network client, and the two production-bundle Sparkle installer-service names, with no `get-task-allow`, downloader-service name, or unrelated capability.
 
 ## Trust Boundaries And Misuse Cases
 

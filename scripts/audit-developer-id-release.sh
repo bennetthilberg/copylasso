@@ -81,6 +81,9 @@ require_text "$verifier" '--architecture "$architecture"'
 require_text "$verifier" '--entitlements - --xml'
 require_text "$verifier" 'COPYLASSO_EXPECTED_TEAM_ID'
 require_text "$verifier" 'bundle_contains_mach_o "$nested_bundle"'
+require_text "$verifier_library" 'io.github.bennetthilberg.copylasso-spks'
+require_text "$verifier_library" 'io.github.bennetthilberg.copylasso-spki'
+require_text "$verifier_library" 'com.apple.security.network.client'
 
 if /usr/bin/grep -Fq -- '--apple-id' "$signing_documentation"; then
     fail "Developer ID signing documentation must use the approved API-key profile."
