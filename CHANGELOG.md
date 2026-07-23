@@ -4,6 +4,10 @@ All notable changes to CopyLasso will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- A user-controlled secure update path for the planned v0.2 release, with optional daily checks, a manual check, authenticated feed and package validation, replay and downgrade protection, and separate download and install consent. Automatic download and installation remain disabled.
+
 ## 0.1.1 - 2026-07-21
 
 ### Fixed

@@ -1,6 +1,6 @@
 # Architecture Overview
 
-CopyLasso currently provides a usable dockless shell plus one complete, stress-tested production service chain through clipboard output and nonactivating feedback. The application includes versioned onboarding, persistent Settings, Launch at Login, a configurable global shortcut, accessible native presentation, production Screen Recording permission handling, a lifecycle-safe multi-display selection overlay, in-memory ScreenCaptureKit region capture, local Vision OCR, deterministic text assembly, write-only plain-text output, and bounded HUD feedback. Feasibility evidence from G05-G07 is retained in the ADRs. G18 completed uniform cross-stage cleanup; G19-G21 harden display, lifecycle, and presentation behavior while retaining physical-environment release qualification.
+CopyLasso currently provides a usable dockless shell plus one complete, stress-tested production service chain through clipboard output and nonactivating feedback. The application includes versioned onboarding, persistent Settings, Launch at Login, a configurable global shortcut, accessible native presentation, production Screen Recording permission handling, a lifecycle-safe multi-display selection overlay, in-memory ScreenCaptureKit region capture, local Vision OCR, deterministic text assembly, write-only plain-text output, bounded HUD feedback, and an isolated user-controlled secure updater. Feasibility evidence from G05-G07 is retained in the ADRs. G18 completed uniform cross-stage cleanup; G19-G21 hardened display, lifecycle, and presentation behavior. G36 adds authenticated update checks without placing networking or update state inside the capture workflow.
 
 ## Components and Dependency Direction
 
@@ -16,6 +16,13 @@ flowchart LR
   Contracts --> Models
   Settings["Settings and onboarding"] --> Services
   Settings --> Models
+  Settings --> Updates["UpdateController"]
+  UpdateMenu["Check for Updates command"] --> Updates
+  Updates --> UpdateBoundary["UpdateServicing"]
+  Sparkle["Sparkle adapter and user driver"] -. conform .-> UpdateBoundary
+  Sparkle --> UpdatePolicy["Pure candidate and byte policy"]
+  Sparkle --> UpdateUI["Accessible consent and progress UI"]
+  Sparkle --> UpdateState["Build-only replay and deferral state"]
   Permission["Core Graphics permission adapter G12"] -. conform .-> Contracts
   Recovery["Nonactivating recovery panel G12"] --> Permission
   Selection["AppKit selection adapter G13"] -. conform .-> Contracts
@@ -32,9 +39,15 @@ flowchart LR
 - `Services` declares narrow permission, selection, capture, OCR, clipboard, and feedback boundaries. The Core Graphics permission, AppKit selection, ScreenCaptureKit capture, and Vision OCR adapters are isolated here.
 - `Models` contains geometry, observations, authorization observations, and feedback values without AppKit, SwiftUI, ScreenCaptureKit, or Vision dependencies.
 - `Settings` owns the typed `UserDefaults` adapter, onboarding-version policy, shortcut storage boundary, and observable settings controller. The system login-item adapter remains isolated in `Services`.
+- `UpdateController` owns only automatic-check preference presentation, manual-check availability, and an updater-unavailable message. The `UpdateServicing` boundary keeps updater startup and failure independent from capture command routing.
+- `SparkleUpdateService` is the sole production Sparkle import. Its delegate disables external release-note downloads and cookies; its custom user driver maps authenticated appcast items into CopyLasso's pure policy and accessible two-consent presentation.
+- `SecureUpdatePolicy` validates canonical monotonic builds, replay state, inline plain-text notes, signed length, a 256 MiB ceiling, and the exact immutable GitHub enclosure URL. `SecureUpdateSessionCoordinator` owns only the active update transaction and enforces the streaming byte budget before extraction and installation.
+- `UserDefaultsSecureUpdateStateStore` persists only a deferred build and highest authenticated build. Sparkle owns its ordinary automatic-check schedule and preference. No feed body, release notes, package bytes, captured pixels, recognized text, or clipboard content enter CopyLasso persistence.
 - `SharedUI` owns explicit compound-control semantics, adaptive auxiliary-panel layout, and system accessibility-display observation. Selection snapshots its high-contrast drawing style when each user session begins.
 
 Dependencies point toward contracts and neutral models. UI and platform adapters may depend on them; models and workflow state must never depend on UI or live platform frameworks.
+
+The update graph is a sibling of the capture graph. Capture code does not import Sparkle, call the updater, or depend on update availability. Updater construction and startup failure are converted into a Settings message while the capture command remains enabled.
 
 ## Production Data Flow
 
@@ -66,6 +79,9 @@ Cancellation is a normal result. It enters an explicit cancelled state and retur
 - Images, recognized observations, assembled text, clipboard text, and feedback previews remain private transient values. They must be released after the active operation and must never be logged, persisted, or placed in observable coordinator state.
 - One private async operation scope owns the image, observations, and full assembled string. It returns only bounded feedback after any pasteboard write. Success and failure tests hold the HUD open and prove the image has already been released while the coordinator remains busy.
 - The root lifecycle controller owns no private operation payload. It cancels the command's task for sleep, screen sleep, lock/session resign, or termination, and never restarts work on wake/unlock. Fixed OSLog diagnostics contain event classes only.
+- The updater service, controller, custom user driver, session coordinator, and presenter are main-actor isolated because Sparkle and AppKit presentation require the application actor. Pure update policy and streaming-byte accounting remain independent of AppKit and Sparkle types.
+- One update session retains only authenticated metadata, byte counts, and Sparkle's cancellation closure. Later, Cancel, closing a cancellable panel, failure, or completion clears CopyLasso-owned session state. Sparkle owns temporary staging and removes it on transaction cancellation or failure.
+- Scheduled checks default on at a 24-hour interval but perform no automatic download or installation. User-visible download and install/relaunch are separate explicit decisions.
 
 ## Goal Ownership
 
@@ -83,5 +99,7 @@ Cancellation is a normal result. It enters an explicit cancelled state and retur
 | G19 | Multi-display topology, Retina, and display-snapshot hardening |
 | G20 | Sleep, lock, termination, task cancellation, recovery, and safe diagnostics |
 | G21 | Accessibility semantics, keyboard operation, adaptive text layout, and system appearance behavior |
+| G35 | Secure-update architecture, dependency pin, threat model, and offline signature proof |
+| G36 | Shipping Sparkle boundary, authenticated policy, accessible user controls, private release metadata, and update qualification |
 
-The G12 permission adapter, recovery panel, G13 selection overlay, G14 capture adapter, G15 Vision adapter, G16 text assembler, G17 clipboard/HUD adapters, and G18 orchestration are live. Captured pixels exist only as the local image passed to OCR; recognized observations, assembled text, and bounded previews remain transient. Pasteboard writes are confined to one service, that service never reads prior clipboard contents, and the feedback model clears on dismissal. Automated integration covers every service boundary, 25 consecutive successes, 20 alternating success/cancel cycles, shared menu/shortcut routing, busy rejection, and resource release. Physical end-to-end qualification remains in the later hardening goals. See [Capture Workflow](capture-workflow.md) for the operation/lifetime contract, [Security and Privacy Review](../security-and-privacy-review.md) for data flow, entitlements, dependencies, trust boundaries, and misuse cases, and [Automated Coverage Review](../coverage-review.md) for regression floors and the manual ownership of uncovered system regions.
+The G12 permission adapter, recovery panel, G13 selection overlay, G14 capture adapter, G15 Vision adapter, G16 text assembler, G17 clipboard/HUD adapters, G18 orchestration, and G36 secure updater are live in source. Captured pixels exist only as the local image passed to OCR; recognized observations, assembled text, and bounded previews remain transient. Pasteboard writes are confined to one service, that service never reads prior clipboard contents, and the feedback model clears on dismissal. The update path never receives any of those values. Automated integration covers every capture service boundary plus updater policy, replay, exact download length, consent, deferral, cancellation, retry, and failure isolation. See [Capture Workflow](capture-workflow.md) for the operation/lifetime contract, [ADR-004](ADR-004-secure-updates.md) for the update boundary, [Security and Privacy Review](../security-and-privacy-review.md) for data flow, entitlements, dependencies, trust boundaries, and misuse cases, and [Automated Coverage Review](../coverage-review.md) for regression floors and the manual ownership of uncovered system regions.

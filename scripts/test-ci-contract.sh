@@ -15,6 +15,7 @@ readonly v02_contract_audit_script="$repository_root/scripts/audit-v02-contract.
 readonly secure_update_audit_script="$repository_root/scripts/audit-secure-update-architecture.sh"
 readonly secure_update_test_script="$repository_root/scripts/test-secure-update-architecture.sh"
 readonly secure_update_signature_script="$repository_root/scripts/test-secure-update-signatures.sh"
+readonly draft_appcast_test_script="$repository_root/scripts/test-draft-appcast.sh"
 readonly generated_app_cleanup_runner="$repository_root/scripts/run-with-generated-app-cleanup.sh"
 readonly ordinary_release_cleanup="$repository_root/scripts/unregister-generated-release.sh"
 readonly repeatability_script="$repository_root/scripts/test-repeatability.sh"
@@ -164,6 +165,15 @@ if [[ "$secure_update_signature_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/test-secure-update-signatures.sh exactly once."
 fi
 
+draft_appcast_test_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/test-draft-appcast\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$draft_appcast_test_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/test-draft-appcast.sh exactly once."
+fi
+
 if [[ ! -x "$developer_id_audit_script" ]] || \
     [[ ! -x "$repository_root/scripts/verify-developer-id-app.sh" ]] || \
     [[ ! -x "$repository_root/scripts/test-developer-id-release.sh" ]]; then
@@ -202,7 +212,8 @@ fi
 
 if [[ ! -x "$secure_update_audit_script" ]] || \
     [[ ! -x "$secure_update_test_script" ]] || \
-    [[ ! -x "$secure_update_signature_script" ]]; then
+    [[ ! -x "$secure_update_signature_script" ]] || \
+    [[ ! -x "$draft_appcast_test_script" ]]; then
     fail "Secure-update architecture proof scripts must be executable."
 fi
 
@@ -214,17 +225,12 @@ fi
 if ! /usr/bin/grep -Fq \
     'COPYLASSO_SECURE_UPDATE_DEBUG_APP="$derived_data/Build/Products/Debug/CopyLasso.app" \' \
     "$ci_script"; then
-    fail "Canonical CI must audit that its Debug application excludes Sparkle."
+    fail "Canonical CI must audit its updater-enabled Debug application."
 fi
 if ! /usr/bin/grep -Fq \
-    'The Release application must not configure an updater.' \
+    'COPYLASSO_SECURE_UPDATE_RELEASE_APP="$release_application" \' \
     "$ci_script"; then
-    fail "Canonical CI must audit that its Release application excludes updater configuration."
-fi
-if ! /usr/bin/grep -Fq \
-    'The Release application must not contain Sparkle.' \
-    "$ci_script"; then
-    fail "Canonical CI must audit that its Release bundle excludes embedded Sparkle."
+    fail "Canonical CI must audit its updater-enabled Universal 2 Release application."
 fi
 
 if ! /usr/bin/grep -Fq \

@@ -88,6 +88,10 @@ enum AccessibilityAuditCopy {
     "Choose whether CopyLasso starts automatically when you log in."
   static let suggestedShortcutHelp =
     "Restore the suggested Shift-Command-2 shortcut."
+  static let automaticUpdatesHelp =
+    "Choose whether CopyLasso checks its signed update feed about once per day."
+  static let checkForUpdatesHelp =
+    "Check the signed CopyLasso update feed now."
   static let openScreenRecordingSettingsHelp =
     "Open the Screen Recording privacy pane in System Settings."
   static let retryPermissionHelp =

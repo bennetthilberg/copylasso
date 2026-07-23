@@ -5,6 +5,7 @@ struct MenuBarMenuView: View {
   @Environment(\.openWindow) private var openWindow
 
   let commandHandler: MenuBarCommandHandler
+  let updateController: UpdateController
 
   var body: some View {
     Button("Capture Text") {
@@ -12,6 +13,13 @@ struct MenuBarMenuView: View {
     }
     .disabled(!commandHandler.isCaptureEnabled)
     .accessibilityIdentifier("copylasso.menu.capture")
+
+    Button("Check for Updates…") {
+      updateController.checkForUpdates()
+    }
+    .disabled(!updateController.canCheckForUpdates)
+    .accessibilityHint(AccessibilityAuditCopy.checkForUpdatesHelp)
+    .accessibilityIdentifier("copylasso.menu.check-for-updates")
 
     Divider()
 

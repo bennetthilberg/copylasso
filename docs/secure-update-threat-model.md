@@ -1,7 +1,8 @@
 # Secure Update Threat Model
 
-This document defines the G35 trust boundary selected for CopyLasso 0.2. It is a
-design and local proof, not evidence that an updater or public feed ships today.
+This document defines the G35 trust boundary and G36 implementation for
+CopyLasso 0.2. G36 ships the updater in source and private qualification builds;
+it does not create a public feed or updater-enabled release.
 
 ## Assets and Trust Boundaries
 
@@ -45,7 +46,10 @@ transmit screenshots, recognized text, clipboard text, or HUD previews.
 
 The app does not accept arbitrary feed overrides, initial enclosure domains, or
 release-channel identifiers. Redirect destinations remain untrusted transport;
-G35 claims no redirect guard that Sparkle's public API cannot enforce and relies
-on the independently verified enclosure signature before installation. G35
-contains no production public key, private key, public feed, published update
-artifact, or shipping network entitlement.
+CopyLasso claims no redirect guard that Sparkle's public API cannot enforce and
+relies on the independently verified enclosure signature before installation.
+G36 compiles only the production public key and exact fixed endpoint. Private
+key material remains outside the repository and build products. The protected
+workflow creates authenticated metadata only inside its restricted verification
+bundle; no public feed, published update artifact, or public update release is
+created by G36.

@@ -66,14 +66,23 @@ readonly keychain_path="${COPYLASSO_RELEASE_KEYCHAIN_PATH:-}"
 readonly archive="$handoff_candidate/CopyLasso.xcarchive"
 readonly export_directory="$handoff_candidate/export"
 readonly application="$export_directory/CopyLasso.app"
+readonly source_packages="$handoff_candidate/SourcePackages"
 
 cd "$repository_root"
+if ! /usr/bin/xcodebuild -resolvePackageDependencies \
+    -project CopyLasso.xcodeproj \
+    -scheme CopyLasso \
+    -clonedSourcePackagesDirPath "$source_packages" \
+    > "$handoff_candidate/package-resolution.log" 2>&1; then
+    protected_release_fail "The protected Release dependencies could not be resolved."
+fi
 if ! /usr/bin/xcodebuild archive \
     -project CopyLasso.xcodeproj \
     -scheme CopyLasso \
     -configuration Release \
     -destination 'generic/platform=macOS' \
     -archivePath "$archive" \
+    -clonedSourcePackagesDirPath "$source_packages" \
     DEVELOPMENT_TEAM="$expected_team_identifier" \
     CODE_SIGN_STYLE=Manual \
     "CODE_SIGN_IDENTITY=Developer ID Application" \
@@ -165,12 +174,26 @@ for evidence_file in \
     payload-manifest.txt; do
     /bin/cp "$output_directory/$evidence_file" "$verification_staging/run/$evidence_file"
 done
+readonly sparkle_generate_appcast="$(/usr/bin/find "$source_packages/artifacts" \
+    -type f -path '*/bin/generate_appcast' -print -quit)"
+[[ -n "$sparkle_generate_appcast" ]] || \
+    protected_release_fail "The reviewed Sparkle appcast tool is unavailable."
+"$repository_root/scripts/generate-draft-appcast.sh" \
+    --dmg "$output_directory/$COPYLASSO_G28_DMG" \
+    --release-notes "$repository_root/docs/release-notes/$COPYLASSO_RELEASE_VERSION.md" \
+    --output "$verification_staging/run/$COPYLASSO_RELEASE_APPCAST" \
+    --sparkle-tools-dir "$(/usr/bin/dirname "$sparkle_generate_appcast")"
 printf 'payload_commit=%s\npackaging_commit=%s\n' \
     "$source_commit" "$source_commit" \
     > "$verification_staging/verification-layout.txt"
 if ! /usr/bin/ditto -c -k --norsrc --noextattr \
     "$verification_staging" "$verification_bundle"; then
     protected_release_fail "The protected local-verification bundle could not be created."
+fi
+if [[ "$(/usr/bin/unzip -Z1 "$verification_bundle" | \
+    /usr/bin/grep -Ec "(^|/)run/$COPYLASSO_RELEASE_APPCAST$")" != "1" ]]; then
+    protected_release_fail \
+        "The private verification bundle is missing authenticated draft update metadata."
 fi
 
 assert_release_workflow_assets "$output_directory" "$verification_bundle"

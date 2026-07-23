@@ -8,6 +8,7 @@ readonly source_verifier="$repository_root/scripts/verify-release-workflow-sourc
 readonly credential_preparer="$repository_root/scripts/prepare-release-keychain.sh"
 readonly credential_cleanup="$repository_root/scripts/cleanup-release-keychain.sh"
 readonly candidate_builder="$repository_root/scripts/build-release-candidate.sh"
+readonly draft_appcast_generator="$repository_root/scripts/generate-draft-appcast.sh"
 readonly draft_creator="$repository_root/scripts/create-draft-release.sh"
 readonly verifier_library="$repository_root/scripts/lib/release-workflow-verification.sh"
 readonly workflow="$repository_root/.github/workflows/release.yml"
@@ -26,6 +27,7 @@ for executable in \
     "$credential_preparer" \
     "$credential_cleanup" \
     "$candidate_builder" \
+    "$draft_appcast_generator" \
     "$draft_creator"; do
     [[ -x "$executable" ]] || \
         fail "Protected-release executable is missing: $(basename "$executable")"

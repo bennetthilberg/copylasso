@@ -128,10 +128,11 @@ fi
 require_text CopyLasso/Models/AboutMetadata.swift 'Created by Bennett Hilberg'
 require_text CopyLasso/Models/AboutMetadata.swift 'https://github.com/bennetthilberg/copylasso'
 require_text CopyLasso/Models/AboutMetadata.swift 'KeyboardShortcuts 3.0.1'
+require_text CopyLasso/Models/AboutMetadata.swift 'Sparkle 2.9.4'
 require_text CopyLasso/App/CopyLassoApp.swift 'CopyLassoApplicationCommands()'
 require_text CopyLasso/App/CopyLassoApp.swift 'CommandGroup(replacing: .appInfo)'
 
-if /usr/bin/grep -R -n -F 'All rights reserved' \
+if /usr/bin/grep -R -n -F --exclude='Sparkle-2.9.4-LICENSE.txt' 'All rights reserved' \
     CopyLasso CopyLasso.xcodeproj/project.pbxproj; then
     fail "The application must not claim all rights reserved for MIT-licensed CopyLasso."
 fi
@@ -175,7 +176,7 @@ require_text CHANGELOG.md '## 0.1.0 - 2026-07-19'
 require_text CHANGELOG.md 'pasteboard clear-success followed by text-write rejection'
 require_text SECURITY.md 'CopyLasso 0.1.x'
 require_text CONTRIBUTING.md 'CopyLasso 0.1.1 is publicly released.'
-require_text PRIVACY.md '**Status:** Approved privacy contract for CopyLasso 0.1.x, including the current 0.1.1 release.'
+require_text PRIVACY.md '**Status:** Approved privacy contract for CopyLasso 0.1.x and the user-controlled secure updater present in source for the planned v0.2 release.'
 require_text docs/release-checklist.md '## G26 - Developer ID Signing And Notarization'
 require_text docs/release-checklist.md '## G27 - Reproducible Release Package'
 require_text docs/release-checklist.md '## G28 - Protected Release Workflow'
@@ -215,7 +216,7 @@ require_text docs/v0.1-product-contract.md \
     '**Implementation status:** Released as 0.1.0 on July 19, 2026; maintained as 0.1.1 on July 21, 2026'
 require_text docs/v0.1-product-contract.md 'clipboard may change'
 require_text docs/security-and-privacy-review.md \
-    'This review describes the public CopyLasso 0.1.x implementation boundary, including the current 0.1.1 release.'
+    'This review describes the public CopyLasso 0.1.x boundary and the secure updater now present in source for the planned v0.2 release.'
 require_text docs/release-candidate-qualification.md '## Exact Candidate Smoke Matrix'
 require_text docs/release-candidate-qualification.md '## G32 v0.1.1 Maintenance Qualification'
 require_text docs/release-candidate-qualification.md 'Do not resume VirtualBuddy'

@@ -213,6 +213,7 @@ final class CopyLassoUITests: XCTestCase {
         app.staticTexts["copylasso.about.acknowledgements.title"].waitForExistence(timeout: 5)
       )
       XCTAssertTrue(app.staticTexts["KeyboardShortcuts 3.0.1"].exists)
+      XCTAssertTrue(app.staticTexts["Sparkle 2.9.4"].exists)
       app.buttons["copylasso.about.acknowledgements.done"].click()
       app.typeKey("w", modifierFlags: .command)
       XCTAssertTrue(aboutTitle.waitForNonExistence(timeout: 5))
@@ -423,6 +424,12 @@ final class CopyLassoUITests: XCTestCase {
       "copylasso.settings.launch-at-login"
     ]
     XCTAssertTrue(launchAtLogin.exists)
+    let automaticUpdates = app.descendants(matching: .any)[
+      "copylasso.settings.automatic-updates"
+    ]
+    XCTAssertTrue(automaticUpdates.exists)
+    XCTAssertTrue(switchIsOn(automaticUpdates))
+    XCTAssertTrue(app.buttons["copylasso.settings.check-for-updates"].isEnabled)
     XCTAssertTrue(
       app.descendants(matching: .any)["copylasso.login.status"].exists
     )
@@ -695,6 +702,7 @@ final class CopyLassoUITests: XCTestCase {
 
   private static let requiredMenuLabels = [
     "Capture Text",
+    "Check for Updates…",
     "Settings…",
     "About CopyLasso",
     "Quit CopyLasso",

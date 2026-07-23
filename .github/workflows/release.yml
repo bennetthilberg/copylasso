@@ -100,6 +100,7 @@ jobs:
       - name: Build and verify exact release candidate
         env:
           COPYLASSO_EXPECTED_TEAM_ID: ${{ secrets.COPYLASSO_EXPECTED_TEAM_ID }}
+          COPYLASSO_SPARKLE_PRIVATE_KEY: ${{ secrets.COPYLASSO_SPARKLE_PRIVATE_KEY }}
         run: |
           ./scripts/build-release-candidate.sh \
             --source-commit "$GITHUB_SHA" \

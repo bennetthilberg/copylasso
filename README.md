@@ -49,11 +49,12 @@ If capture access is unavailable, CopyLasso shows a recovery window with a direc
 
 ## Privacy
 
-CopyLasso is private, offline, and local by design:
+CopyLasso's capture workflow is private, offline, and local by design:
 
 - Captured pixels and unbounded recognized text stay in memory only for the active operation.
 - Screenshots, OCR results, clipboard history, and HUD previews are never logged, persisted, or transmitted.
-- The application has no accounts, analytics, telemetry, cloud OCR, automatic updater, or network-client implementation.
+- The application has no accounts, analytics, telemetry, cloud OCR, or content-upload service.
+- Current source includes the user-controlled secure updater planned for the first v0.2 release. It checks one fixed, cryptographically authenticated feed, sends no screen, OCR, clipboard, hardware-profile, or stable-identifier data, and is independent from capture.
 - Clipboard access is write-only and plain-text-only. CopyLasso never reads the existing clipboard to preserve or restore its contents.
 
 See the [privacy policy](PRIVACY.md), [security and privacy review](docs/security-and-privacy-review.md), and [v0.1 product contract](docs/v0.1-product-contract.md) for the reviewed guarantees and boundaries.
@@ -66,7 +67,7 @@ See the [privacy policy](PRIVACY.md), [security and privacy review](docs/securit
 - Immediately reusing capture without moving the pointer can briefly leave the ordinary pointer visible. Moving the pointer or pressing the mouse button restores the crosshair; selection remains functional.
 - Locking the Mac during an active drag can leave selection pending after unlock. Quit and reopen CopyLasso before another pointer action; if the retained selection is allowed to complete, the clipboard may change.
 - In the rare event that macOS accepts clearing the pasteboard but rejects the subsequent text write, the previous clipboard contents have already been cleared. CopyLasso reports failure and does not read or reconstruct the prior contents.
-- Updates are manual in version 0.1.
+- Updates are manual in the public 0.1 release line. The first updater-enabled release must be installed manually before later authenticated update checks can begin.
 
 ## Build from Source
 
@@ -78,7 +79,20 @@ Clone the repository, open `CopyLasso.xcodeproj`, and run the shared `CopyLasso`
 ./scripts/ci.sh
 ```
 
-Architecture and test details are documented in [Architecture Overview](docs/architecture/overview.md), [Testing](docs/testing.md), and [Manual QA and Performance](docs/manual-qa-and-performance.md). The exact shipping KeyboardShortcuts dependency and license are recorded in [Third-Party Notices](THIRD_PARTY_NOTICES.md); the test-only secure-update dependency proof is recorded in [ADR-004](docs/architecture/ADR-004-secure-updates.md).
+Architecture and test details are documented in [Architecture Overview](docs/architecture/overview.md), [Testing](docs/testing.md), and [Manual QA and Performance](docs/manual-qa-and-performance.md). The exact shipping KeyboardShortcuts and Sparkle dependencies and licenses are recorded in [Third-Party Notices](THIRD_PARTY_NOTICES.md); the updater trust boundary is recorded in [ADR-004](docs/architecture/ADR-004-secure-updates.md).
+
+## Secure Updates In Current Source
+
+The public CopyLasso 0.1.1 download still updates manually. Current source adds the updater for the first v0.2 release:
+
+- automatic checks default on and run at most once per 24 hours;
+- **Settings > Automatically Check for Updates** disables or reenables scheduled checks;
+- **Check for Updates…** in Settings or the menu checks immediately;
+- the app shows authenticated version, plain-text release notes, and exact download size before any download;
+- **Download** begins retrieval, and a separate **Install and Relaunch** confirmation is required after verification; and
+- **Later**, **Cancel**, closing the panel, an offline connection, or verification failure leaves the installed app unchanged.
+
+Update checks use only `https://updates.copylasso.com/appcast.xml`, and accepted packages must use the version-matched immutable CopyLasso asset on GitHub Releases. The updater disables system profiling, cookies, external release-note downloads, automatic downloads, and automatic installation. Capture, OCR, clipboard output, Settings, onboarding, and Launch at Login continue to work when update networking is unavailable. G36 creates no public feed or updater-enabled release; those remain separate release gates.
 
 ## Contributing
 

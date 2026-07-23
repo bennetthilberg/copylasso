@@ -4,5 +4,29 @@
 <dict>
 	<key>NSScreenCaptureUsageDescription</key>
 	<string>CopyLasso captures the screen region you select to recognize text locally.</string>
+	<key>SUAllowsAutomaticUpdates</key>
+	<false/>
+	<key>SUAutomaticallyUpdate</key>
+	<false/>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUEnableDownloaderService</key>
+	<false/>
+	<key>SUEnableInstallerLauncherService</key>
+	<true/>
+	<key>SUEnableSystemProfiling</key>
+	<false/>
+	<key>SUFeedURL</key>
+	<string>https://updates.copylasso.com/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>oFKqdwUzCRsyJOW3F3UweNIf7S+IvqiJm3MWjJC3zCA=</string>
+	<key>SURequireSignedFeed</key>
+	<true/>
+	<key>SUScheduledCheckInterval</key>
+	<integer>86400</integer>
+	<key>SUSignedFeedFailureExpirationInterval</key>
+	<integer>0</integer>
+	<key>SUVerifyUpdateBeforeExtraction</key>
+	<true/>
 </dict>
 </plist>

@@ -80,10 +80,12 @@ final class MenuBarShellTests: XCTestCase {
       metadata.licenseURL.absoluteString,
       "https://github.com/bennetthilberg/copylasso/blob/main/LICENSE"
     )
-    XCTAssertEqual(metadata.acknowledgement.title, "KeyboardShortcuts 3.0.1")
-    XCTAssertEqual(metadata.acknowledgement.author, "Sindre Sorhus")
-    XCTAssertEqual(metadata.acknowledgement.license, "MIT")
-    XCTAssertTrue(metadata.acknowledgement.notice.contains("Permission is hereby granted"))
+    XCTAssertEqual(
+      metadata.acknowledgements.map(\.title), ["KeyboardShortcuts 3.0.1", "Sparkle 2.9.4"])
+    XCTAssertEqual(metadata.acknowledgements[0].author, "Sindre Sorhus")
+    XCTAssertEqual(metadata.acknowledgements[0].license, "MIT")
+    XCTAssertTrue(metadata.acknowledgements[0].notice.contains("Permission is hereby granted"))
+    XCTAssertEqual(metadata.acknowledgements[1].author, "Sparkle Project contributors")
   }
 
   func testAboutMetadataUsesSafeFallbacksForMissingValues() {

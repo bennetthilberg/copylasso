@@ -1,8 +1,8 @@
 # ADR-004: Sparkle Provides the Secure Update Boundary
 
-- **Status:** Accepted for G36 implementation
+- **Status:** Implemented by G36
 - **Date:** July 22, 2026
-- **Scope:** G35 architecture proof only; no updater ships in this goal
+- **Scope:** G35 architecture proof and G36 shipping integration; no public feed or release in G36
 
 ## Context
 
@@ -19,8 +19,10 @@ artifact has SHA-256
 `cb6fdbdc8884f15d62a616e79face92b08322410fd2d425edc6596ccbf4ba3b0`.
 That release was published July 3, 2026, includes a dockless-application update
 UI fix, and its macOS framework contains both `arm64` and `x86_64` slices.
-Sparkle is linked only into `CopyLassoTests` in G35 so the production app,
-entitlements, release bytes, and third-party notices remain unchanged.
+G35 linked Sparkle only into `CopyLassoTests` for the architecture proof. G36
+links the same reviewed package into the application, ships its complete license
+notice, and adds only the sandbox capabilities required by the selected
+installer boundary.
 
 ## Options
 
@@ -41,7 +43,7 @@ installation, and relaunch. Building the equivalent first-party subsystem would
 create substantially more security-critical code without improving the product's
 privacy contract.
 
-G36 will integrate `SPUUpdater` with a small CopyLasso-owned `SPUUserDriver` and
+G36 integrates `SPUUpdater` with a small CopyLasso-owned `SPUUserDriver` and
 an updater delegate behind a narrow application boundary. The custom driver is
 required because Sparkle's standard alert does not expose the enclosure size
 until download progress begins, while the v0.2 contract requires version,
@@ -50,11 +52,12 @@ explicitly starts the transaction. Sparkle remains responsible for all security
 and installation work; CopyLasso owns only presentation, consent, focus, and
 retention policy.
 
-The future fixed feed URL is
+The fixed feed URL compiled into the updater-enabled source is
 `https://updates.copylasso.com/appcast.xml`. Enclosures must use immutable URLs
 of the form
 `https://github.com/bennetthilberg/copylasso/releases/download/<tag>/CopyLasso-<version>.dmg`.
-G35 neither publishes nor requests either endpoint.
+G36 does not publish or request either endpoint during development qualification;
+DNS and public appcast publication remain a separate release gate.
 
 Release notes must be nonempty inline plain text in the signed appcast. G36
 rejects `releaseNotesURL`, `fullReleaseNotesURL`, HTML descriptions, and missing
@@ -80,7 +83,7 @@ architecture checks. If redirect-level policy becomes a requirement, the
 architecture must be amended before shipping rather than relying on an
 unconnected policy helper or Sparkle private API.
 
-G36 will use these non-secret settings:
+G36 uses these non-secret settings:
 
 - `SUFeedURL = https://updates.copylasso.com/appcast.xml` and the reviewed
   `SUPublicEDKey` value created in G36;
@@ -108,7 +111,7 @@ callback that would exceed either boundary invokes cancellation exactly once,
 removes staging, and rejects the candidate. The final downloaded length must
 still equal the signed length before extraction or installation is authorized.
 
-The app will add `com.apple.security.network.client` and one
+The app adds `com.apple.security.network.client` and one
 `com.apple.security.temporary-exception.mach-lookup.global-name` array containing
 exactly `$(PRODUCT_BUNDLE_IDENTIFIER)-spks` and
 `$(PRODUCT_BUNDLE_IDENTIFIER)-spki`, as required by Sparkle's sandboxed
@@ -122,7 +125,9 @@ runtime networking.
 ## Verified Policy
 
 The G35 proof uses Sparkle's real `SUStandardVersionComparator`, real
-`sign_update` tooling, and deterministic transaction policy tests.
+`sign_update` tooling, and deterministic transaction policy tests. G36 carries
+those constraints into the production policy, direct session tests, static and
+built-bundle audits, and a protected draft-metadata fixture.
 
 - `CFBundleVersion` is the ordering authority and must be a canonical positive
   ASCII decimal integer of at most 18 digits; display version must match the
@@ -161,17 +166,25 @@ positive control before that negative result is accepted, then the fixture
 destroys all material.
 Sparkle's signed-feed envelope authenticates an explicit content length and
 parses only those verified bytes; data appended after that envelope cannot alter
-the authenticated appcast. No production key or public feed exists in G35.
+the authenticated appcast. No production key or public feed exists in G35. G36
+creates the production key outside the repository, compiles only its public
+half, and makes the private half available only to the protected release
+environment and encrypted recovery. A protected candidate job creates an
+authenticated appcast inside the restricted verification bundle; G36 does not
+upload a standalone appcast or publish a feed.
 
 ## Consequences
 
 Sparkle 2.9.4 becomes a reviewed test-only package dependency in G35 and a
-planned shipping dependency in G36. Before G36 may link it into CopyLasso, the
-production key, sandbox services, UI behavior, acknowledgements, privacy copy,
-release workflow, and rollback record must satisfy
-[`secure-update-operations.md`](../secure-update-operations.md) and
-[`secure-update-threat-model.md`](../secure-update-threat-model.md).
+shipping dependency in G36. The production key boundary, sandbox services, UI
+behavior, acknowledgements, privacy copy, release workflow, and rollback record
+satisfy [`secure-update-operations.md`](../secure-update-operations.md) and
+[`secure-update-threat-model.md`](../secure-update-threat-model.md). The
+application target has one Sparkle adapter; pure policy and session behavior are
+directly testable without network or UI automation.
 
 Users on 0.1.x have no updater and must install the first updater-enabled release
 manually from the existing authenticated GitHub release channel. Automatic
-updates can begin only after that bootstrap.
+update checks can begin only after that bootstrap. G36 stops before public feed
+or release creation, so its shipping integration is exercised only through
+local and protected private qualification.
