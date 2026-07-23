@@ -42,6 +42,20 @@ final class UserDefaultsSettingsStoreTests: XCTestCase {
     XCTAssertFalse(store.isSuccessSoundEnabled)
   }
 
+  func testCurrentSoundPreferenceMigrationIsIdempotent() {
+    let store = makeStore()
+    store.migrateSuccessSoundPreferenceIfNeeded()
+    store.isSuccessSoundEnabled = false
+
+    store.migrateSuccessSoundPreferenceIfNeeded()
+
+    XCTAssertEqual(
+      store.successSoundPreferenceVersion,
+      UserDefaultsSettingsStore.currentSuccessSoundPreferenceVersion
+    )
+    XCTAssertFalse(store.isSuccessSoundEnabled)
+  }
+
   func testSoundPreferencePersistsAcrossStoreReconstruction() throws {
     let defaults = try makeDefaults()
     var store = UserDefaultsSettingsStore(userDefaults: defaults)
