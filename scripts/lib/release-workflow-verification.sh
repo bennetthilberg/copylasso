@@ -124,6 +124,14 @@ assert_release_candidate_tag() {
         protected_release_fail "The release-candidate tag name is invalid."
 }
 
+assert_authenticated_draft_tag() {
+    local draft_tag="$1"
+    local escaped_version="${COPYLASSO_G28_VERSION//./\\.}"
+
+    [[ "$draft_tag" =~ ^v${escaped_version}-(rc\.[1-9][0-9]*|g32\.[1-9][0-9]*)$ ]] || \
+        protected_release_fail "The authenticated update draft tag is invalid."
+}
+
 assert_release_workflow_assets() {
     local g28_asset_run_directory="$1"
     local g28_asset_verification_bundle="$2"

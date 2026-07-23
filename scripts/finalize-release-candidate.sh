@@ -14,6 +14,7 @@ usage() {
 Usage: finalize-release-candidate.sh \
   --source-commit <40-character-commit> \
   --handoff /path/under/RUNNER_TEMP/<commit> \
+  --download-tag <private-draft-tag> \
   --output-dir /path/to/repository/dist/<release-mode>/<commit>/run
 TEXT
     exit 64
@@ -21,6 +22,7 @@ TEXT
 
 source_commit=""
 handoff_candidate=""
+download_tag=""
 output_directory=""
 while [[ "$#" -gt 0 ]]; do
     case "$1" in
@@ -34,6 +36,11 @@ while [[ "$#" -gt 0 ]]; do
             handoff_candidate="$2"
             shift 2
             ;;
+        --download-tag)
+            [[ "$#" -ge 2 ]] || usage
+            download_tag="$2"
+            shift 2
+            ;;
         --output-dir)
             [[ "$#" -ge 2 ]] || usage
             output_directory="$2"
@@ -42,12 +49,21 @@ while [[ "$#" -gt 0 ]]; do
         *) usage ;;
     esac
 done
-[[ -n "$source_commit" && -n "$handoff_candidate" && -n "$output_directory" ]] || usage
+[[ -n "$source_commit" && -n "$handoff_candidate" && -n "$download_tag" && \
+    -n "$output_directory" ]] || usage
 
 sparkle_private_key="${COPYLASSO_SPARKLE_PRIVATE_KEY:-}"
 unset COPYLASSO_SPARKLE_PRIVATE_KEY
 [[ -n "$sparkle_private_key" ]] || \
     protected_release_fail "The protected Sparkle signing secret is unavailable."
+
+[[ "$download_tag" == "${COPYLASSO_RELEASE_DRAFT_TAG:-}" ]] || \
+    protected_release_fail "The authenticated update tag does not match the protected draft."
+case "${COPYLASSO_RELEASE_MODE:-}" in
+    candidate) assert_release_candidate_tag "$download_tag" ;;
+    rehearsal) assert_release_draft_tag "$download_tag" ;;
+    *) protected_release_fail "The protected release mode is invalid." ;;
+esac
 
 assert_full_release_commit "$source_commit"
 assert_release_source_state \
@@ -98,6 +114,7 @@ COPYLASSO_SPARKLE_PRIVATE_KEY="$sparkle_private_key" \
         --application "$application" \
         --dmg "$output_directory/$COPYLASSO_G28_DMG" \
         --release-notes "$repository_root/docs/release-notes/$COPYLASSO_RELEASE_VERSION.md" \
+        --download-tag "$download_tag" \
         --output "$verification_staging/run/$COPYLASSO_RELEASE_APPCAST" \
         --sparkle-tools-dir "$(/usr/bin/dirname "$sparkle_generate_appcast")"
 unset sparkle_private_key

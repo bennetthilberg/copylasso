@@ -193,6 +193,12 @@ require_literal "$update_policy" 'url.path(percentEncoded: true) == expectedPath
     "The production policy must validate the exact percent-encoded enclosure path."
 require_literal "$update_policy" '#if COPYLASSO_PRIVATE_UPDATE_FIXTURE' \
     "The private end-to-end origin must remain behind a nonshipping compile condition."
+require_literal "$repository_root/CopyLasso/Models/SecureUpdatePresentationModel.swift" \
+    'GitHub Releases (github.com/bennetthilberg/copylasso)' \
+    "The download-consent model must name the authenticated GitHub Releases source."
+require_literal "$repository_root/CopyLasso/SharedUI/SecureUpdatePresentation.swift" \
+    'offer.authenticatedSource' \
+    "The pre-download consent must display the authenticated update source."
 require_literal "$repository_root/CopyLasso/SharedUI/MenuBarLabelView.swift" \
     '#if COPYLASSO_PRIVATE_UPDATE_FIXTURE' \
     "The private end-to-end fixture must expose a visible Computer Use handle."
@@ -298,6 +304,14 @@ require_literal "$repository_root/docs/security-and-privacy-review.md" \
 require_literal "$repository_root/docs/architecture/overview.md" \
     'The update graph is a sibling of the capture graph.' \
     "The architecture overview must isolate updates from capture."
+require_literal "$repository_root/docs/architecture/build-configuration.md" \
+    'G36 links the reviewed Sparkle 2.9.4 package into both the application and update proof tests' \
+    "Build configuration must describe Sparkle's current shipping integration."
+if /usr/bin/grep -Fq \
+    'links it only into `CopyLassoTests`' \
+    "$repository_root/docs/architecture/build-configuration.md"; then
+    fail "Build configuration must not retain the obsolete G35 test-only Sparkle description."
+fi
 require_literal "$repository_root/docs/release-workflow.md" \
     'never uploaded among the four draft assets' \
     "The release workflow must keep the authenticated appcast private in G36."

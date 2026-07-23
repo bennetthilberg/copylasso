@@ -141,6 +141,12 @@ done
 assert_release_candidate_tag "v0.1.1-rc.1"
 expect_failure "release-candidate tag name is invalid" \
     assert_release_candidate_tag "v0.1.1-g32.12345"
+assert_authenticated_draft_tag "v0.1.1-rc.42"
+assert_authenticated_draft_tag "v0.1.1-g32.12345"
+expect_failure "authenticated update draft tag is invalid" \
+    assert_authenticated_draft_tag "v0.1.1"
+expect_failure "authenticated update draft tag is invalid" \
+    assert_authenticated_draft_tag "v0.1.1-rc.01"
 
 readonly valid_draft="$temporary_directory/valid-draft.json"
 printf '%s\n' "{

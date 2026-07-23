@@ -14,6 +14,10 @@ final class SecureUpdateSessionCoordinatorTests: XCTestCase {
     )
 
     XCTAssertEqual(offer.formattedDownloadSize, "2 KB")
+    XCTAssertEqual(
+      offer.authenticatedSource,
+      "GitHub Releases (github.com/bennetthilberg/copylasso)"
+    )
   }
 
   private let policy = SecureUpdatePolicy(maximumDownloadBytes: 16)

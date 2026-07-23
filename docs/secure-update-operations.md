@@ -48,7 +48,7 @@ issue. The public key may be compiled into CopyLasso.
 Developer ID credentials, the SSH release-tag signing key, and the update
 Ed25519 key remain separate. Protected release jobs import only the credentials
 needed for their stage after all ordinary tests pass. G36's draft workflow signs
-the exact candidate enclosure and appcast in a dedicated step after the build
+the exact candidate enclosure and appcast, bound to that private draft tag, in a dedicated step after the build
 and Developer ID credential cleanup. Before creating metadata, it derives the
 seed's public key and requires it to byte-match `SUPublicEDKey` in the exact
 exported application; a different valid seed is rejected. Sparkle then verifies

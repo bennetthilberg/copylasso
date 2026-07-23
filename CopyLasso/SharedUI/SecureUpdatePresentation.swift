@@ -31,7 +31,8 @@ final class SystemSecureUpdatePresenter: NSObject, SecureUpdatePresenting, NSWin
     let alert = NSAlert()
     alert.messageText = "CopyLasso \(offer.displayVersion) Is Available"
     alert.informativeText =
-      "Download size: \(offer.formattedDownloadSize)\n\n"
+      "Authenticated source: \(offer.authenticatedSource)\n"
+      + "Download size: \(offer.formattedDownloadSize)\n\n"
       + offer.releaseNotes
       + "\n\nCopyLasso will download and verify the update. Installation and relaunch "
       + "require a second confirmation."

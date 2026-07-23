@@ -43,7 +43,7 @@ KeyboardShortcuts 3.0.1 is an exact Swift Package Manager dependency used for sh
 
 The dependency is confined to the app, Settings, and SwiftUI presentation layers. Models and capture-workflow state remain independent of KeyboardShortcuts, AppKit, SwiftUI, ScreenCaptureKit, and Vision.
 
-G35 also pins Sparkle 2.9.4 at revision `b6496a74a087257ef5e6da1c5b29a447a60f5bd7`, but links it only into `CopyLassoTests` for the real comparator and offline Ed25519 architecture proof. It is absent from the application target, Release bundle, entitlements, and shipped acknowledgements. [ADR-004](ADR-004-secure-updates.md) records the dependency decision, official artifact checksum, license, and G36 gate.
+G36 links the reviewed Sparkle 2.9.4 package into both the application and update proof tests at exact revision `b6496a74a087257ef5e6da1c5b29a447a60f5bd7`. The application ships the framework, its complete MIT notice, outbound-network entitlement, and exactly the two reviewed Sparkle installer-service names. Sparkle's downloader service remains disabled. [ADR-004](ADR-004-secure-updates.md) records the dependency decision, official artifact checksum, trust boundaries, and release gates.
 
 ## Signing
 

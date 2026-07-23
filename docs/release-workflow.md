@@ -174,7 +174,8 @@ the DMG, checksum, and dSYM beside its `run` evidence, and invoke `verify-releas
 the bundled `payload/<commit>/export/CopyLasso.app`. The supplied payload and packaging commits are
 both the protected workflow commit.
 
-The appcast inside the restricted verification bundle is evidence, not a publication asset. The
+The appcast inside the restricted verification bundle points to the exact private rehearsal or
+release-candidate draft tag and is evidence, not a publication asset. The
 protected job requires exactly one candidate entry, inline plain-text release notes, the canonical
 version/build, exact immutable GitHub enclosure URL and byte length, and valid feed plus enclosure
 Ed25519 signatures. It verifies both signatures with the public key compiled into CopyLasso before

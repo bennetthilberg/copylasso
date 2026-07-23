@@ -29,6 +29,7 @@ readonly executable="$app/Contents/MacOS/CopyLasso"
 readonly dmg="$temporary_directory/$COPYLASSO_RELEASE_DMG"
 readonly notes="$temporary_directory/notes.txt"
 readonly appcast="$temporary_directory/$COPYLASSO_RELEASE_APPCAST"
+readonly download_tag="v$COPYLASSO_RELEASE_VERSION-rc.42"
 /bin/mkdir -p "$app/Contents/MacOS"
 
 readonly private_key="$(/usr/bin/openssl rand -base64 32 | /usr/bin/tr -d '\n')"
@@ -63,6 +64,7 @@ missing_secret_output="$({
         --application "$app" \
         --dmg "$dmg" \
         --release-notes "$notes" \
+        --download-tag "$download_tag" \
         --output "$appcast" \
         --sparkle-tools-dir "$tools_directory" 2>&1
 } || true)"
@@ -75,6 +77,7 @@ mismatched_key_output="$({
         --application "$app" \
         --dmg "$dmg" \
         --release-notes "$notes" \
+        --download-tag "$download_tag" \
         --output "$appcast" \
         --sparkle-tools-dir "$tools_directory" 2>&1
 } || true)"
@@ -88,9 +91,17 @@ COPYLASSO_SPARKLE_PRIVATE_KEY="$private_key" "$generator" \
     --application "$app" \
     --dmg "$dmg" \
     --release-notes "$notes" \
+    --download-tag "$download_tag" \
     --output "$appcast" \
     --sparkle-tools-dir "$tools_directory" >/dev/null
 [[ -s "$appcast" ]] || fail "The authenticated draft appcast was not created."
+readonly enclosure_url="$(
+    /usr/bin/xmllint --nonet --xpath \
+        'string(//*[local-name()="enclosure"]/@url)' "$appcast" 2>/dev/null
+)"
+[[ "$enclosure_url" == \
+    "https://github.com/bennetthilberg/copylasso/releases/download/$download_tag/$COPYLASSO_RELEASE_DMG" ]] || \
+    fail "The authenticated draft appcast must download from its exact private draft tag."
 if /usr/bin/grep -Fq -- "$private_key" "$appcast"; then
     fail "The test-only private key leaked into generated metadata."
 fi
@@ -100,6 +111,7 @@ existing_output="$({
         --application "$app" \
         --dmg "$dmg" \
         --release-notes "$notes" \
+        --download-tag "$download_tag" \
         --output "$appcast" \
         --sparkle-tools-dir "$tools_directory" 2>&1
 } || true)"

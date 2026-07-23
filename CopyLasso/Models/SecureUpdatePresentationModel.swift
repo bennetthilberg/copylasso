@@ -6,6 +6,10 @@ struct SecureUpdateOffer: Equatable, Sendable {
   let releaseNotes: String
   let contentLength: UInt64
 
+  var authenticatedSource: String {
+    "GitHub Releases (github.com/bennetthilberg/copylasso)"
+  }
+
   var formattedDownloadSize: String {
     ByteCountFormatter.string(fromByteCount: Int64(contentLength), countStyle: .file)
   }

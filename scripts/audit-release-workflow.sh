@@ -209,11 +209,13 @@ done
 for required_finalize_text in \
     'generate-draft-appcast.sh' \
     '--application "$application"' \
+    '--download-tag "$download_tag"' \
     'COPYLASSO_RELEASE_APPCAST' \
     'The private verification bundle is missing authenticated draft update metadata.' \
     'assert_release_workflow_assets'; do
     require_text "$candidate_finalizer" "$required_finalize_text"
 done
+require_text "$workflow" '--download-tag "$COPYLASSO_RELEASE_DRAFT_TAG"'
 
 for required_draft_text in \
     '--candidate-number' \

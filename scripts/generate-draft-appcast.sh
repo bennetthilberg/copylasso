@@ -4,8 +4,8 @@ set -euo pipefail
 umask 077
 
 readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && /bin/pwd -P)"
-# shellcheck source=scripts/lib/release-metadata.sh
-source "$repository_root/scripts/lib/release-metadata.sh"
+# shellcheck source=scripts/lib/release-workflow-verification.sh
+source "$repository_root/scripts/lib/release-workflow-verification.sh"
 
 fail() {
     echo "$1" >&2
@@ -13,13 +13,14 @@ fail() {
 }
 
 usage() {
-    echo "Usage: generate-draft-appcast.sh --application <app> --dmg <dmg> --release-notes <text> --output <appcast> --sparkle-tools-dir <dir>" >&2
+    echo "Usage: generate-draft-appcast.sh --application <app> --dmg <dmg> --release-notes <text> --download-tag <draft-tag> --output <appcast> --sparkle-tools-dir <dir>" >&2
     exit 64
 }
 
 application=""
 dmg=""
 release_notes=""
+download_tag=""
 output=""
 tools_directory=""
 while [[ "$#" -gt 0 ]]; do
@@ -39,6 +40,11 @@ while [[ "$#" -gt 0 ]]; do
             release_notes="$2"
             shift 2
             ;;
+        --download-tag)
+            [[ "$#" -ge 2 ]] || usage
+            download_tag="$2"
+            shift 2
+            ;;
         --output)
             [[ "$#" -ge 2 ]] || usage
             output="$2"
@@ -52,8 +58,9 @@ while [[ "$#" -gt 0 ]]; do
         *) usage ;;
     esac
 done
-[[ -n "$application" && -n "$dmg" && -n "$release_notes" && -n "$output" && \
-    -n "$tools_directory" ]] || usage
+[[ -n "$application" && -n "$dmg" && -n "$release_notes" && -n "$download_tag" && \
+    -n "$output" && -n "$tools_directory" ]] || usage
+assert_authenticated_draft_tag "$download_tag"
 
 readonly private_key="${COPYLASSO_SPARKLE_PRIVATE_KEY:-}"
 unset COPYLASSO_SPARKLE_PRIVATE_KEY
@@ -125,7 +132,7 @@ if ! printf '%s' "$private_key" | \
         --embed-release-notes \
         --disable-signing-warning \
         --download-url-prefix \
-        "https://github.com/bennetthilberg/copylasso/releases/download/$COPYLASSO_RELEASE_TAG/" \
+        "https://github.com/bennetthilberg/copylasso/releases/download/$download_tag/" \
         --versions "$COPYLASSO_RELEASE_BUILD" \
         --maximum-deltas 0 \
         --maximum-versions 1 \
@@ -141,7 +148,7 @@ xpath_string() {
     /usr/bin/xmllint --nonet --xpath "string($1)" "$generated_appcast" 2>/dev/null
 }
 readonly enclosure_xpath='//*[local-name()="enclosure"]'
-readonly expected_url="https://github.com/bennetthilberg/copylasso/releases/download/$COPYLASSO_RELEASE_TAG/$COPYLASSO_RELEASE_DMG"
+readonly expected_url="https://github.com/bennetthilberg/copylasso/releases/download/$download_tag/$COPYLASSO_RELEASE_DMG"
 readonly expected_size="$(/usr/bin/stat -f '%z' "$dmg")"
 readonly enclosure_signature="$(xpath_string "$enclosure_xpath/@*[local-name()=\"edSignature\"]")"
 [[ "$(xpath_string 'count(//*[local-name()="item"])')" == "1" ]] || \
