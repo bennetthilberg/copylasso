@@ -234,6 +234,10 @@ if [[ ! -x "$code_recognition_audit_script" ]] || \
     [[ ! -x "$repository_root/scripts/generate-code-fixtures.swift" ]]; then
     fail "The code-recognition audit and deterministic fixture generator must be executable."
 fi
+if [[ "$(/usr/bin/head -n 1 "$repository_root/scripts/generate-code-fixtures.swift")" != \
+    '#!/usr/bin/env -S xcrun swift' ]]; then
+    fail "The executable code-fixture generator must split its xcrun Swift interpreter arguments."
+fi
 
 if [[ ! -x "$success_sound_audit_script" ]] || \
     [[ ! -f "$repository_root/scripts/generate-success-sound.swift" ]]; then

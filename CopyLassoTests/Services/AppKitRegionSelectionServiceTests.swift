@@ -774,6 +774,25 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertNil(outline.animationKeys())
   }
 
+  func testSelectionOverlayUsesModeNeutralAccessibilityCopy() {
+    let appearance = AccessibilityAppearance(
+      increaseContrast: false,
+      differentiateWithoutColor: false,
+      reduceTransparency: false,
+      reduceMotion: false
+    )
+    let view = RegionSelectionView(
+      frame: CGRect(x: 0, y: 0, width: 200, height: 100),
+      style: appearance.selectionOverlayStyle
+    )
+
+    XCTAssertEqual(view.accessibilityLabel(), "CopyLasso selection overlay")
+    XCTAssertEqual(
+      view.accessibilityHelp(),
+      "Drag to select screen content. Press Escape to cancel."
+    )
+  }
+
   func testCursorRectRefreshInvalidatesAndRebuildsThroughOwningWindow() {
     let window = RecordingCursorRectWindow(
       contentRect: CGRect(x: 0, y: 0, width: 100, height: 100),

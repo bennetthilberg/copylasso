@@ -25,6 +25,11 @@ enum SelectionOverlayRenderState: Equatable {
   case dragging(rect: CGRect)
 }
 
+enum SelectionOverlayAccessibilityCopy {
+  static let label = "CopyLasso selection overlay"
+  static let help = "Drag to select screen content. Press Escape to cancel."
+}
+
 @MainActor
 protocol SelectionDisplayProviding: AnyObject {
   func currentDisplays() throws -> [DisplayGeometry]
@@ -523,10 +528,10 @@ private final class AppKitSelectionOverlaySurface: SelectionOverlaySurface {
     panel.ignoresMouseEvents = false
     panel.animationBehavior = .none
     panel.contentView = contentView
-    panel.title = "CopyLasso text selection overlay"
+    panel.title = SelectionOverlayAccessibilityCopy.label
     panel.setAccessibilityIdentifier("copylasso.selection.overlay")
-    panel.setAccessibilityLabel("CopyLasso text selection overlay")
-    panel.setAccessibilityHelp("Drag to select text. Press Escape to cancel.")
+    panel.setAccessibilityLabel(SelectionOverlayAccessibilityCopy.label)
+    panel.setAccessibilityHelp(SelectionOverlayAccessibilityCopy.help)
 
     contentView.displayFrame = display.appKitFrame
   }
@@ -620,8 +625,8 @@ final class RegionSelectionView: NSView {
     setAccessibilityElement(true)
     setAccessibilityIdentifier("copylasso.selection.overlay")
     setAccessibilityRole(.group)
-    setAccessibilityLabel("CopyLasso text selection overlay")
-    setAccessibilityHelp("Drag to select text. Press Escape to cancel.")
+    setAccessibilityLabel(SelectionOverlayAccessibilityCopy.label)
+    setAccessibilityHelp(SelectionOverlayAccessibilityCopy.help)
   }
 
   @available(*, unavailable)

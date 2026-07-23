@@ -1,4 +1,4 @@
-#!/usr/bin/env xcrun swift
+#!/usr/bin/env -S xcrun swift
 import AppKit
 import CoreImage
 import CoreImage.CIFilterBuiltins
