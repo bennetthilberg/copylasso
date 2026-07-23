@@ -78,7 +78,7 @@ Clone the repository, open `CopyLasso.xcodeproj`, and run the shared `CopyLasso`
 ./scripts/ci.sh
 ```
 
-Architecture and test details are documented in [Architecture Overview](docs/architecture/overview.md), [Testing](docs/testing.md), and [Manual QA and Performance](docs/manual-qa-and-performance.md). The exact KeyboardShortcuts dependency and license are recorded in [Third-Party Notices](THIRD_PARTY_NOTICES.md).
+Architecture and test details are documented in [Architecture Overview](docs/architecture/overview.md), [Testing](docs/testing.md), and [Manual QA and Performance](docs/manual-qa-and-performance.md). The exact shipping KeyboardShortcuts dependency and license are recorded in [Third-Party Notices](THIRD_PARTY_NOTICES.md); the test-only secure-update dependency proof is recorded in [ADR-004](docs/architecture/ADR-004-secure-updates.md).
 
 ## Contributing
 

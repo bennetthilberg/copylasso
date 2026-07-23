@@ -62,17 +62,20 @@ Local Apple Development signing adds `com.apple.security.get-task-allow` to audi
 | Clipboard visibility | After a successful write, macOS and other clipboard-aware software control access. CopyLasso writes one plain-string representation and never reads prior contents. |
 | Crash or forced termination during private processing | Operation values are memory-only and no in-app crash reporter receives them. Operating-system diagnostics or a privileged memory inspector remain outside the app's trust boundary. |
 | Diagnostic leakage | The only logger emits four fixed lifecycle messages. CI rejects interpolation and content-bearing logging APIs elsewhere. |
-| Dependency compromise | The only third-party package is exact-version and exact-revision pinned, source-built, MIT licensed, covered by a full notice and justification, and has no transitive package dependency or network service. |
+| Dependency compromise | The only shipping third-party package is exact-version and exact-revision pinned, source-built, MIT licensed, covered by a full notice and justification, and has no transitive package dependency or network service. Sparkle 2.9.4 is additionally pinned and linked only into the G35 test proof; the application target and release bytes remain unchanged. |
 | Shortcut collision or spoofed event | The package validates and records the configured key combination; every event enters the same busy-rejecting command. A shortcut cannot bypass consent or selection. |
 | Malformed OCR geometry or text | Pure formatting tests retain nonempty observations conservatively, reject invalid geometry safely, and output plain text only. |
 
 ## Dependency Inventory
 
-| Dependency | Version and revision | Purpose | License | Upstream |
-| --- | --- | --- | --- | --- |
-| KeyboardShortcuts | 3.0.1, `49c3fc04ea827f816df67843bfcc57286b47ff06` | Global shortcut recording, validation, persistence, registration, replacement, and clearing | MIT | <https://github.com/sindresorhus/KeyboardShortcuts> |
+| Dependency | Scope | Version and revision | Purpose | License | Upstream |
+| --- | --- | --- | --- | --- | --- |
+| KeyboardShortcuts | Shipping application and tests | 3.0.1, `49c3fc04ea827f816df67843bfcc57286b47ff06` | Global shortcut recording, validation, persistence, registration, replacement, and clearing | MIT | <https://github.com/sindresorhus/KeyboardShortcuts> |
+| Sparkle | G35 tests only; absent from CopyLasso.app | 2.9.4, `b6496a74a087257ef5e6da1c5b29a447a60f5bd7` | Real version comparator plus offline appcast/archive signature proof | Permissive Sparkle license bundle | <https://github.com/sparkle-project/Sparkle/blob/2.9.4/LICENSE> |
 
-The package manifest declares no transitive dependency. The Release executable contains its code statically and embeds no third-party dynamic framework. Native macOS APIs provide lower-level event registration but no SwiftUI recorder plus persistence/conflict-management abstraction; the package materially reduces input and lifecycle risk. Its exact license text and attribution are in [Third-Party Notices](../THIRD_PARTY_NOTICES.md). A GitHub Advisory Database query during this audit returned no advisory for the Swift package; this time-sensitive check must be repeated for each release.
+KeyboardShortcuts declares no transitive dependency. The Release executable contains its code statically and embeds no third-party dynamic framework. Native macOS APIs provide lower-level event registration but no SwiftUI recorder plus persistence/conflict-management abstraction; the package materially reduces input and lifecycle risk. Its exact license text and attribution are in [Third-Party Notices](../THIRD_PARTY_NOTICES.md). A GitHub Advisory Database query during that release audit returned no advisory for the Swift package; this time-sensitive check must be repeated for each release.
+
+Sparkle is test-only in G35, so it is not yet a shipped dependency and is deliberately absent from Third-Party Notices and the About acknowledgements. Its exact tag, source revision, official artifact checksum, license URL, justification, and future acknowledgement gate are recorded in [ADR-004](architecture/ADR-004-secure-updates.md). G36 must add the complete shipped notice before linking Sparkle into the application.
 
 ## Reproducible Verification
 
@@ -82,7 +85,7 @@ Run the tracked source audit:
 ./scripts/audit-privacy-security.sh
 ```
 
-The canonical CI entrypoint runs it before compiling. It validates the one-key entitlement, both build-configuration references, absence of network and content-persistence APIs, logger confinement, tracked-secret and local-path scans, the exact dependency inventory/notice/justification, and absence of prebuilt dependency binaries.
+The canonical CI entrypoint runs it before compiling. It validates the one-key entitlement, both build-configuration references, absence of application networking and content-persistence APIs, logger confinement, tracked-secret and local-path scans, exact shipping and test-only dependency scope, the shipping notice/justification, and absence of prebuilt dependency binaries.
 
 The complete application unit bundle also passes when invoked directly under a process sandbox with `(deny network*)`. This exercises real Vision fixtures plus permission, selection, capture planning, formatting, clipboard, feedback, lifecycle, Settings, and end-to-end orchestration tests without disabling the workstation's network connection; the canonical verification record reports the exact current suite count.
 

@@ -76,12 +76,17 @@ if git grep -n -I -E '/Users/[^ /]+' -- \
 fi
 
 readonly package_resolved='CopyLasso.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved'
-if [[ "$(/usr/bin/grep -c '"identity"' "$package_resolved")" != 1 ]] || \
+if [[ "$(/usr/bin/grep -c '"identity"' "$package_resolved")" != 2 ]] || \
     ! /usr/bin/grep -q '"version" : "3.0.1"' "$package_resolved" || \
+    ! /usr/bin/grep -q '"revision" : "49c3fc04ea827f816df67843bfcc57286b47ff06"' "$package_resolved" || \
+    ! /usr/bin/grep -q '"version" : "2.9.4"' "$package_resolved" || \
+    ! /usr/bin/grep -q '"revision" : "b6496a74a087257ef5e6da1c5b29a447a60f5bd7"' "$package_resolved" || \
     ! /usr/bin/grep -q 'KeyboardShortcuts 3.0.1' THIRD_PARTY_NOTICES.md || \
     ! /usr/bin/grep -q 'License: MIT' THIRD_PARTY_NOTICES.md || \
-    ! /usr/bin/grep -q 'Justification:' THIRD_PARTY_NOTICES.md; then
-    echo "Every shipped dependency must be pinned, inventoried, licensed, and justified." >&2
+    ! /usr/bin/grep -q 'Justification:' THIRD_PARTY_NOTICES.md || \
+    ! /usr/bin/grep -Fq 'Sparkle imports must remain confined to the G35 proof test.' \
+        scripts/audit-secure-update-architecture.sh; then
+    echo "Shipped and test-only dependencies must be pinned, scoped, licensed, and justified." >&2
     exit 1
 fi
 

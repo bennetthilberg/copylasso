@@ -105,8 +105,11 @@ readonly package_resolved="CopyLasso.xcodeproj/project.xcworkspace/xcshareddata/
 if [[ ! -f "$package_resolved" ]] || \
     ! /usr/bin/grep -q '"location" : "https://github.com/sindresorhus/KeyboardShortcuts"' "$package_resolved" || \
     ! /usr/bin/grep -q '"revision" : "49c3fc04ea827f816df67843bfcc57286b47ff06"' "$package_resolved" || \
-    ! /usr/bin/grep -q '"version" : "3.0.1"' "$package_resolved"; then
-    echo "KeyboardShortcuts must remain resolved exactly to 3.0.1." >&2
+    ! /usr/bin/grep -q '"version" : "3.0.1"' "$package_resolved" || \
+    ! /usr/bin/grep -q '"location" : "https://github.com/sparkle-project/Sparkle"' "$package_resolved" || \
+    ! /usr/bin/grep -q '"revision" : "b6496a74a087257ef5e6da1c5b29a447a60f5bd7"' "$package_resolved" || \
+    ! /usr/bin/grep -q '"version" : "2.9.4"' "$package_resolved"; then
+    echo "KeyboardShortcuts and test-only Sparkle must remain exactly resolved." >&2
     exit 1
 fi
 
@@ -357,6 +360,17 @@ xcodebuild -resolvePackageDependencies \
     -scheme "$scheme" \
     -clonedSourcePackagesDirPath "$derived_data/SourcePackages"
 
+echo "Proving the secure-update architecture"
+./scripts/test-secure-update-architecture.sh
+sparkle_sign_update="$(/usr/bin/find "$derived_data/SourcePackages/artifacts" \
+    -type f -path '*/bin/sign_update' -print -quit)"
+if [[ -z "$sparkle_sign_update" ]]; then
+    echo "Resolved Sparkle sign_update tool is unavailable." >&2
+    exit 1
+fi
+COPYLASSO_SPARKLE_TOOLS_DIR="$(/usr/bin/dirname "$sparkle_sign_update")" \
+    ./scripts/test-secure-update-signatures.sh
+
 readonly destination="platform=macOS,arch=$requested_architecture"
 common_arguments=(
     -project "$project_path"
@@ -371,6 +385,9 @@ echo "Building Debug for $requested_architecture"
 xcodebuild build \
     "${common_arguments[@]}" \
     -configuration Debug
+
+COPYLASSO_SECURE_UPDATE_DEBUG_APP="$derived_data/Build/Products/Debug/CopyLasso.app" \
+    ./scripts/audit-secure-update-architecture.sh
 
 echo "Auditing final brand assets and release documentation"
 COPYLASSO_BRAND_APP="$derived_data/Build/Products/Debug/CopyLasso.app" \
@@ -503,6 +520,15 @@ readonly release_application="$derived_data/Build/Products/Release/CopyLasso.app
         CODE_SIGNING_ALLOWED=NO
 
 readonly release_info_plist="$release_application/Contents/Info.plist"
+if /usr/bin/find "$release_application" -iname '*Sparkle*' -print -quit | \
+    /usr/bin/grep -q .; then
+    echo "The Release application must not contain Sparkle." >&2
+    exit 1
+fi
+if /usr/bin/plutil -p "$release_info_plist" | /usr/bin/grep -Eq '"SU[A-Za-z]+'; then
+    echo "The Release application must not configure an updater." >&2
+    exit 1
+fi
 if [[ "$(/usr/bin/plutil -extract LSUIElement raw -o - "$release_info_plist")" != "true" ]]; then
     echo "The Release application is not configured as a dockless agent." >&2
     exit 1
