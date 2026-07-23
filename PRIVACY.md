@@ -1,6 +1,6 @@
 # CopyLasso Privacy
 
-**Status:** Approved privacy contract for CopyLasso 0.1.x, including the current 0.1.1 release.
+**Status:** Approved privacy contract for CopyLasso 0.1.x and the user-controlled secure updater present in source for the planned v0.2 release.
 
 CopyLasso is designed as a local-first macOS utility. Its core job is to capture a user-selected screen region, recognize visible text, and place the result on the clipboard without uploading or retaining the captured content.
 
@@ -21,7 +21,7 @@ CopyLasso v0.1 has no:
 - analytics or telemetry; or
 - logging of screenshots, recognized text, clipboard text, or copied-text previews.
 
-The application stores only ordinary preferences needed for versioned onboarding, shortcut configuration, permission-history presentation, and settings behavior. Its permission history records only whether CopyLasso has requested Screen Recording access and whether access was previously observed; it does not store screen content or a definitive macOS authorization status. Launch at Login state is read from macOS rather than copied into a preference that could become stale. These values never contain captured images or recognized text.
+The application stores only ordinary preferences needed for versioned onboarding, shortcut configuration, permission-history presentation, settings behavior, and secure-update control. Update state is limited to the automatic-check schedule and preference, a deferred build, and the highest authenticated build used to reject replay or downgrade. It never stores appcast bodies or release notes. Permission history records only whether CopyLasso has requested Screen Recording access and whether access was previously observed; it does not store screen content or a definitive macOS authorization status. Launch at Login state is read from macOS rather than copied into a preference that could become stale. These values never contain captured images or recognized text.
 
 CopyLasso emits only four fixed lifecycle diagnostic messages: interruption while idle, cancellation for sleep/lock, resume, and application termination cleanup. Those messages contain no captured or frontmost application name, display geometry, pixels, recognized text, clipboard text, preview, raw error, or user-supplied value. Capture results and failures are never interpolated into diagnostics.
 
@@ -43,6 +43,12 @@ The v0.1 core workflow does not require Accessibility or Input Monitoring permis
 
 ## Network Activity
 
-Core functionality does not require network access. The application has no network-client or server entitlement, networking implementation, telemetry service, or automatic updater. Settings links ask macOS to open the default browser; CopyLasso does not fetch those pages itself. Users obtain releases manually from GitHub, outside the core OCR workflow.
+Core capture, OCR, clipboard output, Settings, onboarding, and Launch at Login do not require network access. Current source gives the sandboxed application outbound client access only for the user-controlled secure updater; it has no inbound server entitlement. Starting CopyLasso or performing a capture does not trigger update content in the capture pipeline, and an updater startup or network failure leaves capture fully usable.
+
+Automatic checks default on, run no more often than every 24 hours, and can be disabled in Settings. A user can also choose **Check for Updates…**. Sparkle retrieves one fixed signed feed at `https://updates.copylasso.com/appcast.xml`; accepted enclosures must be the exact version-matched CopyLasso DMG URL on GitHub Releases. CopyLasso disables system profiling, cookies, custom headers, query parameters, external release-note downloads, automatic downloads, and automatic installation. Release notes are authenticated inline plain text. The feed and package are authenticated with the public key compiled into the app, and installation requires two explicit user decisions: one before download and one before quit, install, and relaunch.
+
+Update transport can expose ordinary connection metadata such as the user's IP address and request time to the feed host and GitHub. Sparkle's ordinary user agent identifies the CopyLasso version and Sparkle version. Update requests send no screen pixels, selected rectangle, recognized text, clipboard data, HUD preview, frontmost-application identity, hardware profile, stable user or device identifier, analytics event, or telemetry. CopyLasso does not retain feed bodies or release notes after the active update transaction. Settings links still ask macOS to open the default browser rather than fetching those pages in CopyLasso.
+
+The public CopyLasso 0.1.x line still updates manually. Users must manually install the first updater-enabled release before authenticated checks can begin; G36 does not publish a feed or a release.
 
 The detailed, release-blocking privacy requirements are part of the public [v0.1 product contract](docs/v0.1-product-contract.md). The implementation data flow, entitlements, dependency inventory, trust boundaries, and misuse cases are reconciled in the [security and privacy review](docs/security-and-privacy-review.md).

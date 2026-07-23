@@ -112,3 +112,15 @@ matrix and accepted-risk record.
 - [ ] Confirm Sparkle remains test-only, CopyLasso.app has no updater configuration or network entitlement, release metadata remains `0.1.1 (2)`, and no key, appcast, or public update artifact is created.
 - [ ] Run focused proofs, privacy/security and secure-update audits, canonical arm64/x86_64 pipelines, hosted checks, exact-head review, and ready-PR readback.
 - [ ] Preserve the operations and 0.1.x manual-bootstrap record for G36; do not create production key material, publish a feed, install an update, or start G36.
+
+## G36 - User-Controlled Secure Updates
+
+- [x] Link only pinned Sparkle 2.9.4 into the application, ship its complete local notice, and verify the Universal 2 framework plus nested helpers in Debug and Release products.
+- [x] Retain only App Sandbox, outbound network client, and Sparkle's two versioned installer-service names; disable the downloader service, system profiling, cookies, external release notes, automatic downloads, and automatic installation.
+- [x] Verify the fixed signed-feed/public-key configuration, exact GitHub enclosure policy, canonical build ordering, authenticated high-water replay protection, inline plain-text notes, 256 MiB cap, and exact streaming length.
+- [x] Verify automatic checks default on and can be disabled, the menu and Settings manual command share one updater, and Download plus Install and Relaunch are separate keyboard- and VoiceOver-accessible decisions with Later, Cancel, close, retry, and offline recovery.
+- [x] Confirm capture, onboarding, Settings, TCC recovery, Launch at Login, lifecycle cleanup, clipboard privacy, and core offline behavior remain independent of updater startup or networking failure.
+- [x] Store the production private key only in the nonsynchronized login Keychain, protected GitHub `release` environment, and encrypted offline recovery; compile only the public key and scan repository, logs, build products, and evidence for leakage.
+- [x] Generate and verify one exact signed appcast inside the protected candidate verification bundle; do not upload a standalone appcast, publish a feed, create a public update artifact, or modify the public 0.1.x release.
+- [x] Qualify a private signed older-to-newer update, deferral, cancel/failure preservation, install/relaunch, preference retention, Launch at Login reconciliation, post-update capture, rollback rejection, and update networking denied while capture remains usable.
+- [x] Run focused updater tests, privacy/security and dependency audits, canonical arm64/x86_64 pipelines, hosted macOS checks, Developer ID/notarization/Gatekeeper verification, exact-head review, and ready-PR readback.

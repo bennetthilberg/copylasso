@@ -66,14 +66,23 @@ readonly keychain_path="${COPYLASSO_RELEASE_KEYCHAIN_PATH:-}"
 readonly archive="$handoff_candidate/CopyLasso.xcarchive"
 readonly export_directory="$handoff_candidate/export"
 readonly application="$export_directory/CopyLasso.app"
+readonly source_packages="$handoff_candidate/SourcePackages"
 
 cd "$repository_root"
+if ! /usr/bin/xcodebuild -resolvePackageDependencies \
+    -project CopyLasso.xcodeproj \
+    -scheme CopyLasso \
+    -clonedSourcePackagesDirPath "$source_packages" \
+    > "$handoff_candidate/package-resolution.log" 2>&1; then
+    protected_release_fail "The protected Release dependencies could not be resolved."
+fi
 if ! /usr/bin/xcodebuild archive \
     -project CopyLasso.xcodeproj \
     -scheme CopyLasso \
     -configuration Release \
     -destination 'generic/platform=macOS' \
     -archivePath "$archive" \
+    -clonedSourcePackagesDirPath "$source_packages" \
     DEVELOPMENT_TEAM="$expected_team_identifier" \
     CODE_SIGN_STYLE=Manual \
     "CODE_SIGN_IDENTITY=Developer ID Application" \
@@ -145,36 +154,4 @@ COPYLASSO_EXPECTED_TEAM_ID="$expected_team_identifier" \
     --payload-commit "$source_commit" \
     --output-dir "$output_directory"
 
-readonly verification_bundle="$output_directory/$COPYLASSO_G28_VERIFICATION"
-readonly verification_staging="$(mktemp -d "${TMPDIR:-/tmp}/copylasso-g28-verification.XXXXXX")"
-cleanup_verification_staging() {
-    /bin/rm -rf "$verification_staging"
-}
-trap cleanup_verification_staging EXIT
-
-/bin/mkdir -p \
-    "$verification_staging/payload/$source_commit/export" \
-    "$verification_staging/run"
-/usr/bin/ditto \
-    "$application" \
-    "$verification_staging/payload/$source_commit/export/CopyLasso.app"
-for evidence_file in \
-    notary-submission.json \
-    notary-log.json \
-    release-evidence.txt \
-    payload-manifest.txt; do
-    /bin/cp "$output_directory/$evidence_file" "$verification_staging/run/$evidence_file"
-done
-printf 'payload_commit=%s\npackaging_commit=%s\n' \
-    "$source_commit" "$source_commit" \
-    > "$verification_staging/verification-layout.txt"
-if ! /usr/bin/ditto -c -k --norsrc --noextattr \
-    "$verification_staging" "$verification_bundle"; then
-    protected_release_fail "The protected local-verification bundle could not be created."
-fi
-
-assert_release_workflow_assets "$output_directory" "$verification_bundle"
-cleanup_verification_staging
-trap - EXIT
-
-echo "Protected release candidate created and verified for the exact protected commit."
+echo "Protected release candidate built and verified for the exact protected commit."

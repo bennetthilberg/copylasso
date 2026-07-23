@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-CopyLasso 0.1.x is the currently supported public release line. Security reports about the released application, source, build process, or repository configuration are welcome.
+CopyLasso 0.1.x is the currently supported public release line. Current source also contains the user-controlled secure updater planned for the first v0.2 release; no public updater feed or updater-enabled release exists yet. Security reports about the released application, updater trust boundary, source, build process, protected release workflow, or repository configuration are welcome.
 
 | Version | Supported |
 | --- | --- |
@@ -22,3 +22,5 @@ Include enough information to reproduce and assess the report when possible:
 Remove passwords, tokens, signing credentials, private keys, personal screen captures, recognized private text, and unrelated personal data before submitting a report. The maintainer will use the private advisory to clarify the report and coordinate remediation and disclosure.
 
 General defects without a security impact may be reported through the repository's public issue tracker.
+
+For updater reports, include whether the issue affects feed or enclosure authentication, version/replay ordering, download-size enforcement, staging, installer services, consent or deferral, relaunch, private release metadata, or the fixed feed/enclosure URL policy. Do not attach a private signing seed, protected appcast, Developer ID credential, notarization credential, or private release artifact to a public issue. Use the private advisory route above.

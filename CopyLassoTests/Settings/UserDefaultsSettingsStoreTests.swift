@@ -24,7 +24,6 @@ final class UserDefaultsSettingsStoreTests: XCTestCase {
       hasRequested: true,
       hasObservedGranted: true
     )
-
     store = UserDefaultsSettingsStore(userDefaults: defaults)
 
     XCTAssertEqual(store.completedOnboardingVersion, 1)
@@ -37,7 +36,9 @@ final class UserDefaultsSettingsStoreTests: XCTestCase {
   }
 
   func testResetRemovesEveryOwnedPreference() throws {
-    let store = makeStore()
+    let defaults = try makeDefaults()
+    let store = UserDefaultsSettingsStore(userDefaults: defaults)
+    let updateStore = UserDefaultsSecureUpdateStateStore(userDefaults: defaults)
     store.completedOnboardingVersion = 4
     store.hasConfiguredCaptureShortcut = true
     store.hasConfiguredLaunchAtLogin = true
@@ -45,6 +46,8 @@ final class UserDefaultsSettingsStoreTests: XCTestCase {
       hasRequested: true,
       hasObservedGranted: true
     )
+    updateStore.highestAuthenticatedBuild = "2"
+    updateStore.deferredBuild = "3"
 
     store.reset()
 
@@ -52,6 +55,8 @@ final class UserDefaultsSettingsStoreTests: XCTestCase {
     XCTAssertFalse(store.hasConfiguredCaptureShortcut)
     XCTAssertFalse(store.hasConfiguredLaunchAtLogin)
     XCTAssertEqual(store.history, ScreenCapturePermissionHistory())
+    XCTAssertNil(updateStore.highestAuthenticatedBuild)
+    XCTAssertNil(updateStore.deferredBuild)
   }
 
   func testIndependentSuitesDoNotShareSettings() throws {

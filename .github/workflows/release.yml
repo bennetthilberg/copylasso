@@ -112,6 +112,16 @@ jobs:
           ./scripts/cleanup-release-keychain.sh \
             --state-dir "$COPYLASSO_RELEASE_STATE"
 
+      - name: Generate authenticated update metadata
+        env:
+          COPYLASSO_SPARKLE_PRIVATE_KEY: ${{ secrets.COPYLASSO_SPARKLE_PRIVATE_KEY }}
+        run: |
+          ./scripts/finalize-release-candidate.sh \
+            --source-commit "$GITHUB_SHA" \
+            --handoff "$COPYLASSO_RELEASE_HANDOFF" \
+            --download-tag "$COPYLASSO_RELEASE_DRAFT_TAG" \
+            --output-dir "$COPYLASSO_RELEASE_RUN_DIR"
+
       - name: Create verified GitHub draft release
         env:
           GH_TOKEN: ${{ github.token }}

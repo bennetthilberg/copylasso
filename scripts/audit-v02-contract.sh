@@ -8,7 +8,6 @@ readonly baseline_contract="$repository_root/docs/v0.1-product-contract.md"
 readonly release_metadata="$repository_root/Configuration/ReleaseMetadata.xcconfig"
 readonly entitlements="$repository_root/CopyLasso/CopyLasso.entitlements"
 readonly expected_baseline_contract_digest='3426807f08168cec2aaca337b80d7657a8a2d8569d48ecaafe0ec75672f92291'
-readonly expected_entitlements_digest='b746c74b201e6af4e0864fbd1f4f629f96156a7ec4b7208bc995d0a5089bb592'
 
 fail() {
     echo "$1" >&2
@@ -101,28 +100,36 @@ fi
     "$release_metadata" || \
     fail "G34 must leave the current release build at 2."
 
-[[ -f "$entitlements" ]] || fail "G34 must preserve the reviewed App Sandbox entitlements file."
-entitlements_digest="$(/usr/bin/shasum -a 256 "$entitlements" | /usr/bin/awk '{print $1}')"
-if [[ "$entitlements_digest" != "$expected_entitlements_digest" ]]; then
-    fail "G34 must preserve the reviewed one-key App Sandbox entitlement byte for byte."
+[[ -f "$entitlements" ]] || fail "The approved v0.2 sandbox entitlements file is missing."
+entitlements_json="$(/usr/bin/plutil -convert json -o - "$entitlements")" || \
+    fail "The approved v0.2 sandbox entitlements are invalid."
+if ! /usr/bin/jq -e '
+    (keys | sort) == [
+        "com.apple.security.app-sandbox",
+        "com.apple.security.network.client",
+        "com.apple.security.temporary-exception.mach-lookup.global-name"
+    ] and
+    .["com.apple.security.app-sandbox"] == true and
+    .["com.apple.security.network.client"] == true and
+    .["com.apple.security.temporary-exception.mach-lookup.global-name"] == [
+        "$(PRODUCT_BUNDLE_IDENTIFIER)-spks",
+        "$(PRODUCT_BUNDLE_IDENTIFIER)-spki"
+    ]
+    ' <<< "$entitlements_json" >/dev/null; then
+    fail "G36 must retain only the reviewed v0.2 updater sandbox capabilities."
 fi
 
-if /usr/bin/grep -Eq 'com\.apple\.security\.network\.(client|server)' "$entitlements"; then
-    fail "G34 must not add a network entitlement."
-fi
-
-/usr/bin/grep -Fq \
-    'The application has no accounts, analytics, telemetry, cloud OCR, automatic updater, or network-client implementation.' \
-    "$repository_root/README.md" || \
-    fail "README current-state copy must still deny updater and network-client behavior."
-/usr/bin/grep -Fq \
-    'no network-client or server entitlement, networking implementation, telemetry service, or automatic updater' \
-    "$repository_root/PRIVACY.md" || \
-    fail "PRIVACY current-state copy must still describe the 0.1.1 network boundary."
-/usr/bin/grep -Fq \
-    'no network-client or server entitlement, networking implementation, content-history store, updater' \
-    "$repository_root/docs/security-and-privacy-review.md" || \
-    fail "The security review must still describe the 0.1.1 network boundary."
+for documentation_contract in \
+    "$repository_root/README.md:Current source includes the user-controlled secure updater planned for the first v0.2 release." \
+    "$repository_root/README.md:The public CopyLasso 0.1.1 download still updates manually." \
+    "$repository_root/PRIVACY.md:Update requests send no screen pixels" \
+    "$repository_root/PRIVACY.md:The public CopyLasso 0.1.x line still updates manually." \
+    "$repository_root/docs/security-and-privacy-review.md:The public 0.1.1 artifact remains the current release and contains no updater."; do
+    documentation_file="${documentation_contract%%:*}"
+    required_text="${documentation_contract#*:}"
+    /usr/bin/grep -Fq "$required_text" "$documentation_file" || \
+        fail "G36 documentation does not distinguish shipping source from public 0.1.1: $required_text"
+done
 
 if /usr/bin/grep -R -nE \
     'TODO|example\.com|Capture (Code|LaTeX) (is|are) (available now|shipping|included in 0\.1\.1)' \

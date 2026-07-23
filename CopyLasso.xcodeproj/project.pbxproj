@@ -10,6 +10,7 @@
 		C0B1A0033002000000000003 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = C0B1A0013002000000000001 /* KeyboardShortcuts */; };
 		C0B1A0043002000000000004 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = C0B1A0023002000000000002 /* KeyboardShortcuts */; };
 		C0D35A033500000000000003 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = C0D35A023500000000000002 /* Sparkle */; };
+		C0D36A043600000000000004 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = C0D35A023500000000000002 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -61,6 +62,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C0B1A0033002000000000003 /* KeyboardShortcuts in Frameworks */,
+				C0D36A043600000000000004 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -134,6 +136,7 @@
 			name = CopyLasso;
 			packageProductDependencies = (
 				C0B1A0013002000000000001 /* KeyboardShortcuts */,
+				C0D35A023500000000000002 /* Sparkle */,
 			);
 			productName = CopyLasso;
 			productReference = AACED2EB30004BEB001F9909 /* CopyLasso.app */;

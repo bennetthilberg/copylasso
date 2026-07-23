@@ -295,7 +295,7 @@ Use one stably signed Debug app, keep Screen Recording enabled, and avoid inspec
 4. Search only changed/new CopyLasso files for the synthetic strings and inspect their types. Confirm no screenshot, image encoding, OCR history, preview cache, or content-bearing crash breadcrumb exists.
 5. Inspect Console entries for the CopyLasso process across idle, selection, cancellation, sleep/lock recovery, success, no text, failure, and termination. Only the four fixed lifecycle messages may originate from CopyLasso; no app name being captured, geometry, pixels, recognized text, clipboard text, preview, or raw error may appear.
 6. Run `scripts/test-offline.sh` against a freshly canonical-built bundle. Confirm 187/187 tests pass while the deny-network profile is active. Do not disable the workstation's network or interrupt other applications.
-7. Inspect the signed app entitlement and CodeDirectory flags. Confirm App Sandbox and Hardened Runtime, no network client/server, no device/file/group/temporary exception, and only development `get-task-allow`. G26 established the first Developer ID archive with `get-task-allow` absent; repeat that inspection for every later candidate rather than carrying the historical result forward.
+7. For the historical G22 build, inspect the signed app entitlement and CodeDirectory flags and confirm App Sandbox and Hardened Runtime, no network client/server, no device/file/group/temporary exception, and only development `get-task-allow`. G26 established the first Developer ID archive with `get-task-allow` absent. From G36 onward, every Developer ID candidate must instead contain exactly Boolean App Sandbox, Boolean outbound network client, and the two production-bundle Sparkle installer-service names, with no `get-task-allow`, downloader-service name, or unrelated capability.
 8. Inspect the built Release executable and bundle. Confirm Universal 2, only system-linked frameworks, no embedded third-party dynamic binary, the exact shipping package resolution, and the matching MIT acknowledgement. Test-only packages must remain outside the application bundle.
 9. Inspect Privacy & Security after real use. Screen Recording must be the only core permission; Accessibility, Input Monitoring, Microphone, Full Disk Access, Files and Folders, and automation access must not be required.
 10. Paste the success result into TextEdit, then confirm cancellation/no-text/pre-output failures preserved the sentinel in separate runs. Remember that clipboard contents become a macOS/user trust boundary after a successful write.
@@ -345,8 +345,8 @@ The versioned release checklist and performance result sheet are maintained in [
 exactly once, and `scripts/test-ci-contract.sh` enforces that invocation. The
 audit checks the approved update, sound, command, QR/barcode, LaTeX, privacy,
 accessibility, and version/build decisions while also proving the shipped
-0.1.1 release metadata, current no-updater documentation, and one-key sandbox
-entitlement remain unchanged.
+0.1.1 release metadata remains unchanged and the G36 updater does not falsely
+claim that the public 0.1.1 artifact contains it.
 
 Run the focused gate with:
 
@@ -355,10 +355,10 @@ Run the focused gate with:
 ./scripts/test-ci-contract.sh
 ```
 
-This is a documentation and scope gate. It does not qualify an updater,
-network entitlement, new capture mode, sound asset, recognition dependency, or
-v0.2 release. Those require their later approved goals and direct behavioral
-tests.
+This remains a documentation and scope gate. G36 separately qualifies the
+updater and its exact network entitlements. The audit does not qualify a public
+feed, new capture mode, sound asset, recognition dependency, or v0.2 release.
+Those require their later approved goals and direct behavioral tests.
 
 ## G35 Secure-Update Architecture Proof
 
@@ -394,6 +394,79 @@ configuration, no feed/key material, and the unchanged 0.1.1 (2) release.
 This evidence selects an architecture; it does not exercise an update UI,
 network request, production key, public feed, staged production package, or
 installation. Those are G36 gates.
+
+## G36 User-Controlled Secure Updates
+
+G36 links the same pinned Sparkle 2.9.4 framework into CopyLasso while retaining
+the G35 proof. Production code imports Sparkle only in
+`SparkleUpdateService.swift`; candidate policy, replay state, streaming byte
+accounting, consent, deferral, retry, and failure behavior remain directly
+testable without network or AppKit automation. About and Third-Party Notices
+ship the complete local Sparkle acknowledgement and license bundle.
+
+The focused source and built-product audit verifies:
+
+- the fixed feed URL, production public key, signed-feed requirement, zero
+  signature-failure expiration, 24-hour schedule, automatic checks on, and
+  automatic download/install/system profiling/downloader service off;
+- exactly App Sandbox, outbound network client, and the two versioned Sparkle
+  installer-service names, with no inbound server or unrelated capability;
+- no second application network stack, custom headers, cookies, query data, or
+  external release-note fetch;
+- exact GitHub enclosure URL, canonical monotonic build, authenticated
+  high-water replay protection, nonempty inline plain-text notes, 256 MiB cap,
+  and exact expected/received length before extraction;
+- the Universal 2 Sparkle framework, license resource, Info.plist settings, and
+  nested-code presence in both Debug and Release products; and
+- absence of tracked private keys, appcasts, signatures, public feeds, or
+  modified public 0.1.1 release metadata.
+
+Direct unit coverage includes current/no-update seeding, downgrade, replay,
+malformed high-water state, missing/HTML/external notes, invalid feed signature,
+wrong host/path/query/port/user info, empty/oversized/mismatched/overflowing
+downloads, cancel-once behavior, Download/Later, second install confirmation,
+progress, cancellation, termination retry, successful relaunch, and failure
+cleanup. `UpdateControllerTests` proves updater startup failure reports a safe
+message while leaving capture outside the update dependency graph.
+
+Canonical CI also runs `test-draft-appcast.sh` exactly once. It creates an
+ephemeral key and signed candidate DMG, proves the protected generator fails
+closed without its secret or when a different valid seed does not match the
+public key in the qualified application, verifies feed and enclosure
+signatures, rejects replacement and mutation, and removes all fixture
+material. The protected release workflow receives
+`COPYLASSO_SPARKLE_PRIVATE_KEY` only in a dedicated metadata-finalization step,
+after ordinary tests, archive/export/notarization/packaging, and protected
+credential cleanup pass. It generates the exact signed appcast inside the
+restricted verification bundle. It never uploads a standalone appcast or
+publishes a feed.
+
+Local signed qualification owns the behavior automation cannot faithfully
+drive in ordinary CI: accessible menu and Settings controls, the two native
+consent surfaces, cancel/deferral/offline recovery, actual older-to-newer
+install and relaunch, preference and Launch at Login reconciliation, post-update
+capture, rollback rejection, Developer ID/notarization/Gatekeeper readback, and
+network-denied core capture. A public endpoint, public update artifact, and
+public updater-enabled release remain explicitly outside G36.
+
+`build-private-update-fixture.sh` builds separately identified Apple
+Development-signed `0.1.1 (2)` and `0.2.0 (3)` applications with a loopback-only
+policy compiled under `COPYLASSO_PRIVATE_UPDATE_FIXTURE`. Ordinary Debug,
+Release, and Developer ID builds omit that condition, and the built-bundle audit
+rejects its loopback marker. The fixture signs its local archive and appcast
+with the dedicated Keychain identity, starts with a deliberately mutated feed
+for fail-closed verification, and retains a byte-identical valid feed for the
+subsequent upgrade. It also generates a separately signed `0.1.1 (2)` feed so
+the installed `0.2.0 (3)` fixture can prove downgrade rejection without
+requesting the older archive. It never contacts or populates the public
+endpoint and uses
+the isolated bundle identifier
+`io.github.bennetthilberg.copylasso.g36fixture` so its preferences, TCC row, and
+installer services cannot satisfy production evidence accidentally.
+The same nonshipping compile condition reopens onboarding as a visible
+Computer Use handle after each fixture relaunch; the stored onboarding value is
+not changed, and ordinary Debug, Release, and Developer ID builds omit this
+fixture-only presentation.
 
 The July 13, 2026 signed run completed many functional, permission, and OCR rows
 before exposing a pre-drag sleep/wake failure. G24U subsequently passed exact

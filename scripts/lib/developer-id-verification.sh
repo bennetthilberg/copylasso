@@ -85,6 +85,11 @@ bundle_contains_mach_o() {
 assert_release_entitlements() {
     local entitlements_plist="$1"
     local sandbox_node_type
+    local network_client_node_type
+    local installer_services_node_type
+    local installer_service_count
+    local installer_service_one
+    local installer_service_two
     local xml
     local key_count
 
@@ -114,14 +119,60 @@ assert_release_entitlements() {
             ;;
     esac
 
+    network_client_node_type="$(
+        /usr/bin/printf '%s' "$xml" |
+            /usr/bin/xmllint --nonet --xpath \
+                'name(/plist/dict/key[.="com.apple.security.network.client"]/following-sibling::*[1])' \
+                - 2>/dev/null || true
+    )"
+    if [[ "$network_client_node_type" != "true" ]]; then
+        release_verification_fail \
+            "The signed application must retain the Boolean true outbound network client entitlement."
+        return 1
+    fi
+
+    installer_services_node_type="$(
+        /usr/bin/printf '%s' "$xml" |
+            /usr/bin/xmllint --nonet --xpath \
+                'name(/plist/dict/key[.="com.apple.security.temporary-exception.mach-lookup.global-name"]/following-sibling::*[1])' \
+                - 2>/dev/null || true
+    )"
+    installer_service_count="$(
+        /usr/bin/printf '%s' "$xml" |
+            /usr/bin/xmllint --nonet --xpath \
+                'count(/plist/dict/key[.="com.apple.security.temporary-exception.mach-lookup.global-name"]/following-sibling::array[1]/string)' \
+                - 2>/dev/null || true
+    )"
+    installer_service_one="$(
+        /usr/bin/printf '%s' "$xml" |
+            /usr/bin/xmllint --nonet --xpath \
+                'string(/plist/dict/key[.="com.apple.security.temporary-exception.mach-lookup.global-name"]/following-sibling::array[1]/string[1])' \
+                - 2>/dev/null || true
+    )"
+    installer_service_two="$(
+        /usr/bin/printf '%s' "$xml" |
+            /usr/bin/xmllint --nonet --xpath \
+                'string(/plist/dict/key[.="com.apple.security.temporary-exception.mach-lookup.global-name"]/following-sibling::array[1]/string[2])' \
+                - 2>/dev/null || true
+    )"
+    if [[ "$installer_services_node_type" != "array" ||
+        "$installer_service_count" != "2" ||
+        "$installer_service_one" != "io.github.bennetthilberg.copylasso-spks" ||
+        "$installer_service_two" != "io.github.bennetthilberg.copylasso-spki" ]]; then
+        release_verification_fail \
+            "Release entitlements must retain exactly the reviewed Sparkle installer services."
+        return 1
+    fi
+
     if /usr/libexec/PlistBuddy -c 'Print :com.apple.security.get-task-allow' "$entitlements_plist" >/dev/null 2>&1; then
         release_verification_fail "The Release application must not contain get-task-allow."
         return 1
     fi
 
     key_count="$(/usr/bin/grep -c '<key>' <<< "$xml" || true)"
-    if [[ "$key_count" != "1" ]]; then
-        release_verification_fail "Release entitlements must contain only the reviewed App Sandbox capability."
+    if [[ "$key_count" != "3" ]]; then
+        release_verification_fail \
+            "Release entitlements must contain only App Sandbox, outbound network client, and the reviewed Sparkle installer services."
         return 1
     fi
 }

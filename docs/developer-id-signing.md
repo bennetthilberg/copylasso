@@ -82,7 +82,10 @@ xcodebuild -exportArchive \
 ~~~
 
 Configuration/DeveloperIDExportOptions.plist selects Developer ID distribution while omitting the
-team identifier and all credentials. Before submission, verify the exported application:
+team identifier and all credentials. Before submission, verify the exported application. The
+verifier requires the exact shipping entitlement set: Boolean App Sandbox, Boolean outbound
+network client, and only the two production-bundle Sparkle installer-service names. It rejects
+`get-task-allow`, the downloader service, and every unrelated capability:
 
 ~~~sh
 ./scripts/verify-developer-id-app.sh --pre-notarization \

@@ -8,6 +8,7 @@ readonly source_verifier="$repository_root/scripts/verify-release-workflow-sourc
 readonly credential_preparer="$repository_root/scripts/prepare-release-keychain.sh"
 readonly credential_cleanup="$repository_root/scripts/cleanup-release-keychain.sh"
 readonly candidate_builder="$repository_root/scripts/build-release-candidate.sh"
+readonly draft_appcast_generator="$repository_root/scripts/generate-draft-appcast.sh"
 readonly draft_creator="$repository_root/scripts/create-draft-release.sh"
 readonly verifier_library="$repository_root/scripts/lib/release-workflow-verification.sh"
 readonly workflow="$repository_root/.github/workflows/release.yml"
@@ -26,6 +27,7 @@ for executable in \
     "$credential_preparer" \
     "$credential_cleanup" \
     "$candidate_builder" \
+    "$draft_appcast_generator" \
     "$draft_creator"; do
     [[ -x "$executable" ]] || \
         fail "Protected-release executable is missing: $(basename "$executable")"
@@ -139,6 +141,12 @@ done
 assert_release_candidate_tag "v0.1.1-rc.1"
 expect_failure "release-candidate tag name is invalid" \
     assert_release_candidate_tag "v0.1.1-g32.12345"
+assert_authenticated_draft_tag "v0.1.1-rc.42"
+assert_authenticated_draft_tag "v0.1.1-g32.12345"
+expect_failure "authenticated update draft tag is invalid" \
+    assert_authenticated_draft_tag "v0.1.1"
+expect_failure "authenticated update draft tag is invalid" \
+    assert_authenticated_draft_tag "v0.1.1-rc.01"
 
 readonly valid_draft="$temporary_directory/valid-draft.json"
 printf '%s\n' "{

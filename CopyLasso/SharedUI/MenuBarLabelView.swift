@@ -22,11 +22,16 @@ struct MenuBarLabelView: View {
     .accessibilityHint(AccessibilityAuditCopy.menuBarHelp)
     .task {
       await Task.yield()
-      guard settingsController.takeInitialOnboardingPresentationRequest() else {
-        return
-      }
-      NSApp.activate(ignoringOtherApps: true)
-      openWindow(id: "onboarding")
+      #if COPYLASSO_PRIVATE_UPDATE_FIXTURE
+        NSApp.activate(ignoringOtherApps: true)
+        openWindow(id: "onboarding")
+      #else
+        guard settingsController.takeInitialOnboardingPresentationRequest() else {
+          return
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        openWindow(id: "onboarding")
+      #endif
     }
   }
 }

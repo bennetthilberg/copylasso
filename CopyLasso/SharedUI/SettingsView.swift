@@ -6,6 +6,7 @@ struct SettingsView: View {
   @Environment(\.openWindow) private var openWindow
 
   let settingsController: SettingsController
+  let updateController: UpdateController
   let metadata: AboutMetadata
 
   #if DEBUG
@@ -82,6 +83,40 @@ struct SettingsView: View {
         }
       }
 
+      Section("Updates") {
+        Toggle(
+          "Automatically Check for Updates",
+          isOn: Binding(
+            get: { updateController.automaticallyChecksForUpdates },
+            set: { updateController.setAutomaticallyChecksForUpdates($0) }
+          )
+        )
+        .accessibilityHint(AccessibilityAuditCopy.automaticUpdatesHelp)
+        .accessibilityIdentifier("copylasso.settings.automatic-updates")
+
+        Button("Check for Updates…") {
+          updateController.checkForUpdates()
+        }
+        .disabled(!updateController.canCheckForUpdates)
+        .accessibilityHint(AccessibilityAuditCopy.checkForUpdatesHelp)
+        .accessibilityIdentifier("copylasso.settings.check-for-updates")
+
+        Text(
+          "Checks retrieve only signed update information. CopyLasso never sends screen, OCR, or clipboard content."
+        )
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .fixedSize(horizontal: false, vertical: true)
+
+        if let availabilityMessage = updateController.availabilityMessage {
+          Text(availabilityMessage)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityIdentifier("copylasso.settings.update-unavailable")
+        }
+      }
+
       Section("Privacy") {
         Text(
           "Screen captures and recognized text stay local, remain in memory only as long as needed, "
@@ -111,7 +146,7 @@ struct SettingsView: View {
     }
     .formStyle(.grouped)
     .padding(16)
-    .frame(minWidth: 520, idealWidth: 520, minHeight: 560, idealHeight: 560)
+    .frame(minWidth: 520, idealWidth: 520, minHeight: 680, idealHeight: 680)
     .accessibilityIdentifier("copylasso.settings.form")
     .onAppear {
       settingsController.refreshLaunchAtLoginStatus()

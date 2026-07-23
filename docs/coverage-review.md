@@ -8,15 +8,17 @@ The application target is measured from the nonparallel, timeout-bounded `CopyLa
 
 | Metric | G22 baseline | Current reviewed baseline |
 | --- | ---: | ---: |
-| Unit tests | 187 | 214 |
-| Stable application aggregate | 2,382 / 3,396 (70.14%) | 2,594 / 3,592 (72.21%) |
-| Models, CaptureWorkflow, and Settings | 922 / 1,006 (91.65%) | 986 / 1,030 (95.72%) |
+| Unit tests | 187 | 285 |
+| Stable application aggregate | 2,382 / 3,396 (70.14%) | 3,543 / 5,054 (70.10%) |
+| Models, CaptureWorkflow, and Settings | 922 / 1,006 (91.65%) | 1,229 / 1,278 (96.16%) |
 | `SettingsController.swift` | 144 / 168 (85.71%) | 167 / 172 (97.09%) |
 | `TextAssembler.swift` | 164 / 203 (80.78%) | 186 / 203 (91.62%) |
 
-The stable application aggregate excludes `OnboardingView.swift`, `LaunchAtLoginStatusView.swift`, and `MenuBarLabelView.swift`. Those app-hosted SwiftUI builders execute incidentally only while the Debug preference domain says onboarding is incomplete; signed QA legitimately changes that retained state. Their layout, focus, accessibility, and first-run behavior remain owned by the signed UI and manual checks below. The 70% floor is unchanged, and every other application file remains in the aggregate.
+The stable application aggregate excludes `OnboardingView.swift`, `LaunchAtLoginStatusView.swift`, `MenuBarLabelView.swift`, and G36's `SecureUpdatePresentation.swift`. The first three app-hosted SwiftUI builders execute incidentally only while the Debug preference domain says onboarding is incomplete; signed QA legitimately changes that retained state. The G36 file is the concrete AppKit/SwiftUI presentation adapter: executing its modal alerts and floating panel in a unit host would test neither the real application focus handoff nor keyboard and VoiceOver operation. Its neutral offer formatting and complete presentation protocol live in the included, directly tested `SecureUpdatePresentationModel.swift`; consent, deferral, progress, byte bounds, retry, dismissal, and lifecycle behavior live in the included, directly tested `SecureUpdateSession.swift`. Concrete layout, focus, accessibility, cancellation, and relaunch presentation remain owned by signed UI/private-update qualification. The 70% floor is unchanged, and every other application file remains in the aggregate.
 
 The G23 tests exercise idempotent Launch at Login state, approval/unavailable states, failed postcondition readback, every disable failure, explicit continuation without login, deterministic positioned and unpositioned text-order ties, NaN confidence, and signed-zero geometry. Review propagation adds direct configuration, permission-retry, display-size, fractional-edge, Debug runtime-option, cursor activation/restoration, and appearance regressions. G24R adds ten-cycle visible-feedback replacement, stale-timer isolation, failure-feedback presentation, and lifecycle dismissal coverage. The postcondition test found and fixed one real state-reporting defect: an external re-enable after an idempotent disable now reports a recoverable disable failure instead of returning false with no issue.
+
+G36 adds direct policy, streaming-byte, persistent high-water/deferral, updater-controller, session-consent, and presentation-model coverage. The first full pipeline reported 3,488/5,274 (66.13%) because the concrete 281-line modal AppKit/SwiftUI presenter was being counted even though it can execute meaningfully only in the signed application. Moving its neutral three-line model/protocol contract into a directly tested file and excluding only the concrete presenter produced 3,490/4,993 (69.89%). That still failed the unchanged 70% floor. Missing startup-failure and Debug-service tests then raised real executed behavior to 3,501/4,993 (70.11%) and `UpdateService.swift` from 34/45 to 45/45. Direct downloaded/installing resume-state regressions bring the final G36 checkpoint to 3,543/5,054 (70.10%) and `SecureUpdateSession.swift` to 194/241 (80.49%); no floor was lowered.
 
 ## Enforced Gate
 
@@ -25,7 +27,7 @@ The G23 tests exercise idempotent Launch at Login state, approval/unavailable st
 - the stable application aggregate falls below 70%;
 - the platform-neutral Models, CaptureWorkflow, and Settings aggregate falls below 90%;
 - a required core file disappears from coverage; or
-- a reviewed per-file floor regresses. The strictest floors retain 100% for coordinator and persistent-state primitives, 98% for selection geometry, 95% for clipboard output, 92% for Settings, and 90% for capture orchestration, permission decisions, OCR, and text assembly.
+- a reviewed per-file floor regresses. The strictest floors retain 100% for coordinator, persistent-state, and update-presentation primitives; 98% for selection geometry; 95% for clipboard output and secure candidate policy; 92% for Settings; 90% for capture orchestration, permission decisions, OCR, and text assembly; and 75% for the platform-facing update controller/session seams.
 
 These are regression floors below the reviewed values, not targets to game. A change that adds meaningful behavior must add behavioral tests even if the aggregate remains above its floor. Raising a floor follows evidence; lowering one requires an explicit roadmap amendment and written branch review.
 
@@ -34,6 +36,7 @@ These are regression floors below the reviewed values, not targets to game. A ch
 | Region | Why it remains uncovered in the unit result | Required evidence |
 | --- | --- | --- |
 | SwiftUI `SettingsView`, `AboutView`, onboarding, status, and menu builders | Instantiating declarative builder branches without a window does not prove layout, focus, keyboard order, or accessibility. The aggregate explicitly excludes the three retained-state-dependent onboarding builders so a developer completing setup cannot change the gate without changing code. | Signed focused XCUITests plus the G21/G24 manual accessibility matrix. UI tests have no unconditional retry and are not reported as hosted passes when the runner is unsigned or shielded by `loginwindow`. |
+| AppKit/SwiftUI secure-update presentation | The pure offer model, presentation contract, full session state machine, and every consent/failure decision are directly tested. Running `NSAlert.runModal`, activating the dockless process, or closing a real `NSPanel` from the unit host would not reproduce the application/WindowServer boundary. | G36 signed XCUITests and private older-to-newer update qualification cover keyboard order, VoiceOver labels, Download/Later, Cancel, final Install and Relaunch consent, retry, focus, and dismissal. |
 | `CopyLassoApp` entrypoint and real application termination | A unit test must not start a second app lifecycle or terminate its own process. Root wiring is exercised through injected command/menu tests. | Signed cold-launch, singleton-window, menu, login-item, and Quit checks. |
 | Debug-only permission/selection/capture UI doubles | They exist solely to make signed XCUITests deterministic and are compiled out of Release. | Their controlled UI tests and Release binary/source guards. |
 | AppKit selection panel/event-monitor paths | Pure geometry, clamping, session cancellation, cleanup ordering, and panel-controller seams are directly tested. WindowServer focus, Spaces, display change, cursor, and real mouse delivery are not faithfully reproducible in unit tests. | G13/G19 signed overlay matrices and G24 physical QA. |

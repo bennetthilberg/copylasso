@@ -1,7 +1,8 @@
 # Secure Update Threat Model
 
-This document defines the G35 trust boundary selected for CopyLasso 0.2. It is a
-design and local proof, not evidence that an updater or public feed ships today.
+This document defines the G35 trust boundary and G36 implementation for
+CopyLasso 0.2. G36 ships the updater in source and private qualification builds;
+it does not create a public feed or updater-enabled release.
 
 ## Assets and Trust Boundaries
 
@@ -25,7 +26,7 @@ fail closed before replacing any installed bytes.
 | Replay or downgrade | Compare numeric `CFBundleVersion` with installed and highest authenticated build; preserve the authenticated high-water mark | Older authenticated release is rejected; local preference deletion can remove the extra high-water defense, but never the installed-build defense |
 | Version or archive metadata mismatch | Feed build/display version must equal verified archive metadata | Candidate rejected before install |
 | Oversized, empty, truncated, or length-mismatched archive | Signed declared length, actual-length equality, 256 MiB cap, and the real `SPUUserDriver` download-cancellation closure invoked on the first expected-length or received-byte callback that crosses a boundary | Candidate rejected and staging removed before extraction or installation |
-| Key theft | Protected release environment, nonsynchronized Keychain use, encrypted offline recovery copy, least-access workflow, and documented revocation | A stolen active key can authorize malicious feeds and archives; Developer ID/notarization and rapid revocation are independent defenses |
+| Key theft or wrong protected seed | Protected release environment, nonsynchronized Keychain use, encrypted offline recovery copy, one post-build signing step, byte-for-byte comparison of the seed-derived public key with the exported app's `SUPublicEDKey`, and documented revocation | A stolen active key can authorize malicious feeds and archives; a wrong seed stops metadata creation; Developer ID/notarization and rapid revocation are independent defenses |
 | Key loss | Encrypted recovery copy and tested rotation procedure | Release publication pauses; installed apps continue operating |
 | Key rotation or revocation error | One active transition at a time, appcast signed by the trusted old key, release with replacement public key, explicit readback and rollback plan | 0.1.x and any build lacking the replacement key require manual bootstrap if trust continuity is broken |
 | Release workflow compromise | Protected GitHub environment, immutable tags, exact-head CI, separate Developer ID and Ed25519 secrets, artifact readback | Publication stops on mismatch; never replace bytes under an existing tag |
@@ -45,7 +46,10 @@ transmit screenshots, recognized text, clipboard text, or HUD previews.
 
 The app does not accept arbitrary feed overrides, initial enclosure domains, or
 release-channel identifiers. Redirect destinations remain untrusted transport;
-G35 claims no redirect guard that Sparkle's public API cannot enforce and relies
-on the independently verified enclosure signature before installation. G35
-contains no production public key, private key, public feed, published update
-artifact, or shipping network entitlement.
+CopyLasso claims no redirect guard that Sparkle's public API cannot enforce and
+relies on the independently verified enclosure signature before installation.
+G36 compiles only the production public key and exact fixed endpoint. Private
+key material remains outside the repository and build products. The protected
+workflow creates authenticated metadata only inside its restricted verification
+bundle; no public feed, published update artifact, or public update release is
+created by G36.

@@ -66,7 +66,7 @@ struct AboutView: View {
     .padding(24)
     .frame(minWidth: 420, idealWidth: 420)
     .sheet(isPresented: $isShowingAcknowledgements) {
-      AcknowledgementsView(acknowledgement: metadata.acknowledgement)
+      AcknowledgementsView(acknowledgements: metadata.acknowledgements)
     }
   }
 }
@@ -87,7 +87,7 @@ private struct DeferredApplicationIconView: NSViewRepresentable {
 private struct AcknowledgementsView: View {
   @Environment(\.dismiss) private var dismiss
 
-  let acknowledgement: AboutAcknowledgement
+  let acknowledgements: [AboutAcknowledgement]
 
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
@@ -95,19 +95,25 @@ private struct AcknowledgementsView: View {
         .font(.title2.weight(.semibold))
         .accessibilityIdentifier("copylasso.about.acknowledgements.title")
 
-      Text(acknowledgement.title)
-        .font(.headline)
-
-      Text("\(acknowledgement.author) · \(acknowledgement.license)")
-        .foregroundStyle(.secondary)
-
       ScrollView {
-        Text(acknowledgement.notice)
-          .font(.system(.caption, design: .monospaced))
-          .textSelection(.enabled)
-          .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(alignment: .leading, spacing: 16) {
+          ForEach(Array(acknowledgements.enumerated()), id: \.element.title) { index, item in
+            Text(item.title)
+              .font(.headline)
+              .accessibilityIdentifier("copylasso.about.acknowledgement.\(index)")
+            Text("\(item.author) · \(item.license)")
+              .foregroundStyle(.secondary)
+            Text(item.notice)
+              .font(.system(.caption, design: .monospaced))
+              .textSelection(.enabled)
+              .frame(maxWidth: .infinity, alignment: .leading)
+              .accessibilityLabel("\(item.title) license notice")
+            if index < acknowledgements.count - 1 {
+              Divider()
+            }
+          }
+        }
       }
-      .accessibilityLabel("\(acknowledgement.title) license notice")
 
       HStack {
         Spacer()

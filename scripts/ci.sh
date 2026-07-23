@@ -109,7 +109,7 @@ if [[ ! -f "$package_resolved" ]] || \
     ! /usr/bin/grep -q '"location" : "https://github.com/sparkle-project/Sparkle"' "$package_resolved" || \
     ! /usr/bin/grep -q '"revision" : "b6496a74a087257ef5e6da1c5b29a447a60f5bd7"' "$package_resolved" || \
     ! /usr/bin/grep -q '"version" : "2.9.4"' "$package_resolved"; then
-    echo "KeyboardShortcuts and test-only Sparkle must remain exactly resolved." >&2
+    echo "KeyboardShortcuts and shipping Sparkle must remain exactly resolved." >&2
     exit 1
 fi
 
@@ -370,6 +370,8 @@ if [[ -z "$sparkle_sign_update" ]]; then
 fi
 COPYLASSO_SPARKLE_TOOLS_DIR="$(/usr/bin/dirname "$sparkle_sign_update")" \
     ./scripts/test-secure-update-signatures.sh
+COPYLASSO_SPARKLE_TOOLS_DIR="$(/usr/bin/dirname "$sparkle_sign_update")" \
+    ./scripts/test-draft-appcast.sh
 
 readonly destination="platform=macOS,arch=$requested_architecture"
 common_arguments=(
@@ -385,9 +387,6 @@ echo "Building Debug for $requested_architecture"
 xcodebuild build \
     "${common_arguments[@]}" \
     -configuration Debug
-
-COPYLASSO_SECURE_UPDATE_DEBUG_APP="$derived_data/Build/Products/Debug/CopyLasso.app" \
-    ./scripts/audit-secure-update-architecture.sh
 
 echo "Auditing final brand assets and release documentation"
 COPYLASSO_BRAND_APP="$derived_data/Build/Products/Debug/CopyLasso.app" \
@@ -520,15 +519,9 @@ readonly release_application="$derived_data/Build/Products/Release/CopyLasso.app
         CODE_SIGNING_ALLOWED=NO
 
 readonly release_info_plist="$release_application/Contents/Info.plist"
-if /usr/bin/find "$release_application" -iname '*Sparkle*' -print -quit | \
-    /usr/bin/grep -q .; then
-    echo "The Release application must not contain Sparkle." >&2
-    exit 1
-fi
-if /usr/bin/plutil -p "$release_info_plist" | /usr/bin/grep -Eq '"SU[A-Za-z]+'; then
-    echo "The Release application must not configure an updater." >&2
-    exit 1
-fi
+COPYLASSO_SECURE_UPDATE_DEBUG_APP="$derived_data/Build/Products/Debug/CopyLasso.app" \
+    COPYLASSO_SECURE_UPDATE_RELEASE_APP="$release_application" \
+    ./scripts/audit-secure-update-architecture.sh
 if [[ "$(/usr/bin/plutil -extract LSUIElement raw -o - "$release_info_plist")" != "true" ]]; then
     echo "The Release application is not configured as a dockless agent." >&2
     exit 1
@@ -551,7 +544,7 @@ fi
 
 linked_non_system="$({ /usr/bin/otool -L "$release_executable" | \
     /usr/bin/awk '/^\t/{print $1}' | \
-    /usr/bin/grep -vE '^(/System/Library/|/usr/lib/)' || true; })"
+    /usr/bin/grep -vE '^(/System/Library/|/usr/lib/|@rpath/Sparkle\.framework/)' || true; })"
 if [[ -n "$linked_non_system" ]]; then
     echo "Release links an unexpected non-system dynamic library." >&2
     exit 1
@@ -585,6 +578,10 @@ if [[ ! -f "$debug_module" ]] || \
     ! /usr/bin/grep -a -q 'GlobalShortcutController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'ApplicationLifecycleController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'SystemCaptureLifecycleLogger' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'SecureUpdatePolicy' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'SecureUpdateSessionCoordinator' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'SparkleUpdateService' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'UpdateController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'AccessibilityAppearance' "$debug_module" || \
     ! /usr/bin/grep -a -q 'SystemAccessibilityAppearanceProvider' "$debug_module"; then
     echo "Debug is missing the production-neutral workflow architecture." >&2
@@ -612,6 +609,10 @@ for release_architecture in arm64 x86_64; do
         ! /usr/bin/grep -a -q 'GlobalShortcutController' "$release_module" || \
         ! /usr/bin/grep -a -q 'ApplicationLifecycleController' "$release_module" || \
         ! /usr/bin/grep -a -q 'SystemCaptureLifecycleLogger' "$release_module" || \
+        ! /usr/bin/grep -a -q 'SecureUpdatePolicy' "$release_module" || \
+        ! /usr/bin/grep -a -q 'SecureUpdateSessionCoordinator' "$release_module" || \
+        ! /usr/bin/grep -a -q 'SparkleUpdateService' "$release_module" || \
+        ! /usr/bin/grep -a -q 'UpdateController' "$release_module" || \
         ! /usr/bin/grep -a -q 'AccessibilityAppearance' "$release_module" || \
         ! /usr/bin/grep -a -q 'SystemAccessibilityAppearanceProvider' "$release_module"; then
         echo "Release is missing the production-neutral workflow architecture for $release_architecture." >&2

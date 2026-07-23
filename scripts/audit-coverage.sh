@@ -58,6 +58,7 @@ app_metrics="$(/usr/bin/jq -r '
             .name != "OnboardingView.swift"
             and .name != "LaunchAtLoginStatusView.swift"
             and .name != "MenuBarLabelView.swift"
+            and .name != "SecureUpdatePresentation.swift"
         )
     ]
     | [(map(.coveredLines) | add), (map(.executableLines) | add)]
@@ -94,9 +95,14 @@ required_file_minimums=(
     "GlobalShortcutStore.swift|10000"
     "ScreenCapturePermissionHistory.swift|10000"
     "ScreenCapturePermissionService.swift|9000"
+    "SecureUpdatePolicy.swift|9500"
+    "SecureUpdatePresentationModel.swift|10000"
+    "SecureUpdateSession.swift|7500"
+    "SecureUpdateStateStore.swift|10000"
     "SelectionGeometry.swift|9800"
     "SettingsController.swift|9200"
     "TextAssembler.swift|9000"
+    "UpdateService.swift|7500"
     "VisionOCRService.swift|9000"
 )
 

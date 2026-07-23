@@ -34,6 +34,7 @@ struct CopyLassoApp: App {
   private let globalShortcutController: GlobalShortcutController
   private let feedbackController: FeedbackPanelController
   private let lifecycleController: ApplicationLifecycleController
+  private let updateController: UpdateController
 
   init() {
     let settingsStore = UserDefaultsSettingsStore()
@@ -42,6 +43,7 @@ struct CopyLassoApp: App {
     let permissionService: any ScreenCapturePermissionService
     let selectionService: any RegionSelectionService
     let screenCaptureService: any ScreenCaptureService
+    let updateService: any UpdateServicing
 
     #if DEBUG
       let arguments = ProcessInfo.processInfo.arguments
@@ -75,12 +77,21 @@ struct CopyLassoApp: App {
         runtimeOptions.usesDebugCaptureService
         ? DebugScreenCaptureService()
         : SystemScreenCaptureService()
+      updateService =
+        runtimeOptions.isUITesting
+        ? DebugUpdateService()
+        : SparkleUpdateService()
     #else
       launchAtLoginService = SystemLaunchAtLoginService()
       permissionService = SystemScreenCapturePermissionService(historyStore: settingsStore)
       selectionService = AppKitRegionSelectionService()
       screenCaptureService = SystemScreenCaptureService()
+      updateService = SparkleUpdateService()
     #endif
+
+    let updateController = UpdateController(service: updateService)
+    self.updateController = updateController
+    updateController.start()
 
     settingsController = SettingsController(
       settingsStore: settingsStore,
@@ -130,7 +141,10 @@ struct CopyLassoApp: App {
 
   var body: some Scene {
     MenuBarExtra {
-      MenuBarMenuView(commandHandler: commandHandler)
+      MenuBarMenuView(
+        commandHandler: commandHandler,
+        updateController: updateController
+      )
     } label: {
       MenuBarLabelView(
         settingsController: settingsController,
@@ -145,10 +159,11 @@ struct CopyLassoApp: App {
     Settings {
       SettingsView(
         settingsController: settingsController,
+        updateController: updateController,
         metadata: AboutMetadata(bundle: .main)
       )
     }
-    .defaultSize(width: 520, height: 560)
+    .defaultSize(width: 520, height: 680)
 
     Window("Welcome to CopyLasso", id: "onboarding") {
       OnboardingView(settingsController: settingsController)

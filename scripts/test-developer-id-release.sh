@@ -114,6 +114,13 @@ cat > "$valid_entitlements" <<'PLIST'
 <dict>
     <key>com.apple.security.app-sandbox</key>
     <true/>
+    <key>com.apple.security.network.client</key>
+    <true/>
+    <key>com.apple.security.temporary-exception.mach-lookup.global-name</key>
+    <array>
+        <string>io.github.bennetthilberg.copylasso-spks</string>
+        <string>io.github.bennetthilberg.copylasso-spki</string>
+    </array>
 </dict>
 </plist>
 PLIST
@@ -133,9 +140,38 @@ cp "$valid_entitlements" "$temporary_directory/debug-entitlements.plist"
 expect_failure "get-task-allow" assert_release_entitlements \
     "$temporary_directory/debug-entitlements.plist"
 
-cp "$valid_entitlements" "$temporary_directory/network-entitlements.plist"
-/usr/libexec/PlistBuddy -c 'Add :com.apple.security.network.client bool true' \
-    "$temporary_directory/network-entitlements.plist"
+cp "$valid_entitlements" "$temporary_directory/missing-network-client.plist"
+/usr/libexec/PlistBuddy -c 'Delete :com.apple.security.network.client' \
+    "$temporary_directory/missing-network-client.plist"
+expect_failure "outbound network client" assert_release_entitlements \
+    "$temporary_directory/missing-network-client.plist"
+
+cp "$valid_entitlements" "$temporary_directory/string-network-client.plist"
+/usr/libexec/PlistBuddy -c 'Delete :com.apple.security.network.client' \
+    -c 'Add :com.apple.security.network.client string true' \
+    "$temporary_directory/string-network-client.plist"
+expect_failure "Boolean true outbound network client" assert_release_entitlements \
+    "$temporary_directory/string-network-client.plist"
+
+cp "$valid_entitlements" "$temporary_directory/wrong-installer-service.plist"
+/usr/libexec/PlistBuddy \
+    -c 'Set :com.apple.security.temporary-exception.mach-lookup.global-name:1 io.github.bennetthilberg.copylasso-spkd' \
+    "$temporary_directory/wrong-installer-service.plist"
+expect_failure "Sparkle installer services" assert_release_entitlements \
+    "$temporary_directory/wrong-installer-service.plist"
+
+cp "$valid_entitlements" "$temporary_directory/missing-installer-service.plist"
+/usr/libexec/PlistBuddy \
+    -c 'Delete :com.apple.security.temporary-exception.mach-lookup.global-name:1' \
+    "$temporary_directory/missing-installer-service.plist"
+expect_failure "Sparkle installer services" assert_release_entitlements \
+    "$temporary_directory/missing-installer-service.plist"
+
+cp "$valid_entitlements" "$temporary_directory/extra-entitlements.plist"
+/usr/libexec/PlistBuddy -c 'Add :com.apple.security.network.server bool true' \
+    "$temporary_directory/extra-entitlements.plist"
+expect_failure "only App Sandbox, outbound network client, and the reviewed Sparkle installer services" \
+    assert_release_entitlements "$temporary_directory/extra-entitlements.plist"
 
 cp "$valid_entitlements" "$temporary_directory/missing-sandbox.plist"
 /usr/libexec/PlistBuddy -c 'Delete :com.apple.security.app-sandbox' "$temporary_directory/missing-sandbox.plist"
@@ -147,8 +183,6 @@ expect_failure "must retain App Sandbox" assert_release_entitlements "$temporary
 
 echo 'not a property list' > "$temporary_directory/malformed-entitlements.plist"
 expect_failure "not a valid property list" assert_release_entitlements "$temporary_directory/malformed-entitlements.plist"
-expect_failure "only the reviewed App Sandbox capability" assert_release_entitlements \
-    "$temporary_directory/network-entitlements.plist"
 
 readonly valid_signature="$temporary_directory/valid-signature.txt"
 cat > "$valid_signature" <<'TEXT'

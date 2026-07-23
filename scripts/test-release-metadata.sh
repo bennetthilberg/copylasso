@@ -31,6 +31,8 @@ source "$metadata_library"
     fail "The maintenance release dSYM name is incorrect."
 [[ "$COPYLASSO_RELEASE_VERIFICATION" == "CopyLasso-0.1.1-verification.zip" ]] || \
     fail "The maintenance release verification-bundle name is incorrect."
+[[ "$COPYLASSO_RELEASE_APPCAST" == "CopyLasso-0.1.1-appcast.xml" ]] || \
+    fail "The authenticated draft appcast name is incorrect."
 
 /usr/bin/grep -Fq '#include "ReleaseMetadata.xcconfig"' \
     "$repository_root/Configuration/Shared.xcconfig" || \

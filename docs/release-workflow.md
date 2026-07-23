@@ -25,7 +25,7 @@ Configure the public repository's `release` environment with:
 - protected branches only;
 - the maintainer as required reviewer;
 - self-review allowed while the project has only one release maintainer; and
-- the six environment secrets listed below.
+- the seven environment secrets listed below.
 
 The environment must not expose these values as repository-level secrets:
 
@@ -37,6 +37,7 @@ The environment must not expose these values as repository-level secrets:
 | `COPYLASSO_NOTARY_KEY_ID` | Dedicated Team API key identifier |
 | `COPYLASSO_NOTARY_ISSUER_ID` | App Store Connect issuer identifier |
 | `COPYLASSO_EXPECTED_TEAM_ID` | Approved Developer ID team used for independent verification |
+| `COPYLASSO_SPARKLE_PRIVATE_KEY` | Base64-encoded 32-byte Sparkle Ed25519 seed used only for protected appcast and enclosure signing |
 
 Secret names are public configuration; their values are not release evidence. Never enter a value
 in a workflow input, command argument, tracked file, issue, pull request, or release note.
@@ -52,6 +53,16 @@ Create a dedicated **Team API key** with the **Developer** role for GitHub Actio
 from the local `copylasso-notary` profile established in G26. Store its private-key contents, key
 identifier, and issuer identifier only in the protected environment, then remove the downloaded key
 file. A personal Apple ID password or app-specific password is not used by this workflow.
+
+Generate the Sparkle Ed25519 identity once with the pinned Sparkle 2.9.4 tooling. Keep its private
+seed in the maintainer's nonsynchronized login Keychain and an encrypted offline recovery copy.
+Supply the raw 32-byte Base64 value to `COPYLASSO_SPARKLE_PRIVATE_KEY` only as a protected
+environment secret. The protected workflow injects it into one dedicated post-build metadata step,
+which removes it from the process environment immediately and passes it to Sparkle only over
+standard input. The archive, export, notarization, packaging, and credential-cleanup steps never
+receive it. The application and repository contain only the public key. Never write the private
+value into a workflow input, environment readback, shell argument, log, appcast, issue, or tracked
+file.
 
 The workflow decodes both protected blobs only under `RUNNER_TEMP`, imports the identity into a
 randomly protected temporary Keychain, and creates a `copylasso-notary` profile in that Keychain.
@@ -155,12 +166,23 @@ The draft prerelease contains exactly:
 - `CopyLasso-0.1.1.dSYM.zip`; and
 - `CopyLasso-0.1.1-verification.zip`.
 
-The verification bundle contains the exact stapled source application and the portable records
+The verification bundle contains the exact stapled source application, the authenticated
+`appcast.xml` generated for that exact candidate, and the portable records
 needed to reconstruct the release-run directory after downloading the other three assets. Download
 all four assets into an ignored, commit-addressed directory, expand the verification bundle, place
 the DMG, checksum, and dSYM beside its `run` evidence, and invoke `verify-release-package.sh` with
 the bundled `payload/<commit>/export/CopyLasso.app`. The supplied payload and packaging commits are
 both the protected workflow commit.
+
+The appcast inside the restricted verification bundle points to the exact private rehearsal or
+release-candidate draft tag and is evidence, not a publication asset. The
+protected job requires exactly one candidate entry, inline plain-text release notes, the canonical
+version/build, exact immutable GitHub enclosure URL and byte length, and valid feed plus enclosure
+Ed25519 signatures. It verifies both signatures with the public key compiled into CopyLasso before
+draft creation: the signing seed's derived public key must byte-match `SUPublicEDKey` in the exact
+exported application before either signature is accepted. A wrong but otherwise valid seed fails
+closed without creating metadata. The standalone appcast is never uploaded among the four draft assets
+and no file is published to `updates.copylasso.com` in G36.
 
 Read back the draft through GitHub after upload. It must remain `draft: true` and `prerelease: true`,
 target the exact commit, and contain exactly the four assets above. Recompute the public checksum
@@ -188,6 +210,10 @@ notarization, stapling, package verification, or credential cleanup prevent draf
   export, then remove the export. Do not change notarization credentials unnecessarily.
 - **Notary key rotation:** revoke only the dedicated CI Team API key, create its replacement with the
   Developer role, replace its three environment secrets, and remove the downloaded key.
+- **Sparkle key rotation:** first ship a reviewed release containing the replacement public key
+  through the still-trusted current update channel. Confirm adoption before replacing
+  `COPYLASSO_SPARKLE_PRIVATE_KEY`. A suspected compromise stops update publication and requires a
+  separate incident plan; never silently replace feed or release bytes.
 - **Suspected exposure:** cancel active release runs, revoke the affected Apple credential, delete
   the protected environment value, inspect workflow history, and create a replacement before
   another dispatch.

@@ -12,14 +12,21 @@ if [[ ! -f "$entitlements" ]]; then
     exit 1
 fi
 
-entitlement_count="$(/usr/bin/plutil -p "$entitlements" | /usr/bin/grep -c '=>')"
-if [[ "$entitlement_count" != 1 ]] || \
-    [[ "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.security.app-sandbox' \
-        "$entitlements")" != "true" ]] || \
-    /usr/bin/grep -qE \
-        'com\.apple\.security\.(network|device|files|temporary-exception|application-groups)' \
-        "$entitlements"; then
-    echo "The product entitlement must contain only App Sandbox." >&2
+entitlements_json="$(/usr/bin/plutil -convert json -o - "$entitlements")"
+if ! /usr/bin/jq -e '
+    (keys | sort) == [
+        "com.apple.security.app-sandbox",
+        "com.apple.security.network.client",
+        "com.apple.security.temporary-exception.mach-lookup.global-name"
+    ] and
+    .["com.apple.security.app-sandbox"] == true and
+    .["com.apple.security.network.client"] == true and
+    .["com.apple.security.temporary-exception.mach-lookup.global-name"] == [
+        "$(PRODUCT_BUNDLE_IDENTIFIER)-spks",
+        "$(PRODUCT_BUNDLE_IDENTIFIER)-spki"
+    ]
+    ' <<< "$entitlements_json" >/dev/null; then
+    echo "The product must retain only App Sandbox, outbound updates, and Sparkle installer services." >&2
     exit 1
 fi
 
@@ -36,8 +43,15 @@ if [[ "$(/usr/bin/grep -c 'ENABLE_HARDENED_RUNTIME = YES;' \
 fi
 
 readonly prohibited_network_pattern='URLSession|NSURLSession|URLRequest|NSURLRequest|import[[:space:]]+Network|NWConnection|NWListener|CFNetwork|CFSocket|GCDAsyncSocket|WebKit|WKWebView|socket\('
-if /usr/bin/grep -R -nE "$prohibited_network_pattern" CopyLasso; then
-    echo "The application target must not contain a network-client implementation." >&2
+if /usr/bin/grep -R -nE --include='*.swift' \
+    --exclude='SparkleUpdateService.swift' "$prohibited_network_pattern" CopyLasso; then
+    echo "Application networking must remain confined to the reviewed Sparkle adapter." >&2
+    exit 1
+fi
+if /usr/bin/grep -nE \
+    'URLSession|NSURLSession|import[[:space:]]+Network|NWConnection|NWListener|httpAdditionalHeaders|queryItems' \
+    CopyLasso/Services/SparkleUpdateService.swift; then
+    echo "The Sparkle adapter must not add a second network stack or request metadata." >&2
     exit 1
 fi
 
@@ -82,11 +96,12 @@ if [[ "$(/usr/bin/grep -c '"identity"' "$package_resolved")" != 2 ]] || \
     ! /usr/bin/grep -q '"version" : "2.9.4"' "$package_resolved" || \
     ! /usr/bin/grep -q '"revision" : "b6496a74a087257ef5e6da1c5b29a447a60f5bd7"' "$package_resolved" || \
     ! /usr/bin/grep -q 'KeyboardShortcuts 3.0.1' THIRD_PARTY_NOTICES.md || \
+    ! /usr/bin/grep -q 'Sparkle 2.9.4' THIRD_PARTY_NOTICES.md || \
     ! /usr/bin/grep -q 'License: MIT' THIRD_PARTY_NOTICES.md || \
     ! /usr/bin/grep -q 'Justification:' THIRD_PARTY_NOTICES.md || \
-    ! /usr/bin/grep -Fq 'Sparkle imports must remain confined to the G35 proof test.' \
+    ! /usr/bin/grep -Fq 'Sparkle imports must remain confined to the production adapter and proof test.' \
         scripts/audit-secure-update-architecture.sh; then
-    echo "Shipped and test-only dependencies must be pinned, scoped, licensed, and justified." >&2
+    echo "Shipping dependencies must be pinned, scoped, licensed, and justified." >&2
     exit 1
 fi
 

@@ -11,6 +11,8 @@ readonly source_verifier="$repository_root/scripts/verify-release-workflow-sourc
 readonly credential_preparer="$repository_root/scripts/prepare-release-keychain.sh"
 readonly credential_cleanup="$repository_root/scripts/cleanup-release-keychain.sh"
 readonly candidate_builder="$repository_root/scripts/build-release-candidate.sh"
+readonly draft_appcast_generator="$repository_root/scripts/generate-draft-appcast.sh"
+readonly candidate_finalizer="$repository_root/scripts/finalize-release-candidate.sh"
 readonly ci_export_options="$repository_root/Configuration/DeveloperIDCIExportOptions.plist"
 readonly draft_creator="$repository_root/scripts/create-draft-release.sh"
 readonly verification_library="$repository_root/scripts/lib/release-workflow-verification.sh"
@@ -39,6 +41,8 @@ for executable in \
     "$credential_preparer" \
     "$credential_cleanup" \
     "$candidate_builder" \
+    "$draft_appcast_generator" \
+    "$candidate_finalizer" \
     "$draft_creator" \
     "$focused_tests"; do
     [[ -x "$executable" ]] || \
@@ -122,7 +126,8 @@ for secret in \
     COPYLASSO_NOTARY_KEY_BASE64 \
     COPYLASSO_NOTARY_KEY_ID \
     COPYLASSO_NOTARY_ISSUER_ID \
-    COPYLASSO_EXPECTED_TEAM_ID; do
+    COPYLASSO_EXPECTED_TEAM_ID \
+    COPYLASSO_SPARKLE_PRIVATE_KEY; do
     secret_count="$(/usr/bin/grep -Fc 'secrets.'"$secret" "$workflow")"
     [[ "$secret_count" -ge 1 ]] || \
         fail "The protected release workflow is missing an environment secret: $secret"
@@ -135,18 +140,29 @@ require_text "$workflow" './scripts/verify-release-workflow-source.sh'
 require_text "$workflow" './scripts/prepare-release-keychain.sh'
 require_text "$workflow" './scripts/build-release-candidate.sh'
 require_text "$workflow" './scripts/cleanup-release-keychain.sh'
+require_text "$workflow" './scripts/finalize-release-candidate.sh'
 require_text "$workflow" './scripts/create-draft-release.sh'
 require_text "$workflow" 'if: always()'
 
 build_line="$(/usr/bin/grep -n './scripts/build-release-candidate.sh' "$workflow" | /usr/bin/cut -d: -f1)"
 cleanup_line="$(/usr/bin/grep -n './scripts/cleanup-release-keychain.sh' "$workflow" | /usr/bin/cut -d: -f1)"
+finalize_line="$(/usr/bin/grep -n './scripts/finalize-release-candidate.sh' "$workflow" | \
+    /usr/bin/cut -d: -f1)"
+sparkle_secret_line="$(/usr/bin/grep -n \
+    'COPYLASSO_SPARKLE_PRIVATE_KEY: \${{ secrets.COPYLASSO_SPARKLE_PRIVATE_KEY }}' \
+    "$workflow" | /usr/bin/cut -d: -f1)"
+[[ "$(/usr/bin/grep -Fc \
+    'COPYLASSO_SPARKLE_PRIVATE_KEY: ${{ secrets.COPYLASSO_SPARKLE_PRIVATE_KEY }}' \
+    "$workflow")" == "1" ]] || \
+    fail "The protected Sparkle signing seed must enter exactly one workflow step."
 draft_count="$(/usr/bin/grep -Fc './scripts/create-draft-release.sh' "$workflow")"
 [[ "$draft_count" == "2" ]] || \
     fail "The protected workflow must invoke one draft helper in each validated release mode."
 first_draft_line="$(/usr/bin/grep -n './scripts/create-draft-release.sh' "$workflow" | \
     /usr/bin/head -n 1 | /usr/bin/cut -d: -f1)"
-if ((cleanup_line <= build_line || first_draft_line <= cleanup_line)); then
-    fail "Credential cleanup must follow packaging and precede draft creation."
+if ((cleanup_line <= build_line || finalize_line <= cleanup_line || \
+    sparkle_secret_line >= finalize_line || first_draft_line <= finalize_line)); then
+    fail "Credential cleanup and narrowly scoped appcast signing must precede draft creation."
 fi
 
 for required_prepare_text in \
@@ -172,6 +188,8 @@ done
 
 for required_build_text in \
     'xcodebuild archive' \
+    'xcodebuild -resolvePackageDependencies' \
+    '-clonedSourcePackagesDirPath "$source_packages"' \
     'CODE_SIGN_STYLE=Manual' \
     'CODE_SIGN_IDENTITY=Developer ID Application' \
     'DEVELOPMENT_TEAM="$expected_team_identifier"' \
@@ -184,10 +202,20 @@ for required_build_text in \
     'notarytool submit' \
     'notarytool log' \
     'stapler staple' \
-    'package-release.sh' \
-    'assert_release_workflow_assets'; do
+    'package-release.sh'; do
     require_text "$candidate_builder" "$required_build_text"
 done
+
+for required_finalize_text in \
+    'generate-draft-appcast.sh' \
+    '--application "$application"' \
+    '--download-tag "$download_tag"' \
+    'COPYLASSO_RELEASE_APPCAST' \
+    'The private verification bundle is missing authenticated draft update metadata.' \
+    'assert_release_workflow_assets'; do
+    require_text "$candidate_finalizer" "$required_finalize_text"
+done
+require_text "$workflow" '--download-tag "$COPYLASSO_RELEASE_DRAFT_TAG"'
 
 for required_draft_text in \
     '--candidate-number' \
@@ -237,7 +265,12 @@ for required_documentation_text in \
     'candidate_number' \
     'asset digests' \
     'tag is created last' \
-    'G32'; do
+    'G32' \
+    'COPYLASSO_SPARKLE_PRIVATE_KEY' \
+    'encrypted offline recovery copy' \
+    '`appcast.xml` generated for that exact candidate' \
+    'never uploaded among the four draft assets' \
+    'published to `updates.copylasso.com` in G36.'; do
     require_text "$documentation" "$required_documentation_text"
 done
 require_text "$release_checklist" 'Keep the dSYM and verification bundle restricted to the draft'
@@ -271,6 +304,7 @@ if /usr/bin/grep -Eq 'set -x|TeamIdentifier=[A-Z0-9]{10}|[[:alnum:]._%+-]+@[[:al
     "$credential_preparer" \
     "$credential_cleanup" \
     "$candidate_builder" \
+    "$draft_appcast_generator" \
     "$draft_creator" \
     "$verification_library" \
     "$documentation"; then

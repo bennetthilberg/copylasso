@@ -70,5 +70,8 @@ final class UserDefaultsSettingsStore: AppSettingsStoring {
     userDefaults.removeObject(forKey: Key.hasConfiguredLaunchAtLogin)
     userDefaults.removeObject(forKey: Key.permissionHasRequested)
     userDefaults.removeObject(forKey: Key.permissionHasObservedGranted)
+    userDefaults.removeObject(
+      forKey: UserDefaultsSecureUpdateStateStore.highestAuthenticatedBuildKey)
+    userDefaults.removeObject(forKey: UserDefaultsSecureUpdateStateStore.deferredBuildKey)
   }
 }
