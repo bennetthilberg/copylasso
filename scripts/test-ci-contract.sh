@@ -221,6 +221,11 @@ if ! /usr/bin/grep -Fq \
     "$ci_script"; then
     fail "Canonical CI must audit that its Release application excludes updater configuration."
 fi
+if ! /usr/bin/grep -Fq \
+    'The Release application must not contain Sparkle.' \
+    "$ci_script"; then
+    fail "Canonical CI must audit that its Release bundle excludes embedded Sparkle."
+fi
 
 if ! /usr/bin/grep -Fq \
     'COPYLASSO_BRAND_AUDIT_OUTPUT="$derived_data/brand-release-audit" \' \

@@ -520,6 +520,11 @@ readonly release_application="$derived_data/Build/Products/Release/CopyLasso.app
         CODE_SIGNING_ALLOWED=NO
 
 readonly release_info_plist="$release_application/Contents/Info.plist"
+if /usr/bin/find "$release_application" -iname '*Sparkle*' -print -quit | \
+    /usr/bin/grep -q .; then
+    echo "The Release application must not contain Sparkle." >&2
+    exit 1
+fi
 if /usr/bin/plutil -p "$release_info_plist" | /usr/bin/grep -Eq '"SU[A-Za-z]+'; then
     echo "The Release application must not configure an updater." >&2
     exit 1

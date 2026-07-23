@@ -72,12 +72,18 @@ fi
 if ! /usr/bin/grep -Fq $'\t\t\t\tversion = 2.9.4;' <<< "$sparkle_package_reference"; then
     fail "Sparkle must remain pinned to 2.9.4."
 fi
-require_literal "$package_lock" '"identity" : "sparkle"' \
-    "Package.resolved must include Sparkle."
-require_literal "$package_lock" '"revision" : "b6496a74a087257ef5e6da1c5b29a447a60f5bd7"' \
-    "Package.resolved must lock the reviewed Sparkle revision."
-require_literal "$package_lock" '"version" : "2.9.4"' \
-    "Package.resolved must lock Sparkle 2.9.4."
+sparkle_pins="$(/usr/bin/jq -c \
+    '.pins | map(select(.identity == "sparkle"))' \
+    "$package_lock")" || fail "Package.resolved must be valid JSON."
+if ! /usr/bin/jq -e '
+    length == 1 and
+    .[0].kind == "remoteSourceControl" and
+    .[0].location == "https://github.com/sparkle-project/Sparkle" and
+    .[0].state.revision == "b6496a74a087257ef5e6da1c5b29a447a60f5bd7" and
+    .[0].state.version == "2.9.4"
+    ' <<< "$sparkle_pins" >/dev/null; then
+    fail "Package.resolved must lock the reviewed Sparkle identity, source, revision, and version."
+fi
 
 target_block() {
     local target_name="$1"

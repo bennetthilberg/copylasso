@@ -29,6 +29,10 @@ if ! /usr/bin/grep -Fq 'sparkle_package_reference="$(package_reference_block' \
     "$audit_script"; then
     fail "The audit must scope Sparkle's exact requirement to its package-reference block."
 fi
+if ! /usr/bin/grep -Fq '.pins | map(select(.identity == "sparkle"))' \
+    "$audit_script"; then
+    fail "The audit must scope Sparkle's resolved state to its lockfile pin."
+fi
 
 ambient_marker_output="$({
     COPYLASSO_SECURE_UPDATE_FIXTURE_INNER=1 \
