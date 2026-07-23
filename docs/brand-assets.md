@@ -20,6 +20,12 @@ Icon Composer supplies the platform mask, depth treatment, and distinct Default,
 
 `MenuBarLasso` is an original 18-by-18-point SVG template symbol derived from the same four-gap lasso, lower-right rope tail, and text strokes as the application mark. The asset catalog preserves its vector representation and renders it as a black-and-transparent template so macOS supplies the correct menu-bar color in light, dark, and increased-contrast appearances. Temporary workflow feedback continues to use familiar system status symbols.
 
+## Success Sound
+
+`CopyLasso/Resources/CopyLassoSuccess.wav` is an original project-authored confirmation sound created on July 23, 2026 for G37. It contains no recording, sample, Apple system sound, or third-party audio. The checked-in `scripts/generate-success-sound.swift` source constructs it deterministically from integer-generated triangle partials and a seeded quiet transient, all distributed under CopyLasso's MIT license.
+
+The asset is mono 16-bit PCM WAV at 44.1 kHz, contains 7,938 frames, and lasts 0.18 seconds. Its SHA-256 is `32a817dc86c838b94b3803bf8ea16e469450a51a2fb63444e35d850798cae2a5`. Canonical CI regenerates the file, requires byte equality and the reviewed format, and compares the exact source byte with the Debug and Universal 2 Release resources. Playback uses AppKit's public asynchronous `NSSound` file interface; CopyLasso does not copy or invoke the private macOS screenshot sound.
+
 ## Exact-Name Review
 
 The final pre-artifact exact-name review was repeated on July 14, 2026:

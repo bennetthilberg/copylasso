@@ -14,14 +14,14 @@ struct MenuBarMenuView: View {
     .disabled(!commandHandler.isCaptureEnabled)
     .accessibilityIdentifier("copylasso.menu.capture")
 
+    Divider()
+
     Button("Check for Updates…") {
       updateController.checkForUpdates()
     }
     .disabled(!updateController.canCheckForUpdates)
     .accessibilityHint(AccessibilityAuditCopy.checkForUpdatesHelp)
     .accessibilityIdentifier("copylasso.menu.check-for-updates")
-
-    Divider()
 
     Button("Settings…") {
       commandHandler.openSettings {

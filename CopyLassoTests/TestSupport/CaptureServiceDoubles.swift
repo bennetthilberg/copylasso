@@ -142,6 +142,7 @@ final class SpyTextAssembler: TextAssembling, @unchecked Sendable {
 @MainActor
 final class SpyClipboardService: ClipboardService {
   var error: TestServiceError?
+  var onWrite: ((String) -> Void)?
   private(set) var writtenTexts: [String] = []
 
   func writePlainText(_ text: String) throws {
@@ -149,12 +150,30 @@ final class SpyClipboardService: ClipboardService {
       throw error
     }
     writtenTexts.append(text)
+    onWrite?(text)
+  }
+}
+
+@MainActor
+final class SpySuccessSoundPlayer: SuccessSoundPlaying {
+  var onPlay: (() -> Void)?
+  private(set) var playCallCount = 0
+  private(set) var stopCallCount = 0
+
+  func play() {
+    playCallCount += 1
+    onPlay?()
+  }
+
+  func stop() {
+    stopCallCount += 1
   }
 }
 
 @MainActor
 final class SpyFeedbackService: FeedbackService {
   var error: TestServiceError?
+  var onPresent: ((CaptureFeedback) -> Void)?
   private(set) var presentedFeedback: [CaptureFeedback] = []
   private(set) var dismissCallCount = 0
   private(set) var isVisible = false
@@ -164,6 +183,7 @@ final class SpyFeedbackService: FeedbackService {
       throw error
     }
     presentedFeedback.append(feedback)
+    onPresent?(feedback)
     isVisible = true
   }
 
@@ -178,7 +198,8 @@ final class SpyFeedbackService: FeedbackService {
 func makeTestCaptureCommand(
   coordinator: CaptureCoordinator,
   scheduleWork: @escaping CaptureCommand.WorkScheduler,
-  feedbackService: any FeedbackService = SpyFeedbackService()
+  feedbackService: any FeedbackService = SpyFeedbackService(),
+  successSoundPlayer: any SuccessSoundPlaying = NoopSuccessSoundPlayer()
 ) -> CaptureCommand {
   CaptureCommand(
     coordinator: coordinator,
@@ -191,6 +212,7 @@ func makeTestCaptureCommand(
     ocrService: StubOCRService(result: .failure(.injected)),
     textAssembler: TextAssembler(),
     clipboardService: SpyClipboardService(),
+    successSoundPlayer: successSoundPlayer,
     feedbackService: feedbackService,
     recoveryPresenter: SpyPermissionRecoveryPresenter(),
     scheduleWork: scheduleWork

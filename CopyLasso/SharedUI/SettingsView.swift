@@ -55,9 +55,6 @@ struct SettingsView: View {
         } label: {
           Text("Default")
         }
-        Text("Clear the shortcut to keep Capture Text available only from the menu bar.")
-          .font(.caption)
-          .foregroundStyle(.secondary)
       }
 
       Section("General") {
@@ -83,6 +80,18 @@ struct SettingsView: View {
         }
       }
 
+      Section("Feedback") {
+        Toggle(
+          "Play Sound After Copying",
+          isOn: Binding(
+            get: { settingsController.isSuccessSoundEnabled },
+            set: { settingsController.setSuccessSoundEnabled($0) }
+          )
+        )
+        .accessibilityHint(AccessibilityAuditCopy.successSoundHelp)
+        .accessibilityIdentifier("copylasso.settings.success-sound")
+      }
+
       Section("Updates") {
         Toggle(
           "Automatically Check for Updates",
@@ -100,13 +109,6 @@ struct SettingsView: View {
         .disabled(!updateController.canCheckForUpdates)
         .accessibilityHint(AccessibilityAuditCopy.checkForUpdatesHelp)
         .accessibilityIdentifier("copylasso.settings.check-for-updates")
-
-        Text(
-          "Checks retrieve only signed update information. CopyLasso never sends screen, OCR, or clipboard content."
-        )
-        .font(.caption)
-        .foregroundStyle(.secondary)
-        .fixedSize(horizontal: false, vertical: true)
 
         if let availabilityMessage = updateController.availabilityMessage {
           Text(availabilityMessage)

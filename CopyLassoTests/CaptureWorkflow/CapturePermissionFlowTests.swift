@@ -143,9 +143,28 @@ final class CapturePermissionFlowTests: XCTestCase {
     XCTAssertEqual(context.permission.recordCaptureSuccessCallCount, 1)
     XCTAssertEqual(context.textAssembler.inputs, [observations])
     XCTAssertEqual(context.clipboard.writtenTexts, ["assembled"])
+    XCTAssertEqual(context.sound.playCallCount, 1)
     XCTAssertEqual(context.feedback.presentedFeedback, [.success(preview: "assembled")])
     XCTAssertEqual(context.coordinator.state, .idle)
     XCTAssertTrue(context.command.isEnabled)
+  }
+
+  func testSuccessfulWritePrecedesSoundAndFeedback() async throws {
+    let context = makeContext(
+      current: .granted,
+      selectionResult: .success(.selected(try makeSelection())),
+      captureResult: .success(try makeImage(width: 80, height: 80)),
+      ocrResult: .success([])
+    )
+    var events: [String] = []
+    context.clipboard.onWrite = { _ in events.append("clipboard") }
+    context.sound.onPlay = { events.append("sound") }
+    context.feedback.onPresent = { _ in events.append("feedback") }
+
+    _ = context.command.perform()
+    await context.scheduler.runNext()
+
+    XCTAssertEqual(events, ["clipboard", "sound", "feedback"])
   }
 
   func testEmptyRecognitionPreservesClipboardAndPresentsNoText() async throws {
@@ -162,6 +181,7 @@ final class CapturePermissionFlowTests: XCTestCase {
 
     XCTAssertEqual(context.textAssembler.inputs, [[]])
     XCTAssertEqual(context.clipboard.writtenTexts, [])
+    XCTAssertEqual(context.sound.playCallCount, 0)
     XCTAssertEqual(context.feedback.presentedFeedback, [.noText])
     XCTAssertEqual(context.coordinator.state, .idle)
     XCTAssertTrue(context.command.isEnabled)
@@ -203,6 +223,7 @@ final class CapturePermissionFlowTests: XCTestCase {
     await context.scheduler.runNext()
 
     XCTAssertEqual(context.clipboard.writtenTexts, [])
+    XCTAssertEqual(context.sound.playCallCount, 0)
     XCTAssertEqual(context.feedback.presentedFeedback, [.failure(.clipboard)])
     XCTAssertEqual(context.coordinator.state, .idle)
     XCTAssertTrue(context.command.isEnabled)
@@ -221,6 +242,7 @@ final class CapturePermissionFlowTests: XCTestCase {
     await context.scheduler.runNext()
 
     XCTAssertEqual(context.clipboard.writtenTexts, ["assembled"])
+    XCTAssertEqual(context.sound.playCallCount, 1)
     XCTAssertEqual(context.feedback.presentedFeedback, [])
     XCTAssertEqual(context.coordinator.state, .idle)
     XCTAssertTrue(context.command.isEnabled)
@@ -230,6 +252,7 @@ final class CapturePermissionFlowTests: XCTestCase {
     let coordinator = CaptureCoordinator()
     let scheduler = ManualCaptureWorkScheduler()
     let clipboard = SpyClipboardService()
+    let sound = SpySuccessSoundPlayer()
     let feedback = SpyFeedbackService()
     let command = CaptureCommand(
       coordinator: coordinator,
@@ -246,6 +269,7 @@ final class CapturePermissionFlowTests: XCTestCase {
       ocrService: StubOCRService(result: .success([])),
       textAssembler: SpyTextAssembler(result: "copied"),
       clipboardService: clipboard,
+      successSoundPlayer: sound,
       feedbackService: feedback,
       recoveryPresenter: SpyPermissionRecoveryPresenter(),
       scheduleWork: scheduler.schedule
@@ -264,6 +288,7 @@ final class CapturePermissionFlowTests: XCTestCase {
     }
 
     XCTAssertEqual(clipboard.writtenTexts, Array(repeating: "copied", count: 10))
+    XCTAssertEqual(sound.playCallCount, 10)
     XCTAssertEqual(
       feedback.presentedFeedback,
       Array(repeating: .success(preview: "copied"), count: 10)
@@ -290,6 +315,7 @@ final class CapturePermissionFlowTests: XCTestCase {
     XCTAssertEqual(recognitionCallCount, 1)
     XCTAssertEqual(context.textAssembler.inputs, [])
     XCTAssertEqual(context.clipboard.writtenTexts, [])
+    XCTAssertEqual(context.sound.playCallCount, 0)
     XCTAssertEqual(context.feedback.presentedFeedback, [.failure(.recognition)])
     XCTAssertEqual(context.coordinator.state, .idle)
     XCTAssertTrue(context.command.isEnabled)
@@ -483,6 +509,7 @@ final class CapturePermissionFlowTests: XCTestCase {
     let textAssembler = SpyTextAssembler(result: assembledText)
     let clipboard = SpyClipboardService()
     clipboard.error = clipboardError
+    let sound = SpySuccessSoundPlayer()
     let feedback = SpyFeedbackService()
     feedback.error = feedbackError
     let recovery = SpyPermissionRecoveryPresenter()
@@ -495,6 +522,7 @@ final class CapturePermissionFlowTests: XCTestCase {
       ocrService: ocr,
       textAssembler: textAssembler,
       clipboardService: clipboard,
+      successSoundPlayer: sound,
       feedbackService: feedback,
       recoveryPresenter: recovery,
       scheduleWork: scheduler.schedule
@@ -507,6 +535,7 @@ final class CapturePermissionFlowTests: XCTestCase {
       ocr: ocr,
       textAssembler: textAssembler,
       clipboard: clipboard,
+      sound: sound,
       feedback: feedback,
       recovery: recovery,
       scheduler: scheduler,
@@ -552,6 +581,7 @@ final class CapturePermissionFlowTests: XCTestCase {
     let ocr: StubOCRService
     let textAssembler: SpyTextAssembler
     let clipboard: SpyClipboardService
+    let sound: SpySuccessSoundPlayer
     let feedback: SpyFeedbackService
     let recovery: SpyPermissionRecoveryPresenter
     let scheduler: ManualCaptureWorkScheduler

@@ -12,7 +12,8 @@ flowchart LR
   Capture --> OCR["Local OCR"]
   OCR --> Assembly["Pure assembly"]
   Assembly --> Clipboard["Write-only clipboard"]
-  Clipboard --> Feedback["Bounded feedback"]
+  Clipboard --> Sound["Content-free success sound"]
+  Sound --> Feedback["Bounded feedback"]
   Feedback --> Idle["Idle"]
 ```
 
@@ -30,9 +31,11 @@ Returning from that function ends the image, observations, and unbounded-text sc
 ## Completion, Cancellation, And Failure
 
 - Success and no-text enter `completing` only while presenting feedback, then return immediately to idle while the feedback panel owns its independent dismissal timer. A new idle capture may therefore dismiss visible feedback and begin selection without waiting for that timer.
+- Only a successful nonempty clipboard write requests one success sound. Every cancellation, no-text result, and failure before or during the clipboard write is silent. Playback never receives private content and never blocks completion.
 - Escape, too-small selection, display change, application termination, and OCR cancellation are non-error cancellation outcomes. They never write the clipboard or show generic failure feedback.
 - Ordinary selection, capture, recognition, clipboard, and feedback errors are classified only by stage. Raw platform errors and content never enter observable state or user copy.
 - A real capture-time Screen Recording denial uses the specific permission-recovery panel rather than stacking a generic failure HUD.
+- Selection records and restores another frontmost application only when it actually activates CopyLasso for the system crosshair. If Settings or About was already active, overlay cleanup proceeds directly to capture, OCR, sound, and the nonactivating HUD instead of waiting for a later application-resign event.
 - Terminal cancellation or failure is explicitly reset only after the operation has unwound.
 - Sleep, screen sleep, and lock/session resign request `.systemInterrupted`; application termination requests `.applicationTerminated`. The root-owned task propagates cancellation through capture, OCR, and feedback, while selection receives an explicit synchronous cleanup request. Wake/unlock never retries automatically.
 
@@ -40,4 +43,4 @@ The clipboard adapter is intentionally write-only. Cancellation and every failur
 
 ## Verification Boundary
 
-The canonical suite injects every service, exercises all branch classes, performs 25 consecutive successful operations and 20 alternating success/cancel cycles, rejects concurrent work, proves menu and shortcut use the exact same command, and cancels pending selection, capture, OCR, and feedback work. The signed manual matrix remains necessary for arbitrary app pixels, full-screen Spaces, real paste targets, physical displays, sleep/wake, and lock/unlock.
+The canonical suite injects every service, exercises all branch classes, performs 25 consecutive successful operations and 20 alternating success/cancel cycles, rejects concurrent work, proves menu and shortcut use the exact same command, and cancels pending selection, capture, OCR, sound, and feedback work. The signed manual matrix remains necessary for arbitrary app pixels, full-screen Spaces, real paste targets, physical displays, sleep/wake, lock/unlock, and actual audio-output behavior.

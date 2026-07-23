@@ -168,7 +168,7 @@ This live matrix requires an unlocked graphical session and granted Screen Recor
 1. Put a unique value on the clipboard, invoke Capture Text, and cancel with Escape. Paste into TextEdit and confirm the unique value remains.
 2. Select a known paragraph, wait for the success HUD to disappear, and paste into both TextEdit and a browser text field. Confirm plain text, sensible line breaks, and exactly one clipboard replacement.
 3. Select a region with no visible text. Confirm the no-text HUD is distinct and the prior clipboard remains.
-4. Keep Finder, TextEdit, and a full-screen application frontmost in separate runs. Confirm the HUD appears without activation, key-window change, sound, notification request, or menu opening.
+4. Keep Finder, TextEdit, and a full-screen application frontmost in separate runs. For the historical G17 behavior, confirm the HUD appears without activation, key-window change, sound, notification request, or menu opening. G37 supersedes only the sound portion for current source.
 5. Confirm the menu symbol changes only for the HUD lifetime, the preview is readable with VoiceOver, long text is truncated with one ellipsis, and no preview remains after dismissal.
 6. During each success, no-text, and failure HUD, invoke Capture Text again. Confirm the HUD closes
    immediately, one fresh crosshair appears, and no stale panel or overlapping selection remains.
@@ -513,3 +513,25 @@ and permission transitions are qualified without claiming additional OS
 coverage. The applicable
 lock-only failure and immediate-reuse stationary-crosshair nuance remain
 maintainer-accepted v0.1 residuals.
+
+## G37 Configurable Success Sound
+
+G37 adds one original 0.18-second bundled success sound, enabled by default through a versioned Boolean preference. `CaptureCommand` requests it exactly once only after a nonempty clipboard write succeeds. Permission denial, selection cancellation, no text, capture/OCR/formatting failure, clipboard failure, and disabled preference paths remain silent. Playback has no content input and cannot turn a successful copy into a failure.
+
+Direct tests cover absent/malformed preference migration, explicit opt-out preservation, persistence, Debug reset, native Settings binding, enabled/disabled/unavailable/failed playback, restart-on-rapid-reuse behavior, idempotent stop cleanup, success-only command ordering, ten immediate successes, and silence on every non-success branch. The selection-activation suite also proves a capture begun while CopyLasso Settings is already active completes restoration immediately without deactivating or waiting for another application click, so OCR and HUD presentation are not delayed. Signed UI checks keep the first status-menu divider immediately after Capture Text and confirm Settings omits redundant visible captions while preserving accessible control help. The tracked audit regenerates the asset byte-for-byte, verifies its fixed format and digest, confines `NSSound` to one service, checks both built bundles, and rejects recording, microphone, system-audio-capture, notification, and alternate system-sound APIs:
+
+```sh
+./scripts/audit-success-sound.sh
+```
+
+The signed manual matrix uses the same development-signed Debug app for every row:
+
+1. Confirm the Settings **Play Sound After Copying** toggle defaults on, is reachable with Full Keyboard Access, exposes its state and help to VoiceOver, persists off/on across quit and relaunch, and returns on after Debug local-state reset.
+2. With the toggle on, perform three successful text captures through the shortcut and one through the menu. Confirm each clipboard write, one short sound, the HUD, no frontmost-app focus change, and immediate reuse. Repeat with CopyLasso Settings frontmost while selecting visible pixels from another window; confirm the HUD appears without requiring a click in that other application.
+3. Repeat cancellation before and during drag, a blank/no-text selection, permission rejection, and an injected or otherwise observable clipboard-stage failure. Confirm every result is silent.
+4. Disable the toggle and repeat two successful captures. Confirm text and HUD still succeed while audio remains silent. Re-enable it and confirm the next success sounds once.
+5. Repeat one success while system output is muted, at low and ordinary volume, with headphones if available, and after switching output devices. Confirm unavailable or inaudible output introduces no prompt, error, activation, or capture delay.
+6. Start a success sound and immediately begin another capture, cancel, quit, sleep, or lock where physically practical. Confirm transient playback is stopped or superseded, no overlapping tail remains, and capture/lifecycle recovery still follows the established contract.
+7. Inspect System Settings privacy panes and confirm G37 requests no Microphone, System Audio Recording Only, Accessibility, Input Monitoring, or notification authorization.
+
+Actual audibility, mute/volume, hardware-output routing, and VoiceOver speech remain physical manual evidence. Automation owns asset integrity, invocation policy, state transitions, privacy isolation, error handling, and cleanup.

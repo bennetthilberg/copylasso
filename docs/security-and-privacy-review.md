@@ -1,10 +1,10 @@
 # Security And Privacy Review
 
-This review describes the public CopyLasso 0.1.x boundary and the secure updater now present in source for the planned v0.2 release. It reconciles the source, built products, dependency graph, entitlements, persistence, and public privacy promises. The public 0.1.1 artifact remains the current release and contains no updater.
+This review describes the public CopyLasso 0.1.x boundary and the secure updater plus configurable success sound now present in source for the planned v0.2 release. It reconciles the source, built products, dependency graph, entitlements, persistence, and public privacy promises. The public 0.1.1 artifact remains the current release and contains neither feature.
 
 ## Result
 
-The implementation remains local-first and offline-capable. Screen Recording is the only macOS privacy permission required by the core workflow. The app has no content-history store, account, telemetry, or crash-reporting SDK. Its sole network capability is the isolated, user-controlled Sparkle updater; capture, OCR, clipboard output, Settings, onboarding, and Launch at Login remain operational with update networking unavailable.
+The implementation remains local-first and offline-capable. Screen Recording is the only macOS privacy permission required by the core workflow. The app has no content-history store, account, telemetry, or crash-reporting SDK. Its sole network capability is the isolated, user-controlled Sparkle updater; capture, OCR, clipboard output, local success sound, Settings, onboarding, and Launch at Login remain operational with update networking unavailable.
 
 The tracked `CopyLasso.entitlements` contains App Sandbox, outbound network client, and exactly Sparkle's two versioned installer-service Mach lookup names. Both app configurations use that file and keep Hardened Runtime enabled. There is no inbound server, device, file, application-group, or other temporary-exception capability. Screen Recording consent is managed by macOS TCC rather than an entitlement.
 
@@ -19,6 +19,7 @@ The tracked `CopyLasso.entitlements` contains App Sandbox, outbound network clie
 | OCR | Text, confidence, and normalized bounds | Private async operation scope | None |
 | Assembly | One plain `String` | Private async operation scope | None |
 | Clipboard | Nonempty assembled text | Passed once to a write-only adapter | One system pasteboard plain-string item, controlled by macOS after the write |
+| Sound | Enabled state and one content-free play/stop command | Successful clipboard completion or lifecycle cleanup | One versioned Boolean preference; no content |
 | Feedback | No-text/failure copy or an at-most-80-character success preview | Approximately 2.5 seconds | None; the observable model clears on dismissal |
 | Diagnostics | Fixed lifecycle event class | Unified logging policy | No payload, application name, geometry, content, or raw error |
 | Update check | Fixed HTTPS feed request and authenticated inline metadata | Active check or user-visible transaction | Automatic-check schedule and preference, deferred build, and highest authenticated build only |
@@ -34,6 +35,7 @@ CopyLasso owns only these preference categories:
 - whether shortcut and Launch at Login choices have been configured;
 - whether Screen Recording was requested and whether access was previously observed; and
 - `KeyboardShortcuts_captureText`, an encoded key/modifier choice maintained by the pinned shortcut package;
+- the versioned `feedback.successSoundEnabled` Boolean, defaulting on and preserving explicit opt-out;
 - Sparkle's automatic-check schedule and user preference; and
 - `updates.deferredBuild` plus `updates.highestAuthenticatedBuild`, which contain canonical build numbers only.
 
@@ -50,7 +52,7 @@ An inspected development container contained preference/window metadata, one 240
 - Sparkle installer services: exactly `$(PRODUCT_BUNDLE_IDENTIFIER)-spks` and `$(PRODUCT_BUNDLE_IDENTIFIER)-spki`; the separate downloader service is disabled.
 - Screen Recording: requested only after a user Capture Text command.
 - Accessibility and Input Monitoring: not required by the shortcut, menu, selection, OCR, or output path.
-- Microphone and system audio: not requested; ScreenCaptureKit capture disables audio.
+- Microphone and system-audio capture: not requested; ScreenCaptureKit capture disables audio. The output-only success sound uses `NSSound` and requests no privacy permission.
 - Files and folders: no user-selected or temporary-file entitlement; captured pixels never use a file intermediate.
 
 Settings links ask macOS to open the user's default browser. CopyLasso itself does not fetch those URLs. The shipping updater is isolated from core capture and has one fixed feed URL. Automatic checks default on at a 24-hour interval but can be disabled; manual checks remain available. Download and install never occur automatically. The user sees authenticated version, inline plain-text notes, and exact size before download, then explicitly confirms download and later install/relaunch.
@@ -68,6 +70,7 @@ Local Apple Development signing adds `com.apple.security.get-task-allow` to audi
 | Protected or DRM content | CopyLasso follows macOS capture restrictions and does not bypass protected pixels. Blank protected output may yield no text. |
 | Misleading or hostile visible text | OCR output is untrusted plain text. CopyLasso copies it but never executes it, interprets markup, follows a link, or invokes a shell. Users must review text before using it as a command or credential. |
 | Clipboard visibility | After a successful write, macOS and other clipboard-aware software control access. CopyLasso writes one plain-string representation and never reads prior contents. |
+| Audio content leakage or playback failure | The sound service receives no pixels, recognized text, clipboard text, preview, geometry, or application identity. It plays one fixed bundled asset after a successful write; missing, muted, unavailable, or refused playback fails silently without delaying or failing capture. |
 | Crash or forced termination during private processing | Operation values are memory-only and no in-app crash reporter receives them. Operating-system diagnostics or a privileged memory inspector remain outside the app's trust boundary. |
 | Diagnostic leakage | The only logger emits four fixed lifecycle messages. CI rejects interpolation and content-bearing logging APIs elsewhere. |
 | Dependency compromise | KeyboardShortcuts and Sparkle are exact-version and exact-revision pinned, licensed, and covered by complete local notices. Sparkle is confined to one production adapter plus direct policy/session tests; canonical audits verify its framework, configuration, public key, installer entitlements, and absence of a second network stack. |
@@ -89,6 +92,8 @@ KeyboardShortcuts declares no transitive dependency. The Release executable cont
 
 Sparkle is a shipping binary framework in G36. Its exact tag, source revision, official artifact checksum, complete shipped license bundle, About acknowledgement, fixed configuration, entitlement boundary, and justification are recorded in [Third-Party Notices](../THIRD_PARTY_NOTICES.md), [ADR-004](architecture/ADR-004-secure-updates.md), and the secure-update audit. `SUEnableDownloaderService` is false; the bundled downloader XPC is inert and receives no downloader-service Mach entitlement. Release qualification must repeat advisory, framework-signature, nested-code, architecture, and notarization checks.
 
+`CopyLassoSuccess.wav` is original project-authored audio generated deterministically by the tracked integer-only script. It contains no third-party recording, dependency, content, or metadata; its construction, fixed digest, and provenance are recorded in [Brand Assets](brand-assets.md).
+
 GitHub's tag readback records Sparkle 2.9.4 as a non-draft, non-prerelease release published July 3, 2026. A July 22, 2026 GitHub Advisory Database query for `sparkle@2.9.4` returned zero matching Swift advisories. This is a dated result, not a permanent guarantee; repeat it and review upstream release/security notices before every updater-enabled release.
 
 ## Reproducible Verification
@@ -97,9 +102,10 @@ Run the tracked source audit:
 
 ```sh
 ./scripts/audit-privacy-security.sh
+./scripts/audit-success-sound.sh
 ```
 
-The canonical CI entrypoint runs it before compiling. It validates the exact three-key entitlement contract, both build-configuration references, updater-only networking, absence of content-persistence APIs, logger confinement, tracked-secret and local-path scans, exact dependency scope, shipping notices, and absence of tracked prebuilt dependency binaries.
+The canonical CI entrypoint runs each audit exactly once. They validate the exact three-key entitlement contract, both build-configuration references, updater-only networking, absence of content-persistence APIs, logger confinement, tracked-secret and local-path scans, exact dependency scope, shipping notices, absence of tracked prebuilt dependency binaries, deterministic original audio bytes, one bundled sound asset, content-free service wiring, and no microphone, system-audio-capture, notification, or alternate playback API.
 
 The complete application unit bundle also passes when invoked directly under a process sandbox with `(deny network*)`. This exercises real Vision fixtures plus permission, selection, capture planning, formatting, clipboard, feedback, lifecycle, Settings, and end-to-end orchestration tests without disabling the workstation's network connection; the canonical verification record reports the exact current suite count.
 

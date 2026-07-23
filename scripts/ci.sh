@@ -522,6 +522,9 @@ readonly release_info_plist="$release_application/Contents/Info.plist"
 COPYLASSO_SECURE_UPDATE_DEBUG_APP="$derived_data/Build/Products/Debug/CopyLasso.app" \
     COPYLASSO_SECURE_UPDATE_RELEASE_APP="$release_application" \
     ./scripts/audit-secure-update-architecture.sh
+COPYLASSO_SUCCESS_SOUND_DEBUG_APP="$derived_data/Build/Products/Debug/CopyLasso.app" \
+    COPYLASSO_SUCCESS_SOUND_RELEASE_APP="$release_application" \
+    ./scripts/audit-success-sound.sh
 if [[ "$(/usr/bin/plutil -extract LSUIElement raw -o - "$release_info_plist")" != "true" ]]; then
     echo "The Release application is not configured as a dockless agent." >&2
     exit 1
@@ -572,6 +575,7 @@ if [[ ! -f "$debug_module" ]] || \
     ! /usr/bin/grep -a -q 'VisionOCRService' "$debug_module" || \
     ! /usr/bin/grep -a -q 'TextAssembler' "$debug_module" || \
     ! /usr/bin/grep -a -q 'SystemClipboardService' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'SystemSuccessSoundPlayer' "$debug_module" || \
     ! /usr/bin/grep -a -q 'FeedbackPanelController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'PermissionRecoveryPanelController' "$debug_module" || \
     ! /usr/bin/grep -a -q 'SettingsController' "$debug_module" || \
@@ -603,6 +607,7 @@ for release_architecture in arm64 x86_64; do
         ! /usr/bin/grep -a -q 'VisionOCRService' "$release_module" || \
         ! /usr/bin/grep -a -q 'TextAssembler' "$release_module" || \
         ! /usr/bin/grep -a -q 'SystemClipboardService' "$release_module" || \
+        ! /usr/bin/grep -a -q 'SystemSuccessSoundPlayer' "$release_module" || \
         ! /usr/bin/grep -a -q 'FeedbackPanelController' "$release_module" || \
         ! /usr/bin/grep -a -q 'PermissionRecoveryPanelController' "$release_module" || \
         ! /usr/bin/grep -a -q 'SettingsController' "$release_module" || \

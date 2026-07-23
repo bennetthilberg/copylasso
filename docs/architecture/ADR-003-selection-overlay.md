@@ -22,10 +22,12 @@ The AppKit approach is viable. CopyLasso will use one transparent, borderless `N
 - while dragging, dims only the initiating display outside the selection with 18% black; and
 - draws one thin neutral-gray dashed selection outline with a subtle two-point corner radius whose phase moves linearly around the active rectangle, while Reduce Motion leaves the same dashed outline static.
 
-Before panels are shown, the activation manager records the frontmost application,
-requests selection-only activation, and waits for AppKit's
-`didBecomeActiveNotification`. Only that confirmed-active callback may construct
-and present the panels. The panel under the pointer then requests key status, but
+Before panels are shown, the activation manager records a different frontmost
+application, requests selection-only activation, and waits for AppKit's
+`didBecomeActiveNotification`. When CopyLasso is already active because Settings
+or About is frontmost, it does not create a synthetic activation handoff. Only a
+confirmed-active callback may construct and present the panels. The panel under
+the pointer then requests key status, but
 cursor setup waits for that exact panel's `didBecomeKey` callback rather than
 treating `makeKey()` as synchronous. Once key, the panel explicitly makes its
 overlay view first responder. If mouse-down occurs on any other display,
@@ -50,7 +52,10 @@ application remains active. CopyLasso therefore requests foreground status for
 the selection interval and uses the normal AppKit crosshair; it does not draw a
 second pointer. Cleanup hides all panels, restores the cursor stack, and then
 cooperatively yields activation back to the recorded application before the
-deferred selection result is delivered.
+deferred selection result is delivered. If CopyLasso was already active, cleanup
+delivers the result immediately without deactivating or waiting for a future
+resign event. This keeps OCR and the nonactivating HUD from depending on a click
+in another application.
 
 The spike intentionally does not set `NSWindow.SharingType.none`. Apple now documents [`none`](https://developer.apple.com/documentation/appkit/nswindow/sharingtype-swift.enum/none) as a legacy value that should not be used to hide a window from screen capture.
 

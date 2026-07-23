@@ -27,6 +27,7 @@ final class SettingsController {
   private(set) var captureShortcut: KeyboardShortcuts.Shortcut?
   private(set) var launchAtLoginStatus: LaunchAtLoginStatus
   private(set) var launchAtLoginIssue: LaunchAtLoginIssue?
+  private(set) var isSuccessSoundEnabled: Bool
 
   var needsOnboarding: Bool {
     settingsStore.completedOnboardingVersion < currentOnboardingVersion
@@ -52,6 +53,7 @@ final class SettingsController {
     shortcutStore: any GlobalShortcutStoring,
     currentOnboardingVersion: Int = SettingsController.currentOnboardingVersion
   ) {
+    settingsStore.migrateSuccessSoundPreferenceIfNeeded()
     self.settingsStore = settingsStore
     self.launchAtLoginService = launchAtLoginService
     self.shortcutStore = shortcutStore
@@ -59,6 +61,7 @@ final class SettingsController {
     captureShortcut = shortcutStore.captureShortcut
     launchAtLoginStatus = launchAtLoginService.status
     launchAtLoginIssue = Self.issue(for: launchAtLoginService.status)
+    isSuccessSoundEnabled = settingsStore.isSuccessSoundEnabled
   }
 
   func takeInitialOnboardingPresentationRequest() -> Bool {
@@ -117,6 +120,11 @@ final class SettingsController {
     settingsStore.hasConfiguredCaptureShortcut = true
   }
 
+  func setSuccessSoundEnabled(_ enabled: Bool) {
+    settingsStore.isSuccessSoundEnabled = enabled
+    isSuccessSoundEnabled = settingsStore.isSuccessSoundEnabled
+  }
+
   func useSuggestedCaptureShortcut() {
     setCaptureShortcut(CaptureShortcutDefaults.suggested)
   }
@@ -137,8 +145,10 @@ final class SettingsController {
         return false
       }
       settingsStore.reset()
+      settingsStore.migrateSuccessSoundPreferenceIfNeeded()
       shortcutStore.reset()
       captureShortcut = nil
+      isSuccessSoundEnabled = settingsStore.isSuccessSoundEnabled
       presentedInitialOnboarding = false
       return true
     }

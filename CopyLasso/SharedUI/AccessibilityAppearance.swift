@@ -92,6 +92,8 @@ enum AccessibilityAuditCopy {
     "Choose whether CopyLasso checks its signed update feed about once per day."
   static let checkForUpdatesHelp =
     "Check the signed CopyLasso update feed now."
+  static let successSoundHelp =
+    "Play a brief sound only after CopyLasso successfully copies recognized content."
   static let openScreenRecordingSettingsHelp =
     "Open the Screen Recording privacy pane in System Settings."
   static let retryPermissionHelp =

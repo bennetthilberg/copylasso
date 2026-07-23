@@ -819,6 +819,7 @@ final class SystemSelectionApplicationActivationManager: NSObject,
   private let scheduleActivationFallback: ActivationFallbackScheduler
   private var previousApplication: NSRunningApplication?
   private var hasActiveHandoff = false
+  private var activatedApplicationForSelection = false
   private var isObservingActivation = false
   private var isObservingDeactivation = false
   private var activationReady: (@MainActor @Sendable () -> Void)?
@@ -862,6 +863,7 @@ final class SystemSelectionApplicationActivationManager: NSObject,
     guard !hasActiveHandoff else { return }
     hasActiveHandoff = true
 
+    let wasApplicationActive = isApplicationActive()
     if let frontmostApplication = frontmostApplication(),
       frontmostApplication.processIdentifier != currentProcessIdentifier()
     {
@@ -870,11 +872,12 @@ final class SystemSelectionApplicationActivationManager: NSObject,
 
     activationReady = whenActive
     activationUnavailable = whenUnavailable
-    if isApplicationActive() {
+    if wasApplicationActive {
       completeActivation()
       return
     }
 
+    activatedApplicationForSelection = true
     notificationCenter.addObserver(
       self,
       selector: #selector(applicationDidBecomeActive(_:)),
@@ -937,9 +940,17 @@ final class SystemSelectionApplicationActivationManager: NSObject,
       return
     }
     hasActiveHandoff = false
+    let requiresActivationRestoration = activatedApplicationForSelection
+    activatedApplicationForSelection = false
     stopObservingActivation()
     activationReady = nil
     activationUnavailable = nil
+
+    guard requiresActivationRestoration else {
+      previousApplication = nil
+      whenInactive()
+      return
+    }
 
     guard isApplicationActive() else {
       previousApplication = nil

@@ -12,6 +12,7 @@ readonly release_workflow_audit_script="$repository_root/scripts/audit-release-w
 readonly platform_qualification_audit_script="$repository_root/scripts/audit-platform-qualification.sh"
 readonly platform_qualification_test_script="$repository_root/scripts/test-platform-qualification.sh"
 readonly v02_contract_audit_script="$repository_root/scripts/audit-v02-contract.sh"
+readonly success_sound_audit_script="$repository_root/scripts/audit-success-sound.sh"
 readonly secure_update_audit_script="$repository_root/scripts/audit-secure-update-architecture.sh"
 readonly secure_update_test_script="$repository_root/scripts/test-secure-update-architecture.sh"
 readonly secure_update_signature_script="$repository_root/scripts/test-secure-update-signatures.sh"
@@ -138,6 +139,15 @@ if [[ "$v02_contract_audit_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/audit-v02-contract.sh exactly once."
 fi
 
+success_sound_audit_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/audit-success-sound\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$success_sound_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-success-sound.sh exactly once."
+fi
+
 secure_update_audit_invocations="$({
     /usr/bin/grep -Ec \
         '^[[:space:]]*\./scripts/audit-secure-update-architecture\.sh[[:space:]]*$' \
@@ -208,6 +218,20 @@ fi
 
 if [[ ! -x "$v02_contract_audit_script" ]]; then
     fail "The v0.2 product-contract audit must be executable."
+fi
+
+if [[ ! -x "$success_sound_audit_script" ]] || \
+    [[ ! -f "$repository_root/scripts/generate-success-sound.swift" ]]; then
+    fail "The configurable success-sound audit and generator must be available."
+fi
+
+if ! /usr/bin/grep -Fq \
+    'COPYLASSO_SUCCESS_SOUND_DEBUG_APP="$derived_data/Build/Products/Debug/CopyLasso.app" \' \
+    "$ci_script" || \
+    ! /usr/bin/grep -Fq \
+      'COPYLASSO_SUCCESS_SOUND_RELEASE_APP="$release_application" \' \
+      "$ci_script"; then
+    fail "Canonical CI must audit the built Debug and Universal 2 success-sound resources."
 fi
 
 if [[ ! -x "$secure_update_audit_script" ]] || \

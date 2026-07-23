@@ -34,6 +34,7 @@ struct CopyLassoApp: App {
   private let globalShortcutController: GlobalShortcutController
   private let feedbackController: FeedbackPanelController
   private let lifecycleController: ApplicationLifecycleController
+  private let successSoundPlayer: SystemSuccessSoundPlayer
   private let updateController: UpdateController
 
   init() {
@@ -101,6 +102,8 @@ struct CopyLassoApp: App {
     let coordinator = CaptureCoordinator()
     let feedbackController = FeedbackPanelController()
     self.feedbackController = feedbackController
+    let successSoundPlayer = SystemSuccessSoundPlayer(preferences: settingsStore)
+    self.successSoundPlayer = successSoundPlayer
     let recoveryController = PermissionRecoveryPanelController(
       permissionService: permissionService
     )
@@ -112,6 +115,7 @@ struct CopyLassoApp: App {
       ocrService: VisionOCRService(),
       textAssembler: TextAssembler(),
       clipboardService: SystemClipboardService(),
+      successSoundPlayer: successSoundPlayer,
       feedbackService: feedbackController,
       recoveryPresenter: recoveryController
     )

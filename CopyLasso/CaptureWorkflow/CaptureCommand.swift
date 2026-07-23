@@ -18,6 +18,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
   private let ocrService: any OCRService
   private let textAssembler: any TextAssembling
   private let clipboardService: any ClipboardService
+  private let successSoundPlayer: any SuccessSoundPlaying
   private let feedbackService: any FeedbackService
   private let recoveryPresenter: any PermissionRecoveryPresenting
   private let scheduleWork: WorkScheduler?
@@ -36,6 +37,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     ocrService: any OCRService,
     textAssembler: any TextAssembling,
     clipboardService: any ClipboardService,
+    successSoundPlayer: any SuccessSoundPlaying = NoopSuccessSoundPlayer(),
     feedbackService: any FeedbackService,
     recoveryPresenter: any PermissionRecoveryPresenting,
     scheduleWork: WorkScheduler? = nil
@@ -47,6 +49,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     self.ocrService = ocrService
     self.textAssembler = textAssembler
     self.clipboardService = clipboardService
+    self.successSoundPlayer = successSoundPlayer
     self.feedbackService = feedbackService
     self.recoveryPresenter = recoveryPresenter
     self.scheduleWork = scheduleWork
@@ -77,6 +80,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
   @discardableResult
   func cancelActiveOperation(reason: CaptureCancellationReason) -> Bool {
     feedbackService.dismiss()
+    successSoundPlayer.stop()
     guard requestedCancellationReason == nil else { return false }
     switch coordinator.state {
     case .requestingPermission, .selecting, .capturing, .recognizing, .completing:
@@ -230,6 +234,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
       throw CaptureOperationInterruption.failure(.clipboard)
     }
 
+    successSoundPlayer.play()
     let preview = FeedbackPreview(text: text).text
     return .success(preview: preview)
   }
