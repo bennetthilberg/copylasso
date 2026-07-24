@@ -13,7 +13,7 @@ final class GlobalShortcutStoreTests: XCTestCase {
     )
     XCTAssertEqual(
       CaptureShortcutDefaults.suggestedDescription,
-      "Suggested: Shift–Command–2. Clear the recorder to use only the menu command."
+      "Suggested: Shift–Command–2."
     )
   }
 
@@ -26,7 +26,6 @@ final class GlobalShortcutStoreTests: XCTestCase {
       .two,
       modifiers: [.shift, .command]
     )
-
     var store = KeyboardShortcutsStore()
     store.captureShortcut = suggested
     store = KeyboardShortcutsStore()
@@ -34,5 +33,21 @@ final class GlobalShortcutStoreTests: XCTestCase {
 
     store.reset()
     XCTAssertNil(store.captureShortcut)
+  }
+
+  func testStoreRemovesTheUnreleasedLegacyCodeShortcut() {
+    let legacyCodeName = KeyboardShortcuts.Name("captureCode")
+    let originalShortcut = KeyboardShortcuts.getShortcut(for: legacyCodeName)
+    defer {
+      KeyboardShortcuts.setShortcut(originalShortcut, for: legacyCodeName)
+    }
+    KeyboardShortcuts.setShortcut(
+      KeyboardShortcuts.Shortcut(.eight, modifiers: [.option, .command]),
+      for: legacyCodeName
+    )
+
+    _ = KeyboardShortcutsStore()
+
+    XCTAssertNil(KeyboardShortcuts.getShortcut(for: legacyCodeName))
   }
 }

@@ -35,9 +35,9 @@ struct SettingsView: View {
         }
       }
 
-      Section("Shortcut") {
+      Section("Shortcuts") {
         KeyboardShortcuts.Recorder(
-          "Capture Text",
+          "Capture",
           shortcut: Binding(
             get: { settingsController.captureShortcut },
             set: { settingsController.setCaptureShortcut($0) }

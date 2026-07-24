@@ -1,5 +1,3 @@
-import KeyboardShortcuts
-
 enum GlobalShortcutEvent: Equatable, Sendable {
   case keyDown
   case keyUp
@@ -14,7 +12,7 @@ protocol GlobalShortcutEventSourcing: AnyObject {
 final class GlobalShortcutController {
   private let captureCommand: CaptureCommand
   private let eventSource: any GlobalShortcutEventSourcing
-  private var listenerTask: Task<Void, Never>?
+  private var listenerTasks: [Task<Void, Never>] = []
 
   init(
     captureCommand: CaptureCommand,
@@ -27,40 +25,24 @@ final class GlobalShortcutController {
   func start() {
     stop()
     let stream = eventSource.events()
-    listenerTask = Task { @MainActor [weak self] in
-      for await event in stream where event == .keyUp {
+    let task = Task { @MainActor [weak self] in
+      for await event in stream {
+        guard event == .keyUp else {
+          continue
+        }
         guard !Task.isCancelled else {
           return
         }
         self?.captureCommand.perform()
       }
     }
+    listenerTasks.append(task)
   }
 
   func stop() {
-    listenerTask?.cancel()
-    listenerTask = nil
-  }
-}
-
-@MainActor
-final class KeyboardShortcutsEventSource: GlobalShortcutEventSourcing {
-  func events() -> AsyncStream<GlobalShortcutEvent> {
-    AsyncStream { continuation in
-      let task = Task { @MainActor in
-        for await event in KeyboardShortcuts.events(for: .captureText) {
-          switch event {
-          case .keyDown:
-            continuation.yield(.keyDown)
-          case .keyUp:
-            continuation.yield(.keyUp)
-          }
-        }
-        continuation.finish()
-      }
-      continuation.onTermination = { _ in
-        task.cancel()
-      }
+    for task in listenerTasks {
+      task.cancel()
     }
+    listenerTasks.removeAll()
   }
 }

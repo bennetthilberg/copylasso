@@ -46,7 +46,7 @@ final class CopyLassoUITests: XCTestCase {
     defer { app.terminate() }
 
     openMenu(in: app)
-    let clearedShortcutMenuWidth = menuItem("Capture Text", in: app).frame.width
+    let clearedShortcutMenuWidth = menuItem("Capture", in: app).frame.width
     app.typeKey(XCUIKeyboardKey.escape, modifierFlags: [])
 
     openMenu(in: app)
@@ -57,9 +57,9 @@ final class CopyLassoUITests: XCTestCase {
     app.typeKey("w", modifierFlags: .command)
 
     openMenu(in: app)
-    let savedShortcutMenuWidth = menuItem("Capture Text", in: app).frame.width
+    let savedShortcutMenuWidth = menuItem("Capture", in: app).frame.width
     XCTAssertGreaterThan(savedShortcutMenuWidth, clearedShortcutMenuWidth)
-    retainScreenshot(named: "CopyLasso menu with saved Capture Text shortcut")
+    retainScreenshot(named: "CopyLasso menu with saved Capture shortcut")
     app.typeKey(XCUIKeyboardKey.escape, modifierFlags: [])
 
     openMenu(in: app)
@@ -71,9 +71,68 @@ final class CopyLassoUITests: XCTestCase {
     app.typeKey("w", modifierFlags: .command)
 
     openMenu(in: app)
-    let customShortcutMenuWidth = menuItem("Capture Text", in: app).frame.width
+    let customShortcutMenuWidth = menuItem("Capture", in: app).frame.width
     XCTAssertGreaterThan(customShortcutMenuWidth, clearedShortcutMenuWidth)
-    retainScreenshot(named: "CopyLasso menu with custom Capture Text shortcut")
+    retainScreenshot(named: "CopyLasso menu with custom Capture shortcut")
+  }
+
+  @MainActor
+  func testUnifiedCapturePresentsCodeSuccessNoContentAndAmbiguityFeedback() {
+    let cases = [
+      ("success", "Copied Code: COPYLASSO UI CODE"),
+      (
+        "no-code",
+        "No Text or Code Found. Try selecting a clearer or larger area around the content."
+      ),
+      (
+        "ambiguous",
+        "Capture Codes Separately. The selection contains multiple codes with multiline content."
+      ),
+    ]
+
+    for (result, expectedAccessibilityLabel) in cases {
+      let app = completedApp(
+        extraArguments: [
+          "--g38-selection=selected",
+          "--g38-code-result=\(result)",
+        ]
+      )
+      app.launch()
+
+      openMenu(in: app)
+      menuItem("Capture", in: app).click()
+
+      let feedbackHUD = app.descendants(matching: .any)["copylasso.feedback.hud"]
+      XCTAssertTrue(feedbackHUD.waitForExistence(timeout: 5))
+      assertAccessibleText(feedbackHUD, equals: expectedAccessibilityLabel)
+      retainScreenshot(named: "CopyLasso unified Capture \(result) feedback")
+      app.terminate()
+    }
+  }
+
+  @MainActor
+  func testPermissionRecoveryRetriesUnifiedCaptureAndPreservesCodePrecedence() {
+    let app = completedApp(
+      extraArguments: [
+        "--g12-permission-sequence=after-request,granted",
+        "--g38-selection=selected",
+        "--g38-code-result=success",
+      ]
+    )
+    app.launch()
+    defer { app.terminate() }
+
+    openMenu(in: app)
+    menuItem("Capture", in: app).click()
+    XCTAssertTrue(
+      app.staticTexts["copylasso.permission-recovery.title"]
+        .waitForExistence(timeout: 5)
+    )
+
+    app.buttons["copylasso.permission-recovery.try-again"].click()
+    let feedbackHUD = app.descendants(matching: .any)["copylasso.feedback.hud"]
+    XCTAssertTrue(feedbackHUD.waitForExistence(timeout: 5))
+    assertAccessibleText(feedbackHUD, equals: "Copied Code: COPYLASSO UI CODE")
   }
 
   @MainActor
@@ -84,7 +143,7 @@ final class CopyLassoUITests: XCTestCase {
 
     for _ in 0..<3 {
       openMenu(in: app)
-      let capture = menuItem("Capture Text", in: app)
+      let capture = menuItem("Capture", in: app)
       XCTAssertTrue(capture.isEnabled)
       capture.click()
     }
@@ -99,7 +158,7 @@ final class CopyLassoUITests: XCTestCase {
     let pasteboardChangeCount = NSPasteboard.general.changeCount
 
     openMenu(in: app)
-    menuItem("Capture Text", in: app).click()
+    menuItem("Capture", in: app).click()
 
     XCTAssertEqual(NSPasteboard.general.changeCount, pasteboardChangeCount)
   }
@@ -111,11 +170,11 @@ final class CopyLassoUITests: XCTestCase {
     defer { app.terminate() }
 
     openMenu(in: app)
-    menuItem("Capture Text", in: app).click()
+    menuItem("Capture", in: app).click()
 
     let overlay = selectionOverlay(in: app)
     XCTAssertTrue(overlay.waitForExistence(timeout: 5))
-    XCTAssertEqual(overlay.label, "CopyLasso text selection overlay")
+    XCTAssertEqual(overlay.label, "CopyLasso selection overlay")
     app.typeKey(XCUIKeyboardKey.escape, modifierFlags: [])
     XCTAssertTrue(overlay.waitForNonExistence(timeout: 5))
 
@@ -314,7 +373,7 @@ final class CopyLassoUITests: XCTestCase {
       app.launch()
 
       openMenu(in: app)
-      XCTAssertTrue(menuItem("Capture Text", in: app).exists)
+      XCTAssertTrue(menuItem("Capture", in: app).exists)
 
       let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
       attachment.name = "CopyLasso menu — \(appearance)"
@@ -352,7 +411,7 @@ final class CopyLassoUITests: XCTestCase {
     let launchAtLogin = app.descendants(matching: .any)[
       "copylasso.onboarding.launch-at-login"
     ]
-    XCTAssertEqual(shortcut.label, "Capture Text keyboard shortcut")
+    XCTAssertEqual(shortcut.label, "Capture keyboard shortcut")
     XCTAssertEqual(launchAtLogin.label, "Launch CopyLasso at Login")
 
     app.typeKey(XCUIKeyboardKey.return, modifierFlags: [])
@@ -374,7 +433,7 @@ final class CopyLassoUITests: XCTestCase {
       "copylasso.settings.launch-at-login"
     ]
     XCTAssertTrue(shortcut.waitForExistence(timeout: 5))
-    XCTAssertEqual(shortcut.label, "Capture Text keyboard shortcut")
+    XCTAssertEqual(shortcut.label, "Capture keyboard shortcut")
     XCTAssertEqual(launchAtLogin.label, "Launch CopyLasso at Login")
     XCTAssertNotNil(launchAtLogin.value)
 
@@ -405,7 +464,7 @@ final class CopyLassoUITests: XCTestCase {
       app.staticTexts["copylasso.onboarding.title"].waitForNonExistence(timeout: 5)
     )
     openMenu(in: app)
-    XCTAssertTrue(menuItem("Capture Text", in: app).exists)
+    XCTAssertTrue(menuItem("Capture", in: app).exists)
     app.terminate()
 
     app = unfinishedAppWithoutReset()
@@ -463,6 +522,9 @@ final class CopyLassoUITests: XCTestCase {
       app.descendants(matching: .any)["copylasso.settings.shortcut"]
         .waitForExistence(timeout: 5)
     )
+    XCTAssertFalse(
+      app.descendants(matching: .any)["copylasso.settings.code-shortcut"].exists
+    )
     XCTAssertTrue(app.buttons["copylasso.settings.use-suggested-shortcut"].exists)
     let launchAtLogin = app.descendants(matching: .any)[
       "copylasso.settings.launch-at-login"
@@ -490,7 +552,7 @@ final class CopyLassoUITests: XCTestCase {
     XCTAssertTrue(app.links["MIT License"].exists)
     XCTAssertFalse(
       app.staticTexts[
-        "Clear the shortcut to keep Capture Text available only from the menu bar."
+        "Clear the shortcut to keep Capture available only from the menu bar."
       ].exists
     )
     XCTAssertFalse(
@@ -551,7 +613,7 @@ final class CopyLassoUITests: XCTestCase {
     let pasteboardChangeCount = NSPasteboard.general.changeCount
 
     openMenu(in: app)
-    menuItem("Capture Text", in: app).click()
+    menuItem("Capture", in: app).click()
 
     XCTAssertTrue(
       app.staticTexts["copylasso.permission-recovery.title"]
@@ -572,7 +634,7 @@ final class CopyLassoUITests: XCTestCase {
 
     for _ in 0..<3 {
       openMenu(in: app)
-      menuItem("Capture Text", in: app).click()
+      menuItem("Capture", in: app).click()
       XCTAssertTrue(
         app.staticTexts["copylasso.permission-recovery.title"]
           .waitForExistence(timeout: 5)
@@ -604,7 +666,7 @@ final class CopyLassoUITests: XCTestCase {
     defer { app.terminate() }
 
     openMenu(in: app)
-    menuItem("Capture Text", in: app).click()
+    menuItem("Capture", in: app).click()
     XCTAssertTrue(
       app.staticTexts["copylasso.permission-recovery.title"]
         .waitForExistence(timeout: 5)
@@ -623,7 +685,7 @@ final class CopyLassoUITests: XCTestCase {
     )
 
     openMenu(in: app)
-    menuItem("Capture Text", in: app).click()
+    menuItem("Capture", in: app).click()
     XCTAssertTrue(
       app.staticTexts["copylasso.permission-recovery.title"]
         .waitForExistence(timeout: 5)
@@ -635,7 +697,7 @@ final class CopyLassoUITests: XCTestCase {
     )
 
     openMenu(in: app)
-    menuItem("Capture Text", in: app).click()
+    menuItem("Capture", in: app).click()
     XCTAssertTrue(
       app.staticTexts["copylasso.permission-recovery.title"]
         .waitForExistence(timeout: 5)
@@ -653,7 +715,7 @@ final class CopyLassoUITests: XCTestCase {
     defer { app.terminate() }
 
     openMenu(in: app)
-    menuItem("Capture Text", in: app).click()
+    menuItem("Capture", in: app).click()
     XCTAssertTrue(
       app.staticTexts["copylasso.permission-recovery.title"]
         .waitForExistence(timeout: 5)
@@ -689,7 +751,7 @@ final class CopyLassoUITests: XCTestCase {
     let item = statusItem(in: app)
     XCTAssertTrue(item.waitForExistence(timeout: 5))
     item.click()
-    XCTAssertTrue(menuItem("Capture Text", in: app).waitForExistence(timeout: 5))
+    XCTAssertTrue(menuItem("Capture", in: app).waitForExistence(timeout: 5))
   }
 
   @MainActor
@@ -698,7 +760,7 @@ final class CopyLassoUITests: XCTestCase {
     message: String = "Capture should return to idle"
   ) -> XCUIElement {
     openMenu(in: app)
-    let capture = menuItem("Capture Text", in: app)
+    let capture = menuItem("Capture", in: app)
     let enabled = XCTNSPredicateExpectation(
       predicate: NSPredicate(format: "enabled == true"),
       object: capture
@@ -765,7 +827,7 @@ final class CopyLassoUITests: XCTestCase {
   }
 
   private static let requiredMenuLabels = [
-    "Capture Text",
+    "Capture",
     "Check for Updates…",
     "Settings…",
     "About CopyLasso",

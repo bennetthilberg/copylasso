@@ -79,6 +79,9 @@ echo "Testing platform and reinstall qualification"
 echo "Auditing the approved v0.2 product contract"
 ./scripts/audit-v02-contract.sh
 
+echo "Auditing on-screen code recognition"
+./scripts/audit-code-recognition.sh
+
 readonly committed_development_team_pattern='^[[:space:]]*"?DEVELOPMENT_TEAM(\[[^]]+\])?"?[[:space:]]*=[[:space:]]*[A-Z0-9]{10};'
 
 if /usr/bin/grep -Eq "$committed_development_team_pattern" \
@@ -146,7 +149,7 @@ fi
 
 readonly ocr_service='CopyLasso/Services/VisionOCRService.swift'
 ocr_api_files="$({ /usr/bin/grep -R -lE \
-    'import[[:space:]]+Vision|VNRecognizeTextRequest|VNImageRequestHandler' CopyLasso || true; })"
+    'VNRecognizeTextRequest' CopyLasso || true; })"
 if [[ "$ocr_api_files" != "$ocr_service" ]] || \
     ! /usr/bin/grep -q 'VNRecognizeTextRequestRevision3' "$ocr_service" || \
     ! /usr/bin/grep -q 'request.recognitionLevel = .accurate' "$ocr_service" || \
@@ -492,7 +495,7 @@ if [[ "$(/usr/bin/plutil -extract LSUIElement raw -o - "$debug_info_plist")" != 
     echo "The Debug application is not configured as a dockless agent." >&2
     exit 1
 fi
-if [[ "$(/usr/bin/plutil -extract NSScreenCaptureUsageDescription raw -o - "$debug_info_plist")" != "CopyLasso captures the screen region you select to recognize text locally." ]]; then
+if [[ "$(/usr/bin/plutil -extract NSScreenCaptureUsageDescription raw -o - "$debug_info_plist")" != "CopyLasso captures the screen region you select to recognize text or codes locally." ]]; then
     echo "The Debug application is missing its screen-capture usage description." >&2
     exit 1
 fi
@@ -529,7 +532,7 @@ if [[ "$(/usr/bin/plutil -extract LSUIElement raw -o - "$release_info_plist")" !
     echo "The Release application is not configured as a dockless agent." >&2
     exit 1
 fi
-if [[ "$(/usr/bin/plutil -extract NSScreenCaptureUsageDescription raw -o - "$release_info_plist")" != "CopyLasso captures the screen region you select to recognize text locally." ]]; then
+if [[ "$(/usr/bin/plutil -extract NSScreenCaptureUsageDescription raw -o - "$release_info_plist")" != "CopyLasso captures the screen region you select to recognize text or codes locally." ]]; then
     echo "The Release application is missing its screen-capture usage description." >&2
     exit 1
 fi
@@ -559,7 +562,7 @@ if /usr/bin/nm -u "$release_executable" | \
     exit 1
 fi
 
-if /usr/bin/strings "$release_executable" | /usr/bin/grep -qE -- '--g10-g11-|--g12-|--g13-|--g14-|--g15-|--g16-|--g17-'; then
+if /usr/bin/strings "$release_executable" | /usr/bin/grep -qE -- '--g10-g11-|--g12-|--g13-|--g14-|--g15-|--g16-|--g17-|--g38-'; then
     echo "Debug-only UI-test controls leaked into Release." >&2
     exit 1
 fi
@@ -574,6 +577,8 @@ if [[ ! -f "$debug_module" ]] || \
     ! /usr/bin/grep -a -q 'SystemScreenCaptureService' "$debug_module" || \
     ! /usr/bin/grep -a -q 'VisionOCRService' "$debug_module" || \
     ! /usr/bin/grep -a -q 'TextAssembler' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'VisionBarcodeService' "$debug_module" || \
+    ! /usr/bin/grep -a -q 'CodePayloadAssembler' "$debug_module" || \
     ! /usr/bin/grep -a -q 'SystemClipboardService' "$debug_module" || \
     ! /usr/bin/grep -a -q 'SystemSuccessSoundPlayer' "$debug_module" || \
     ! /usr/bin/grep -a -q 'FeedbackPanelController' "$debug_module" || \
@@ -606,6 +611,8 @@ for release_architecture in arm64 x86_64; do
         ! /usr/bin/grep -a -q 'SystemScreenCaptureService' "$release_module" || \
         ! /usr/bin/grep -a -q 'VisionOCRService' "$release_module" || \
         ! /usr/bin/grep -a -q 'TextAssembler' "$release_module" || \
+        ! /usr/bin/grep -a -q 'VisionBarcodeService' "$release_module" || \
+        ! /usr/bin/grep -a -q 'CodePayloadAssembler' "$release_module" || \
         ! /usr/bin/grep -a -q 'SystemClipboardService' "$release_module" || \
         ! /usr/bin/grep -a -q 'SystemSuccessSoundPlayer' "$release_module" || \
         ! /usr/bin/grep -a -q 'FeedbackPanelController' "$release_module" || \

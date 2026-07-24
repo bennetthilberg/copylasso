@@ -1,10 +1,10 @@
 # Security And Privacy Review
 
-This review describes the public CopyLasso 0.1.x boundary and the secure updater plus configurable success sound now present in source for the planned v0.2 release. It reconciles the source, built products, dependency graph, entitlements, persistence, and public privacy promises. The public 0.1.1 artifact remains the current release and contains neither feature.
+This review describes the public CopyLasso 0.1.x boundary and the secure updater, configurable success sound, and unified on-screen code recognition now present in source for the planned v0.2 release. It reconciles the source, built products, dependency graph, entitlements, persistence, and public privacy promises. The public 0.1.1 artifact remains the current release and contains none of these three features.
 
 ## Result
 
-The implementation remains local-first and offline-capable. Screen Recording is the only macOS privacy permission required by the core workflow. The app has no content-history store, account, telemetry, or crash-reporting SDK. Its sole network capability is the isolated, user-controlled Sparkle updater; capture, OCR, clipboard output, local success sound, Settings, onboarding, and Launch at Login remain operational with update networking unavailable.
+The implementation remains local-first and offline-capable. Screen Recording is the only macOS privacy permission required by the core workflow. The app has no content-history store, account, telemetry, or crash-reporting SDK. Its sole network capability is the isolated, user-controlled Sparkle updater; text and code recognition, clipboard output, local success sound, Settings, onboarding, and Launch at Login remain operational with update networking unavailable.
 
 The tracked `CopyLasso.entitlements` contains App Sandbox, outbound network client, and exactly Sparkle's two versioned installer-service Mach lookup names. Both app configurations use that file and keep Hardened Runtime enabled. There is no inbound server, device, file, application-group, or other temporary-exception capability. Screen Recording consent is managed by macOS TCC rather than an entitlement.
 
@@ -12,12 +12,13 @@ The tracked `CopyLasso.entitlements` contains App Sandbox, outbound network clie
 
 | Stage | Data | Lifetime and boundary | Persistent output |
 | --- | --- | --- | --- |
-| Request | Command event and payload-free coordinator state | One operation | None |
+| Request | Unified Capture command event and payload-free coordinator state | One operation | None |
 | Permission | Two local history booleans and direct Core Graphics observation | Preferences plus current check | Requested-before and observed-granted booleans only |
 | Selection | Display identity, frames, scale, and rectangle | Active selection through capture validation | None |
 | Capture | One `CGImage` for the selected local rectangle | Private async operation scope | None; no encoder or image writer exists |
-| OCR | Text, confidence, and normalized bounds | Private async operation scope | None |
-| Assembly | One plain `String` | Private async operation scope | None |
+| Text recognition | Text, confidence, and normalized bounds | Private async operation scope | None |
+| Code recognition | String payload, supported symbology, confidence, and normalized bounds | Private async operation scope | None |
+| Assembly | One inert plain `String` | Private async operation scope | None |
 | Clipboard | Nonempty assembled text | Passed once to a write-only adapter | One system pasteboard plain-string item, controlled by macOS after the write |
 | Sound | Enabled state and one content-free play/stop command | Successful clipboard completion or lifecycle cleanup | One versioned Boolean preference; no content |
 | Feedback | No-text/failure copy or an at-most-80-character success preview | Approximately 2.5 seconds | None; the observable model clears on dismissal |
@@ -35,6 +36,7 @@ CopyLasso owns only these preference categories:
 - whether shortcut and Launch at Login choices have been configured;
 - whether Screen Recording was requested and whether access was previously observed; and
 - `KeyboardShortcuts_captureText`, an encoded key/modifier choice maintained by the pinned shortcut package;
+- the unreleased legacy `KeyboardShortcuts_captureCode` value is cleared during migration and Debug reset rather than retained as a user-facing second shortcut;
 - the versioned `feedback.successSoundEnabled` Boolean, defaulting on and preserving explicit opt-out;
 - Sparkle's automatic-check schedule and user preference; and
 - `updates.deferredBuild` plus `updates.highestAuthenticatedBuild`, which contain canonical build numbers only.
@@ -50,10 +52,10 @@ An inspected development container contained preference/window metadata, one 240
 - Network client: present solely for Sparkle's fixed signed-feed and immutable GitHub enclosure requests. The app has no second networking stack, custom headers, cookie use, query parameters, system profiling, or external release-note request.
 - Network server: absent.
 - Sparkle installer services: exactly `$(PRODUCT_BUNDLE_IDENTIFIER)-spks` and `$(PRODUCT_BUNDLE_IDENTIFIER)-spki`; the separate downloader service is disabled.
-- Screen Recording: requested only after a user Capture Text command.
+- Screen Recording: requested only after a user Capture command.
 - Accessibility and Input Monitoring: not required by the shortcut, menu, selection, OCR, or output path.
 - Microphone and system-audio capture: not requested; ScreenCaptureKit capture disables audio. The output-only success sound uses `NSSound` and requests no privacy permission.
-- Files and folders: no user-selected or temporary-file entitlement; captured pixels never use a file intermediate.
+- Files and folders: no user-selected or temporary-file entitlement; captured pixels and code payloads never use a file intermediate.
 
 Settings links ask macOS to open the user's default browser. CopyLasso itself does not fetch those URLs. The shipping updater is isolated from core capture and has one fixed feed URL. Automatic checks default on at a 24-hour interval but can be disabled; manual checks remain available. Download and install never occur automatically. The user sees authenticated version, inline plain-text notes, and exact size before download, then explicitly confirms download and later install/relaunch.
 
@@ -69,6 +71,7 @@ Local Apple Development signing adds `com.apple.security.get-task-allow` to audi
 | Wrong display after reconfiguration | Identity, point size, scale, bounds, and derived pixel dimensions must match a fresh ScreenCaptureKit snapshot or capture fails before OCR. |
 | Protected or DRM content | CopyLasso follows macOS capture restrictions and does not bypass protected pixels. Blank protected output may yield no text. |
 | Misleading or hostile visible text | OCR output is untrusted plain text. CopyLasso copies it but never executes it, interprets markup, follows a link, or invokes a shell. Users must review text before using it as a command or credential. |
+| Malicious or action-shaped code payload | Code output is untrusted inert plain text. CopyLasso never opens a URL, launches an application, joins a network, creates a contact or calendar item, invokes a shell, or otherwise interprets or acts on it. |
 | Clipboard visibility | After a successful write, macOS and other clipboard-aware software control access. CopyLasso writes one plain-string representation and never reads prior contents. |
 | Audio content leakage or playback failure | The sound service receives no pixels, recognized text, clipboard text, preview, geometry, or application identity. It plays one fixed bundled asset after a successful write; missing, muted, unavailable, or refused playback fails silently without delaying or failing capture. |
 | Crash or forced termination during private processing | Operation values are memory-only and no in-app crash reporter receives them. Operating-system diagnostics or a privileged memory inspector remain outside the app's trust boundary. |
@@ -78,17 +81,24 @@ Local Apple Development signing adds `com.apple.security.get-task-allow` to audi
 | Replay or downgrade | The installed build is the baseline and the highest authenticated build persists across deferral; lower candidates fail closed. Malformed persisted state also fails closed. |
 | Oversized, truncated, or interrupted download | Expected and received bytes must match the signed length and remain within 256 MiB. Overflow, cancellation, timeout, disk failure, extraction failure, or installation failure cancels once, removes staging, and preserves the installed app. |
 | Unwanted update | Automatic checks may be disabled. Automatic download and installation are disabled. The user must first choose Download and later choose Install and Relaunch; Later, Cancel, Escape, or closing the panel preserves the installed app. |
-| Shortcut collision or spoofed event | The package validates and records the configured key combination; every event enters the same busy-rejecting command. A shortcut cannot bypass consent or selection. |
+| Shortcut collision or spoofed event | The package validates and records the configured key combination; a narrow `RegisterEventHotKey` adapter delivers it without an event tap or additional permission, and every event enters the same busy-rejecting command. Recorder focus suspends delivery only while CopyLasso is active. A shortcut cannot bypass consent or selection. |
 | Malformed OCR geometry or text | Pure formatting tests retain nonempty observations conservatively, reject invalid geometry safely, and output plain text only. |
+| Malformed, unsupported, binary-only, or ambiguous code result | The adapter exposes only the five reviewed symbologies. Pure assembly rejects missing or empty strings and invalid geometry, removes exact duplicates, and preserves the clipboard when multiple unique payloads contain line breaks. |
+
+## G38 Code Recognition Review
+
+Unified code recognition adds no dependency, entitlement, permission, network route, persistence, file or camera input, logger, or automatic application action. `VNDetectBarcodesRequest` is confined to one adapter pinned to revision 3 and explicitly limited to QR, Code 128, Data Matrix, PDF417, and Aztec. The adapter runs off the main actor, supports cancellation through the same request boundary as text OCR, converts results to framework-neutral observations, and releases the captured image when the private operation unwinds. Text and code recognition consume the same in-memory image concurrently; an eligible code result takes precedence, and a selection without one falls back to OCR.
+
+Complete payloads remain inside the private operation until the existing write-only clipboard call. The HUD receives only the established bounded preview. Nil, binary-only, empty, unsupported, partial, malformed, and no-code observations are ignored before OCR fallback. Ambiguous, no-content, cancellation, and complete-recognition-failure paths never call the clipboard or sound service. Permission recovery retries the one Capture request, and the shared coordinator rejects overlap.
 
 ## Dependency Inventory
 
 | Dependency | Scope | Version and revision | Purpose | License | Upstream |
 | --- | --- | --- | --- | --- | --- |
-| KeyboardShortcuts | Shipping application and tests | 3.0.1, `49c3fc04ea827f816df67843bfcc57286b47ff06` | Global shortcut recording, validation, persistence, registration, replacement, and clearing | MIT | <https://github.com/sindresorhus/KeyboardShortcuts> |
+| KeyboardShortcuts | Shipping application and tests | 3.0.1, `49c3fc04ea827f816df67843bfcc57286b47ff06` | Global shortcut recording, validation, persistence, menu presentation, replacement, and clearing | MIT | <https://github.com/sindresorhus/KeyboardShortcuts> |
 | Sparkle | Shipping application and tests | 2.9.4, `b6496a74a087257ef5e6da1c5b29a447a60f5bd7` | Signed appcast and enclosure verification, bounded download, staging, sandboxed installation, relaunch, and comparator behavior | Permissive Sparkle license bundle | <https://github.com/sparkle-project/Sparkle/blob/2.9.4/LICENSE> |
 
-KeyboardShortcuts declares no transitive dependency. The Release executable contains its code statically. Native macOS APIs provide lower-level event registration but no SwiftUI recorder plus persistence/conflict-management abstraction; the package materially reduces input and lifecycle risk. Its exact license text and attribution are in [Third-Party Notices](../THIRD_PARTY_NOTICES.md). A July 22, 2026 GitHub Advisory Database query for KeyboardShortcuts 3.0.1 returned zero matching Swift advisories; this time-sensitive check must be repeated for each release.
+KeyboardShortcuts declares no transitive dependency. The Release executable contains its code statically. CopyLasso uses native permission-free hotkey registration for event delivery, while the package supplies the SwiftUI recorder, persistence, conflict validation, and menu presentation. Its exact license text and attribution are in [Third-Party Notices](../THIRD_PARTY_NOTICES.md). A July 22, 2026 GitHub Advisory Database query for KeyboardShortcuts 3.0.1 returned zero matching Swift advisories; this time-sensitive check must be repeated for each release.
 
 Sparkle is a shipping binary framework in G36. Its exact tag, source revision, official artifact checksum, complete shipped license bundle, About acknowledgement, fixed configuration, entitlement boundary, and justification are recorded in [Third-Party Notices](../THIRD_PARTY_NOTICES.md), [ADR-004](architecture/ADR-004-secure-updates.md), and the secure-update audit. `SUEnableDownloaderService` is false; the bundled downloader XPC is inert and receives no downloader-service Mach entitlement. Release qualification must repeat advisory, framework-signature, nested-code, architecture, and notarization checks.
 
@@ -103,9 +113,10 @@ Run the tracked source audit:
 ```sh
 ./scripts/audit-privacy-security.sh
 ./scripts/audit-success-sound.sh
+./scripts/audit-code-recognition.sh
 ```
 
-The canonical CI entrypoint runs each audit exactly once. They validate the exact three-key entitlement contract, both build-configuration references, updater-only networking, absence of content-persistence APIs, logger confinement, tracked-secret and local-path scans, exact dependency scope, shipping notices, absence of tracked prebuilt dependency binaries, deterministic original audio bytes, one bundled sound asset, content-free service wiring, and no microphone, system-audio-capture, notification, or alternate playback API.
+The canonical CI entrypoint runs each audit exactly once. They validate the exact three-key entitlement contract, both build-configuration references, updater-only networking, absence of content-persistence APIs, logger confinement, tracked-secret and local-path scans, exact dependency scope, shipping notices, absence of tracked prebuilt dependency binaries, deterministic original audio and code-fixture bytes, Vision barcode confinement and configuration, inert payload handling, one bundled sound asset, content-free service wiring, and no microphone, camera, file-import, system-audio-capture, notification, or alternate playback API.
 
 The complete application unit bundle also passes when invoked directly under a process sandbox with `(deny network*)`. This exercises real Vision fixtures plus permission, selection, capture planning, formatting, clipboard, feedback, lifecycle, Settings, and end-to-end orchestration tests without disabling the workstation's network connection; the canonical verification record reports the exact current suite count.
 

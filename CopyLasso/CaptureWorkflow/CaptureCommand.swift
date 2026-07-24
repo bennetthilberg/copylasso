@@ -17,6 +17,8 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
   private let screenCaptureService: any ScreenCaptureService
   private let ocrService: any OCRService
   private let textAssembler: any TextAssembling
+  private let barcodeService: any BarcodeRecognitionService
+  private let codePayloadAssembler: any CodePayloadAssembling
   private let clipboardService: any ClipboardService
   private let successSoundPlayer: any SuccessSoundPlaying
   private let feedbackService: any FeedbackService
@@ -36,6 +38,8 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     screenCaptureService: any ScreenCaptureService,
     ocrService: any OCRService,
     textAssembler: any TextAssembling,
+    barcodeService: any BarcodeRecognitionService,
+    codePayloadAssembler: any CodePayloadAssembling = CodePayloadAssembler(),
     clipboardService: any ClipboardService,
     successSoundPlayer: any SuccessSoundPlaying = NoopSuccessSoundPlayer(),
     feedbackService: any FeedbackService,
@@ -48,6 +52,8 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     self.screenCaptureService = screenCaptureService
     self.ocrService = ocrService
     self.textAssembler = textAssembler
+    self.barcodeService = barcodeService
+    self.codePayloadAssembler = codePayloadAssembler
     self.clipboardService = clipboardService
     self.successSoundPlayer = successSoundPlayer
     self.feedbackService = feedbackService
@@ -75,6 +81,11 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
       }
     }
     return result
+  }
+
+  @discardableResult
+  func retryLastRequest() -> CaptureTransitionResult {
+    perform()
   }
 
   @discardableResult
@@ -204,39 +215,101 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
       throw CaptureOperationInterruption.failure(.internal)
     }
 
-    let observations: [RecognizedTextObservation]
-    do {
-      observations = try await ocrService.recognizeText(in: image)
-    } catch VisionOCRError.cancelled {
-      throw CaptureOperationInterruption.cancelled(
-        requestedCancellationReason ?? .user
-      )
-    } catch {
-      if let reason = cancellationReasonIfRequested {
-        throw CaptureOperationInterruption.cancelled(reason)
-      }
-      throw CaptureOperationInterruption.failure(.recognition)
-    }
+    async let textAttempt = recognizeText(in: image)
+    async let codeAttempt = recognizeCodes(in: image)
+    let attempts = await (textAttempt, codeAttempt)
     try throwIfCancellationRequested()
-
     guard case .transitioned = coordinator.handle(.recognitionCompleted) else {
       throw CaptureOperationInterruption.failure(.internal)
     }
 
-    let text = textAssembler.assemble(observations)
-    if text.isEmpty {
-      return .noText
+    let resolution = try resolveRecognition(
+      textAttempt: attempts.0,
+      codeAttempt: attempts.1
+    )
+    let content: String
+    let successFeedback: (String) -> CaptureFeedback
+    switch resolution {
+    case .text(let recognizedText):
+      content = recognizedText
+      successFeedback = { .success(preview: $0) }
+    case .code(let payload):
+      content = payload
+      successFeedback = { .codeSuccess(preview: $0) }
+    case .noContent:
+      return .noContent
+    case .ambiguousCodes:
+      return .ambiguousCodes
     }
 
     do {
-      try clipboardService.writePlainText(text)
+      try clipboardService.writePlainText(content)
     } catch {
       throw CaptureOperationInterruption.failure(.clipboard)
     }
 
     successSoundPlayer.play()
-    let preview = FeedbackPreview(text: text).text
-    return .success(preview: preview)
+    let preview = FeedbackPreview(text: content).text
+    return successFeedback(preview)
+  }
+
+  private func recognizeText(
+    in image: CGImage
+  ) async -> RecognitionAttempt<[RecognizedTextObservation]> {
+    do {
+      return .success(try await ocrService.recognizeText(in: image))
+    } catch VisionOCRError.cancelled {
+      return .cancelled
+    } catch {
+      return cancellationReasonIfRequested == nil ? .failure : .cancelled
+    }
+  }
+
+  private func recognizeCodes(
+    in image: CGImage
+  ) async -> RecognitionAttempt<[RecognizedCodeObservation]> {
+    do {
+      return .success(try await barcodeService.recognizeCodes(in: image))
+    } catch VisionBarcodeError.cancelled {
+      return .cancelled
+    } catch {
+      return cancellationReasonIfRequested == nil ? .failure : .cancelled
+    }
+  }
+
+  private func resolveRecognition(
+    textAttempt: RecognitionAttempt<[RecognizedTextObservation]>,
+    codeAttempt: RecognitionAttempt<[RecognizedCodeObservation]>
+  ) throws -> UnifiedRecognitionResolution {
+    if textAttempt.isCancelled || codeAttempt.isCancelled {
+      throw CaptureOperationInterruption.cancelled(
+        requestedCancellationReason ?? .user
+      )
+    }
+
+    let recognitionFailed = textAttempt.isFailure || codeAttempt.isFailure
+    if case .success(let codeObservations) = codeAttempt {
+      switch codePayloadAssembler.assemble(codeObservations) {
+      case .content(let payload):
+        return .code(payload)
+      case .ambiguous:
+        return .ambiguousCodes
+      case .noCode:
+        break
+      }
+    }
+
+    if case .success(let textObservations) = textAttempt {
+      let text = textAssembler.assemble(textObservations)
+      if !text.isEmpty {
+        return .text(text)
+      }
+    }
+
+    if recognitionFailed {
+      throw CaptureOperationInterruption.failure(.recognition)
+    }
+    return .noContent
   }
 
   private func handle(_ interruption: CaptureOperationInterruption) {
@@ -320,6 +393,33 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     _ = coordinator.handle(.cancel(reason))
     return true
   }
+}
+
+private enum RecognitionAttempt<Output: Sendable>: Sendable {
+  case success(Output)
+  case cancelled
+  case failure
+
+  var isCancelled: Bool {
+    if case .cancelled = self {
+      return true
+    }
+    return false
+  }
+
+  var isFailure: Bool {
+    if case .failure = self {
+      return true
+    }
+    return false
+  }
+}
+
+private enum UnifiedRecognitionResolution {
+  case text(String)
+  case code(String)
+  case noContent
+  case ambiguousCodes
 }
 
 private enum CaptureOperationInterruption: Error {

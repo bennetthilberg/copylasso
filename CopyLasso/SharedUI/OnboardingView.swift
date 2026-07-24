@@ -17,7 +17,7 @@ struct OnboardingView: View {
         Text("Welcome to CopyLasso")
           .font(.largeTitle.weight(.semibold))
           .accessibilityIdentifier("copylasso.onboarding.title")
-        Text("Copy visible text from anywhere on your screen.")
+        Text("Copy visible text and codes from anywhere on your screen.")
           .font(.title3)
           .foregroundStyle(.secondary)
       }
@@ -38,7 +38,7 @@ struct OnboardingView: View {
       Form {
         Section("Capture shortcut") {
           KeyboardShortcuts.Recorder(
-            "Capture Text",
+            "Capture",
             shortcut: $draftShortcut
           )
           .accessibilityLabel(AccessibilityAuditCopy.shortcutRecorderLabel)

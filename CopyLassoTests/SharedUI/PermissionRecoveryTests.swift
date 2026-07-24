@@ -196,4 +196,10 @@ private final class SpyCaptureRequester: CaptureRequesting {
     performCallCount += 1
     return result
   }
+
+  @discardableResult
+  func retryLastRequest() -> CaptureTransitionResult {
+    performCallCount += 1
+    return result
+  }
 }

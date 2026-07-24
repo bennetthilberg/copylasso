@@ -1,3 +1,5 @@
+import AppKit
+import KeyboardShortcuts
 import XCTest
 
 @testable import CopyLasso
@@ -42,6 +44,139 @@ final class GlobalShortcutControllerTests: XCTestCase {
     }
 
     XCTAssertEqual(context.scheduler.scheduledCompletionCount, 3)
+  }
+
+  func testSystemEventSourceRegistersSavedShortcutAndForwardsEvents() async {
+    let shortcut = KeyboardShortcuts.Shortcut(.two, modifiers: [.shift, .command])
+    let registrar = RecordingGlobalShortcutHotKeyRegistrar()
+    let source = SystemGlobalShortcutEventSource(
+      registrar: registrar,
+      shortcutProvider: { shortcut }
+    )
+    var iterator = source.events().makeAsyncIterator()
+
+    XCTAssertEqual(registrar.registeredShortcuts, [shortcut])
+
+    registrar.emit(.keyDown)
+    let event = await iterator.next()
+
+    XCTAssertEqual(event, .keyDown)
+  }
+
+  func testSystemEventSourceReregistersWhenTheSavedShortcutChanges() {
+    let notificationCenter = NotificationCenter()
+    let first = KeyboardShortcuts.Shortcut(.two, modifiers: [.shift, .command])
+    let replacement = KeyboardShortcuts.Shortcut(.eight, modifiers: [.option, .command])
+    let shortcutProvider = RecordingShortcutProvider(shortcut: first)
+    let registrar = RecordingGlobalShortcutHotKeyRegistrar()
+    let source = SystemGlobalShortcutEventSource(
+      registrar: registrar,
+      notificationCenter: notificationCenter,
+      shortcutProvider: { shortcutProvider.shortcut }
+    )
+    _ = source.events()
+
+    shortcutProvider.shortcut = replacement
+    notificationCenter.post(
+      name: Notification.Name("KeyboardShortcuts_shortcutByNameDidChange"),
+      object: nil
+    )
+
+    XCTAssertEqual(registrar.registeredShortcuts, [first, replacement])
+  }
+
+  func testSystemEventSourceSuspendsWhileTheShortcutRecorderIsActive() {
+    let notificationCenter = NotificationCenter()
+    let shortcut = KeyboardShortcuts.Shortcut(.two, modifiers: [.shift, .command])
+    let registrar = RecordingGlobalShortcutHotKeyRegistrar()
+    let source = SystemGlobalShortcutEventSource(
+      registrar: registrar,
+      notificationCenter: notificationCenter,
+      isApplicationActive: { true },
+      shortcutProvider: { shortcut }
+    )
+    _ = source.events()
+
+    notificationCenter.post(
+      name: Notification.Name("KeyboardShortcuts_recorderActiveStatusDidChange"),
+      object: nil,
+      userInfo: ["isActive": true]
+    )
+    notificationCenter.post(
+      name: Notification.Name("KeyboardShortcuts_recorderActiveStatusDidChange"),
+      object: nil,
+      userInfo: ["isActive": false]
+    )
+
+    XCTAssertEqual(registrar.registeredShortcuts, [shortcut, nil, shortcut])
+  }
+
+  func testSystemEventSourceIgnoresRestoredRecorderFocusWhileApplicationIsInactive() {
+    let notificationCenter = NotificationCenter()
+    let shortcut = KeyboardShortcuts.Shortcut(.two, modifiers: [.shift, .command])
+    let registrar = RecordingGlobalShortcutHotKeyRegistrar()
+    let source = SystemGlobalShortcutEventSource(
+      registrar: registrar,
+      notificationCenter: notificationCenter,
+      isApplicationActive: { false },
+      shortcutProvider: { shortcut }
+    )
+    _ = source.events()
+
+    notificationCenter.post(
+      name: Notification.Name("KeyboardShortcuts_recorderActiveStatusDidChange"),
+      object: nil,
+      userInfo: ["isActive": true]
+    )
+
+    XCTAssertEqual(registrar.registeredShortcuts, [shortcut])
+  }
+
+  func testSystemEventSourceReenablesShortcutWhenApplicationResignsDuringRecording() {
+    let notificationCenter = NotificationCenter()
+    let observedApplication = NSObject()
+    let applicationActivity = RecordingApplicationActivity(isActive: true)
+    let shortcut = KeyboardShortcuts.Shortcut(.two, modifiers: [.shift, .command])
+    let registrar = RecordingGlobalShortcutHotKeyRegistrar()
+    let source = SystemGlobalShortcutEventSource(
+      registrar: registrar,
+      notificationCenter: notificationCenter,
+      observedApplication: observedApplication,
+      isApplicationActive: { applicationActivity.isActive },
+      shortcutProvider: { shortcut }
+    )
+    _ = source.events()
+    notificationCenter.post(
+      name: Notification.Name("KeyboardShortcuts_recorderActiveStatusDidChange"),
+      object: nil,
+      userInfo: ["isActive": true]
+    )
+
+    applicationActivity.isActive = false
+    notificationCenter.post(
+      name: NSApplication.didResignActiveNotification,
+      object: observedApplication
+    )
+
+    XCTAssertEqual(registrar.registeredShortcuts, [shortcut, nil, shortcut])
+  }
+
+  func testSystemEventSourceRestartDoesNotLetTheOldStreamUnregisterTheNewOne() async {
+    let shortcut = KeyboardShortcuts.Shortcut(.two, modifiers: [.shift, .command])
+    let registrar = RecordingGlobalShortcutHotKeyRegistrar()
+    let source = SystemGlobalShortcutEventSource(
+      registrar: registrar,
+      shortcutProvider: { shortcut }
+    )
+    _ = source.events()
+    var replacementIterator = source.events().makeAsyncIterator()
+
+    await Task.yield()
+    registrar.emit(.keyUp)
+    let event = await replacementIterator.next()
+
+    XCTAssertEqual(event, .keyUp)
+    XCTAssertEqual(registrar.registeredShortcuts, [shortcut, nil, shortcut])
   }
 
   func testStopCancelsEventDeliveryAndCleansUpTheStream() async {
@@ -92,6 +227,40 @@ final class GlobalShortcutControllerTests: XCTestCase {
     let coordinator: CaptureCoordinator
     let scheduler: ShortcutCaptureCompletionScheduler
     let events: StubGlobalShortcutEventSource
+  }
+}
+
+@MainActor
+private final class RecordingShortcutProvider {
+  var shortcut: KeyboardShortcuts.Shortcut?
+
+  init(shortcut: KeyboardShortcuts.Shortcut?) {
+    self.shortcut = shortcut
+  }
+}
+
+@MainActor
+private final class RecordingApplicationActivity {
+  var isActive: Bool
+
+  init(isActive: Bool) {
+    self.isActive = isActive
+  }
+}
+
+@MainActor
+private final class RecordingGlobalShortcutHotKeyRegistrar:
+  GlobalShortcutHotKeyRegistering
+{
+  var eventHandler: ((GlobalShortcutEvent) -> Void)?
+  private(set) var registeredShortcuts: [KeyboardShortcuts.Shortcut?] = []
+
+  func register(_ shortcut: KeyboardShortcuts.Shortcut?) {
+    registeredShortcuts.append(shortcut)
+  }
+
+  func emit(_ event: GlobalShortcutEvent) {
+    eventHandler?(event)
   }
 }
 

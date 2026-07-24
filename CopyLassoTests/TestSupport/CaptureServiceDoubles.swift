@@ -120,6 +120,26 @@ actor StubOCRService: OCRService {
   }
 }
 
+actor StubBarcodeRecognitionService: BarcodeRecognitionService {
+  var result: Result<[RecognizedCodeObservation], TestServiceError>
+  private(set) var recognitionCallCount = 0
+  private(set) var recognizedImageSizes: [CGSize] = []
+
+  init(result: Result<[RecognizedCodeObservation], TestServiceError>) {
+    self.result = result
+  }
+
+  func recognizeCodes(in image: CGImage) async throws -> [RecognizedCodeObservation] {
+    recognitionCallCount += 1
+    recognizedImageSizes.append(CGSize(width: image.width, height: image.height))
+    return try result.get()
+  }
+
+  func setResult(_ result: Result<[RecognizedCodeObservation], TestServiceError>) {
+    self.result = result
+  }
+}
+
 final class SpyTextAssembler: TextAssembling, @unchecked Sendable {
   private let lock = NSLock()
   private let result: String
@@ -211,6 +231,7 @@ func makeTestCaptureCommand(
     screenCaptureService: StubScreenCaptureService(result: .failure(.injected)),
     ocrService: StubOCRService(result: .failure(.injected)),
     textAssembler: TextAssembler(),
+    barcodeService: StubBarcodeRecognitionService(result: .failure(.injected)),
     clipboardService: SpyClipboardService(),
     successSoundPlayer: successSoundPlayer,
     feedbackService: feedbackService,

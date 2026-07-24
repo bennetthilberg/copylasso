@@ -33,7 +33,7 @@ for required_text in \
     '# CopyLasso v0.2 Product Contract' \
     '**Status:** Approved scope for the planned v0.2 release' \
     '**Approved:** July 22, 2026' \
-    '**Implementation status:** In progress; the secure updater and configurable success sound are present in source but not in public CopyLasso 0.1.1' \
+    '**Implementation status:** In progress; the secure updater, configurable success sound, and unified on-screen code recognition are implemented in source but are not part of the public CopyLasso 0.1.1 download.' \
     '[v0.1 product contract](v0.1-product-contract.md)' \
     'automatic update checks are enabled by default' \
     'disable automatic checks in Settings' \
@@ -43,14 +43,15 @@ for required_text in \
     'Downloading, installing, and relaunching always require explicit user confirmation.' \
     'Success sound is enabled by default' \
     'only after the clipboard write succeeds' \
-    'Capture Text, Capture Code, and Capture LaTeX are separate commands.' \
-    '`Shift-Command-2` (`⇧⌘2`) remains assigned only to Capture Text.' \
-    'Capture Code and Capture LaTeX shortcuts are unset by default.' \
+    'CopyLasso exposes one Capture command and one configurable shortcut.' \
+    '`Shift-Command-2` (`⇧⌘2`) remains assigned to the single Capture command.' \
+    'Any eligible supported code result wins over recognized text' \
+    'If no eligible code remains, CopyLasso uses the ordinary OCR result.' \
     'Eligible observations are sorted in visual top-to-bottom, left-to-right order' \
     'Deduplication happens before any single-result, multiline, or' \
     'retained visual order with one newline' \
     'If multiple unique payloads remain and any contains a line break' \
-    'mode-specific ambiguity' \
+    'code-specific ambiguity' \
     'never opens a URL' \
     'at least 300 samples' \
     'at least 200 positive math samples' \
@@ -124,7 +125,7 @@ for documentation_contract in \
     "$repository_root/README.md:The public CopyLasso 0.1.1 download still updates manually." \
     "$repository_root/PRIVACY.md:Update requests send no screen pixels" \
     "$repository_root/PRIVACY.md:The public CopyLasso 0.1.x line still updates manually." \
-    "$repository_root/docs/security-and-privacy-review.md:The public 0.1.1 artifact remains the current release and contains neither feature."; do
+    "$repository_root/docs/security-and-privacy-review.md:The public 0.1.1 artifact remains the current release and contains none of these three features."; do
     documentation_file="${documentation_contract%%:*}"
     required_text="${documentation_contract#*:}"
     /usr/bin/grep -Fq "$required_text" "$documentation_file" || \

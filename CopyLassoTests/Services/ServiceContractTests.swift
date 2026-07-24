@@ -95,12 +95,12 @@ final class ServiceContractTests: XCTestCase {
     let service = SpyFeedbackService()
 
     try service.present(.success(preview: "known preview"))
-    try service.present(.noText)
+    try service.present(.noContent)
     try service.present(.failure(.recognition))
 
     XCTAssertEqual(
       service.presentedFeedback,
-      [.success(preview: "known preview"), .noText, .failure(.recognition)]
+      [.success(preview: "known preview"), .noContent, .failure(.recognition)]
     )
 
     service.error = .injected

@@ -25,6 +25,11 @@ enum SelectionOverlayRenderState: Equatable {
   case dragging(rect: CGRect)
 }
 
+enum SelectionOverlayAccessibilityCopy {
+  static let label = "CopyLasso selection overlay"
+  static let help = "Drag to select screen content. Press Escape to cancel."
+}
+
 @MainActor
 protocol SelectionDisplayProviding: AnyObject {
   func currentDisplays() throws -> [DisplayGeometry]
@@ -75,6 +80,24 @@ protocol SelectionApplicationActivationManaging: AnyObject {
   func restorePreviousApplication(
     whenInactive: @escaping @MainActor @Sendable () -> Void
   )
+}
+
+@MainActor
+protocol SelectionApplicationWindowVisibilityManaging: AnyObject {
+  func hideForSelection()
+  func restoreAfterSelection()
+}
+
+@MainActor
+protocol SelectionApplicationWindowPresenting: AnyObject {
+  var isVisibleForSelection: Bool { get }
+  func hideForSelection()
+  func restoreBehindAfterSelection()
+}
+
+@MainActor
+protocol SelectionApplicationWindowProviding: AnyObject {
+  func allApplicationWindows() -> [any SelectionApplicationWindowPresenting]
 }
 
 @MainActor
@@ -523,10 +546,10 @@ private final class AppKitSelectionOverlaySurface: SelectionOverlaySurface {
     panel.ignoresMouseEvents = false
     panel.animationBehavior = .none
     panel.contentView = contentView
-    panel.title = "CopyLasso text selection overlay"
+    panel.title = SelectionOverlayAccessibilityCopy.label
     panel.setAccessibilityIdentifier("copylasso.selection.overlay")
-    panel.setAccessibilityLabel("CopyLasso text selection overlay")
-    panel.setAccessibilityHelp("Drag to select text. Press Escape to cancel.")
+    panel.setAccessibilityLabel(SelectionOverlayAccessibilityCopy.label)
+    panel.setAccessibilityHelp(SelectionOverlayAccessibilityCopy.help)
 
     contentView.displayFrame = display.appKitFrame
   }
@@ -620,8 +643,8 @@ final class RegionSelectionView: NSView {
     setAccessibilityElement(true)
     setAccessibilityIdentifier("copylasso.selection.overlay")
     setAccessibilityRole(.group)
-    setAccessibilityLabel("CopyLasso text selection overlay")
-    setAccessibilityHelp("Drag to select text. Press Escape to cancel.")
+    setAccessibilityLabel(SelectionOverlayAccessibilityCopy.label)
+    setAccessibilityHelp(SelectionOverlayAccessibilityCopy.help)
   }
 
   @available(*, unavailable)
@@ -817,9 +840,11 @@ final class SystemSelectionApplicationActivationManager: NSObject,
   private let currentProcessIdentifier: () -> pid_t
   private let requestPreviousApplicationActivation: (NSRunningApplication) -> Void
   private let scheduleActivationFallback: ActivationFallbackScheduler
+  private let windowVisibilityManager: any SelectionApplicationWindowVisibilityManaging
   private var previousApplication: NSRunningApplication?
   private var hasActiveHandoff = false
   private var activatedApplicationForSelection = false
+  private var hidApplicationWindowsForSelection = false
   private var isObservingActivation = false
   private var isObservingDeactivation = false
   private var activationReady: (@MainActor @Sendable () -> Void)?
@@ -839,7 +864,8 @@ final class SystemSelectionApplicationActivationManager: NSObject,
         NSApp.yieldActivation(to: application)
         _ = application.activate(from: .current, options: [])
       },
-      scheduleActivationFallback: Self.scheduleDefaultActivationFallback
+      scheduleActivationFallback: Self.scheduleDefaultActivationFallback,
+      windowVisibilityManager: SystemSelectionApplicationWindowVisibilityManager()
     )
   }
 
@@ -877,6 +903,8 @@ final class SystemSelectionApplicationActivationManager: NSObject,
       return
     }
 
+    windowVisibilityManager.hideForSelection()
+    hidApplicationWindowsForSelection = true
     activatedApplicationForSelection = true
     notificationCenter.addObserver(
       self,
@@ -918,7 +946,9 @@ final class SystemSelectionApplicationActivationManager: NSObject,
       _ = application.activate(from: .current, options: [])
     },
     scheduleActivationFallback: @escaping ActivationFallbackScheduler =
-      SystemSelectionApplicationActivationManager.scheduleDefaultActivationFallback
+      SystemSelectionApplicationActivationManager.scheduleDefaultActivationFallback,
+    windowVisibilityManager: any SelectionApplicationWindowVisibilityManaging =
+      SystemSelectionApplicationWindowVisibilityManager()
   ) {
     self.notificationCenter = notificationCenter
     self.observedApplication = observedApplication
@@ -929,6 +959,7 @@ final class SystemSelectionApplicationActivationManager: NSObject,
     self.currentProcessIdentifier = currentProcessIdentifier
     self.requestPreviousApplicationActivation = requestPreviousApplicationActivation
     self.scheduleActivationFallback = scheduleActivationFallback
+    self.windowVisibilityManager = windowVisibilityManager
     super.init()
   }
 
@@ -948,12 +979,14 @@ final class SystemSelectionApplicationActivationManager: NSObject,
 
     guard requiresActivationRestoration else {
       previousApplication = nil
+      restoreApplicationWindows()
       whenInactive()
       return
     }
 
     guard isApplicationActive() else {
       previousApplication = nil
+      restoreApplicationWindows()
       whenInactive()
       return
     }
@@ -1010,9 +1043,16 @@ final class SystemSelectionApplicationActivationManager: NSObject,
 
   private func completeRestoration() {
     stopObservingDeactivation()
+    restoreApplicationWindows()
     let restorationReady = restorationReady
     self.restorationReady = nil
     restorationReady?()
+  }
+
+  private func restoreApplicationWindows() {
+    guard hidApplicationWindowsForSelection else { return }
+    hidApplicationWindowsForSelection = false
+    windowVisibilityManager.restoreAfterSelection()
   }
 
   private func stopObservingDeactivation() {
@@ -1027,6 +1067,62 @@ final class SystemSelectionApplicationActivationManager: NSObject,
 
   deinit {
     notificationCenter.removeObserver(self)
+  }
+}
+
+@MainActor
+final class SystemSelectionApplicationWindowVisibilityManager:
+  SelectionApplicationWindowVisibilityManaging
+{
+  private let applicationWindowProvider: any SelectionApplicationWindowProviding
+  private var hiddenWindows: [any SelectionApplicationWindowPresenting] = []
+
+  convenience init() {
+    self.init(applicationWindowProvider: SystemSelectionApplicationWindowProvider())
+  }
+
+  init(applicationWindowProvider: any SelectionApplicationWindowProviding) {
+    self.applicationWindowProvider = applicationWindowProvider
+  }
+
+  func hideForSelection() {
+    guard hiddenWindows.isEmpty else { return }
+    hiddenWindows =
+      applicationWindowProvider
+      .allApplicationWindows()
+      .filter(\.isVisibleForSelection)
+    for window in hiddenWindows {
+      window.hideForSelection()
+    }
+  }
+
+  func restoreAfterSelection() {
+    let windowsToRestore = hiddenWindows
+    hiddenWindows.removeAll()
+    for window in windowsToRestore where !window.isVisibleForSelection {
+      window.restoreBehindAfterSelection()
+    }
+  }
+}
+
+@MainActor
+final class SystemSelectionApplicationWindowProvider: SelectionApplicationWindowProviding {
+  func allApplicationWindows() -> [any SelectionApplicationWindowPresenting] {
+    NSApp?.windows ?? []
+  }
+}
+
+extension NSWindow: SelectionApplicationWindowPresenting {
+  var isVisibleForSelection: Bool {
+    isVisible
+  }
+
+  func hideForSelection() {
+    orderOut(nil)
+  }
+
+  func restoreBehindAfterSelection() {
+    orderBack(nil)
   }
 }
 

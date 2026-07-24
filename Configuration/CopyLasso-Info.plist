@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>NSScreenCaptureUsageDescription</key>
-	<string>CopyLasso captures the screen region you select to recognize text locally.</string>
+	<string>CopyLasso captures the screen region you select to recognize text or codes locally.</string>
 	<key>SUAllowsAutomaticUpdates</key>
 	<false/>
 	<key>SUAutomaticallyUpdate</key>

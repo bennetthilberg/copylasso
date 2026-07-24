@@ -9,8 +9,8 @@ struct MenuBarMenuView: View {
   let updateController: UpdateController
 
   var body: some View {
-    Button("Capture Text") {
-      commandHandler.captureText()
+    Button("Capture") {
+      commandHandler.capture()
     }
     .disabled(!commandHandler.isCaptureEnabled)
     .globalKeyboardShortcut(.captureText)

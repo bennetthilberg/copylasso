@@ -23,7 +23,7 @@ final class MenuBarCommandHandler {
   }
 
   @discardableResult
-  func captureText() -> CaptureTransitionResult {
+  func capture() -> CaptureTransitionResult {
     captureCommand.perform()
   }
 

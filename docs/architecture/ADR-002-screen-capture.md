@@ -87,7 +87,7 @@ No ScreenCaptureKit enumeration or capture call occurred, so the private-window-
 
 ## G14 Production Capture Adoption
 
-G14 implements `SystemScreenCaptureService` as an actor-isolated `ScreenCaptureService`. A valid selection now carries its original display point size, `NSScreen` backing scale, and an outward-rounded, display-local backing-pixel rectangle. The request planner verifies that the pixel rectangle is consistent with the local Core Graphics rectangle, aligns the source rectangle to backing-pixel edges, and disables cursor and audio capture. Both application configurations declare `NSScreenCaptureUsageDescription` with a local-text-recognition explanation.
+G14 implements `SystemScreenCaptureService` as an actor-isolated `ScreenCaptureService`. A valid selection now carries its original display point size, `NSScreen` backing scale, and an outward-rounded, display-local backing-pixel rectangle. The request planner verifies that the pixel rectangle is consistent with the local Core Graphics rectangle, aligns the source rectangle to backing-pixel edges, and disables cursor and audio capture. Both application configurations declare `NSScreenCaptureUsageDescription` with a local text-or-code-recognition explanation.
 
 Only after the G13 completion callback has ordered out and released every overlay does the live client:
 

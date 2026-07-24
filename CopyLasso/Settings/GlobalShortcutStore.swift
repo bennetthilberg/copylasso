@@ -11,7 +11,7 @@ enum CaptureShortcutDefaults {
     modifiers: [.shift, .command]
   )
   static let suggestedDescription =
-    "Suggested: Shift–Command–2. Clear the recorder to use only the menu command."
+    "Suggested: Shift–Command–2."
 }
 
 @MainActor
@@ -22,6 +22,12 @@ protocol GlobalShortcutStoring: AnyObject {
 
 @MainActor
 final class KeyboardShortcutsStore: GlobalShortcutStoring {
+  private let legacyCodeShortcutName = KeyboardShortcuts.Name("captureCode")
+
+  init() {
+    KeyboardShortcuts.setShortcut(nil, for: legacyCodeShortcutName)
+  }
+
   var captureShortcut: KeyboardShortcuts.Shortcut? {
     get {
       KeyboardShortcuts.getShortcut(for: .captureText)
@@ -33,5 +39,6 @@ final class KeyboardShortcutsStore: GlobalShortcutStoring {
 
   func reset() {
     KeyboardShortcuts.setShortcut(nil, for: .captureText)
+    KeyboardShortcuts.setShortcut(nil, for: legacyCodeShortcutName)
   }
 }

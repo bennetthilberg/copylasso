@@ -8,4 +8,6 @@ protocol PermissionRecoveryPresenting: AnyObject {
 protocol CaptureRequesting: AnyObject {
   @discardableResult
   func perform() -> CaptureTransitionResult
+  @discardableResult
+  func retryLastRequest() -> CaptureTransitionResult
 }

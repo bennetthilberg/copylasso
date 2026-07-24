@@ -332,6 +332,7 @@ final class SettingsControllerTests: XCTestCase {
     XCTAssertTrue(context.controller.resetLocalDevelopmentState())
     XCTAssertEqual(context.store.resetCallCount, 1)
     XCTAssertEqual(context.shortcutStore.resetCallCount, 1)
+    XCTAssertNil(context.shortcutStore.captureShortcut)
     XCTAssertTrue(context.controller.needsOnboarding)
     XCTAssertTrue(context.controller.isSuccessSoundEnabled)
 

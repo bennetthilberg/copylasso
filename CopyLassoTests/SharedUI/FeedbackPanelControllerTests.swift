@@ -5,7 +5,7 @@ import XCTest
 
 @MainActor
 final class FeedbackPanelControllerTests: XCTestCase {
-  func testContentDistinguishesSuccessNoTextAndFailureWithoutRawErrors() {
+  func testContentDistinguishesTextCodeNoContentAndFailureWithoutRawErrors() {
     XCTAssertEqual(
       FeedbackPresentationContent(feedback: .success(preview: "known preview")),
       FeedbackPresentationContent(
@@ -17,13 +17,14 @@ final class FeedbackPanelControllerTests: XCTestCase {
       )
     )
     XCTAssertEqual(
-      FeedbackPresentationContent(feedback: .noText),
+      FeedbackPresentationContent(feedback: .noContent),
       FeedbackPresentationContent(
         symbolName: "text.magnifyingglass",
-        menuBarAccessibilityLabel: "CopyLasso, no text found",
-        title: "No Text Found",
-        message: "Try selecting a clearer or larger area.",
-        accessibilityLabel: "No Text Found. Try selecting a clearer or larger area."
+        menuBarAccessibilityLabel: "CopyLasso, no text or code found",
+        title: "No Text or Code Found",
+        message: "Try selecting a clearer or larger area around the content.",
+        accessibilityLabel:
+          "No Text or Code Found. Try selecting a clearer or larger area around the content."
       )
     )
     XCTAssertEqual(
@@ -32,9 +33,23 @@ final class FeedbackPanelControllerTests: XCTestCase {
         symbolName: "exclamationmark.triangle.fill",
         menuBarAccessibilityLabel: "CopyLasso, capture failed",
         title: "Copy Failed",
-        message: "Text recognition could not be completed.",
-        accessibilityLabel: "Copy Failed. Text recognition could not be completed."
+        message: "Text and code recognition could not be completed.",
+        accessibilityLabel: "Copy Failed. Text and code recognition could not be completed."
       )
+    )
+    XCTAssertEqual(
+      FeedbackPresentationContent(feedback: .codeSuccess(preview: "CODE")),
+      FeedbackPresentationContent(
+        symbolName: "checkmark.circle.fill",
+        menuBarAccessibilityLabel: "CopyLasso, code copied",
+        title: "Copied Code",
+        message: "CODE",
+        accessibilityLabel: "Copied Code: CODE"
+      )
+    )
+    XCTAssertEqual(
+      FeedbackPresentationContent(feedback: .ambiguousCodes).title,
+      "Capture Codes Separately"
     )
   }
 
@@ -77,7 +92,7 @@ final class FeedbackPanelControllerTests: XCTestCase {
     XCTAssertNil(controller.model.feedback)
     XCTAssertNil(controller.model.content)
 
-    try controller.present(.noText)
+    try controller.present(.noContent)
     await waiter.waitUntilCallCount(2)
     XCTAssertEqual(host.showCallCount, 2)
     waiter.resumeCall(at: 1)
@@ -108,7 +123,7 @@ final class FeedbackPanelControllerTests: XCTestCase {
       waitForDismissal: waiter.wait
     )
 
-    try controller.present(.noText)
+    try controller.present(.noContent)
     await waiter.waitUntilCallCount(1)
     XCTAssertEqual(controller.model.feedbackHUDBackgroundStyle, .regularMaterial)
     XCTAssertEqual(makePanelCallCount, 1)
@@ -144,11 +159,11 @@ final class FeedbackPanelControllerTests: XCTestCase {
     )
     try controller.present(.success(preview: "first"))
     await waiter.waitUntilCallCount(1)
-    try controller.present(.noText)
+    try controller.present(.noContent)
     await waiter.waitUntilCallCount(2)
 
     await Task.yield()
-    XCTAssertEqual(controller.model.feedback, .noText)
+    XCTAssertEqual(controller.model.feedback, .noContent)
     XCTAssertEqual(host.hideCallCount, 0)
 
     waiter.resumeCall(at: 1)
@@ -175,7 +190,9 @@ final class FeedbackPanelControllerTests: XCTestCase {
   func testExplicitDismissHidesEveryFeedbackKindImmediatelyAndCancelsTheActiveWait() async {
     let feedbackCases: [CaptureFeedback] = [
       .success(preview: "first"),
-      .noText,
+      .noContent,
+      .codeSuccess(preview: "code"),
+      .ambiguousCodes,
       .failure(.recognition),
     ]
 

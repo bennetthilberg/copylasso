@@ -44,6 +44,7 @@ struct CopyLassoApp: App {
     let permissionService: any ScreenCapturePermissionService
     let selectionService: any RegionSelectionService
     let screenCaptureService: any ScreenCaptureService
+    let barcodeService: any BarcodeRecognitionService
     let updateService: any UpdateServicing
 
     #if DEBUG
@@ -72,7 +73,7 @@ struct CopyLassoApp: App {
         : SystemScreenCapturePermissionService(historyStore: settingsStore)
       selectionService =
         runtimeOptions.isUITesting && !runtimeOptions.isLiveSelectionTesting
-        ? DebugRegionSelectionService()
+        ? DebugRegionSelectionService(arguments: arguments)
         : AppKitRegionSelectionService()
       screenCaptureService =
         runtimeOptions.usesDebugCaptureService
@@ -82,11 +83,16 @@ struct CopyLassoApp: App {
         runtimeOptions.isUITesting
         ? DebugUpdateService()
         : SparkleUpdateService()
+      barcodeService =
+        runtimeOptions.isUITesting
+        ? DebugBarcodeRecognitionService(arguments: arguments)
+        : VisionBarcodeService()
     #else
       launchAtLoginService = SystemLaunchAtLoginService()
       permissionService = SystemScreenCapturePermissionService(historyStore: settingsStore)
       selectionService = AppKitRegionSelectionService()
       screenCaptureService = SystemScreenCaptureService()
+      barcodeService = VisionBarcodeService()
       updateService = SparkleUpdateService()
     #endif
 
@@ -114,6 +120,8 @@ struct CopyLassoApp: App {
       screenCaptureService: screenCaptureService,
       ocrService: VisionOCRService(),
       textAssembler: TextAssembler(),
+      barcodeService: barcodeService,
+      codePayloadAssembler: CodePayloadAssembler(),
       clipboardService: SystemClipboardService(),
       successSoundPlayer: successSoundPlayer,
       feedbackService: feedbackController,
@@ -126,7 +134,7 @@ struct CopyLassoApp: App {
     )
     let globalShortcutController = GlobalShortcutController(
       captureCommand: captureCommand,
-      eventSource: KeyboardShortcutsEventSource()
+      eventSource: SystemGlobalShortcutEventSource()
     )
     self.globalShortcutController = globalShortcutController
     let lifecycleController = ApplicationLifecycleController(
