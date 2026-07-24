@@ -96,16 +96,18 @@ final class CopyLassoUITests: XCTestCase {
   @MainActor
   func testCaptureCodePresentsModeSpecificSuccessNoCodeAndAmbiguityFeedback() {
     let cases = [
-      ("success", "Copied Code", "COPYLASSO UI CODE"),
-      ("no-code", "No Code Found", "Try selecting a clearer or larger area around the code."),
+      ("success", "Copied Code: COPYLASSO UI CODE"),
+      (
+        "no-code",
+        "No Code Found. Try selecting a clearer or larger area around the code."
+      ),
       (
         "ambiguous",
-        "Capture Codes Separately",
-        "The selection contains multiple codes with multiline content."
+        "Capture Codes Separately. The selection contains multiple codes with multiline content."
       ),
     ]
 
-    for (result, expectedTitle, expectedMessage) in cases {
+    for (result, expectedAccessibilityLabel) in cases {
       let app = completedApp(
         extraArguments: [
           "--g38-selection=selected",
@@ -117,13 +119,9 @@ final class CopyLassoUITests: XCTestCase {
       openMenu(in: app)
       menuItem("Capture Code", in: app).click()
 
-      let title = app.staticTexts["copylasso.feedback.title"]
-      XCTAssertTrue(title.waitForExistence(timeout: 5))
-      assertAccessibleText(title, equals: expectedTitle)
-      assertAccessibleText(
-        app.staticTexts["copylasso.feedback.message"],
-        equals: expectedMessage
-      )
+      let feedbackHUD = app.descendants(matching: .any)["copylasso.feedback.hud"]
+      XCTAssertTrue(feedbackHUD.waitForExistence(timeout: 5))
+      assertAccessibleText(feedbackHUD, equals: expectedAccessibilityLabel)
       retainScreenshot(named: "CopyLasso Capture Code \(result) feedback")
       app.terminate()
     }
@@ -149,9 +147,9 @@ final class CopyLassoUITests: XCTestCase {
     )
 
     app.buttons["copylasso.permission-recovery.try-again"].click()
-    let title = app.staticTexts["copylasso.feedback.title"]
-    XCTAssertTrue(title.waitForExistence(timeout: 5))
-    assertAccessibleText(title, equals: "Copied Code")
+    let feedbackHUD = app.descendants(matching: .any)["copylasso.feedback.hud"]
+    XCTAssertTrue(feedbackHUD.waitForExistence(timeout: 5))
+    assertAccessibleText(feedbackHUD, equals: "Copied Code: COPYLASSO UI CODE")
   }
 
   @MainActor
