@@ -37,23 +37,6 @@ final class SettingsControllerTests: XCTestCase {
     XCTAssertTrue(context.store.isSuccessSoundEnabled)
   }
 
-  func testCaptureCodeShortcutIsIndependentOptionalAndPersistsImmediately() {
-    let context = makeContext()
-    let codeShortcut = KeyboardShortcuts.Shortcut(
-      .eight,
-      modifiers: [.option, .command]
-    )
-
-    XCTAssertNil(context.controller.captureCodeShortcut)
-    context.controller.setCaptureCodeShortcut(codeShortcut)
-    XCTAssertEqual(context.controller.captureCodeShortcut, codeShortcut)
-    XCTAssertEqual(context.shortcutStore.captureCodeShortcut, codeShortcut)
-
-    context.controller.setCaptureCodeShortcut(nil)
-    XCTAssertNil(context.controller.captureCodeShortcut)
-    XCTAssertNil(context.shortcutStore.captureCodeShortcut)
-  }
-
   func testClosingOnboardingDoesNotCompleteItOrApplyDraftChoices() {
     let context = makeContext()
 
@@ -345,15 +328,11 @@ final class SettingsControllerTests: XCTestCase {
     context.login.status = .enabled
     context.login.statusAfterDisable = .disabled
     context.shortcutStore.captureShortcut = suggestedShortcut
-    context.shortcutStore.captureCodeShortcut = KeyboardShortcuts.Shortcut(
-      .eight,
-      modifiers: [.option, .command]
-    )
 
     XCTAssertTrue(context.controller.resetLocalDevelopmentState())
     XCTAssertEqual(context.store.resetCallCount, 1)
     XCTAssertEqual(context.shortcutStore.resetCallCount, 1)
-    XCTAssertNil(context.shortcutStore.captureCodeShortcut)
+    XCTAssertNil(context.shortcutStore.captureShortcut)
     XCTAssertTrue(context.controller.needsOnboarding)
     XCTAssertTrue(context.controller.isSuccessSoundEnabled)
 

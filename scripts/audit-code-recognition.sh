@@ -25,11 +25,13 @@ for required_file in \
     "$assembler" \
     "$workflow" \
     "$generator" \
-    "$repository_root/CopyLasso/Models/CaptureMode.swift" \
     "$repository_root/CopyLassoTests/Models/CodePayloadAssemblerTests.swift" \
     "$repository_root/CopyLassoTests/Services/VisionBarcodeServiceTests.swift"; do
     [[ -f "$required_file" ]] || fail "Required code-recognition file is missing: $required_file"
 done
+
+[[ ! -e "$repository_root/CopyLasso/Models/CaptureMode.swift" ]] || \
+    fail "Unified capture must not retain a separate CaptureMode model."
 
 vision_barcode_files="$({
     /usr/bin/grep -R -lE \
@@ -68,31 +70,44 @@ if /usr/bin/grep -nE \
 fi
 
 for required_workflow_contract in \
-    'perform(mode: CaptureMode)' \
+    'func perform() -> CaptureTransitionResult' \
     'retryLastRequest()' \
-    'barcodeService.recognizeCodes(in: image)' \
-    'codePayloadAssembler.assemble(observations)' \
-    'mode == .text ? .success(preview: preview) : .codeSuccess(preview: preview)'; do
+    'async let textAttempt = recognizeText(in: image)' \
+    'async let codeAttempt = recognizeCodes(in: image)' \
+    'codePayloadAssembler.assemble(codeObservations)' \
+    'return .code(payload)' \
+    'return .text(text)' \
+    'return .noContent'; do
     /usr/bin/grep -Fq "$required_workflow_contract" "$workflow" || \
         fail "The shared capture workflow is missing: $required_workflow_contract"
 done
 
 for required_ui_contract in \
-    "$menu:Capture Code" \
-    "$menu:.globalKeyboardShortcut(.captureCode)" \
+    "$menu:Button(\"Capture\")" \
+    "$menu:.globalKeyboardShortcut(.captureText)" \
     "$settings:Shortcuts" \
-    "$settings:Capture Code" \
-    "$settings:codeShortcutRecorderLabel" \
-    "$shortcut_store:static let captureCode = Self(\"captureCode\")" \
+    "$settings:KeyboardShortcuts.Recorder(" \
+    "$settings:\"Capture\"" \
+    "$shortcut_store:legacyCodeShortcutName = KeyboardShortcuts.Name(\"captureCode\")" \
     "$feedback:Copied Code" \
-    "$feedback:No Code Found" \
-    "$feedback:Capture Codes Separately" \
-    "$feedback:Code Capture Failed"; do
+    "$feedback:No Text or Code Found" \
+    "$feedback:Capture Codes Separately"; do
     contract_file="${required_ui_contract%%:*}"
     required_text="${required_ui_contract#*:}"
     /usr/bin/grep -Fq "$required_text" "$contract_file" || \
         fail "The Capture Code UI contract is missing: $required_text"
 done
+
+if /usr/bin/grep -R -nE \
+    'Capture Code"|captureCodeShortcut|globalKeyboardShortcut\(\.captureCode\)|perform\(mode:|codeShortcutRecorderLabel|No Code Found|Code Capture Failed' \
+    "$menu" \
+    "$settings" \
+    "$repository_root/CopyLasso/App" \
+    "$repository_root/CopyLasso/CaptureWorkflow" \
+    "$repository_root/CopyLasso/Models/FeedbackPresentationContent.swift" \
+    "$repository_root/CopyLasso/Settings/SettingsController.swift"; then
+    fail "Unified Capture must not expose a second code mode, command, shortcut, or generic code-only failure."
+fi
 
 readonly expected_fixture_records=(
     "4b359a470614f8c335f5ff32cfcf743398d0936d974ab04d52f4e654148db355 code-aztec.png"
@@ -132,18 +147,18 @@ if ! /usr/bin/jq -e '
         "com.apple.security.temporary-exception.mach-lookup.global-name"
     ]
     ' <<< "$entitlements_json" >/dev/null; then
-    fail "Capture Code must not add an entitlement."
+    fail "On-screen code recognition must not add an entitlement."
 fi
 
 for documentation_contract in \
-    "$repository_root/README.md:Capture Code is present in current source but is not part of the public CopyLasso 0.1.1 download." \
-    "$repository_root/CHANGELOG.md:Capture Code" \
+    "$repository_root/README.md:Unified code recognition is present in current source but is not part of the public CopyLasso 0.1.1 download." \
+    "$repository_root/CHANGELOG.md:Unified on-screen recognition" \
     "$repository_root/PRIVACY.md:Code payloads are recognized locally" \
     "$repository_root/SECURITY.md:CopyLasso never opens or acts on a recognized code payload." \
-    "$repository_root/docs/architecture/capture-workflow.md:## Capture Code" \
+    "$repository_root/docs/architecture/capture-workflow.md:## Concurrent Recognition and Precedence" \
     "$repository_root/docs/security-and-privacy-review.md:## G38 Code Recognition Review" \
     "$repository_root/docs/testing.md:## G38 On-Screen Code Recognition" \
-    "$repository_root/docs/v0.2-product-contract.md:Capture Code are implemented in source but are not part of the public CopyLasso 0.1.1 download."; do
+    "$repository_root/docs/v0.2-product-contract.md:unified on-screen code recognition are implemented in source but are not part of the public CopyLasso 0.1.1 download."; do
     documentation_file="${documentation_contract%%:*}"
     required_text="${documentation_contract#*:}"
     /usr/bin/grep -Fq "$required_text" "$documentation_file" || \
@@ -151,7 +166,7 @@ for documentation_contract in \
 done
 
 if /usr/bin/grep -R -nE \
-    'Capture Code (is|are) (available now|shipping|included in 0\.1\.1)' \
+    '(Capture Code|code recognition) (is|are) (available now|shipping|included in 0\.1\.1)' \
     "$repository_root/README.md" \
     "$repository_root/CHANGELOG.md" \
     "$repository_root/PRIVACY.md" \

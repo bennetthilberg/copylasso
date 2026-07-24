@@ -3,7 +3,6 @@ import KeyboardShortcuts
 
 extension KeyboardShortcuts.Name {
   static let captureText = Self("captureText")
-  static let captureCode = Self("captureCode")
 }
 
 enum CaptureShortcutDefaults {
@@ -12,18 +11,23 @@ enum CaptureShortcutDefaults {
     modifiers: [.shift, .command]
   )
   static let suggestedDescription =
-    "Suggested: Shift–Command–2. Clear the recorder to use only the menu command."
+    "Suggested: Shift–Command–2."
 }
 
 @MainActor
 protocol GlobalShortcutStoring: AnyObject {
   var captureShortcut: KeyboardShortcuts.Shortcut? { get set }
-  var captureCodeShortcut: KeyboardShortcuts.Shortcut? { get set }
   func reset()
 }
 
 @MainActor
 final class KeyboardShortcutsStore: GlobalShortcutStoring {
+  private let legacyCodeShortcutName = KeyboardShortcuts.Name("captureCode")
+
+  init() {
+    KeyboardShortcuts.setShortcut(nil, for: legacyCodeShortcutName)
+  }
+
   var captureShortcut: KeyboardShortcuts.Shortcut? {
     get {
       KeyboardShortcuts.getShortcut(for: .captureText)
@@ -33,17 +37,8 @@ final class KeyboardShortcutsStore: GlobalShortcutStoring {
     }
   }
 
-  var captureCodeShortcut: KeyboardShortcuts.Shortcut? {
-    get {
-      KeyboardShortcuts.getShortcut(for: .captureCode)
-    }
-    set {
-      KeyboardShortcuts.setShortcut(newValue, for: .captureCode)
-    }
-  }
-
   func reset() {
     KeyboardShortcuts.setShortcut(nil, for: .captureText)
-    KeyboardShortcuts.setShortcut(nil, for: .captureCode)
+    KeyboardShortcuts.setShortcut(nil, for: legacyCodeShortcutName)
   }
 }

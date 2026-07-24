@@ -134,6 +134,10 @@ actor StubBarcodeRecognitionService: BarcodeRecognitionService {
     recognizedImageSizes.append(CGSize(width: image.width, height: image.height))
     return try result.get()
   }
+
+  func setResult(_ result: Result<[RecognizedCodeObservation], TestServiceError>) {
+    self.result = result
+  }
 }
 
 final class SpyTextAssembler: TextAssembling, @unchecked Sendable {
@@ -227,6 +231,7 @@ func makeTestCaptureCommand(
     screenCaptureService: StubScreenCaptureService(result: .failure(.injected)),
     ocrService: StubOCRService(result: .failure(.injected)),
     textAssembler: TextAssembler(),
+    barcodeService: StubBarcodeRecognitionService(result: .failure(.injected)),
     clipboardService: SpyClipboardService(),
     successSoundPlayer: successSoundPlayer,
     feedbackService: feedbackService,

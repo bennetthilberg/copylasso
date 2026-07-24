@@ -30,20 +30,6 @@ final class GlobalShortcutControllerTests: XCTestCase {
     XCTAssertEqual(context.scheduler.scheduledCompletionCount, 1)
   }
 
-  func testCodeShortcutInvokesCodeModeAndSharesBusyRejection() async {
-    let context = makeContext()
-    context.controller.start()
-
-    context.events.emit(.keyUp, mode: .code)
-    await waitForState(.requestingPermission, coordinator: context.coordinator)
-    context.events.emit(.keyUp, mode: .text)
-    await Task.yield()
-
-    XCTAssertEqual(context.scheduler.scheduledCompletionCount, 1)
-    await context.scheduler.runNext()
-    XCTAssertEqual(context.coordinator.state, .idle)
-  }
-
   func testThreeSequentialShortcutRequestsRemainUsable() async {
     let context = makeContext()
     context.controller.start()

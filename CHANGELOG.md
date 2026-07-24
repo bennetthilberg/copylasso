@@ -8,7 +8,7 @@ All notable changes to CopyLasso will be documented in this file.
 
 - A user-controlled secure update path for the planned v0.2 release, with optional daily checks, a manual check, authenticated feed and package validation, replay and downgrade protection, and separate download and install consent. Automatic download and installation remain disabled.
 - A brief original success sound for the planned v0.2 release, enabled by default and independently disableable in Settings. It plays only after a successful clipboard write.
-- A separate Capture Code workflow for QR, Code 128, Data Matrix, PDF417, and Aztec codes visible on screen, with an optional shortcut, deterministic multi-code ordering, inert plain-text output, and mode-specific feedback. This remains unreleased source work and is not part of public CopyLasso 0.1.1.
+- Unified on-screen recognition for QR, Code 128, Data Matrix, PDF417, and Aztec codes through the existing Capture action and shortcut. Supported codes take precedence over OCR text, while code-free selections fall back to text recognition. Deterministic multi-code ordering, inert plain-text output, and code-specific ambiguity feedback remain unreleased source work and are not part of public CopyLasso 0.1.1.
 
 ## 0.1.1 - 2026-07-21
 

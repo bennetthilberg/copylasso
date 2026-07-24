@@ -7,7 +7,7 @@ enum GlobalShortcutEvent: Equatable, Sendable {
 
 @MainActor
 protocol GlobalShortcutEventSourcing: AnyObject {
-  func events(for mode: CaptureMode) -> AsyncStream<GlobalShortcutEvent>
+  func events() -> AsyncStream<GlobalShortcutEvent>
 }
 
 @MainActor
@@ -26,18 +26,16 @@ final class GlobalShortcutController {
 
   func start() {
     stop()
-    for mode in [CaptureMode.text, .code] {
-      let stream = eventSource.events(for: mode)
-      let task = Task { @MainActor [weak self] in
-        for await event in stream where event == .keyUp {
-          guard !Task.isCancelled else {
-            return
-          }
-          self?.captureCommand.perform(mode: mode)
+    let stream = eventSource.events()
+    let task = Task { @MainActor [weak self] in
+      for await event in stream where event == .keyUp {
+        guard !Task.isCancelled else {
+          return
         }
+        self?.captureCommand.perform()
       }
-      listenerTasks.append(task)
     }
+    listenerTasks.append(task)
   }
 
   func stop() {
@@ -50,11 +48,10 @@ final class GlobalShortcutController {
 
 @MainActor
 final class KeyboardShortcutsEventSource: GlobalShortcutEventSourcing {
-  func events(for mode: CaptureMode) -> AsyncStream<GlobalShortcutEvent> {
+  func events() -> AsyncStream<GlobalShortcutEvent> {
     AsyncStream { continuation in
       let task = Task { @MainActor in
-        let name: KeyboardShortcuts.Name = mode == .text ? .captureText : .captureCode
-        for await event in KeyboardShortcuts.events(for: name) {
+        for await event in KeyboardShortcuts.events(for: .captureText) {
           switch event {
           case .keyDown:
             continuation.yield(.keyDown)

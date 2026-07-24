@@ -167,7 +167,7 @@ final class CapturePermissionFlowTests: XCTestCase {
     XCTAssertEqual(events, ["clipboard", "sound", "feedback"])
   }
 
-  func testEmptyRecognitionPreservesClipboardAndPresentsNoText() async throws {
+  func testEmptyRecognitionPreservesClipboardAndPresentsNoContent() async throws {
     let context = makeContext(
       current: .granted,
       selectionResult: .success(.selected(try makeSelection())),
@@ -182,7 +182,7 @@ final class CapturePermissionFlowTests: XCTestCase {
     XCTAssertEqual(context.textAssembler.inputs, [[]])
     XCTAssertEqual(context.clipboard.writtenTexts, [])
     XCTAssertEqual(context.sound.playCallCount, 0)
-    XCTAssertEqual(context.feedback.presentedFeedback, [.noText])
+    XCTAssertEqual(context.feedback.presentedFeedback, [.noContent])
     XCTAssertEqual(context.coordinator.state, .idle)
     XCTAssertTrue(context.command.isEnabled)
   }
@@ -268,6 +268,7 @@ final class CapturePermissionFlowTests: XCTestCase {
       ),
       ocrService: StubOCRService(result: .success([])),
       textAssembler: SpyTextAssembler(result: "copied"),
+      barcodeService: StubBarcodeRecognitionService(result: .success([])),
       clipboardService: clipboard,
       successSoundPlayer: sound,
       feedbackService: feedback,
@@ -340,6 +341,7 @@ final class CapturePermissionFlowTests: XCTestCase {
       screenCaptureService: screenCapture,
       ocrService: CancelledOCRService(),
       textAssembler: TextAssembler(),
+      barcodeService: StubBarcodeRecognitionService(result: .success([])),
       clipboardService: SpyClipboardService(),
       feedbackService: SpyFeedbackService(),
       recoveryPresenter: recovery,
@@ -395,6 +397,7 @@ final class CapturePermissionFlowTests: XCTestCase {
       screenCaptureService: PermissionDeniedScreenCaptureService(),
       ocrService: ocr,
       textAssembler: TextAssembler(),
+      barcodeService: StubBarcodeRecognitionService(result: .success([])),
       clipboardService: SpyClipboardService(),
       feedbackService: SpyFeedbackService(),
       recoveryPresenter: recovery,
@@ -465,6 +468,7 @@ final class CapturePermissionFlowTests: XCTestCase {
       screenCaptureService: StubScreenCaptureService(result: .failure(.injected)),
       ocrService: StubOCRService(result: .failure(.injected)),
       textAssembler: TextAssembler(),
+      barcodeService: StubBarcodeRecognitionService(result: .success([])),
       clipboardService: SpyClipboardService(),
       feedbackService: SpyFeedbackService(),
       recoveryPresenter: SpyPermissionRecoveryPresenter(),
@@ -521,6 +525,7 @@ final class CapturePermissionFlowTests: XCTestCase {
       screenCaptureService: screenCapture,
       ocrService: ocr,
       textAssembler: textAssembler,
+      barcodeService: StubBarcodeRecognitionService(result: .success([])),
       clipboardService: clipboard,
       successSoundPlayer: sound,
       feedbackService: feedback,

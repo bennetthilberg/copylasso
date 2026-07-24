@@ -23,8 +23,10 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     XCTAssertEqual(context.selection.selectRegionCallCount, 25)
     let capturedSelections = await context.screenCapture.selections
     let recognitionCallCount = await context.ocr.recognitionCallCount
+    let barcodeRecognitionCallCount = await context.barcode.recognitionCallCount
     XCTAssertEqual(capturedSelections.count, 25)
     XCTAssertEqual(recognitionCallCount, 25)
+    XCTAssertEqual(barcodeRecognitionCallCount, 25)
     XCTAssertEqual(context.textAssembler.inputs.count, 25)
     XCTAssertEqual(context.clipboard.writtenTexts, Array(repeating: "assembled", count: 25))
     XCTAssertEqual(context.sound.playCallCount, 25)
@@ -50,8 +52,10 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
 
     let capturedSelections = await context.screenCapture.selections
     let recognitionCallCount = await context.ocr.recognitionCallCount
+    let barcodeRecognitionCallCount = await context.barcode.recognitionCallCount
     XCTAssertEqual(capturedSelections.count, 10)
     XCTAssertEqual(recognitionCallCount, 10)
+    XCTAssertEqual(barcodeRecognitionCallCount, 10)
     XCTAssertEqual(context.clipboard.writtenTexts.count, 10)
     XCTAssertEqual(context.sound.playCallCount, 10)
     XCTAssertEqual(context.feedback.presentedFeedback.count, 10)
@@ -117,6 +121,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
       screenCaptureService: capture,
       ocrService: StubOCRService(result: .success([observation()])),
       textAssembler: SpyTextAssembler(result: assembled),
+      barcodeService: StubBarcodeRecognitionService(result: .success([])),
       clipboardService: clipboard,
       feedbackService: feedback,
       recoveryPresenter: SpyPermissionRecoveryPresenter(),
@@ -163,6 +168,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
       screenCaptureService: capture,
       ocrService: StubOCRService(result: .failure(.injected)),
       textAssembler: SpyTextAssembler(result: "must not run"),
+      barcodeService: StubBarcodeRecognitionService(result: .failure(.injected)),
       clipboardService: clipboard,
       feedbackService: feedback,
       recoveryPresenter: SpyPermissionRecoveryPresenter(),
@@ -206,7 +212,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     shortcut.start()
     defer { shortcut.stop() }
 
-    XCTAssertEqual(menu.captureText(), .transitioned(from: .idle, to: .requestingPermission))
+    XCTAssertEqual(menu.capture(), .transitioned(from: .idle, to: .requestingPermission))
     await context.scheduler.runNext()
 
     await Task.yield()
@@ -223,7 +229,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     XCTAssertEqual(context.coordinator.state, .idle)
   }
 
-  func testCodeSuccessWritesExactOrderedPayloadThenPlaysSoundAndPresentsCodeFeedback()
+  func testSupportedCodeWinsOverRecognizedTextThenPlaysSoundAndPresentsCodeFeedback()
     async throws
   {
     let observations = [
@@ -233,7 +239,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     let context = try makeContext(barcodeResult: .success(observations))
 
     XCTAssertEqual(
-      context.command.perform(mode: .code),
+      context.command.perform(),
       .transitioned(from: .idle, to: .requestingPermission)
     )
     await context.scheduler.runNext()
@@ -247,65 +253,111 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     let barcodeRecognitionCount = await context.barcode.recognitionCallCount
     let textRecognitionCount = await context.ocr.recognitionCallCount
     XCTAssertEqual(barcodeRecognitionCount, 1)
-    XCTAssertEqual(textRecognitionCount, 0)
+    XCTAssertEqual(textRecognitionCount, 1)
+    XCTAssertEqual(context.textAssembler.inputs, [])
     XCTAssertEqual(context.coordinator.state, .idle)
   }
 
-  func testNoCodeAndMultilineAmbiguityPreserveClipboardAndRemainSilent() async throws {
+  func testNoEligibleCodeFallsBackToRecognizedText() async throws {
     let noCode = try makeContext(barcodeResult: .success([]))
-    _ = noCode.command.perform(mode: .code)
+    _ = noCode.command.perform()
     await noCode.scheduler.runNext()
-    XCTAssertEqual(noCode.feedback.presentedFeedback, [.noCode])
-    XCTAssertEqual(noCode.clipboard.writtenTexts, [])
-    XCTAssertEqual(noCode.sound.playCallCount, 0)
+    XCTAssertEqual(noCode.feedback.presentedFeedback, [.success(preview: "assembled")])
+    XCTAssertEqual(noCode.clipboard.writtenTexts, ["assembled"])
+    XCTAssertEqual(noCode.sound.playCallCount, 1)
+    XCTAssertEqual(noCode.textAssembler.inputs.count, 1)
+  }
 
+  func testNoTextOrEligibleCodePreservesClipboardAndRemainsSilent() async throws {
+    let context = try makeContext(
+      barcodeResult: .success([]),
+      assembledText: ""
+    )
+
+    _ = context.command.perform()
+    await context.scheduler.runNext()
+
+    XCTAssertEqual(context.feedback.presentedFeedback, [.noContent])
+    XCTAssertEqual(context.clipboard.writtenTexts, [])
+    XCTAssertEqual(context.sound.playCallCount, 0)
+  }
+
+  func testMultilineCodeAmbiguityWinsOverTextAndPreservesClipboard() async throws {
     let ambiguous = try makeContext(
       barcodeResult: .success([
         codeObservation(payload: "line one\nline two", x: 0.1),
         codeObservation(payload: "another", x: 0.6),
       ])
     )
-    _ = ambiguous.command.perform(mode: .code)
+    _ = ambiguous.command.perform()
     await ambiguous.scheduler.runNext()
     XCTAssertEqual(ambiguous.feedback.presentedFeedback, [.ambiguousCodes])
     XCTAssertEqual(ambiguous.clipboard.writtenTexts, [])
     XCTAssertEqual(ambiguous.sound.playCallCount, 0)
+    XCTAssertEqual(ambiguous.textAssembler.inputs, [])
   }
 
-  func testCodeRecognitionAndClipboardFailuresUseModeSpecificFeedbackAndStaySilent()
+  func testOneRecognizerMaySucceedWhenTheOtherFails()
     async throws
   {
-    let recognitionFailure = try makeContext(barcodeResult: .failure(.injected))
-    _ = recognitionFailure.command.perform(mode: .code)
-    await recognitionFailure.scheduler.runNext()
+    let codeFailure = try makeContext(barcodeResult: .failure(.injected))
+    _ = codeFailure.command.perform()
+    await codeFailure.scheduler.runNext()
     XCTAssertEqual(
-      recognitionFailure.feedback.presentedFeedback,
-      [.codeFailure(.recognition)]
+      codeFailure.feedback.presentedFeedback,
+      [.success(preview: "assembled")]
     )
+    XCTAssertEqual(codeFailure.clipboard.writtenTexts, ["assembled"])
+    XCTAssertEqual(codeFailure.sound.playCallCount, 1)
+
+    let textFailure = try makeContext(
+      ocrResult: .failure(.injected),
+      barcodeResult: .success([codeObservation(payload: "CODE", x: 0.1)])
+    )
+    _ = textFailure.command.perform()
+    await textFailure.scheduler.runNext()
+    XCTAssertEqual(
+      textFailure.feedback.presentedFeedback,
+      [.codeSuccess(preview: "CODE")]
+    )
+    XCTAssertEqual(textFailure.clipboard.writtenTexts, ["CODE"])
+    XCTAssertEqual(textFailure.sound.playCallCount, 1)
+  }
+
+  func testBothRecognitionFailuresAndClipboardFailureStaySilent() async throws {
+    let recognitionFailure = try makeContext(
+      ocrResult: .failure(.injected),
+      barcodeResult: .failure(.injected)
+    )
+    _ = recognitionFailure.command.perform()
+    await recognitionFailure.scheduler.runNext()
+    XCTAssertEqual(recognitionFailure.feedback.presentedFeedback, [.failure(.recognition)])
     XCTAssertEqual(recognitionFailure.clipboard.writtenTexts, [])
     XCTAssertEqual(recognitionFailure.sound.playCallCount, 0)
 
-    let clipboardFailure = try makeContext()
+    let clipboardFailure = try makeContext(
+      barcodeResult: .success([codeObservation(payload: "CODE", x: 0.1)])
+    )
     clipboardFailure.clipboard.error = .injected
-    _ = clipboardFailure.command.perform(mode: .code)
+    _ = clipboardFailure.command.perform()
     await clipboardFailure.scheduler.runNext()
     XCTAssertEqual(
       clipboardFailure.feedback.presentedFeedback,
-      [.codeFailure(.clipboard)]
+      [.failure(.clipboard)]
     )
     XCTAssertEqual(clipboardFailure.clipboard.writtenTexts, [])
     XCTAssertEqual(clipboardFailure.sound.playCallCount, 0)
   }
 
-  func testTextAndCodeRequestsShareOneBusyStateAndDoNotOverlap() async throws {
+  func testRepeatedCaptureRequestSharesOneBusyStateAndDoesNotOverlap() async throws {
     let context = try makeContext()
 
     XCTAssertEqual(
-      context.command.perform(mode: .code),
+      context.command.perform(),
       .transitioned(from: .idle, to: .requestingPermission)
     )
     XCTAssertEqual(
-      context.command.perform(mode: .text),
+      context.command.perform(),
       .rejectedBusy(currentState: .requestingPermission)
     )
     XCTAssertEqual(context.scheduler.scheduledCount, 1)
@@ -314,14 +366,16 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     let barcodeRecognitionCount = await context.barcode.recognitionCallCount
     let textRecognitionCount = await context.ocr.recognitionCallCount
     XCTAssertEqual(barcodeRecognitionCount, 1)
-    XCTAssertEqual(textRecognitionCount, 0)
+    XCTAssertEqual(textRecognitionCount, 1)
   }
 
-  func testPermissionRecoveryRetryPreservesTheInitiatingCodeMode() async throws {
-    let context = try makeContext()
+  func testPermissionRecoveryRetriesTheUnifiedCapture() async throws {
+    let context = try makeContext(
+      barcodeResult: .success([codeObservation(payload: "CODE", x: 0.1)])
+    )
     context.permission.currentResult = .notGrantedAfterRequest
 
-    _ = context.command.perform(mode: .code)
+    _ = context.command.perform()
     await context.scheduler.runNext()
     XCTAssertEqual(
       context.recovery.presentedObservations,
@@ -338,12 +392,14 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     let barcodeRecognitionCount = await context.barcode.recognitionCallCount
     let textRecognitionCount = await context.ocr.recognitionCallCount
     XCTAssertEqual(barcodeRecognitionCount, 1)
-    XCTAssertEqual(textRecognitionCount, 0)
+    XCTAssertEqual(textRecognitionCount, 1)
     XCTAssertEqual(context.clipboard.writtenTexts, ["CODE"])
   }
 
-  func testMenuAndCodeShortcutRouteThroughTheSameCodeCommand() async throws {
+  func testMenuAndShortcutBothUseCodeFirstUnifiedRecognition() async throws {
+    let codeObservations = [codeObservation(payload: "CODE", x: 0.1)]
     let context = try makeContext()
+    await context.barcode.setResult(.success(codeObservations))
     let menu = MenuBarCommandHandler(
       captureCommand: context.command,
       applicationTerminator: NoopApplicationTerminator()
@@ -357,12 +413,12 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     defer { shortcuts.stop() }
 
     XCTAssertEqual(
-      menu.captureCode(),
+      menu.capture(),
       .transitioned(from: .idle, to: .requestingPermission)
     )
     await context.scheduler.runNext()
 
-    events.emit(.keyUp, mode: .code)
+    events.emit(.keyUp)
     await context.scheduler.waitUntilScheduledCount(2)
     await context.scheduler.runNext()
 
@@ -370,16 +426,20 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     let barcodeRecognitionCount = await context.barcode.recognitionCallCount
     let textRecognitionCount = await context.ocr.recognitionCallCount
     XCTAssertEqual(barcodeRecognitionCount, 2)
-    XCTAssertEqual(textRecognitionCount, 0)
+    XCTAssertEqual(textRecognitionCount, 2)
   }
 
-  func testOneHundredAlternatingTextAndCodeCapturesRemainReusable() async throws {
+  func testOneHundredAlternatingTextAndCodeResultsRemainReusable() async throws {
     let context = try makeContext()
 
     for index in 0..<100 {
-      let mode: CaptureMode = index.isMultiple(of: 2) ? .text : .code
+      await context.barcode.setResult(
+        index.isMultiple(of: 2)
+          ? .success([])
+          : .success([codeObservation(payload: "CODE", x: 0.1)])
+      )
       XCTAssertEqual(
-        context.command.perform(mode: mode),
+        context.command.perform(),
         .transitioned(from: .idle, to: .requestingPermission),
         "Cycle \(index + 1)"
       )
@@ -391,8 +451,48 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     XCTAssertEqual(context.sound.playCallCount, 100)
     let textRecognitionCount = await context.ocr.recognitionCallCount
     let barcodeRecognitionCount = await context.barcode.recognitionCallCount
-    XCTAssertEqual(textRecognitionCount, 50)
-    XCTAssertEqual(barcodeRecognitionCount, 50)
+    XCTAssertEqual(textRecognitionCount, 100)
+    XCTAssertEqual(barcodeRecognitionCount, 100)
+  }
+
+  func testTextAndCodeRecognitionStartConcurrently() async throws {
+    let coordinator = CaptureCoordinator()
+    let scheduler = IntegrationWorkScheduler()
+    let gate = ConcurrentRecognitionGate()
+    let clipboard = SpyClipboardService()
+    let command = CaptureCommand(
+      coordinator: coordinator,
+      permissionService: StubScreenCapturePermissionService(
+        currentResult: .granted,
+        requestResult: .granted
+      ),
+      selectionService: StubRegionSelectionService(
+        result: .success(.selected(try makeSelection()))
+      ),
+      screenCaptureService: StubScreenCaptureService(result: .success(try makeImage())),
+      ocrService: GatedOCRService(gate: gate),
+      textAssembler: SpyTextAssembler(result: "text"),
+      barcodeService: GatedBarcodeRecognitionService(gate: gate),
+      clipboardService: clipboard,
+      feedbackService: SpyFeedbackService(),
+      recoveryPresenter: SpyPermissionRecoveryPresenter(),
+      scheduleWork: scheduler.schedule
+    )
+
+    _ = command.perform()
+    let work = Task { await scheduler.runNext() }
+    for _ in 0..<100 {
+      if await gate.arrivalCount >= 2 {
+        break
+      }
+      await Task.yield()
+    }
+    let arrivalCountBeforeRelease = await gate.arrivalCount
+    await gate.release()
+    await work.value
+
+    XCTAssertEqual(arrivalCountBeforeRelease, 2)
+    XCTAssertEqual(clipboard.writtenTexts, ["text"])
   }
 
   private func runOne(_ context: Context) async {
@@ -406,7 +506,8 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     selectionResult: Result<SelectionOutcome, TestServiceError>? = nil,
     captureResult: Result<CGImage, TestServiceError>? = nil,
     ocrResult: Result<[RecognizedTextObservation], TestServiceError>? = nil,
-    barcodeResult: Result<[RecognizedCodeObservation], TestServiceError>? = nil
+    barcodeResult: Result<[RecognizedCodeObservation], TestServiceError>? = nil,
+    assembledText: String = "assembled"
   ) throws -> Context {
     let coordinator = CaptureCoordinator()
     let permission = StubScreenCapturePermissionService(
@@ -428,10 +529,8 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     }
     let screenCapture = StubScreenCaptureService(result: resolvedCaptureResult)
     let ocr = StubOCRService(result: ocrResult ?? .success([observation()]))
-    let barcode = StubBarcodeRecognitionService(
-      result: barcodeResult ?? .success([codeObservation(payload: "CODE", x: 0.1)])
-    )
-    let textAssembler = SpyTextAssembler(result: "assembled")
+    let barcode = StubBarcodeRecognitionService(result: barcodeResult ?? .success([]))
+    let textAssembler = SpyTextAssembler(result: assembledText)
     let clipboard = SpyClipboardService()
     let sound = SpySuccessSoundPlayer()
     let feedback = SpyFeedbackService()
@@ -609,6 +708,49 @@ private actor EphemeralScreenCaptureService: ScreenCaptureService {
 
 private final class WeakWorkflowImageReference: @unchecked Sendable {
   weak var image: CGImage?
+}
+
+private actor ConcurrentRecognitionGate {
+  private(set) var arrivalCount = 0
+  private var isReleased = false
+  private var waiters: [CheckedContinuation<Void, Never>] = []
+
+  func arrive() async {
+    arrivalCount += 1
+    guard !isReleased else {
+      return
+    }
+    await withCheckedContinuation { continuation in
+      waiters.append(continuation)
+    }
+  }
+
+  func release() {
+    isReleased = true
+    let currentWaiters = waiters
+    waiters.removeAll()
+    for waiter in currentWaiters {
+      waiter.resume()
+    }
+  }
+}
+
+private struct GatedOCRService: OCRService {
+  let gate: ConcurrentRecognitionGate
+
+  func recognizeText(in image: CGImage) async throws -> [RecognizedTextObservation] {
+    await gate.arrive()
+    return []
+  }
+}
+
+private struct GatedBarcodeRecognitionService: BarcodeRecognitionService {
+  let gate: ConcurrentRecognitionGate
+
+  func recognizeCodes(in image: CGImage) async throws -> [RecognizedCodeObservation] {
+    await gate.arrive()
+    return []
+  }
 }
 
 @MainActor

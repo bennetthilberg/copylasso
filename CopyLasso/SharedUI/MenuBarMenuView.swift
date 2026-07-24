@@ -9,19 +9,12 @@ struct MenuBarMenuView: View {
   let updateController: UpdateController
 
   var body: some View {
-    Button("Capture Text") {
-      commandHandler.captureText()
+    Button("Capture") {
+      commandHandler.capture()
     }
     .disabled(!commandHandler.isCaptureEnabled)
     .globalKeyboardShortcut(.captureText)
     .accessibilityIdentifier("copylasso.menu.capture")
-
-    Button("Capture Code") {
-      commandHandler.captureCode()
-    }
-    .disabled(!commandHandler.isCaptureEnabled)
-    .globalKeyboardShortcut(.captureCode)
-    .accessibilityIdentifier("copylasso.menu.capture-code")
 
     Divider()
 

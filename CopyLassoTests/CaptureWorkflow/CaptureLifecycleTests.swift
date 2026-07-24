@@ -185,6 +185,7 @@ final class CaptureLifecycleTests: XCTestCase {
         ?? StubScreenCaptureService(result: .success(try! makeImage())),
       ocrService: ocr ?? StubOCRService(result: .success([observation()])),
       textAssembler: SpyTextAssembler(result: "assembled"),
+      barcodeService: StubBarcodeRecognitionService(result: .success([])),
       clipboardService: clipboard ?? SpyClipboardService(),
       feedbackService: feedback ?? SpyFeedbackService(),
       recoveryPresenter: SpyPermissionRecoveryPresenter(),

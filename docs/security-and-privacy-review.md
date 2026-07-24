@@ -1,6 +1,6 @@
 # Security And Privacy Review
 
-This review describes the public CopyLasso 0.1.x boundary and the secure updater, configurable success sound, and Capture Code workflow now present in source for the planned v0.2 release. It reconciles the source, built products, dependency graph, entitlements, persistence, and public privacy promises. The public 0.1.1 artifact remains the current release and contains none of these three features.
+This review describes the public CopyLasso 0.1.x boundary and the secure updater, configurable success sound, and unified on-screen code recognition now present in source for the planned v0.2 release. It reconciles the source, built products, dependency graph, entitlements, persistence, and public privacy promises. The public 0.1.1 artifact remains the current release and contains none of these three features.
 
 ## Result
 
@@ -12,7 +12,7 @@ The tracked `CopyLasso.entitlements` contains App Sandbox, outbound network clie
 
 | Stage | Data | Lifetime and boundary | Persistent output |
 | --- | --- | --- | --- |
-| Request | Text or Code command event and payload-free coordinator state | One operation | None |
+| Request | Unified Capture command event and payload-free coordinator state | One operation | None |
 | Permission | Two local history booleans and direct Core Graphics observation | Preferences plus current check | Requested-before and observed-granted booleans only |
 | Selection | Display identity, frames, scale, and rectangle | Active selection through capture validation | None |
 | Capture | One `CGImage` for the selected local rectangle | Private async operation scope | None; no encoder or image writer exists |
@@ -36,7 +36,7 @@ CopyLasso owns only these preference categories:
 - whether shortcut and Launch at Login choices have been configured;
 - whether Screen Recording was requested and whether access was previously observed; and
 - `KeyboardShortcuts_captureText`, an encoded key/modifier choice maintained by the pinned shortcut package;
-- optional `KeyboardShortcuts_captureCode`, using the same encoded package-owned key/modifier representation;
+- the unreleased legacy `KeyboardShortcuts_captureCode` value is cleared during migration and Debug reset rather than retained as a user-facing second shortcut;
 - the versioned `feedback.successSoundEnabled` Boolean, defaulting on and preserving explicit opt-out;
 - Sparkle's automatic-check schedule and user preference; and
 - `updates.deferredBuild` plus `updates.highestAuthenticatedBuild`, which contain canonical build numbers only.
@@ -52,7 +52,7 @@ An inspected development container contained preference/window metadata, one 240
 - Network client: present solely for Sparkle's fixed signed-feed and immutable GitHub enclosure requests. The app has no second networking stack, custom headers, cookie use, query parameters, system profiling, or external release-note request.
 - Network server: absent.
 - Sparkle installer services: exactly `$(PRODUCT_BUNDLE_IDENTIFIER)-spks` and `$(PRODUCT_BUNDLE_IDENTIFIER)-spki`; the separate downloader service is disabled.
-- Screen Recording: requested only after a user Capture Text or Capture Code command.
+- Screen Recording: requested only after a user Capture command.
 - Accessibility and Input Monitoring: not required by the shortcut, menu, selection, OCR, or output path.
 - Microphone and system-audio capture: not requested; ScreenCaptureKit capture disables audio. The output-only success sound uses `NSSound` and requests no privacy permission.
 - Files and folders: no user-selected or temporary-file entitlement; captured pixels and code payloads never use a file intermediate.
@@ -87,9 +87,9 @@ Local Apple Development signing adds `com.apple.security.get-task-allow` to audi
 
 ## G38 Code Recognition Review
 
-Capture Code adds no dependency, entitlement, permission, network route, persistence, file or camera input, logger, or automatic application action. `VNDetectBarcodesRequest` is confined to one adapter pinned to revision 3 and explicitly limited to QR, Code 128, Data Matrix, PDF417, and Aztec. The adapter runs off the main actor, supports cancellation through the same request boundary as text OCR, converts results to framework-neutral observations, and releases the captured image when the private operation unwinds.
+Unified code recognition adds no dependency, entitlement, permission, network route, persistence, file or camera input, logger, or automatic application action. `VNDetectBarcodesRequest` is confined to one adapter pinned to revision 3 and explicitly limited to QR, Code 128, Data Matrix, PDF417, and Aztec. The adapter runs off the main actor, supports cancellation through the same request boundary as text OCR, converts results to framework-neutral observations, and releases the captured image when the private operation unwinds. Text and code recognition consume the same in-memory image concurrently; an eligible code result takes precedence, and a selection without one falls back to OCR.
 
-Complete payloads remain inside the private operation until the existing write-only clipboard call. The HUD receives only the established bounded preview. Nil, binary-only, empty, unsupported, partial, malformed, no-code, ambiguous, cancellation, and failure paths never call the clipboard or sound service. Permission recovery retains only the initiating mode, and the shared coordinator rejects Text/Code overlap.
+Complete payloads remain inside the private operation until the existing write-only clipboard call. The HUD receives only the established bounded preview. Nil, binary-only, empty, unsupported, partial, malformed, and no-code observations are ignored before OCR fallback. Ambiguous, no-content, cancellation, and complete-recognition-failure paths never call the clipboard or sound service. Permission recovery retries the one Capture request, and the shared coordinator rejects overlap.
 
 ## Dependency Inventory
 
