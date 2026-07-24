@@ -486,6 +486,94 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(readyCallCount, 1)
   }
 
+  func
+    testSystemActivationManagerHidesWindowsBeforeSelectionActivationAndRestoresAfterFocusHandoff()
+  {
+    let notificationCenter = NotificationCenter()
+    let observedApplication = NSObject()
+    let windowVisibility = RecordingSelectionApplicationWindowVisibilityManager()
+    var isActive = false
+    var events: [String] = []
+    let manager = SystemSelectionApplicationActivationManager(
+      notificationCenter: notificationCenter,
+      observedApplication: observedApplication,
+      isApplicationActive: { isActive },
+      activateApplication: { events.append("activate") },
+      deactivateApplication: { events.append("deactivate") },
+      frontmostApplication: { nil },
+      windowVisibilityManager: windowVisibility
+    )
+
+    manager.activateForSelection {
+      events.append("ready")
+    }
+
+    XCTAssertEqual(windowVisibility.events, ["hide"])
+    XCTAssertEqual(events, ["activate"])
+
+    isActive = true
+    notificationCenter.post(
+      name: NSApplication.didBecomeActiveNotification,
+      object: observedApplication
+    )
+    manager.restorePreviousApplication {
+      events.append("restored")
+    }
+
+    XCTAssertEqual(windowVisibility.events, ["hide"])
+    XCTAssertEqual(events, ["activate", "ready", "deactivate"])
+
+    isActive = false
+    notificationCenter.post(
+      name: NSApplication.didResignActiveNotification,
+      object: observedApplication
+    )
+
+    XCTAssertEqual(windowVisibility.events, ["hide", "restore"])
+    XCTAssertEqual(events, ["activate", "ready", "deactivate", "restored"])
+  }
+
+  func testSystemActivationManagerLeavesWindowsAloneWhenCopyLassoWasAlreadyActive() {
+    let windowVisibility = RecordingSelectionApplicationWindowVisibilityManager()
+    let manager = SystemSelectionApplicationActivationManager(
+      notificationCenter: NotificationCenter(),
+      observedApplication: NSObject(),
+      isApplicationActive: { true },
+      activateApplication: {},
+      windowVisibilityManager: windowVisibility
+    )
+
+    manager.activateForSelection {}
+    manager.restorePreviousApplication {}
+
+    XCTAssertTrue(windowVisibility.events.isEmpty)
+  }
+
+  func testSystemWindowVisibilityManagerIncludesVisibleWindowsFromInactiveSpaces() {
+    let activeSpaceWindow = RecordingSelectionApplicationWindow(isVisible: true)
+    let inactiveSpaceWindow = RecordingSelectionApplicationWindow(isVisible: true)
+    let hiddenWindow = RecordingSelectionApplicationWindow(isVisible: false)
+    let windowProvider = RecordingSelectionApplicationWindowProvider(
+      windows: [activeSpaceWindow, inactiveSpaceWindow, hiddenWindow]
+    )
+    let manager = SystemSelectionApplicationWindowVisibilityManager(
+      applicationWindowProvider: windowProvider
+    )
+
+    manager.hideForSelection()
+
+    XCTAssertEqual(windowProvider.requestCount, 1)
+    XCTAssertEqual(activeSpaceWindow.events, ["hide"])
+    XCTAssertEqual(inactiveSpaceWindow.events, ["hide"])
+    XCTAssertTrue(hiddenWindow.events.isEmpty)
+
+    manager.restoreAfterSelection()
+
+    XCTAssertEqual(activeSpaceWindow.events, ["hide", "restore"])
+    XCTAssertEqual(inactiveSpaceWindow.events, ["hide", "restore"])
+    XCTAssertTrue(hiddenWindow.events.isEmpty)
+  }
+
   func testSystemActivationManagerFailsOnceWhenActivationNotificationNeverArrives() {
     let notificationCenter = NotificationCenter()
     let observedApplication = NSObject()
@@ -1720,6 +1808,58 @@ private final class RecordingSelectionApplicationActivationManager:
     let restorationReady = restorationReady
     self.restorationReady = nil
     restorationReady?()
+  }
+}
+
+@MainActor
+private final class RecordingSelectionApplicationWindowVisibilityManager:
+  SelectionApplicationWindowVisibilityManaging
+{
+  private(set) var events: [String] = []
+
+  func hideForSelection() {
+    events.append("hide")
+  }
+
+  func restoreAfterSelection() {
+    events.append("restore")
+  }
+}
+
+@MainActor
+private final class RecordingSelectionApplicationWindow: SelectionApplicationWindowPresenting {
+  private(set) var isVisibleForSelection: Bool
+  private(set) var events: [String] = []
+
+  init(isVisible: Bool) {
+    isVisibleForSelection = isVisible
+  }
+
+  func hideForSelection() {
+    events.append("hide")
+    isVisibleForSelection = false
+  }
+
+  func restoreBehindAfterSelection() {
+    events.append("restore")
+    isVisibleForSelection = true
+  }
+}
+
+@MainActor
+private final class RecordingSelectionApplicationWindowProvider:
+  SelectionApplicationWindowProviding
+{
+  private let windows: [any SelectionApplicationWindowPresenting]
+  private(set) var requestCount = 0
+
+  init(windows: [any SelectionApplicationWindowPresenting]) {
+    self.windows = windows
+  }
+
+  func allApplicationWindows() -> [any SelectionApplicationWindowPresenting] {
+    requestCount += 1
+    return windows
   }
 }
 

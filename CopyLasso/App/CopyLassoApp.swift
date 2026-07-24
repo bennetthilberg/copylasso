@@ -134,7 +134,7 @@ struct CopyLassoApp: App {
     )
     let globalShortcutController = GlobalShortcutController(
       captureCommand: captureCommand,
-      eventSource: KeyboardShortcutsEventSource()
+      eventSource: SystemGlobalShortcutEventSource()
     )
     self.globalShortcutController = globalShortcutController
     let lifecycleController = ApplicationLifecycleController(

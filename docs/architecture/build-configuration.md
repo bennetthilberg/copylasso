@@ -39,7 +39,7 @@ Both configurations generate their Info.plist through Xcode and set `LSUIElement
 
 ## Swift Package Dependencies
 
-KeyboardShortcuts 3.0.1 is an exact Swift Package Manager dependency used for shortcut recording, conflict validation, persistence, and global event delivery. The Xcode project uses an exact-version requirement and commits `Package.resolved` with revision `49c3fc04ea827f816df67843bfcc57286b47ff06`. Its upstream source and MIT license are recorded in [Third-Party Notices](../../THIRD_PARTY_NOTICES.md).
+KeyboardShortcuts 3.0.1 is an exact Swift Package Manager dependency used for shortcut recording, conflict validation, persistence, and native menu glyph presentation. The Xcode project uses an exact-version requirement and commits `Package.resolved` with revision `49c3fc04ea827f816df67843bfcc57286b47ff06`. Its upstream source and MIT license are recorded in [Third-Party Notices](../../THIRD_PARTY_NOTICES.md). A narrow app-owned adapter delivers the saved shortcut through macOS `RegisterEventHotKey`; it uses no event tap, Accessibility permission, or Input Monitoring permission. The adapter suspends delivery only while the recorder is active in the active CopyLasso application, so restoring an inactive Settings window on another Space cannot disable the shortcut.
 
 The dependency is confined to the app, Settings, and SwiftUI presentation layers. Models and capture-workflow state remain independent of KeyboardShortcuts, AppKit, SwiftUI, ScreenCaptureKit, and Vision.
 
