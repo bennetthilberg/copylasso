@@ -91,6 +91,46 @@ Unified code recognition adds no dependency, entitlement, permission, network ro
 
 Complete payloads remain inside the private operation until the existing write-only clipboard call. The HUD receives only the established bounded preview. Nil, binary-only, empty, unsupported, partial, malformed, and no-code observations are ignored before OCR fallback. Ambiguous, no-content, cancellation, and complete-recognition-failure paths never call the clipboard or sound service. Permission recovery retries the one Capture request, and the shared coordinator rejects overlap.
 
+## G39 Offline LaTeX Feasibility Review
+
+G39 adds no production recognizer, model, runtime, dependency, resource,
+entitlement, permission, network route, preference, clipboard branch, or UI.
+The isolated benchmark scorer uses only Foundation and CryptoKit and never
+links into the application target.
+
+The study identified several risks that a future proposal must resolve before
+the blind corpus is unsealed:
+
+- source-code, checkpoint, tokenizer, and training-data licenses are separate
+  trust decisions;
+- pickle checkpoints are executable research inputs and cannot be shipping
+  model data;
+- ONNX external data, malformed graphs, Core ML compilation caches, and
+  optional downloads require pinned lengths, digests, safe paths, and
+  fail-closed loading;
+- image dimensions, tensor allocation, token count, decoder iterations,
+  cancellation, and disk use need hard bounds;
+- package managers and preprocessing libraries can perform network version
+  checks even when model inference is local; and
+- output must remain inert clipboard text and must never be rendered, compiled,
+  executed, opened, persisted, logged, or transmitted.
+
+The compact Texo reference completed with networking denied, but its AGPL
+license is incompatible and it returned nonempty output for every ordinary-text
+negative. PP-FormulaNet-S exceeds the installed-size gate before its runtime is
+included. LaTeX_OCR_rec's maintained runtime cannot initialize on arm64 and its
+runtime alone exceeds the feature budget. MixTex fits as source model data, but
+its Apache model metadata, linked AGPL reference source, and unreleased
+training-data record do not establish compatible reproducible provenance; its
+diagnostic reference run also emitted output for every negative. No candidate
+reached the stage where Core ML conversion, a production sandbox, Developer ID
+signing, or physical base-M1 and Intel qualification could establish a go
+result.
+
+[ADR-005](architecture/ADR-005-offline-latex-recognition.md) records the no-go.
+All large artifacts and disposable runtime code remain outside Git and are not
+part of the dependency inventory below.
+
 ## Dependency Inventory
 
 | Dependency | Scope | Version and revision | Purpose | License | Upstream |
@@ -114,9 +154,10 @@ Run the tracked source audit:
 ./scripts/audit-privacy-security.sh
 ./scripts/audit-success-sound.sh
 ./scripts/audit-code-recognition.sh
+./scripts/audit-latex-feasibility.sh
 ```
 
-The canonical CI entrypoint runs each audit exactly once. They validate the exact three-key entitlement contract, both build-configuration references, updater-only networking, absence of content-persistence APIs, logger confinement, tracked-secret and local-path scans, exact dependency scope, shipping notices, absence of tracked prebuilt dependency binaries, deterministic original audio and code-fixture bytes, Vision barcode confinement and configuration, inert payload handling, one bundled sound asset, content-free service wiring, and no microphone, camera, file-import, system-audio-capture, notification, or alternate playback API.
+The canonical CI entrypoint runs each audit exactly once. They validate the exact three-key entitlement contract, both build-configuration references, updater-only networking, absence of content-persistence APIs, logger confinement, tracked-secret and local-path scans, exact dependency scope, shipping notices, absence of tracked prebuilt dependency binaries, deterministic original audio and code-fixture bytes, Vision barcode confinement and configuration, inert payload handling, one bundled sound asset, content-free service wiring, the LaTeX no-go production boundary, and no microphone, camera, file-import, system-audio-capture, notification, or alternate playback API.
 
 The complete application unit bundle also passes when invoked directly under a process sandbox with `(deny network*)`. This exercises real Vision fixtures plus permission, selection, capture planning, formatting, clipboard, feedback, lifecycle, Settings, and end-to-end orchestration tests without disabling the workstation's network connection; the canonical verification record reports the exact current suite count.
 

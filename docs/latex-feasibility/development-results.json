@@ -1,0 +1,156 @@
+{
+  "candidates": [
+    {
+      "artifact_bytes": 80114829,
+      "artifact_digests": {
+        "decoder_model_merged.onnx": "10be29b751f6de5f9900c3658551020dc865257eb2c3034bc4c1e016e4d0e35d",
+        "encoder_model.onnx": "95cccef463e5ed3623282f1541c0011a00b8a5d0828ea2cd57d6953ad4310b5b"
+      },
+      "candidate": "Texo ONNX FP32",
+      "load_milliseconds": 494.602125,
+      "model_revision": "63e04c86fc96c2324811114351eeea8118bf6b28",
+      "negative": {
+        "count": 100,
+        "false_success_count": 100,
+        "warm_p50_milliseconds": 58.968208,
+        "warm_p95_milliseconds": 882.395583
+      },
+      "positive": {
+        "count": 100,
+        "nonempty_count": 100,
+        "normalized_exact_count": 50,
+        "warm_p50_milliseconds": 64.568542,
+        "warm_p95_milliseconds": 821.8915
+      },
+      "process_peak_rss_bytes": 672579584,
+      "runtime": {
+        "onnxruntime": "1.27.0",
+        "optimum": "2.1.0",
+        "optimum_onnx": "0.1.0",
+        "transformers": "4.40.0"
+      },
+      "script_sha256": "c9e03ec615e428f68c486b03f72daa6e1fdaf0517b016163beed60be32004ad7",
+      "source_revision": "5de97cfad9a424827e93e07d9d190fe999d038dd",
+      "status": "measured"
+    },
+    {
+      "artifact_bytes": 238397573,
+      "artifact_digests": {
+        "inference.pdiparams": "b6392296d16e2a9f414c0a751d7ccbd1bd9d8272b68aab72df1d3875f35a7489"
+      },
+      "candidate": "PP-FormulaNet-S",
+      "load_milliseconds": 3186.202958,
+      "model_revision": "0572450e501be9eb1b1cdb7e00fccf4b22fab4df",
+      "negative": {
+        "count": 100,
+        "false_success_count": 100,
+        "warm_p50_milliseconds": 223.355417,
+        "warm_p95_milliseconds": 260.470291
+      },
+      "observed_added_peak_rss_bytes": 784334848,
+      "positive": {
+        "count": 100,
+        "nonempty_count": 100,
+        "normalized_exact_count": 12,
+        "warm_p50_milliseconds": 155.903792,
+        "warm_p95_milliseconds": 606.25975
+      },
+      "process_peak_rss_bytes": 1082097664,
+      "runtime": {
+        "ftfy": "6.3.1",
+        "paddleocr": "3.3.2",
+        "paddlepaddle": "3.2.2",
+        "paddlex": "3.3.13"
+      },
+      "script_sha256": "0f10725bf6f60e6aa08a36c01e7d1cdf60cb0d9af35a82a85faef63164c2b2f5",
+      "status": "measured"
+    },
+    {
+      "artifact_bytes": 172793301,
+      "artifact_digests": {
+        "model.safetensors": "cb737c91081caf47666e4d64c1e62d715c8c63727c1c7a6b4204214c8a7e930c"
+      },
+      "candidate": "MixTex ZhEn-LaTeX-OCR",
+      "load_milliseconds": 1017.8425,
+      "model_revision": "37da0497956ac97f0a81f4da001f000d5295b77c",
+      "negative": {
+        "count": 100,
+        "false_success_count": 100,
+        "warm_p50_milliseconds": 181.254792,
+        "warm_p95_milliseconds": 193.07775
+      },
+      "observed_added_peak_rss_bytes": 655212544,
+      "positive": {
+        "count": 100,
+        "nonempty_count": 100,
+        "normalized_exact_count": 0,
+        "warm_p50_milliseconds": 332.240875,
+        "warm_p95_milliseconds": 1343.060292
+      },
+      "process_peak_rss_bytes": 922746880,
+      "runtime": {
+        "torch": "2.7.0",
+        "transformers": "4.40.0"
+      },
+      "script_sha256": "e5137536b70c995374e694fff59a9bec16d85775cba5561ce11488f9e81bfa8b",
+      "status": "measured"
+    },
+    {
+      "artifact_bytes": 103756168,
+      "artifact_digests": {
+        "inference.pdiparams": "1b2b27fa532e4e687116c9e3a141e4f17420c75ab53a0ef10692b5bb797e67d2"
+      },
+      "candidate": "LaTeX_OCR_rec",
+      "failure": {
+        "message": "MKL-DNN is not available",
+        "stage": "maintained arm64 Paddle CPU initialization"
+      },
+      "load_milliseconds_before_failure": 1193.578625,
+      "model_revision": "563fb029dfdf5fc847d0677f3870039960e3a801",
+      "process_peak_rss_bytes_at_failure": 484982784,
+      "runtime": {
+        "ftfy": "6.3.1",
+        "paddleocr": "3.3.2",
+        "paddlepaddle": "3.2.2",
+        "paddlex": "3.3.13"
+      },
+      "script_sha256": "0f10725bf6f60e6aa08a36c01e7d1cdf60cb0d9af35a82a85faef63164c2b2f5",
+      "status": "runtime_blocked"
+    }
+  ],
+  "date": "2026-07-24",
+  "fixture_binding": {
+    "negative_count": 100,
+    "negative_generation": {
+      "background": "white RGB 720 by 128",
+      "font": "Arial 30 from the macOS system font path",
+      "font_sha256": "525979822591a3447cfc49d943d6f7683508e25543407871c0ed8fed05fd2bd9",
+      "foreground": "black",
+      "text_pattern": "Copy visible text locally sample NNN",
+      "text_position": [
+        20,
+        42
+      ]
+    },
+    "negative_manifest_sha256": "22d3d58935c6ca0634f69c2dc65fc64fdf5b3074083eeab69e9e49610292a62e",
+    "positive_count": 100,
+    "positive_image_manifest_sha256": "6b3feb60faf660a4176092fc28e58985d2d0d372c48707ad008b8671fe2db640",
+    "positive_label_prefix_sha256": "d06318550deccd7512e1d46b9728d4b92a2d811fdab9b2f0d2bfc925254f6ef9",
+    "positive_source_revision": "5de97cfad9a424827e93e07d9d190fe999d038dd"
+  },
+  "host": {
+    "architecture": "arm64",
+    "hardware": "Mac17,9 MacBook Pro with Apple M5 Pro and 24 GB memory",
+    "macos": "26.5.2 build 25F84",
+    "qualifies_for_blind_gate": false
+  },
+  "measurement_protocol": {
+    "blind_gate_credit": false,
+    "networking_denied": true,
+    "normalization": "NFC, CR/LF normalization, outer math-delimiter removal, Unicode whitespace collapse",
+    "timing_boundary": "per-image file open, maintained preprocessing, deterministic greedy generation, and decoding",
+    "warmups": 3
+  },
+  "schema_version": 1,
+  "study": "CopyLasso G39 public development comparison"
+}

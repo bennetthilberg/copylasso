@@ -563,3 +563,58 @@ The complete application unit bundle also runs with networking denied. Signed UI
 Actual global-shortcut delivery, Screen Recording transitions, visible crosshair/dimming, physical display behavior, VoiceOver speech, audible output, and absence of automatic macOS actions remain signed manual evidence. Automation owns recognition accuracy for deterministic fixtures, unified routing and precedence, assembly, privacy isolation, error handling, lifetime, and repeatability.
 
 The global-shortcut boundary has direct tests for saved-shortcut registration, event forwarding, shortcut replacement, recorder suspension, inactive-window restoration, application deactivation, stream restart, busy rejection, and sequential reuse. A July 24, 2026 signed Debug regression reproduced an inactive Settings window on one Space, switched to another Space, completed one capture, and invoked Capture again while its HUD remained visible. The initial build lost the second event because restoring Settings falsely marked its recorder active and unregistered the hotkey. The application-aware registration policy kept the shortcut available while CopyLasso was inactive; the maintainer repeated the exact sequence and confirmed the second selection started.
+
+## G39 Offline LaTeX Feasibility
+
+G39 is a non-production go/no-go study. Its isolated dependency-free Swift
+package validates the exact corpus minimums and class tallies, safe relative
+image paths and byte digests, one-candidate blind freeze, frozen input digests,
+label/result completeness, conservative normalization, structural and exact
+accuracy, deterministic nearest-rank p50/p95, false success, size, memory,
+environment, privacy, platform, and runtime-comparison thresholds.
+Class-count validation is deliberately mechanical: it proves only that the
+manifest contains enough declared tags. Before any future unblinding, an
+independent reviewer must inspect every positive image and ground truth and
+confirm that each claimed class is genuinely exercised. The scorer and its
+synthetic unit fixtures are not semantic corpus-review evidence.
+
+Run the focused 14-test suite with:
+
+```sh
+./scripts/test-latex-feasibility.sh
+```
+
+The scorer recomputes the corpus, label, protocol, executable, model,
+configuration, preprocessing, and decoder digests supplied to the CLI. A
+reported gate failure exits with status 2. Physical hardware identity, AC and
+thermal state, executable slices, sandbox behavior, license compatibility, and
+provenance still require independent evidence review; JSON assertions alone do
+not establish them.
+
+Development comparison used 100 public candidate-owned formula fixtures and
+100 generated ordinary-text negatives with one input set, normalizer, and
+end-to-end timing boundary. It tested Texo ONNX FP32, PP-FormulaNet-S, and
+MixTex through their maintained reference paths; LaTeX_OCR_rec failed during
+maintained arm64 initialization. The content-free aggregate record binds the
+fixture manifests, runtime versions, adapter digests, counts, timings, and
+artifact digests. These results receive no blind-gate or
+physical-reference-hardware credit. No candidate survived the sequential
+license, provenance, installed-size, and maintained-platform screens, so the
+blind 300-sample corpus was not created or unsealed.
+
+The focused audit confirms the no-go summary and protocol, prevents tracked
+model/runtime binaries, preserves the exact production tree, and distinguishes
+the development comparison from a passing blind evaluation:
+
+```sh
+./scripts/audit-latex-feasibility.sh
+```
+
+Canonical CI invokes the focused test and audit exactly once on both the arm64
+and x86_64 jobs. G39 adds no signed UI or physical capture procedure because it
+adds no production feature. A future reconsideration must first pass the
+preblind license, complete installed-size, provenance, macOS 14, and both
+architecture screens, then obtain the required base-M1 and Intel systems before
+unsealing a fresh corpus. The maintainer-approved sequential stopping rule does
+not relax any go threshold; it prevents spending the unseen corpus on a design
+that has already failed a terminal gate.

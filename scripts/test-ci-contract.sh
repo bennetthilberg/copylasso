@@ -13,6 +13,8 @@ readonly platform_qualification_audit_script="$repository_root/scripts/audit-pla
 readonly platform_qualification_test_script="$repository_root/scripts/test-platform-qualification.sh"
 readonly v02_contract_audit_script="$repository_root/scripts/audit-v02-contract.sh"
 readonly code_recognition_audit_script="$repository_root/scripts/audit-code-recognition.sh"
+readonly latex_feasibility_audit_script="$repository_root/scripts/audit-latex-feasibility.sh"
+readonly latex_feasibility_test_script="$repository_root/scripts/test-latex-feasibility.sh"
 readonly success_sound_audit_script="$repository_root/scripts/audit-success-sound.sh"
 readonly secure_update_audit_script="$repository_root/scripts/audit-secure-update-architecture.sh"
 readonly secure_update_test_script="$repository_root/scripts/test-secure-update-architecture.sh"
@@ -149,6 +151,33 @@ if [[ "$code_recognition_audit_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/audit-code-recognition.sh exactly once."
 fi
 
+latex_feasibility_test_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/test-latex-feasibility\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$latex_feasibility_test_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/test-latex-feasibility.sh exactly once."
+fi
+
+latex_feasibility_audit_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/audit-latex-feasibility\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$latex_feasibility_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-latex-feasibility.sh exactly once."
+fi
+
+latex_feasibility_format_paths="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*Tools/LaTeXFeasibility[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$latex_feasibility_format_paths" != "1" ]]; then
+    fail "Canonical CI must lint the isolated LaTeX feasibility tool exactly once."
+fi
+
 success_sound_audit_invocations="$({
     /usr/bin/grep -Ec \
         '^[[:space:]]*\./scripts/audit-success-sound\.sh[[:space:]]*$' \
@@ -233,6 +262,11 @@ fi
 if [[ ! -x "$code_recognition_audit_script" ]] || \
     [[ ! -x "$repository_root/scripts/generate-code-fixtures.swift" ]]; then
     fail "The code-recognition audit and deterministic fixture generator must be executable."
+fi
+
+if [[ ! -x "$latex_feasibility_audit_script" ]] || \
+    [[ ! -x "$latex_feasibility_test_script" ]]; then
+    fail "The offline LaTeX feasibility test and audit must be executable."
 fi
 if [[ "$(/usr/bin/head -n 1 "$repository_root/scripts/generate-code-fixtures.swift")" != \
     '#!/usr/bin/env -S xcrun swift' ]]; then
