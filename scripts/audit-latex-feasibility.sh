@@ -207,7 +207,7 @@ if /usr/bin/grep -R -nE \
 fi
 
 if /usr/bin/grep -R -nE \
-    'TODO|FIXME|example\.com|/Users/|file://' \
+    'TODO|FIXME|example\.com|/Users[/]|file://' \
     "$tool_root" "$evidence_root" \
     "$repository_root/docs/architecture/ADR-005-offline-latex-recognition.md"; then
     fail "G39 evidence contains a placeholder or local path."
