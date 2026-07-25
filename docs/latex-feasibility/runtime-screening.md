@@ -187,8 +187,9 @@ passing every product-contract gate:
   latency thresholds.
 - **Accuracy:** normalized exact match is at least 3 percentage points higher
   overall, or at least 5 percentage points higher in a predefined difficult
-  class, and the paired 95% confidence interval for that improvement excludes
-  zero. No reported class may fall below its absolute accuracy threshold.
+  class, and the 95% normal-approximation interval computed from the bound
+  paired binary sample outcomes excludes zero. No reported class may fall below
+  its absolute accuracy threshold.
 
 Runtime size or maintenance simplicity may break a result that does not cross a
 meaningful speed or accuracy threshold, in which case the Core ML preference
@@ -198,8 +199,11 @@ comes from model availability rather than attributing it to the runtime.
 
 After comparison on development data, G39 selects and freezes at most one
 complete model/runtime design, preprocessing, decoder, normalization, and
-scoring implementation before inspecting the blind evaluation corpus. A change
-after unblinding requires a fresh unseen corpus under the product contract.
+scoring implementation before inspecting the blind evaluation corpus. The
+freeze includes a digest-checked manifest covering retained files and compiled
+directories, including a third-party runtime or the explicit system Core ML
+identifier. A change after unblinding requires a fresh unseen corpus under the
+product contract.
 
 ## G39 disposition
 

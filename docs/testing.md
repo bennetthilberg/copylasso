@@ -568,28 +568,34 @@ The global-shortcut boundary has direct tests for saved-shortcut registration, e
 
 G39 is a non-production go/no-go study. Its isolated dependency-free Swift
 package validates the exact corpus minimums and class tallies, safe relative
-image paths and byte digests, one-candidate blind freeze, frozen input digests,
+image paths and byte digests, one-candidate blind freeze, a complete
+file/directory artifact manifest, frozen input digests,
 label/result completeness, conservative normalization, structural and exact
 accuracy, deterministic nearest-rank p50/p95, false success, size, memory,
-environment, privacy, platform, and runtime-comparison thresholds.
+environment, privacy, platform, and runtime-comparison thresholds. Runtime
+comparison derives its paired accuracy differences and 95% normal-approximation
+intervals from the bound per-sample outcomes rather than accepting caller
+supplied intervals.
 Class-count validation is deliberately mechanical: it proves only that the
 manifest contains enough declared tags. Before any future unblinding, an
 independent reviewer must inspect every positive image and ground truth and
 confirm that each claimed class is genuinely exercised. The scorer and its
 synthetic unit fixtures are not semantic corpus-review evidence.
 
-Run the focused 14-test suite with:
+Run the focused 16-test suite with:
 
 ```sh
 ./scripts/test-latex-feasibility.sh
 ```
 
-The scorer recomputes the corpus, label, protocol, executable, model,
-configuration, preprocessing, and decoder digests supplied to the CLI. A
-reported gate failure exits with status 2. Physical hardware identity, AC and
-thermal state, executable slices, sandbox behavior, license compatibility, and
-provenance still require independent evidence review; JSON assertions alone do
-not establish them.
+The scorer recomputes the corpus, label, protocol, executable, and complete
+artifact-manifest digests supplied to the CLI. It validates each retained model,
+configuration, preprocessing, decoder, auxiliary, and runtime file or directory
+under that manifest and rejects any protocol whose parsed thresholds differ
+from the compiled scorer contract. A reported gate failure exits with status 2.
+Physical hardware identity, AC and thermal state, executable slices, sandbox
+behavior, license compatibility, and provenance still require independent
+evidence review; JSON assertions alone do not establish them.
 
 Development comparison used 100 public candidate-owned formula fixtures and
 100 generated ordinary-text negatives with one input set, normalizer, and

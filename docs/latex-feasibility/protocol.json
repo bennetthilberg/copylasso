@@ -66,7 +66,8 @@
         "difficult_class_minimum_improvement": 0.05,
         "no_class_may_miss_absolute_gate": true,
         "overall_minimum_improvement": 0.03,
-        "paired_95_percent_confidence_interval_must_exclude_zero": true
+        "paired_95_percent_confidence_interval_must_exclude_zero": true,
+        "paired_confidence_method": "normal_approximation_of_paired_binary_differences"
       },
       "latency": {
         "minimum_absolute_p95_improvement_milliseconds": 100,
@@ -133,7 +134,9 @@
   },
   "schema_version": 1,
   "scorer_contract": {
+    "artifact_manifest_binds_complete_file_and_directory_set": true,
     "comparison_reports_bind_candidate_runtime_and_common_corpus_label_scorer_protocol_digests": true,
+    "derives_paired_confidence_interval_from_bound_sample_outcomes": true,
     "failed_gate_exit_code": 2,
     "mechanical_class_counts_require_independent_semantic_review": true,
     "nearest_rank_percentiles": [
@@ -142,6 +145,7 @@
     ],
     "no_qualified_runtime_is_distinct_from_core_ml_preference": true,
     "recomputes_supplied_artifact_digests": true,
+    "validates_parsed_protocol_against_compiled_thresholds": true,
     "requires_independent_review_of_physical_and_legal_evidence": true
   },
   "study": "CopyLasso G39 offline LaTeX feasibility"

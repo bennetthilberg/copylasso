@@ -1,3 +1,4 @@
+import CoreFoundation
 import CryptoKit
 import Foundation
 
@@ -70,28 +71,68 @@ public enum CandidateRuntimeKind: String, Codable, Sendable {
   case nonCoreML = "non_core_ml"
 }
 
+public enum CandidateArtifactRole: String, Codable, CaseIterable, Sendable {
+  case model
+  case configuration
+  case preprocessing
+  case decoder
+  case runtime
+  case auxiliary
+}
+
+public enum CandidateArtifactKind: String, Codable, Sendable {
+  case file
+  case directory
+}
+
+public struct CandidateArtifact: Codable, Equatable, Sendable {
+  public var role: CandidateArtifactRole
+  public var kind: CandidateArtifactKind
+  public var relativePath: String
+  public var sha256: String
+
+  public init(
+    role: CandidateArtifactRole,
+    kind: CandidateArtifactKind,
+    relativePath: String,
+    sha256: String
+  ) {
+    self.role = role
+    self.kind = kind
+    self.relativePath = relativePath
+    self.sha256 = sha256
+  }
+}
+
+public struct CandidateArtifactManifest: Codable, Equatable, Sendable {
+  public var schemaVersion: Int
+  public var systemRuntimeIdentifier: String?
+  public var artifacts: [CandidateArtifact]
+
+  public init(
+    schemaVersion: Int,
+    systemRuntimeIdentifier: String?,
+    artifacts: [CandidateArtifact]
+  ) {
+    self.schemaVersion = schemaVersion
+    self.systemRuntimeIdentifier = systemRuntimeIdentifier
+    self.artifacts = artifacts
+  }
+}
+
 public struct CandidateDesignFreeze: Codable, Equatable, Sendable {
   public var id: String
   public var runtimeKind: CandidateRuntimeKind
-  public var modelSHA256: String
-  public var configurationSHA256: String
-  public var preprocessingSHA256: String
-  public var decoderSHA256: String
+  public var artifactManifestSHA256: String
 
   public init(
     id: String,
     runtimeKind: CandidateRuntimeKind,
-    modelSHA256: String,
-    configurationSHA256: String,
-    preprocessingSHA256: String,
-    decoderSHA256: String
+    artifactManifestSHA256: String
   ) {
     self.id = id
     self.runtimeKind = runtimeKind
-    self.modelSHA256 = modelSHA256
-    self.configurationSHA256 = configurationSHA256
-    self.preprocessingSHA256 = preprocessingSHA256
-    self.decoderSHA256 = decoderSHA256
+    self.artifactManifestSHA256 = artifactManifestSHA256
   }
 }
 
@@ -125,29 +166,20 @@ public struct VerifiedInputDigests: Codable, Equatable, Sendable {
   public var sealedLabelsSHA256: String
   public var scorerSHA256: String
   public var protocolSHA256: String
-  public var modelSHA256: String
-  public var configurationSHA256: String
-  public var preprocessingSHA256: String
-  public var decoderSHA256: String
+  public var artifactManifestSHA256: String
 
   public init(
     corpusManifestSHA256: String,
     sealedLabelsSHA256: String,
     scorerSHA256: String,
     protocolSHA256: String,
-    modelSHA256: String,
-    configurationSHA256: String,
-    preprocessingSHA256: String,
-    decoderSHA256: String
+    artifactManifestSHA256: String
   ) {
     self.corpusManifestSHA256 = corpusManifestSHA256
     self.sealedLabelsSHA256 = sealedLabelsSHA256
     self.scorerSHA256 = scorerSHA256
     self.protocolSHA256 = protocolSHA256
-    self.modelSHA256 = modelSHA256
-    self.configurationSHA256 = configurationSHA256
-    self.preprocessingSHA256 = preprocessingSHA256
-    self.decoderSHA256 = decoderSHA256
+    self.artifactManifestSHA256 = artifactManifestSHA256
   }
 }
 
@@ -217,10 +249,7 @@ public struct SampleMeasurement: Codable, Equatable, Sendable {
 
 public struct ArchitectureRun: Codable, Equatable, Sendable {
   public var candidateID: String
-  public var modelSHA256: String
-  public var configurationSHA256: String
-  public var preprocessingSHA256: String
-  public var decoderSHA256: String
+  public var artifactManifestSHA256: String
   public var architecture: BenchmarkArchitecture
   public var environment: BenchmarkEnvironment
   public var coldLoadMilliseconds: Double
@@ -230,10 +259,7 @@ public struct ArchitectureRun: Codable, Equatable, Sendable {
 
   public init(
     candidateID: String,
-    modelSHA256: String,
-    configurationSHA256: String,
-    preprocessingSHA256: String,
-    decoderSHA256: String,
+    artifactManifestSHA256: String,
     architecture: BenchmarkArchitecture,
     environment: BenchmarkEnvironment,
     coldLoadMilliseconds: Double,
@@ -242,10 +268,7 @@ public struct ArchitectureRun: Codable, Equatable, Sendable {
     samples: [SampleMeasurement]
   ) {
     self.candidateID = candidateID
-    self.modelSHA256 = modelSHA256
-    self.configurationSHA256 = configurationSHA256
-    self.preprocessingSHA256 = preprocessingSHA256
-    self.decoderSHA256 = decoderSHA256
+    self.artifactManifestSHA256 = artifactManifestSHA256
     self.architecture = architecture
     self.environment = environment
     self.coldLoadMilliseconds = coldLoadMilliseconds
@@ -320,9 +343,35 @@ public struct AccuracyMetrics: Codable, Equatable, Sendable {
   public let classes: [String: ClassAccuracyMetrics]
 }
 
+public struct SampleAccuracyOutcome: Codable, Equatable, Sendable {
+  public var id: String
+  public var kind: EvaluationSampleKind
+  public var classes: [MathSampleClass]
+  public var normalizedExactMatch: Bool
+  public var cleanStructuralMatch: Bool
+  public var hasRecognizedOutput: Bool
+
+  public init(
+    id: String,
+    kind: EvaluationSampleKind,
+    classes: [MathSampleClass],
+    normalizedExactMatch: Bool,
+    cleanStructuralMatch: Bool,
+    hasRecognizedOutput: Bool
+  ) {
+    self.id = id
+    self.kind = kind
+    self.classes = classes
+    self.normalizedExactMatch = normalizedExactMatch
+    self.cleanStructuralMatch = cleanStructuralMatch
+    self.hasRecognizedOutput = hasRecognizedOutput
+  }
+}
+
 public struct ArchitectureGateReport: Codable, Equatable, Sendable {
   public let architecture: BenchmarkArchitecture
   public let accuracy: AccuracyMetrics
+  public let sampleOutcomes: [SampleAccuracyOutcome]
   public let measurementCount: Int
   public let warmP50Milliseconds: Double
   public let warmP95Milliseconds: Double
@@ -372,6 +421,7 @@ public struct RuntimeComparisonReport: Codable, Equatable, Sendable {
   public let challengerPassesEveryAbsoluteGate: Bool
   public let hasMeaningfulLatencyWin: Bool
   public let hasMeaningfulAccuracyWin: Bool
+  public let pairedAccuracyImprovements: [PairedAccuracyImprovement]
   public let recommendedRuntime: RuntimeRecommendation
 }
 
@@ -391,6 +441,13 @@ public enum FeasibilityValidationError: Error, Equatable, Sendable {
   case positiveSampleHasNoMathClass(String)
   case negativeSampleHasMathClasses(String)
   case emptyCandidateID
+  case invalidProtocolContract
+  case incompleteArtifactManifest
+  case duplicateArtifactPath(String)
+  case unboundArtifact(String)
+  case invalidArtifactPath(String)
+  case missingArtifact(String)
+  case artifactDigestMismatch(String)
   case inputDigestMismatch(field: String)
   case labelIDsDoNotMatchCorpus
   case duplicateLabelID(String)
@@ -446,6 +503,20 @@ extension FeasibilityValidationError: CustomStringConvertible {
       "Negative sample declares a math class: \(id)"
     case .emptyCandidateID:
       "A candidate design has an empty identifier."
+    case .invalidProtocolContract:
+      "The supplied feasibility protocol does not match the scorer contract."
+    case .incompleteArtifactManifest:
+      "The candidate artifact manifest does not bind every required component."
+    case .duplicateArtifactPath(let path):
+      "Duplicate candidate artifact path: \(path)"
+    case .unboundArtifact(let path):
+      "Candidate artifact is not covered by the manifest: \(path)"
+    case .invalidArtifactPath(let path):
+      "Candidate artifact path is unsafe or invalid: \(path)"
+    case .missingArtifact(let path):
+      "Candidate artifact is missing or has the wrong kind: \(path)"
+    case .artifactDigestMismatch(let path):
+      "Candidate artifact digest does not match the manifest: \(path)"
     case .inputDigestMismatch(let field):
       "A frozen input digest does not match the supplied bytes: \(field)"
     case .labelIDsDoNotMatchCorpus:
@@ -557,6 +628,388 @@ public enum ArtifactDigest {
 
   public static func sha256(fileURL: URL) throws -> String {
     sha256(try Data(contentsOf: fileURL, options: [.mappedIfSafe]))
+  }
+
+  public static func sha256Tree(directoryURL: URL) throws -> String {
+    let root = directoryURL.resolvingSymlinksInPath().standardizedFileURL
+    guard
+      try root.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey]).isDirectory == true
+    else {
+      throw FeasibilityValidationError.missingArtifact(directoryURL.lastPathComponent)
+    }
+    guard
+      let enumerator = FileManager.default.enumerator(
+        at: root,
+        includingPropertiesForKeys: [
+          .isDirectoryKey,
+          .isRegularFileKey,
+          .isSymbolicLinkKey,
+        ],
+        options: []
+      )
+    else {
+      throw FeasibilityValidationError.missingArtifact(directoryURL.lastPathComponent)
+    }
+
+    var records: [String] = []
+    for case let url as URL in enumerator {
+      let values = try url.resourceValues(forKeys: [
+        .isDirectoryKey,
+        .isRegularFileKey,
+        .isSymbolicLinkKey,
+      ])
+      let resolvedURL = url.resolvingSymlinksInPath().standardizedFileURL
+      let relativePath = String(resolvedURL.path.dropFirst(root.path.count + 1))
+      guard
+        values.isSymbolicLink != true,
+        !relativePath.contains("\n"),
+        !relativePath.contains("\r"),
+        !relativePath.contains("\t")
+      else {
+        throw FeasibilityValidationError.invalidArtifactPath(relativePath)
+      }
+      if values.isDirectory == true {
+        continue
+      }
+      guard values.isRegularFile == true else {
+        throw FeasibilityValidationError.invalidArtifactPath(relativePath)
+      }
+      records.append("\(relativePath)\t\(try sha256(fileURL: resolvedURL))\n")
+    }
+    guard !records.isEmpty else {
+      throw FeasibilityValidationError.incompleteArtifactManifest
+    }
+    return sha256(Data(records.sorted().joined().utf8))
+  }
+}
+
+public enum ArtifactManifestValidator {
+  public static func validate(
+    _ manifest: CandidateArtifactManifest,
+    runtimeKind: CandidateRuntimeKind,
+    under artifactRoot: URL
+  ) throws {
+    guard manifest.schemaVersion == 1 else {
+      throw FeasibilityValidationError.unsupportedSchemaVersion(manifest.schemaVersion)
+    }
+    let roles = Set(manifest.artifacts.map(\.role))
+    let requiredRoles: Set<CandidateArtifactRole> = [
+      .model,
+      .configuration,
+      .preprocessing,
+      .decoder,
+    ]
+    let usesSystemCoreML =
+      runtimeKind == .coreML
+      && manifest.systemRuntimeIdentifier == "com.apple.CoreML"
+    guard
+      requiredRoles.isSubset(of: roles),
+      roles.contains(.runtime) || usesSystemCoreML,
+      manifest.systemRuntimeIdentifier == nil || usesSystemCoreML
+    else {
+      throw FeasibilityValidationError.incompleteArtifactManifest
+    }
+
+    let resolvedRoot = artifactRoot.resolvingSymlinksInPath().standardizedFileURL
+    let rootPrefix = resolvedRoot.path.hasSuffix("/") ? resolvedRoot.path : resolvedRoot.path + "/"
+    var paths = Set<String>()
+    for artifact in manifest.artifacts {
+      try validateSHA256(artifact.sha256, field: "artifact.sha256")
+      guard paths.insert(artifact.relativePath).inserted else {
+        throw FeasibilityValidationError.duplicateArtifactPath(artifact.relativePath)
+      }
+      let path = artifact.relativePath
+      let components = path.split(separator: "/", omittingEmptySubsequences: false)
+      guard
+        !path.isEmpty,
+        !path.hasPrefix("/"),
+        !components.contains(".."),
+        !path.contains("\n"),
+        !path.contains("\r"),
+        !path.contains("\t")
+      else {
+        throw FeasibilityValidationError.invalidArtifactPath(path)
+      }
+      let unresolvedURL =
+        resolvedRoot
+        .appendingPathComponent(path)
+        .standardizedFileURL
+      guard unresolvedURL.path.hasPrefix(rootPrefix) else {
+        throw FeasibilityValidationError.invalidArtifactPath(path)
+      }
+      let unresolvedValues = try? unresolvedURL.resourceValues(forKeys: [.isSymbolicLinkKey])
+      guard unresolvedValues?.isSymbolicLink != true else {
+        throw FeasibilityValidationError.invalidArtifactPath(path)
+      }
+      let url = unresolvedURL.resolvingSymlinksInPath().standardizedFileURL
+      guard url.path.hasPrefix(rootPrefix) else {
+        throw FeasibilityValidationError.invalidArtifactPath(path)
+      }
+      let values = try? url.resourceValues(forKeys: [
+        .isDirectoryKey,
+        .isRegularFileKey,
+        .isSymbolicLinkKey,
+      ])
+      guard values?.isSymbolicLink != true else {
+        throw FeasibilityValidationError.invalidArtifactPath(path)
+      }
+      let actualDigest: String
+      switch artifact.kind {
+      case .file:
+        guard values?.isRegularFile == true else {
+          throw FeasibilityValidationError.missingArtifact(path)
+        }
+        actualDigest = try ArtifactDigest.sha256(fileURL: url)
+      case .directory:
+        guard values?.isDirectory == true else {
+          throw FeasibilityValidationError.missingArtifact(path)
+        }
+        actualDigest = try ArtifactDigest.sha256Tree(directoryURL: url)
+      }
+      guard actualDigest == artifact.sha256 else {
+        throw FeasibilityValidationError.artifactDigestMismatch(path)
+      }
+    }
+
+    let filePaths = Set(
+      manifest.artifacts.filter { $0.kind == .file }.map(\.relativePath)
+    )
+    let directoryPaths = manifest.artifacts
+      .filter { $0.kind == .directory }
+      .map { $0.relativePath.hasSuffix("/") ? $0.relativePath : $0.relativePath + "/" }
+    for actualPath in try regularFilePaths(under: resolvedRoot) {
+      guard
+        filePaths.contains(actualPath)
+          || directoryPaths.contains(where: { actualPath.hasPrefix($0) })
+      else {
+        throw FeasibilityValidationError.unboundArtifact(actualPath)
+      }
+    }
+  }
+
+  private static func regularFilePaths(under root: URL) throws -> [String] {
+    guard
+      let enumerator = FileManager.default.enumerator(
+        at: root,
+        includingPropertiesForKeys: [
+          .isDirectoryKey,
+          .isRegularFileKey,
+          .isSymbolicLinkKey,
+        ],
+        options: []
+      )
+    else {
+      throw FeasibilityValidationError.incompleteArtifactManifest
+    }
+    var paths: [String] = []
+    for case let url as URL in enumerator {
+      let values = try url.resourceValues(forKeys: [
+        .isDirectoryKey,
+        .isRegularFileKey,
+        .isSymbolicLinkKey,
+      ])
+      let resolvedURL = url.resolvingSymlinksInPath().standardizedFileURL
+      let relativePath = String(resolvedURL.path.dropFirst(root.path.count + 1))
+      guard
+        values.isSymbolicLink != true,
+        !relativePath.contains("\n"),
+        !relativePath.contains("\r"),
+        !relativePath.contains("\t")
+      else {
+        throw FeasibilityValidationError.invalidArtifactPath(relativePath)
+      }
+      if values.isDirectory == true {
+        continue
+      }
+      guard values.isRegularFile == true else {
+        throw FeasibilityValidationError.invalidArtifactPath(relativePath)
+      }
+      paths.append(relativePath)
+    }
+    return paths
+  }
+}
+
+public enum ProtocolValidator {
+  public static func validateSupported(_ data: Data) throws {
+    guard
+      let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+      integer(root, "schema_version") == 1,
+      integer(root, "blind_evaluation", "corpus", "minimum_samples") == 300,
+      integer(root, "blind_evaluation", "corpus", "minimum_positive_samples") == 200,
+      integer(root, "blind_evaluation", "corpus", "minimum_negative_samples") == 100,
+      double(
+        root,
+        "gate_thresholds",
+        "accuracy",
+        "clean_common_structural_minimum"
+      ) == 0.95,
+      double(
+        root,
+        "gate_thresholds",
+        "accuracy",
+        "each_positive_class_exact_minimum"
+      ) == 0.70,
+      double(
+        root,
+        "gate_thresholds",
+        "accuracy",
+        "negative_false_success_maximum"
+      ) == 0.01,
+      double(
+        root,
+        "gate_thresholds",
+        "accuracy",
+        "overall_positive_exact_minimum"
+      ) == 0.85,
+      integer(root, "gate_thresholds", "installed_growth_maximum_bytes") == 209_715_200,
+      double(
+        root,
+        "gate_thresholds",
+        "latency",
+        "arm64_warm_p95_maximum_milliseconds"
+      ) == 2_000,
+      double(
+        root,
+        "gate_thresholds",
+        "latency",
+        "intel_warm_p95_maximum_milliseconds"
+      ) == 4_000,
+      integer(root, "gate_thresholds", "peak_memory_growth_maximum_bytes") == 786_432_000,
+      boolean(root, "development_comparison", "core_ml_preference") == true,
+      boolean(
+        root,
+        "development_comparison",
+        "non_core_ml_meaningful_win",
+        "requires_every_absolute_gate"
+      ) == true,
+      double(
+        root,
+        "development_comparison",
+        "non_core_ml_meaningful_win",
+        "accuracy",
+        "overall_minimum_improvement"
+      ) == 0.03,
+      double(
+        root,
+        "development_comparison",
+        "non_core_ml_meaningful_win",
+        "accuracy",
+        "difficult_class_minimum_improvement"
+      ) == 0.05,
+      boolean(
+        root,
+        "development_comparison",
+        "non_core_ml_meaningful_win",
+        "accuracy",
+        "paired_95_percent_confidence_interval_must_exclude_zero"
+      ) == true,
+      string(
+        root,
+        "development_comparison",
+        "non_core_ml_meaningful_win",
+        "accuracy",
+        "paired_confidence_method"
+      ) == "normal_approximation_of_paired_binary_differences",
+      double(
+        root,
+        "development_comparison",
+        "non_core_ml_meaningful_win",
+        "latency",
+        "minimum_absolute_p95_improvement_milliseconds"
+      ) == 100,
+      double(
+        root,
+        "development_comparison",
+        "non_core_ml_meaningful_win",
+        "latency",
+        "minimum_relative_p95_improvement"
+      ) == 0.20,
+      double(
+        root,
+        "development_comparison",
+        "non_core_ml_meaningful_win",
+        "latency",
+        "other_architecture_maximum_regression"
+      ) == 0.10
+    else {
+      throw FeasibilityValidationError.invalidProtocolContract
+    }
+
+    guard
+      let requiredClasses = dictionary(
+        root,
+        "blind_evaluation",
+        "corpus",
+        "required_positive_classes"
+      ),
+      MathSampleClass.requiredPositiveClasses.allSatisfy({
+        integer(requiredClasses, $0.rawValue) == ($0 == .cleanCommon ? 100 : 15)
+      }),
+      strings(
+        root,
+        "development_comparison",
+        "non_core_ml_meaningful_win",
+        "accuracy",
+        "predefined_difficult_classes"
+      ) == [
+        "aligned_equations",
+        "degraded",
+        "low_resolution",
+        "matrices",
+      ]
+    else {
+      throw FeasibilityValidationError.invalidProtocolContract
+    }
+  }
+
+  private static func value(
+    _ root: [String: Any],
+    _ path: [String]
+  ) -> Any? {
+    var current: Any = root
+    for component in path {
+      guard let dictionary = current as? [String: Any],
+        let next = dictionary[component]
+      else {
+        return nil
+      }
+      current = next
+    }
+    return current
+  }
+
+  private static func integer(_ root: [String: Any], _ path: String...) -> Int? {
+    (value(root, path) as? NSNumber)?.intValue
+  }
+
+  private static func double(_ root: [String: Any], _ path: String...) -> Double? {
+    (value(root, path) as? NSNumber)?.doubleValue
+  }
+
+  private static func boolean(_ root: [String: Any], _ path: String...) -> Bool? {
+    guard
+      let number = value(root, path) as? NSNumber,
+      CFGetTypeID(number) == CFBooleanGetTypeID()
+    else {
+      return nil
+    }
+    return number.boolValue
+  }
+
+  private static func string(_ root: [String: Any], _ path: String...) -> String? {
+    value(root, path) as? String
+  }
+
+  private static func strings(_ root: [String: Any], _ path: String...) -> [String]? {
+    value(root, path) as? [String]
+  }
+
+  private static func dictionary(
+    _ root: [String: Any],
+    _ path: String...
+  ) -> [String: Any]? {
+    value(root, path) as? [String: Any]
   }
 }
 
@@ -684,10 +1137,10 @@ public enum FreezeValidator {
     guard !candidate.id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
       throw FeasibilityValidationError.emptyCandidateID
     }
-    try validateSHA256(candidate.modelSHA256, field: "candidate.modelSHA256")
-    try validateSHA256(candidate.configurationSHA256, field: "candidate.configurationSHA256")
-    try validateSHA256(candidate.preprocessingSHA256, field: "candidate.preprocessingSHA256")
-    try validateSHA256(candidate.decoderSHA256, field: "candidate.decoderSHA256")
+    try validateSHA256(
+      candidate.artifactManifestSHA256,
+      field: "candidate.artifactManifestSHA256"
+    )
   }
 
   public static func validateBinding(
@@ -700,10 +1153,11 @@ public enum FreezeValidator {
       ("sealedLabelsSHA256", binding.sealedLabelsSHA256, freeze.sealedLabelsSHA256),
       ("scorerSHA256", binding.scorerSHA256, freeze.scorerSHA256),
       ("protocolSHA256", binding.protocolSHA256, freeze.protocolSHA256),
-      ("modelSHA256", binding.modelSHA256, candidate.modelSHA256),
-      ("configurationSHA256", binding.configurationSHA256, candidate.configurationSHA256),
-      ("preprocessingSHA256", binding.preprocessingSHA256, candidate.preprocessingSHA256),
-      ("decoderSHA256", binding.decoderSHA256, candidate.decoderSHA256),
+      (
+        "artifactManifestSHA256",
+        binding.artifactManifestSHA256,
+        candidate.artifactManifestSHA256
+      ),
     ]
     for (field, actual, expected) in checks {
       try validateSHA256(actual, field: "binding.\(field)")
@@ -796,7 +1250,7 @@ public enum CandidateGateEvaluator {
       guard let run = runs[architecture] else {
         throw FeasibilityValidationError.missingArchitecture(architecture)
       }
-      let accuracy = calculateAccuracy(
+      let (accuracy, sampleOutcomes) = calculateAccuracy(
         corpus: corpus,
         labelsByID: labelsByID,
         measurements: Dictionary(uniqueKeysWithValues: run.samples.map { ($0.id, $0) })
@@ -809,6 +1263,7 @@ public enum CandidateGateEvaluator {
         ArchitectureGateReport(
           architecture: architecture,
           accuracy: accuracy,
+          sampleOutcomes: sampleOutcomes,
           measurementCount: run.samples.count,
           warmP50Milliseconds: p50,
           warmP95Milliseconds: p95,
@@ -912,10 +1367,7 @@ public enum CandidateGateEvaluator {
     for run in runs {
       guard
         run.candidateID == candidate.id,
-        run.modelSHA256 == candidate.modelSHA256,
-        run.configurationSHA256 == candidate.configurationSHA256,
-        run.preprocessingSHA256 == candidate.preprocessingSHA256,
-        run.decoderSHA256 == candidate.decoderSHA256
+        run.artifactManifestSHA256 == candidate.artifactManifestSHA256
       else {
         throw FeasibilityValidationError.mixedCandidateDesigns
       }
@@ -968,7 +1420,7 @@ public enum CandidateGateEvaluator {
     corpus: EvaluationCorpus,
     labelsByID: [String: EvaluationLabel],
     measurements: [String: SampleMeasurement]
-  ) -> AccuracyMetrics {
+  ) -> (AccuracyMetrics, [SampleAccuracyOutcome]) {
     var positiveCount = 0
     var normalizedExactMatches = 0
     var cleanCommonCount = 0
@@ -977,6 +1429,7 @@ public enum CandidateGateEvaluator {
     var negativeFalseSuccesses = 0
     var classTotals: [MathSampleClass: Int] = [:]
     var classMatches: [MathSampleClass: Int] = [:]
+    var sampleOutcomes: [SampleAccuracyOutcome] = []
 
     for sample in corpus.samples {
       guard
@@ -1000,17 +1453,39 @@ public enum CandidateGateEvaluator {
             classMatches[sampleClass, default: 0] += 1
           }
         }
+        var isCleanStructuralMatch = false
         if sample.classes.contains(.cleanCommon) {
           cleanCommonCount += 1
           let accepted = Set(
             label.acceptedStructuralForms.compactMap(LaTeXNormalizer.normalize)
           )
           if let output, accepted.contains(output) {
+            isCleanStructuralMatch = true
             cleanStructuralMatches += 1
           }
         }
+        sampleOutcomes.append(
+          SampleAccuracyOutcome(
+            id: sample.id,
+            kind: sample.kind,
+            classes: sample.classes,
+            normalizedExactMatch: isExact,
+            cleanStructuralMatch: isCleanStructuralMatch,
+            hasRecognizedOutput: output != nil
+          )
+        )
       case .negative:
         negativeCount += 1
+        sampleOutcomes.append(
+          SampleAccuracyOutcome(
+            id: sample.id,
+            kind: sample.kind,
+            classes: sample.classes,
+            normalizedExactMatch: false,
+            cleanStructuralMatch: false,
+            hasRecognizedOutput: output != nil
+          )
+        )
         if output != nil {
           negativeFalseSuccesses += 1
         }
@@ -1027,26 +1502,29 @@ public enum CandidateGateEvaluator {
         normalizedExactRate: rate(numerator: matches, denominator: total)
       )
     }
-    return AccuracyMetrics(
-      positiveCount: positiveCount,
-      normalizedExactMatches: normalizedExactMatches,
-      overallExactRate: rate(
-        numerator: normalizedExactMatches,
-        denominator: positiveCount
+    return (
+      AccuracyMetrics(
+        positiveCount: positiveCount,
+        normalizedExactMatches: normalizedExactMatches,
+        overallExactRate: rate(
+          numerator: normalizedExactMatches,
+          denominator: positiveCount
+        ),
+        cleanCommonCount: cleanCommonCount,
+        cleanStructuralMatches: cleanStructuralMatches,
+        cleanStructuralRate: rate(
+          numerator: cleanStructuralMatches,
+          denominator: cleanCommonCount
+        ),
+        negativeCount: negativeCount,
+        negativeFalseSuccesses: negativeFalseSuccesses,
+        negativeFalseSuccessRate: rate(
+          numerator: negativeFalseSuccesses,
+          denominator: negativeCount
+        ),
+        classes: classMetrics
       ),
-      cleanCommonCount: cleanCommonCount,
-      cleanStructuralMatches: cleanStructuralMatches,
-      cleanStructuralRate: rate(
-        numerator: cleanStructuralMatches,
-        denominator: cleanCommonCount
-      ),
-      negativeCount: negativeCount,
-      negativeFalseSuccesses: negativeFalseSuccesses,
-      negativeFalseSuccessRate: rate(
-        numerator: negativeFalseSuccesses,
-        denominator: negativeCount
-      ),
-      classes: classMetrics
+      sampleOutcomes
     )
   }
 
@@ -1066,8 +1544,7 @@ public enum RuntimeComparisonEvaluator {
 
   public static func evaluate(
     coreMLReport: CandidateGateReport,
-    challengerReport: CandidateGateReport,
-    pairedAccuracyImprovements: [PairedAccuracyImprovement]
+    challengerReport: CandidateGateReport
   ) throws -> RuntimeComparisonReport {
     guard
       coreMLReport.freeze.candidate.runtimeKind == .coreML,
@@ -1112,37 +1589,14 @@ public enum RuntimeComparisonEvaluator {
       }
     }
 
-    var hasMeaningfulAccuracyWin = false
-    var comparedMetrics = Set<String>()
-    for interval in pairedAccuracyImprovements {
-      let comparisonKey = "\(interval.architecture.rawValue):\(interval.metric)"
-      guard
-        !interval.metric.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-        interval.metric == "overall" || difficultClassMetrics.contains(interval.metric),
-        comparedMetrics.insert(comparisonKey).inserted,
-        interval.improvement.isFinite,
-        interval.lower95ConfidenceBound.isFinite,
-        interval.upper95ConfidenceBound.isFinite,
-        interval.lower95ConfidenceBound <= interval.upper95ConfidenceBound,
-        interval.lower95ConfidenceBound <= interval.improvement,
-        interval.improvement <= interval.upper95ConfidenceBound,
-        let core = coreMetrics[interval.architecture],
-        let challenger = challengerMetrics[interval.architecture],
-        let expectedImprovement = accuracyImprovement(
-          metric: interval.metric,
-          coreML: core,
-          challenger: challenger
-        ),
-        abs(interval.improvement - expectedImprovement) <= 0.000_000_001
-      else {
-        throw FeasibilityValidationError.invalidComparison
-      }
+    let pairedAccuracyImprovements = try pairedAccuracyImprovements(
+      coreML: coreMetrics,
+      challenger: challengerMetrics
+    )
+    let hasMeaningfulAccuracyWin = pairedAccuracyImprovements.contains { interval in
       let requiredImprovement = interval.metric == "overall" ? 0.03 : 0.05
-      if interval.improvement >= requiredImprovement
+      return interval.improvement >= requiredImprovement
         && interval.lower95ConfidenceBound > 0
-      {
-        hasMeaningfulAccuracyWin = true
-      }
     }
 
     let recommendation: RuntimeRecommendation
@@ -1160,6 +1614,7 @@ public enum RuntimeComparisonEvaluator {
       challengerPassesEveryAbsoluteGate: challengerReport.passed,
       hasMeaningfulLatencyWin: hasMeaningfulLatencyWin,
       hasMeaningfulAccuracyWin: hasMeaningfulAccuracyWin,
+      pairedAccuracyImprovements: pairedAccuracyImprovements,
       recommendedRuntime: recommendation
     )
   }
@@ -1170,9 +1625,13 @@ public enum RuntimeComparisonEvaluator {
     var reports: [BenchmarkArchitecture: ArchitectureGateReport] = [:]
     for architectureReport in report.architectureReports {
       let accuracy = architectureReport.accuracy
+      let identifiers = architectureReport.sampleOutcomes.map(\.id)
+      try validateAccuracyBinding(architectureReport)
       guard
         architectureReport.warmP95Milliseconds.isFinite,
         architectureReport.warmP95Milliseconds > 0,
+        architectureReport.measurementCount == architectureReport.sampleOutcomes.count,
+        Set(identifiers).count == identifiers.count,
         accuracy.overallExactRate.isFinite,
         (0...1).contains(accuracy.overallExactRate),
         accuracy.classes.values.allSatisfy({
@@ -1194,6 +1653,152 @@ public enum RuntimeComparisonEvaluator {
       throw FeasibilityValidationError.invalidComparison
     }
     return reports
+  }
+
+  private static func validateAccuracyBinding(
+    _ report: ArchitectureGateReport
+  ) throws {
+    let positive = report.sampleOutcomes.filter { $0.kind == .positive }
+    let negative = report.sampleOutcomes.filter { $0.kind == .negative }
+    let exactPositive = positive.filter(\.normalizedExactMatch).count
+    let clean = positive.filter { $0.classes.contains(.cleanCommon) }
+    let cleanStructural = clean.filter(\.cleanStructuralMatch).count
+    let negativeFalseSuccesses = negative.filter(\.hasRecognizedOutput).count
+    guard
+      positive.count == report.accuracy.positiveCount,
+      exactPositive == report.accuracy.normalizedExactMatches,
+      approximatelyEqual(
+        Double(exactPositive) / Double(positive.count),
+        report.accuracy.overallExactRate
+      ),
+      clean.count == report.accuracy.cleanCommonCount,
+      cleanStructural == report.accuracy.cleanStructuralMatches,
+      approximatelyEqual(
+        Double(cleanStructural) / Double(clean.count),
+        report.accuracy.cleanStructuralRate
+      ),
+      negative.count == report.accuracy.negativeCount,
+      negativeFalseSuccesses == report.accuracy.negativeFalseSuccesses,
+      approximatelyEqual(
+        Double(negativeFalseSuccesses) / Double(negative.count),
+        report.accuracy.negativeFalseSuccessRate
+      )
+    else {
+      throw FeasibilityValidationError.invalidComparison
+    }
+    for sampleClass in MathSampleClass.requiredPositiveClasses {
+      let classOutcomes = positive.filter { $0.classes.contains(sampleClass) }
+      let classMatches = classOutcomes.filter(\.normalizedExactMatch).count
+      guard
+        let metrics = report.accuracy.classes[sampleClass.rawValue],
+        classOutcomes.count == metrics.sampleCount,
+        classMatches == metrics.normalizedExactMatches,
+        approximatelyEqual(
+          Double(classMatches) / Double(classOutcomes.count),
+          metrics.normalizedExactRate
+        )
+      else {
+        throw FeasibilityValidationError.invalidComparison
+      }
+    }
+  }
+
+  private static func approximatelyEqual(_ lhs: Double, _ rhs: Double) -> Bool {
+    lhs.isFinite && rhs.isFinite && abs(lhs - rhs) <= 0.000_000_001
+  }
+
+  private static func pairedAccuracyImprovements(
+    coreML: [BenchmarkArchitecture: ArchitectureGateReport],
+    challenger: [BenchmarkArchitecture: ArchitectureGateReport]
+  ) throws -> [PairedAccuracyImprovement] {
+    var improvements: [PairedAccuracyImprovement] = []
+    let metrics = ["overall"] + difficultClassMetrics.sorted()
+    for architecture in BenchmarkArchitecture.allCases {
+      guard
+        let coreReport = coreML[architecture],
+        let challengerReport = challenger[architecture]
+      else {
+        throw FeasibilityValidationError.invalidComparison
+      }
+      let coreOutcomes = Dictionary(
+        uniqueKeysWithValues: coreReport.sampleOutcomes.map { ($0.id, $0) }
+      )
+      let challengerOutcomes = Dictionary(
+        uniqueKeysWithValues: challengerReport.sampleOutcomes.map { ($0.id, $0) }
+      )
+      guard Set(coreOutcomes.keys) == Set(challengerOutcomes.keys) else {
+        throw FeasibilityValidationError.invalidComparison
+      }
+
+      for metric in metrics {
+        var pairedDifferences: [Double] = []
+        for id in coreOutcomes.keys.sorted() {
+          guard
+            let coreOutcome = coreOutcomes[id],
+            let challengerOutcome = challengerOutcomes[id],
+            coreOutcome.kind == challengerOutcome.kind,
+            Set(coreOutcome.classes) == Set(challengerOutcome.classes)
+          else {
+            throw FeasibilityValidationError.invalidComparison
+          }
+          guard coreOutcome.kind == .positive else {
+            continue
+          }
+          if metric != "overall" {
+            guard
+              let sampleClass = MathSampleClass(rawValue: metric),
+              coreOutcome.classes.contains(sampleClass)
+            else {
+              continue
+            }
+          }
+          pairedDifferences.append(
+            (challengerOutcome.normalizedExactMatch ? 1 : 0)
+              - (coreOutcome.normalizedExactMatch ? 1 : 0)
+          )
+        }
+        guard !pairedDifferences.isEmpty else {
+          throw FeasibilityValidationError.invalidComparison
+        }
+        let interval = normalApproximation95(pairedDifferences)
+        guard
+          let expectedImprovement = accuracyImprovement(
+            metric: metric,
+            coreML: coreReport,
+            challenger: challengerReport
+          ),
+          abs(interval.improvement - expectedImprovement) <= 0.000_000_001
+        else {
+          throw FeasibilityValidationError.invalidComparison
+        }
+        improvements.append(
+          PairedAccuracyImprovement(
+            architecture: architecture,
+            metric: metric,
+            improvement: interval.improvement,
+            lower95ConfidenceBound: interval.lower,
+            upper95ConfidenceBound: interval.upper
+          )
+        )
+      }
+    }
+    return improvements
+  }
+
+  private static func normalApproximation95(
+    _ pairedDifferences: [Double]
+  ) -> (improvement: Double, lower: Double, upper: Double) {
+    let count = Double(pairedDifferences.count)
+    let mean = pairedDifferences.reduce(0, +) / count
+    guard pairedDifferences.count > 1 else {
+      return (mean, mean, mean)
+    }
+    let sumSquaredDeviations = pairedDifferences.reduce(0) {
+      $0 + pow($1 - mean, 2)
+    }
+    let sampleVariance = sumSquaredDeviations / Double(pairedDifferences.count - 1)
+    let margin = 1.959_963_984_540_054 * sqrt(sampleVariance / count)
+    return (mean, max(-1, mean - margin), min(1, mean + margin))
   }
 
   private static func accuracyImprovement(

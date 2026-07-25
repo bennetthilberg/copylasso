@@ -62,6 +62,21 @@ done
     .development_comparison.blind_gate_credit == false
     ' "$summary" >/dev/null || fail "The G39 summary does not record the approved no-go."
 
+actual_production_digest="$(
+    git -C "$repository_root" ls-files -s -- \
+        CopyLasso \
+        CopyLassoTests \
+        CopyLassoUITests \
+        CopyLasso.xcodeproj \
+        Configuration \
+        THIRD_PARTY_NOTICES.md |
+        LC_ALL=C /usr/bin/sort |
+        /usr/bin/shasum -a 256 |
+        /usr/bin/awk '{print $1}'
+)"
+[[ "$actual_production_digest" == "$expected_production_digest" ]] || \
+    fail "The tracked production tree no longer matches the reviewed G38 boundary."
+
 /usr/bin/jq -e '
     .schema_version == 1 and
     .blind_evaluation.candidate_limit == 1 and
@@ -94,8 +109,13 @@ done
         "low_resolution",
         "matrices"
     ] and
+    .development_comparison.non_core_ml_meaningful_win.accuracy.paired_confidence_method ==
+        "normal_approximation_of_paired_binary_differences" and
     .scorer_contract.comparison_reports_bind_candidate_runtime_and_common_corpus_label_scorer_protocol_digests == true and
+    .scorer_contract.artifact_manifest_binds_complete_file_and_directory_set == true and
+    .scorer_contract.derives_paired_confidence_interval_from_bound_sample_outcomes == true and
     .scorer_contract.recomputes_supplied_artifact_digests == true and
+    .scorer_contract.validates_parsed_protocol_against_compiled_thresholds == true and
     .scorer_contract.mechanical_class_counts_require_independent_semantic_review == true and
     .scorer_contract.no_qualified_runtime_is_distinct_from_core_ml_preference == true and
     .scorer_contract.requires_independent_review_of_physical_and_legal_evidence == true and
@@ -171,6 +191,8 @@ for required_source in \
     'public var candidate: CandidateDesignFreeze' \
     'validateBinding(' \
     'validateImages(' \
+    'ArtifactManifestValidator' \
+    'sha256Tree(directoryURL:' \
     'ArtifactDigest.sha256' \
     'warmP50Milliseconds' \
     'ClassAccuracyMetrics' \
@@ -183,6 +205,7 @@ for required_source in \
     'change.saved >= 100' \
     'otherChange.regression <= 0.10' \
     'interval.improvement >= requiredImprovement' \
+    'normalApproximation95' \
     'interval.lower95ConfidenceBound > 0' \
     'recommendation = .none'; do
     /usr/bin/grep -Fq "$required_source" "$core" || \
@@ -190,15 +213,23 @@ for required_source in \
 done
 
 for required_command in \
+    'case "validate-protocol":' \
     'CorpusValidator.validateImages' \
+    'ProtocolValidator.validateSupported' \
+    'ArtifactManifestValidator.validate' \
     'corpusManifestSHA256: ArtifactDigest.sha256(corpusData)' \
     'scorerSHA256: try ArtifactDigest.sha256(fileURL: executableURL)' \
     'protocolSHA256: ArtifactDigest.sha256(protocolData)' \
+    'artifactManifestSHA256: ArtifactDigest.sha256(artifactManifestData)' \
     'if !report.passed' \
     'exit(2)'; do
     /usr/bin/grep -Fq "$required_command" "$command" || \
         fail "The G39 CLI is missing its reviewed fail-closed behavior: $required_command"
 done
+
+/usr/bin/grep -Fq '"$scratch/debug/latex-feasibility" validate-protocol' \
+    "$repository_root/scripts/test-latex-feasibility.sh" || \
+    fail "The focused suite must validate the tracked protocol with the production CLI."
 
 if /usr/bin/grep -R -nE \
     'https?://|URLSession|Network\.framework|import[[:space:]]+(CoreML|Vision|AppKit|SwiftUI)' \

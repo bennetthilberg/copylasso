@@ -119,7 +119,10 @@ the following without changing the current product contract:
 
 At that point, compare direct Core ML and the best credible non-Core-ML path
 using the fixed meaningful-win rule. Select exactly one design, commit the
-freeze and scorer digests, and only then run a fresh blind evaluation.
+freeze, scorer, parsed protocol, and complete file/directory artifact-manifest
+digests, and only then run a fresh blind evaluation. Runtime comparison derives
+paired accuracy intervals from the two candidates' bound per-sample outcomes;
+it does not accept caller-supplied confidence bounds.
 
 ## Consequences
 

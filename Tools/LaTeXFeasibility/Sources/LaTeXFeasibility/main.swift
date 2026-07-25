@@ -11,6 +11,11 @@ struct LaTeXFeasibilityCommand {
     }
 
     switch command {
+    case "validate-protocol":
+      guard let protocolPath = arguments.popFirst(), arguments.isEmpty else {
+        throw CommandError.usage
+      }
+      try ProtocolValidator.validateSupported(read(protocolPath))
     case "validate-corpus":
       guard
         let corpusPath = arguments.popFirst(),
@@ -33,10 +38,8 @@ struct LaTeXFeasibilityCommand {
         let labelsPath = arguments.popFirst(),
         let freezePath = arguments.popFirst(),
         let protocolPath = arguments.popFirst(),
-        let modelPath = arguments.popFirst(),
-        let configurationPath = arguments.popFirst(),
-        let preprocessingPath = arguments.popFirst(),
-        let decoderPath = arguments.popFirst(),
+        let artifactManifestPath = arguments.popFirst(),
+        let artifactRootPath = arguments.popFirst(),
         let evidencePath = arguments.popFirst(),
         arguments.isEmpty
       else {
@@ -45,10 +48,21 @@ struct LaTeXFeasibilityCommand {
       let corpusData = try read(corpusPath)
       let labelsData = try read(labelsPath)
       let protocolData = try read(protocolPath)
+      let artifactManifestData = try read(artifactManifestPath)
       let corpus = try JSONDecoder().decode(EvaluationCorpus.self, from: corpusData)
+      let freeze: EvaluationFreeze = try decode(freezePath)
+      try ProtocolValidator.validateSupported(protocolData)
       try CorpusValidator.validateImages(
         for: corpus,
         under: URL(fileURLWithPath: imageRootPath, isDirectory: true)
+      )
+      try ArtifactManifestValidator.validate(
+        try JSONDecoder().decode(
+          CandidateArtifactManifest.self,
+          from: artifactManifestData
+        ),
+        runtimeKind: freeze.candidate.runtimeKind,
+        under: URL(fileURLWithPath: artifactRootPath, isDirectory: true)
       )
       let executableURL =
         URL(fileURLWithPath: CommandLine.arguments[0])
@@ -57,24 +71,13 @@ struct LaTeXFeasibilityCommand {
       let report = try CandidateGateEvaluator.evaluate(
         corpus: corpus,
         labels: try JSONDecoder().decode([EvaluationLabel].self, from: labelsData),
-        freeze: try decode(freezePath),
+        freeze: freeze,
         binding: VerifiedInputDigests(
           corpusManifestSHA256: ArtifactDigest.sha256(corpusData),
           sealedLabelsSHA256: ArtifactDigest.sha256(labelsData),
           scorerSHA256: try ArtifactDigest.sha256(fileURL: executableURL),
           protocolSHA256: ArtifactDigest.sha256(protocolData),
-          modelSHA256: try ArtifactDigest.sha256(
-            fileURL: URL(fileURLWithPath: modelPath)
-          ),
-          configurationSHA256: try ArtifactDigest.sha256(
-            fileURL: URL(fileURLWithPath: configurationPath)
-          ),
-          preprocessingSHA256: try ArtifactDigest.sha256(
-            fileURL: URL(fileURLWithPath: preprocessingPath)
-          ),
-          decoderSHA256: try ArtifactDigest.sha256(
-            fileURL: URL(fileURLWithPath: decoderPath)
-          )
+          artifactManifestSHA256: ArtifactDigest.sha256(artifactManifestData)
         ),
         evidence: try decode(evidencePath)
       )
@@ -110,8 +113,9 @@ private enum CommandError: Error, CustomStringConvertible {
   var description: String {
     """
     Usage:
+      latex-feasibility validate-protocol <protocol.json>
       latex-feasibility validate-corpus <corpus.json> <image-root>
-      latex-feasibility score <corpus.json> <image-root> <labels.json> <freeze.json> <protocol.json> <model> <configuration> <preprocessing> <decoder> <evidence.json>
+      latex-feasibility score <corpus.json> <image-root> <labels.json> <freeze.json> <protocol.json> <artifact-manifest.json> <artifact-root> <evidence.json>
     """
   }
 }

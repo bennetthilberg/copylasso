@@ -18,3 +18,6 @@ SWIFTPM_MODULECACHE_OVERRIDE="$scratch/swiftpm-module-cache" \
     --package-path "$package" \
     --scratch-path "$scratch" \
     --disable-sandbox
+
+"$scratch/debug/latex-feasibility" validate-protocol \
+    "$repository_root/docs/latex-feasibility/protocol.json"

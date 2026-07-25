@@ -165,8 +165,8 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
     }
 
     var badDigest = freeze
-    badDigest.candidate.modelSHA256 = "not-a-digest"
-    assertValidationError(.invalidSHA256(field: "candidate.modelSHA256")) {
+    badDigest.candidate.artifactManifestSHA256 = "not-a-digest"
+    assertValidationError(.invalidSHA256(field: "candidate.artifactManifestSHA256")) {
       try FreezeValidator.validate(badDigest)
     }
 
@@ -276,8 +276,7 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
     )
     let latencyWin = try RuntimeComparisonEvaluator.evaluate(
       coreMLReport: coreReport,
-      challengerReport: latencyChallengerReport,
-      pairedAccuracyImprovements: []
+      challengerReport: latencyChallengerReport
     )
     XCTAssertTrue(latencyWin.hasMeaningfulLatencyWin)
     XCTAssertEqual(latencyWin.recommendedRuntime, .nonCoreML)
@@ -295,8 +294,7 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
           armLatency: 900,
           intelLatency: 2_000
         )
-      ),
-      pairedAccuracyImprovements: []
+      )
     )
     XCTAssertFalse(practicalTie.hasMeaningfulLatencyWin)
     XCTAssertEqual(practicalTie.recommendedRuntime, .coreML)
@@ -317,8 +315,7 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
     )
     let failedChallenger = try RuntimeComparisonEvaluator.evaluate(
       coreMLReport: coreReport,
-      challengerReport: failedChallengerReport,
-      pairedAccuracyImprovements: []
+      challengerReport: failedChallengerReport
     )
     XCTAssertEqual(failedChallenger.recommendedRuntime, .coreML)
 
@@ -336,15 +333,13 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
     )
     let nonCoreMLWinAgainstUnqualifiedBaseline = try RuntimeComparisonEvaluator.evaluate(
       coreMLReport: failedCoreReport,
-      challengerReport: latencyChallengerReport,
-      pairedAccuracyImprovements: []
+      challengerReport: latencyChallengerReport
     )
     XCTAssertEqual(nonCoreMLWinAgainstUnqualifiedBaseline.recommendedRuntime, .nonCoreML)
 
     let noQualifiedRecommendation = try RuntimeComparisonEvaluator.evaluate(
       coreMLReport: failedCoreReport,
-      challengerReport: failedChallengerReport,
-      pairedAccuracyImprovements: []
+      challengerReport: failedChallengerReport
     )
     XCTAssertEqual(noQualifiedRecommendation.recommendedRuntime, .none)
 
@@ -372,18 +367,16 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
     )
     let accuracyWin = try RuntimeComparisonEvaluator.evaluate(
       coreMLReport: accuracyBaselineReport,
-      challengerReport: exactChallengerReport,
-      pairedAccuracyImprovements: [
-        PairedAccuracyImprovement(
-          architecture: .arm64,
-          metric: "overall",
-          improvement: 0.03,
-          lower95ConfidenceBound: 0.001,
-          upper95ConfidenceBound: 0.059
-        )
-      ]
+      challengerReport: exactChallengerReport
     )
     XCTAssertTrue(accuracyWin.hasMeaningfulAccuracyWin)
+    XCTAssertTrue(
+      accuracyWin.pairedAccuracyImprovements.contains {
+        $0.metric == "overall"
+          && $0.improvement == 0.03
+          && $0.lower95ConfidenceBound > 0
+      }
+    )
     XCTAssertEqual(accuracyWin.recommendedRuntime, .nonCoreML)
 
     var mismatchedChallengerFreeze = challengerFreeze
@@ -401,40 +394,141 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
     assertValidationError(.invalidComparison) {
       _ = try RuntimeComparisonEvaluator.evaluate(
         coreMLReport: coreReport,
-        challengerReport: mismatchedChallengerReport,
-        pairedAccuracyImprovements: []
+        challengerReport: mismatchedChallengerReport
       )
     }
 
+    var mismatchedOutcomes = exactChallengerReport.architectureReports
+    let armIndex = try XCTUnwrap(
+      mismatchedOutcomes.firstIndex { $0.architecture == .arm64 }
+    )
+    var armOutcomes = mismatchedOutcomes[armIndex].sampleOutcomes
+    armOutcomes[0].id = "substituted-sample"
+    mismatchedOutcomes[armIndex] = ArchitectureGateReport(
+      architecture: mismatchedOutcomes[armIndex].architecture,
+      accuracy: mismatchedOutcomes[armIndex].accuracy,
+      sampleOutcomes: armOutcomes,
+      measurementCount: mismatchedOutcomes[armIndex].measurementCount,
+      warmP50Milliseconds: mismatchedOutcomes[armIndex].warmP50Milliseconds,
+      warmP95Milliseconds: mismatchedOutcomes[armIndex].warmP95Milliseconds,
+      coldLoadMilliseconds: mismatchedOutcomes[armIndex].coldLoadMilliseconds,
+      addedPeakMemoryBytes: mismatchedOutcomes[armIndex].addedPeakMemoryBytes
+    )
+    let unboundChallengerReport = CandidateGateReport(
+      candidateID: exactChallengerReport.candidateID,
+      freeze: exactChallengerReport.freeze,
+      passed: exactChallengerReport.passed,
+      failures: exactChallengerReport.failures,
+      installedSizeGrowthBytes: exactChallengerReport.installedSizeGrowthBytes,
+      architectureReports: mismatchedOutcomes
+    )
     assertValidationError(.invalidComparison) {
       _ = try RuntimeComparisonEvaluator.evaluate(
         coreMLReport: accuracyBaselineReport,
-        challengerReport: exactChallengerReport,
-        pairedAccuracyImprovements: [
-          PairedAccuracyImprovement(
-            architecture: .arm64,
-            metric: "invented-class",
-            improvement: 0.05,
-            lower95ConfidenceBound: 0.01,
-            upper95ConfidenceBound: 0.09
-          )
-        ]
+        challengerReport: unboundChallengerReport
+      )
+    }
+  }
+
+  func testProtocolValidationRejectsThresholdDrift() throws {
+    let supported = makeSupportedProtocolData()
+    XCTAssertNoThrow(try ProtocolValidator.validateSupported(supported))
+
+    let drifted = try XCTUnwrap(
+      String(data: supported, encoding: .utf8)?
+        .replacingOccurrences(
+          of: #""overall_positive_exact_minimum": 0.85"#,
+          with: #""overall_positive_exact_minimum": 0.90"#
+        )
+        .data(using: .utf8)
+    )
+    assertValidationError(.invalidProtocolContract) {
+      try ProtocolValidator.validateSupported(drifted)
+    }
+  }
+
+  func testArtifactManifestBindsCompleteFilesAndRuntimeDirectory() throws {
+    let root = FileManager.default.temporaryDirectory
+      .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    let runtime = root.appendingPathComponent("runtime", isDirectory: true)
+    try FileManager.default.createDirectory(at: runtime, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let fileNames = ["model.bin", "configuration.json", "preprocess.json", "decoder.json"]
+    for name in fileNames {
+      try Data(name.utf8).write(to: root.appendingPathComponent(name))
+    }
+    try Data("runtime".utf8).write(to: runtime.appendingPathComponent("engine.dylib"))
+
+    let manifest = CandidateArtifactManifest(
+      schemaVersion: 1,
+      systemRuntimeIdentifier: nil,
+      artifacts: [
+        artifact(.model, "model.bin", under: root),
+        artifact(.configuration, "configuration.json", under: root),
+        artifact(.preprocessing, "preprocess.json", under: root),
+        artifact(.decoder, "decoder.json", under: root),
+        CandidateArtifact(
+          role: .runtime,
+          kind: .directory,
+          relativePath: "runtime",
+          sha256: try ArtifactDigest.sha256Tree(directoryURL: runtime)
+        ),
+      ]
+    )
+    XCTAssertNoThrow(
+      try ArtifactManifestValidator.validate(
+        manifest,
+        runtimeKind: .nonCoreML,
+        under: root
+      )
+    )
+
+    let unlistedURL = root.appendingPathComponent("unlisted.bin")
+    try Data("unlisted".utf8).write(to: unlistedURL)
+    assertValidationError(.unboundArtifact("unlisted.bin")) {
+      try ArtifactManifestValidator.validate(
+        manifest,
+        runtimeKind: .nonCoreML,
+        under: root
+      )
+    }
+    try FileManager.default.removeItem(at: unlistedURL)
+
+    try Data("changed".utf8).write(to: runtime.appendingPathComponent("engine.dylib"))
+    assertValidationError(.artifactDigestMismatch("runtime")) {
+      try ArtifactManifestValidator.validate(
+        manifest,
+        runtimeKind: .nonCoreML,
+        under: root
       )
     }
 
-    assertValidationError(.invalidComparison) {
-      _ = try RuntimeComparisonEvaluator.evaluate(
-        coreMLReport: accuracyBaselineReport,
-        challengerReport: exactChallengerReport,
-        pairedAccuracyImprovements: [
-          PairedAccuracyImprovement(
-            architecture: .arm64,
-            metric: "overall",
-            improvement: 0.04,
-            lower95ConfidenceBound: 0.01,
-            upper95ConfidenceBound: 0.07
-          )
-        ]
+    var incomplete = manifest
+    incomplete.artifacts.removeAll { $0.role == .runtime }
+    assertValidationError(.incompleteArtifactManifest) {
+      try ArtifactManifestValidator.validate(
+        incomplete,
+        runtimeKind: .nonCoreML,
+        under: root
+      )
+    }
+
+    try FileManager.default.removeItem(at: runtime)
+    incomplete.systemRuntimeIdentifier = "com.apple.CoreML"
+    XCTAssertNoThrow(
+      try ArtifactManifestValidator.validate(
+        incomplete,
+        runtimeKind: .coreML,
+        under: root
+      )
+    )
+    incomplete.systemRuntimeIdentifier = "unreviewed.runtime"
+    assertValidationError(.incompleteArtifactManifest) {
+      try ArtifactManifestValidator.validate(
+        incomplete,
+        runtimeKind: .coreML,
+        under: root
       )
     }
   }
@@ -588,7 +682,7 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
     }
 
     mixed = makePassingEvidence(corpus: corpus, labels: labels, freeze: freeze)
-    mixed.runs[1].modelSHA256 = digest(32_000)
+    mixed.runs[1].artifactManifestSHA256 = digest(32_000)
     assertValidationError(.mixedCandidateDesigns) {
       _ = try CandidateGateEvaluator.evaluate(
         corpus: corpus,
@@ -599,17 +693,6 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
       )
     }
 
-    mixed = makePassingEvidence(corpus: corpus, labels: labels, freeze: freeze)
-    mixed.runs[1].decoderSHA256 = digest(32_003)
-    assertValidationError(.mixedCandidateDesigns) {
-      _ = try CandidateGateEvaluator.evaluate(
-        corpus: corpus,
-        labels: labels,
-        freeze: freeze,
-        binding: makeBinding(for: freeze),
-        evidence: mixed
-      )
-    }
   }
 
   func testResultsMustContainEverySampleExactlyOnceWithFiniteMeasurements() {
@@ -740,10 +823,7 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
       candidate: CandidateDesignFreeze(
         id: candidateID,
         runtimeKind: runtimeKind,
-        modelSHA256: digest(modelSeed),
-        configurationSHA256: digest(modelSeed + 1),
-        preprocessingSHA256: digest(modelSeed + 2),
-        decoderSHA256: digest(modelSeed + 3)
+        artifactManifestSHA256: digest(modelSeed)
       )
     )
   }
@@ -762,10 +842,7 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
     func run(_ architecture: BenchmarkArchitecture, latency: Double) -> ArchitectureRun {
       ArchitectureRun(
         candidateID: candidate.id,
-        modelSHA256: candidate.modelSHA256,
-        configurationSHA256: candidate.configurationSHA256,
-        preprocessingSHA256: candidate.preprocessingSHA256,
-        decoderSHA256: candidate.decoderSHA256,
+        artifactManifestSHA256: candidate.artifactManifestSHA256,
         architecture: architecture,
         environment: BenchmarkEnvironment(
           hardwareModel: architecture == .arm64 ? "qualifying-arm64" : "qualifying-intel",
@@ -816,10 +893,90 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
       sealedLabelsSHA256: freeze.sealedLabelsSHA256,
       scorerSHA256: freeze.scorerSHA256,
       protocolSHA256: freeze.protocolSHA256,
-      modelSHA256: freeze.candidate.modelSHA256,
-      configurationSHA256: freeze.candidate.configurationSHA256,
-      preprocessingSHA256: freeze.candidate.preprocessingSHA256,
-      decoderSHA256: freeze.candidate.decoderSHA256
+      artifactManifestSHA256: freeze.candidate.artifactManifestSHA256
+    )
+  }
+
+  private func artifact(
+    _ role: CandidateArtifactRole,
+    _ path: String,
+    under root: URL
+  ) -> CandidateArtifact {
+    CandidateArtifact(
+      role: role,
+      kind: .file,
+      relativePath: path,
+      sha256: try! ArtifactDigest.sha256(fileURL: root.appendingPathComponent(path))
+    )
+  }
+
+  private func makeSupportedProtocolData() -> Data {
+    Data(
+      """
+      {
+        "schema_version": 1,
+        "blind_evaluation": {
+          "corpus": {
+            "minimum_samples": 300,
+            "minimum_positive_samples": 200,
+            "minimum_negative_samples": 100,
+            "required_positive_classes": {
+              "clean_common": 100,
+              "inline": 15,
+              "display": 15,
+              "fractions": 15,
+              "roots": 15,
+              "superscripts": 15,
+              "subscripts": 15,
+              "greek_symbols": 15,
+              "operators": 15,
+              "delimiters": 15,
+              "aligned_equations": 15,
+              "matrices": 15,
+              "degraded": 15,
+              "low_resolution": 15
+            }
+          }
+        },
+        "gate_thresholds": {
+          "accuracy": {
+            "clean_common_structural_minimum": 0.95,
+            "each_positive_class_exact_minimum": 0.70,
+            "negative_false_success_maximum": 0.01,
+            "overall_positive_exact_minimum": 0.85
+          },
+          "installed_growth_maximum_bytes": 209715200,
+          "latency": {
+            "arm64_warm_p95_maximum_milliseconds": 2000,
+            "intel_warm_p95_maximum_milliseconds": 4000
+          },
+          "peak_memory_growth_maximum_bytes": 786432000
+        },
+        "development_comparison": {
+          "core_ml_preference": true,
+          "non_core_ml_meaningful_win": {
+            "requires_every_absolute_gate": true,
+            "accuracy": {
+              "overall_minimum_improvement": 0.03,
+              "difficult_class_minimum_improvement": 0.05,
+              "paired_95_percent_confidence_interval_must_exclude_zero": true,
+              "paired_confidence_method": "normal_approximation_of_paired_binary_differences",
+              "predefined_difficult_classes": [
+                "aligned_equations",
+                "degraded",
+                "low_resolution",
+                "matrices"
+              ]
+            },
+            "latency": {
+              "minimum_absolute_p95_improvement_milliseconds": 100,
+              "minimum_relative_p95_improvement": 0.20,
+              "other_architecture_maximum_regression": 0.10
+            }
+          }
+        }
+      }
+      """.utf8
     )
   }
 
