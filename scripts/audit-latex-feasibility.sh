@@ -212,7 +212,11 @@ for required_source in \
     'Int(exactly: numericValue)' \
     'warmP50Milliseconds' \
     'ClassAccuracyMetrics' \
+    'public struct RuntimeComparisonCandidateInput' \
     'RuntimeComparisonEvaluator' \
+    'let coreMLReport = try CandidateGateEvaluator.evaluate(' \
+    'let challengerReport = try CandidateGateEvaluator.evaluate(' \
+    'private static func compareValidatedReports(' \
     'coreMLReport.freeze.candidate.runtimeKind == .coreML' \
     'challengerReport.freeze.candidate.runtimeKind == .nonCoreML' \
     'private static let difficultClassMetrics' \
@@ -228,6 +232,23 @@ for required_source in \
     /usr/bin/grep -Fq "$required_source" "$core" || \
         fail "The G39 scorer is missing its reviewed contract: $required_source"
 done
+
+if /usr/bin/awk '
+    /public static func evaluate\(/ {
+        in_public_evaluate = 1
+    }
+    in_public_evaluate && /coreMLReport: CandidateGateReport/ {
+        found = 1
+    }
+    in_public_evaluate && /\) throws ->/ {
+        in_public_evaluate = 0
+    }
+    END {
+        exit found ? 0 : 1
+    }
+' "$core"; then
+    fail "Runtime comparison must recompute gate eligibility from source evidence."
+fi
 
 for required_command in \
     'case "validate-protocol":' \

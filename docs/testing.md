@@ -584,7 +584,7 @@ independent reviewer must inspect every positive image and ground truth and
 confirm that each claimed class is genuinely exercised. The scorer and its
 synthetic unit fixtures are not semantic corpus-review evidence.
 
-Run the focused 18-test suite with:
+Run the focused 19-test suite with:
 
 ```sh
 ./scripts/test-latex-feasibility.sh
@@ -600,10 +600,12 @@ running executable before hashing it, including when launched by name through
 bundled third-party runtime; non-Core-ML and reference manifests must bind their
 runtime artifacts. Meaningful non-Core-ML latency or accuracy wins require every
 absolute gate to pass; a zero-latency challenger remains comparable against a
-positive Core ML baseline. The parser rejects Boolean or fractional values for
-integer fields and requires the complete parsed protocol, including physical,
-privacy, platform, comparison, and normalization fields, to match the compiled
-semantic digest.
+positive Core ML baseline. Runtime comparison accepts each candidate's frozen
+source evidence and recomputes both gate reports; it never accepts a persisted
+report's unbound `passed` Boolean as recommendation input. The parser rejects
+Boolean or fractional values for integer fields and requires the complete
+parsed protocol, including physical, privacy, platform, comparison, and
+normalization fields, to match the compiled semantic digest.
 Reference-only runtimes cannot enter blind gate scoring. A reported gate
 failure exits with status 2.
 Physical hardware identity, AC and thermal state, executable slices, sandbox

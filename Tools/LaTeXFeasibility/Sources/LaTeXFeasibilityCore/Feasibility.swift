@@ -388,6 +388,22 @@ public struct CandidateGateReport: Codable, Equatable, Sendable {
   public let architectureReports: [ArchitectureGateReport]
 }
 
+public struct RuntimeComparisonCandidateInput: Sendable {
+  public var freeze: EvaluationFreeze
+  public var binding: VerifiedInputDigests
+  public var evidence: CandidateEvidence
+
+  public init(
+    freeze: EvaluationFreeze,
+    binding: VerifiedInputDigests,
+    evidence: CandidateEvidence
+  ) {
+    self.freeze = freeze
+    self.binding = binding
+    self.evidence = evidence
+  }
+}
+
 public struct PairedAccuracyImprovement: Codable, Equatable, Sendable {
   public var architecture: BenchmarkArchitecture
   public var metric: String
@@ -1643,6 +1659,32 @@ public enum RuntimeComparisonEvaluator {
   ]
 
   public static func evaluate(
+    corpus: EvaluationCorpus,
+    labels: [EvaluationLabel],
+    coreML: RuntimeComparisonCandidateInput,
+    challenger: RuntimeComparisonCandidateInput
+  ) throws -> RuntimeComparisonReport {
+    let coreMLReport = try CandidateGateEvaluator.evaluate(
+      corpus: corpus,
+      labels: labels,
+      freeze: coreML.freeze,
+      binding: coreML.binding,
+      evidence: coreML.evidence
+    )
+    let challengerReport = try CandidateGateEvaluator.evaluate(
+      corpus: corpus,
+      labels: labels,
+      freeze: challenger.freeze,
+      binding: challenger.binding,
+      evidence: challenger.evidence
+    )
+    return try compareValidatedReports(
+      coreMLReport: coreMLReport,
+      challengerReport: challengerReport
+    )
+  }
+
+  private static func compareValidatedReports(
     coreMLReport: CandidateGateReport,
     challengerReport: CandidateGateReport
   ) throws -> RuntimeComparisonReport {

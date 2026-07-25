@@ -245,6 +245,44 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
     )
   }
 
+  func testRuntimeComparisonRecomputesGateEligibilityFromSourceEvidence() throws {
+    let corpus = makeMinimumCorpus()
+    let labels = makeLabels(for: corpus)
+    let coreFreeze = makeFreeze()
+    let challengerFreeze = makeFreeze(
+      candidateID: "onnx-candidate",
+      runtimeKind: .nonCoreML,
+      modelSeed: 32_000
+    )
+    var challengerEvidence = makePassingEvidence(
+      corpus: corpus,
+      labels: labels,
+      freeze: challengerFreeze,
+      armLatency: 700,
+      intelLatency: 1_500
+    )
+    challengerEvidence.licenseIsRedistributable = false
+
+    let comparison = try RuntimeComparisonEvaluator.evaluate(
+      corpus: corpus,
+      labels: labels,
+      coreML: RuntimeComparisonCandidateInput(
+        freeze: coreFreeze,
+        binding: makeBinding(for: coreFreeze),
+        evidence: makePassingEvidence(corpus: corpus, labels: labels, freeze: coreFreeze)
+      ),
+      challenger: RuntimeComparisonCandidateInput(
+        freeze: challengerFreeze,
+        binding: makeBinding(for: challengerFreeze),
+        evidence: challengerEvidence
+      )
+    )
+
+    XCTAssertFalse(comparison.challengerPassesEveryAbsoluteGate)
+    XCTAssertFalse(comparison.hasMeaningfulLatencyWin)
+    XCTAssertEqual(comparison.recommendedRuntime, .coreML)
+  }
+
   func testNonCoreMLRequiresAConfiguredMeaningfulWinAndEveryAbsoluteGate() throws {
     let corpus = makeMinimumCorpus()
     let labels = makeLabels(for: corpus)
@@ -254,50 +292,43 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
       runtimeKind: .nonCoreML,
       modelSeed: 32_000
     )
-    let coreReport = try report(
+    let coreEvidence = makePassingEvidence(
+      corpus: corpus,
+      labels: labels,
+      freeze: coreFreeze,
+      armLatency: 1_000,
+      intelLatency: 2_000
+    )
+    let latencyChallengerEvidence = makePassingEvidence(
+      corpus: corpus,
+      labels: labels,
+      freeze: challengerFreeze,
+      armLatency: 800,
+      intelLatency: 2_190
+    )
+    let latencyWin = try comparison(
       corpus,
       labels,
       coreFreeze,
-      makePassingEvidence(
-        corpus: corpus,
-        labels: labels,
-        freeze: coreFreeze,
-        armLatency: 1_000,
-        intelLatency: 2_000
-      )
+      coreEvidence,
+      challengerFreeze,
+      latencyChallengerEvidence
     )
-    let latencyChallengerReport = try report(
+    XCTAssertTrue(latencyWin.hasMeaningfulLatencyWin)
+    XCTAssertEqual(latencyWin.recommendedRuntime, .nonCoreML)
+
+    let practicalTie = try comparison(
       corpus,
       labels,
+      coreFreeze,
+      coreEvidence,
       challengerFreeze,
       makePassingEvidence(
         corpus: corpus,
         labels: labels,
         freeze: challengerFreeze,
-        armLatency: 800,
-        intelLatency: 2_190
-      )
-    )
-    let latencyWin = try RuntimeComparisonEvaluator.evaluate(
-      coreMLReport: coreReport,
-      challengerReport: latencyChallengerReport
-    )
-    XCTAssertTrue(latencyWin.hasMeaningfulLatencyWin)
-    XCTAssertEqual(latencyWin.recommendedRuntime, .nonCoreML)
-
-    let practicalTie = try RuntimeComparisonEvaluator.evaluate(
-      coreMLReport: coreReport,
-      challengerReport: try report(
-        corpus,
-        labels,
-        challengerFreeze,
-        makePassingEvidence(
-          corpus: corpus,
-          labels: labels,
-          freeze: challengerFreeze,
-          armLatency: 900,
-          intelLatency: 2_000
-        )
+        armLatency: 900,
+        intelLatency: 2_000
       )
     )
     XCTAssertFalse(practicalTie.hasMeaningfulLatencyWin)
@@ -311,22 +342,22 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
       intelLatency: 1_500
     )
     failedChallengerEvidence.licenseIsRedistributable = false
-    let failedChallengerReport = try report(
+    let failedChallenger = try comparison(
       corpus,
       labels,
+      coreFreeze,
+      coreEvidence,
       challengerFreeze,
       failedChallengerEvidence
-    )
-    let failedChallenger = try RuntimeComparisonEvaluator.evaluate(
-      coreMLReport: coreReport,
-      challengerReport: failedChallengerReport
     )
     XCTAssertFalse(failedChallenger.hasMeaningfulLatencyWin)
     XCTAssertEqual(failedChallenger.recommendedRuntime, .coreML)
 
-    let zeroLatencyChallengerReport = try report(
+    let zeroLatencyWin = try comparison(
       corpus,
       labels,
+      coreFreeze,
+      coreEvidence,
       challengerFreeze,
       makePassingEvidence(
         corpus: corpus,
@@ -335,10 +366,6 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
         armLatency: 0,
         intelLatency: 0
       )
-    )
-    let zeroLatencyWin = try RuntimeComparisonEvaluator.evaluate(
-      coreMLReport: coreReport,
-      challengerReport: zeroLatencyChallengerReport
     )
     XCTAssertTrue(zeroLatencyWin.hasMeaningfulLatencyWin)
     XCTAssertEqual(zeroLatencyWin.recommendedRuntime, .nonCoreML)
@@ -349,21 +376,23 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
       freeze: coreFreeze
     )
     failedCoreEvidence.sandboxCompatible = false
-    let failedCoreReport = try report(
+    let nonCoreMLWinAgainstUnqualifiedBaseline = try comparison(
       corpus,
       labels,
       coreFreeze,
-      failedCoreEvidence
-    )
-    let nonCoreMLWinAgainstUnqualifiedBaseline = try RuntimeComparisonEvaluator.evaluate(
-      coreMLReport: failedCoreReport,
-      challengerReport: latencyChallengerReport
+      failedCoreEvidence,
+      challengerFreeze,
+      latencyChallengerEvidence
     )
     XCTAssertEqual(nonCoreMLWinAgainstUnqualifiedBaseline.recommendedRuntime, .nonCoreML)
 
-    let noQualifiedRecommendation = try RuntimeComparisonEvaluator.evaluate(
-      coreMLReport: failedCoreReport,
-      challengerReport: failedChallengerReport
+    let noQualifiedRecommendation = try comparison(
+      corpus,
+      labels,
+      coreFreeze,
+      failedCoreEvidence,
+      challengerFreeze,
+      failedChallengerEvidence
     )
     XCTAssertEqual(noQualifiedRecommendation.recommendedRuntime, .none)
 
@@ -377,21 +406,18 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
         accuracyBaselineEvidence.runs[runIndex].samples[index].output = "struct-\(index)"
       }
     }
-    let accuracyBaselineReport = try report(
+    let exactChallengerEvidence = makePassingEvidence(
+      corpus: corpus,
+      labels: labels,
+      freeze: challengerFreeze
+    )
+    let accuracyWin = try comparison(
       corpus,
       labels,
       coreFreeze,
-      accuracyBaselineEvidence
-    )
-    let exactChallengerReport = try report(
-      corpus,
-      labels,
+      accuracyBaselineEvidence,
       challengerFreeze,
-      makePassingEvidence(corpus: corpus, labels: labels, freeze: challengerFreeze)
-    )
-    let accuracyWin = try RuntimeComparisonEvaluator.evaluate(
-      coreMLReport: accuracyBaselineReport,
-      challengerReport: exactChallengerReport
+      exactChallengerEvidence
     )
     XCTAssertTrue(accuracyWin.hasMeaningfulAccuracyWin)
     XCTAssertTrue(
@@ -409,65 +435,44 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
       freeze: challengerFreeze
     )
     failedAccuracyEvidence.licenseIsRedistributable = false
-    let failedAccuracyWin = try RuntimeComparisonEvaluator.evaluate(
-      coreMLReport: accuracyBaselineReport,
-      challengerReport: try report(
-        corpus,
-        labels,
-        challengerFreeze,
-        failedAccuracyEvidence
-      )
+    let failedAccuracyWin = try comparison(
+      corpus,
+      labels,
+      coreFreeze,
+      accuracyBaselineEvidence,
+      challengerFreeze,
+      failedAccuracyEvidence
     )
     XCTAssertFalse(failedAccuracyWin.hasMeaningfulAccuracyWin)
     XCTAssertEqual(failedAccuracyWin.recommendedRuntime, .coreML)
 
     var mismatchedChallengerFreeze = challengerFreeze
     mismatchedChallengerFreeze.corpusManifestSHA256 = digest(32_999)
-    let mismatchedChallengerReport = try report(
-      corpus,
-      labels,
-      mismatchedChallengerFreeze,
-      makePassingEvidence(
-        corpus: corpus,
-        labels: labels,
-        freeze: mismatchedChallengerFreeze
-      )
-    )
     assertValidationError(.invalidComparison) {
-      _ = try RuntimeComparisonEvaluator.evaluate(
-        coreMLReport: coreReport,
-        challengerReport: mismatchedChallengerReport
+      _ = try comparison(
+        corpus,
+        labels,
+        coreFreeze,
+        coreEvidence,
+        mismatchedChallengerFreeze,
+        makePassingEvidence(
+          corpus: corpus,
+          labels: labels,
+          freeze: mismatchedChallengerFreeze
+        )
       )
     }
 
-    var mismatchedOutcomes = exactChallengerReport.architectureReports
-    let armIndex = try XCTUnwrap(
-      mismatchedOutcomes.firstIndex { $0.architecture == .arm64 }
-    )
-    var armOutcomes = mismatchedOutcomes[armIndex].sampleOutcomes
-    armOutcomes[0].id = "substituted-sample"
-    mismatchedOutcomes[armIndex] = ArchitectureGateReport(
-      architecture: mismatchedOutcomes[armIndex].architecture,
-      accuracy: mismatchedOutcomes[armIndex].accuracy,
-      sampleOutcomes: armOutcomes,
-      measurementCount: mismatchedOutcomes[armIndex].measurementCount,
-      warmP50Milliseconds: mismatchedOutcomes[armIndex].warmP50Milliseconds,
-      warmP95Milliseconds: mismatchedOutcomes[armIndex].warmP95Milliseconds,
-      coldLoadMilliseconds: mismatchedOutcomes[armIndex].coldLoadMilliseconds,
-      addedPeakMemoryBytes: mismatchedOutcomes[armIndex].addedPeakMemoryBytes
-    )
-    let unboundChallengerReport = CandidateGateReport(
-      candidateID: exactChallengerReport.candidateID,
-      freeze: exactChallengerReport.freeze,
-      passed: exactChallengerReport.passed,
-      failures: exactChallengerReport.failures,
-      installedSizeGrowthBytes: exactChallengerReport.installedSizeGrowthBytes,
-      architectureReports: mismatchedOutcomes
-    )
-    assertValidationError(.invalidComparison) {
-      _ = try RuntimeComparisonEvaluator.evaluate(
-        coreMLReport: accuracyBaselineReport,
-        challengerReport: unboundChallengerReport
+    var substitutedEvidence = exactChallengerEvidence
+    substitutedEvidence.runs[0].samples[0].id = "substituted-sample"
+    assertValidationError(.resultIDsDoNotMatchCorpus(.arm64)) {
+      _ = try comparison(
+        corpus,
+        labels,
+        coreFreeze,
+        accuracyBaselineEvidence,
+        challengerFreeze,
+        substitutedEvidence
       )
     }
   }
@@ -973,6 +978,30 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
       freeze: freeze,
       binding: makeBinding(for: freeze),
       evidence: evidence
+    )
+  }
+
+  private func comparison(
+    _ corpus: EvaluationCorpus,
+    _ labels: [EvaluationLabel],
+    _ coreFreeze: EvaluationFreeze,
+    _ coreEvidence: CandidateEvidence,
+    _ challengerFreeze: EvaluationFreeze,
+    _ challengerEvidence: CandidateEvidence
+  ) throws -> RuntimeComparisonReport {
+    try RuntimeComparisonEvaluator.evaluate(
+      corpus: corpus,
+      labels: labels,
+      coreML: RuntimeComparisonCandidateInput(
+        freeze: coreFreeze,
+        binding: makeBinding(for: coreFreeze),
+        evidence: coreEvidence
+      ),
+      challenger: RuntimeComparisonCandidateInput(
+        freeze: challengerFreeze,
+        binding: makeBinding(for: challengerFreeze),
+        evidence: challengerEvidence
+      )
     )
   }
 
