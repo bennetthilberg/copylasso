@@ -620,7 +620,7 @@ public enum LaTeXNormalizer {
       if !isEscaped(match.lowerBound, in: value) {
         return match.lowerBound == expectedSuffixStart
       }
-      searchStart = match.upperBound
+      searchStart = value.index(after: match.lowerBound)
     }
     return false
   }

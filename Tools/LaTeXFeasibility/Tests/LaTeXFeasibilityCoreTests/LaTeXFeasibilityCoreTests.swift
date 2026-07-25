@@ -16,6 +16,7 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
     XCTAssertEqual(LaTeXNormalizer.normalize("$x_1$"), "x_1")
     XCTAssertEqual(LaTeXNormalizer.normalize("$x$ + $y$"), "$x$ + $y$")
     XCTAssertEqual(LaTeXNormalizer.normalize("$$x$$ + $$y$$"), "$$x$$ + $$y$$")
+    XCTAssertEqual(LaTeXNormalizer.normalize("$$x\\$$$"), "x\\$")
     XCTAssertEqual(LaTeXNormalizer.normalize("\\(x\\) + \\(y\\)"), "\\(x\\) + \\(y\\)")
     XCTAssertEqual(LaTeXNormalizer.normalize("\\dfrac{1}{2}"), "\\dfrac{1}{2}")
     XCTAssertEqual(LaTeXNormalizer.normalize("x+y"), "x+y")
