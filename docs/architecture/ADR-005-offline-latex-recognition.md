@@ -122,7 +122,10 @@ using the fixed meaningful-win rule. Select exactly one design, commit the
 freeze, scorer, parsed protocol, and complete file/directory artifact-manifest
 digests, and only then run a fresh blind evaluation. Runtime comparison derives
 paired accuracy intervals from the two candidates' bound per-sample outcomes;
-it does not accept caller-supplied confidence bounds.
+it does not accept caller-supplied confidence bounds. The parsed protocol must
+exactly match the scorer's thresholds and normalization behavior. A Core ML
+freeze must name Apple's system runtime and contain no bundled runtime role,
+while reference-only runtimes remain ineligible for blind gate scoring.
 
 ## Consequences
 

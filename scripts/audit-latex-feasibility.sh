@@ -194,6 +194,12 @@ for required_source in \
     'ArtifactManifestValidator' \
     'sha256Tree(directoryURL:' \
     'ArtifactDigest.sha256' \
+    'manifest.systemRuntimeIdentifier == "com.apple.CoreML"' \
+    '!roles.contains(.runtime)' \
+    'case .nonCoreML, .reference:' \
+    'string(root, "normalization", "unicode_normalization") == "NFC"' \
+    'CFGetTypeID(number) != CFBooleanGetTypeID()' \
+    'Int(exactly: numericValue)' \
     'warmP50Milliseconds' \
     'ClassAccuracyMetrics' \
     'RuntimeComparisonEvaluator' \
@@ -207,6 +213,7 @@ for required_source in \
     'interval.improvement >= requiredImprovement' \
     'normalApproximation95' \
     'interval.lower95ConfidenceBound > 0' \
+    'candidate.runtimeKind != .reference' \
     'recommendation = .none'; do
     /usr/bin/grep -Fq "$required_source" "$core" || \
         fail "The G39 scorer is missing its reviewed contract: $required_source"

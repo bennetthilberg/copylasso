@@ -445,6 +445,32 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
     assertValidationError(.invalidProtocolContract) {
       try ProtocolValidator.validateSupported(drifted)
     }
+
+    let normalizationDrift = try XCTUnwrap(
+      String(data: supported, encoding: .utf8)?
+        .replacingOccurrences(
+          of: #""unicode_normalization": "NFC""#,
+          with: #""unicode_normalization": "NFD""#
+        )
+        .data(using: .utf8)
+    )
+    assertValidationError(.invalidProtocolContract) {
+      try ProtocolValidator.validateSupported(normalizationDrift)
+    }
+
+    for (original, replacement) in [
+      (#""minimum_samples": 300"#, #""minimum_samples": 300.5"#),
+      (#""schema_version": 1"#, #""schema_version": true"#),
+    ] {
+      let malformedInteger = try XCTUnwrap(
+        String(data: supported, encoding: .utf8)?
+          .replacingOccurrences(of: original, with: replacement)
+          .data(using: .utf8)
+      )
+      assertValidationError(.invalidProtocolContract) {
+        try ProtocolValidator.validateSupported(malformedInteger)
+      }
+    }
   }
 
   func testArtifactManifestBindsCompleteFilesAndRuntimeDirectory() throws {
@@ -483,6 +509,22 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
         under: root
       )
     )
+    assertValidationError(.incompleteArtifactManifest) {
+      try ArtifactManifestValidator.validate(
+        manifest,
+        runtimeKind: .coreML,
+        under: root
+      )
+    }
+    var mixedCoreML = manifest
+    mixedCoreML.systemRuntimeIdentifier = "com.apple.CoreML"
+    assertValidationError(.incompleteArtifactManifest) {
+      try ArtifactManifestValidator.validate(
+        mixedCoreML,
+        runtimeKind: .coreML,
+        under: root
+      )
+    }
 
     let unlistedURL = root.appendingPathComponent("unlisted.bin")
     try Data("unlisted".utf8).write(to: unlistedURL)
@@ -529,6 +571,23 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
         incomplete,
         runtimeKind: .coreML,
         under: root
+      )
+    }
+  }
+
+  func testReferenceRuntimeCannotEnterBlindGateScoring() throws {
+    let corpus = makeMinimumCorpus()
+    let labels = makeLabels(for: corpus)
+    let freeze = makeFreeze(runtimeKind: .reference)
+    let evidence = makePassingEvidence(corpus: corpus, labels: labels, freeze: freeze)
+
+    assertValidationError(.ineligibleRuntimeKind(.reference)) {
+      _ = try CandidateGateEvaluator.evaluate(
+        corpus: corpus,
+        labels: labels,
+        freeze: freeze,
+        binding: makeBinding(for: freeze),
+        evidence: evidence
       )
     }
   }
@@ -951,6 +1010,23 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
             "intel_warm_p95_maximum_milliseconds": 4000
           },
           "peak_memory_growth_maximum_bytes": 786432000
+        },
+        "normalization": {
+          "collapse_unicode_whitespace_runs": true,
+          "remove_one_complete_outer_math_delimiter_pair": [
+            "$",
+            "$$",
+            "\\\\(",
+            "\\\\["
+          ],
+          "unicode_normalization": "NFC",
+          "unchanged": [
+            "commands",
+            "braces",
+            "operator spelling",
+            "environments",
+            "mathematical structure"
+          ]
         },
         "development_comparison": {
           "core_ml_preference": true,

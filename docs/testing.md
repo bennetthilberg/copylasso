@@ -582,7 +582,7 @@ independent reviewer must inspect every positive image and ground truth and
 confirm that each claimed class is genuinely exercised. The scorer and its
 synthetic unit fixtures are not semantic corpus-review evidence.
 
-Run the focused 16-test suite with:
+Run the focused 17-test suite with:
 
 ```sh
 ./scripts/test-latex-feasibility.sh
@@ -591,8 +591,12 @@ Run the focused 16-test suite with:
 The scorer recomputes the corpus, label, protocol, executable, and complete
 artifact-manifest digests supplied to the CLI. It validates each retained model,
 configuration, preprocessing, decoder, auxiliary, and runtime file or directory
-under that manifest and rejects any protocol whose parsed thresholds differ
-from the compiled scorer contract. A reported gate failure exits with status 2.
+under that manifest. Core ML freezes require the exact Apple system runtime and
+forbid a bundled third-party runtime; non-Core-ML and reference manifests must
+bind their runtime artifacts. The parser rejects Boolean or fractional values
+for integer fields and rejects any threshold or normalization rule that differs
+from the compiled scorer contract. Reference-only runtimes cannot enter blind
+gate scoring. A reported gate failure exits with status 2.
 Physical hardware identity, AC and thermal state, executable slices, sandbox
 behavior, license compatibility, and provenance still require independent
 evidence review; JSON assertions alone do not establish them.

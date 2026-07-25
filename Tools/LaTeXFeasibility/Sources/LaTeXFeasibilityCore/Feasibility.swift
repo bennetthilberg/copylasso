@@ -467,6 +467,7 @@ public enum FeasibilityValidationError: Error, Equatable, Sendable {
   case emptyLatencySeries
   case invalidLatency
   case invalidInstalledSize
+  case ineligibleRuntimeKind(CandidateRuntimeKind)
   case invalidComparison
 }
 
@@ -555,6 +556,8 @@ extension FeasibilityValidationError: CustomStringConvertible {
       "A latency measurement is negative or non-finite."
     case .invalidInstalledSize:
       "Installed-size growth must be nonnegative."
+    case .ineligibleRuntimeKind(let runtimeKind):
+      "Runtime \(runtimeKind.rawValue) is not eligible for blind gate scoring."
     case .invalidComparison:
       "Runtime comparison inputs are incomplete, duplicated, or non-finite."
     }
@@ -699,15 +702,24 @@ public enum ArtifactManifestValidator {
       .preprocessing,
       .decoder,
     ]
-    let usesSystemCoreML =
-      runtimeKind == .coreML
-      && manifest.systemRuntimeIdentifier == "com.apple.CoreML"
-    guard
-      requiredRoles.isSubset(of: roles),
-      roles.contains(.runtime) || usesSystemCoreML,
-      manifest.systemRuntimeIdentifier == nil || usesSystemCoreML
-    else {
+    guard requiredRoles.isSubset(of: roles) else {
       throw FeasibilityValidationError.incompleteArtifactManifest
+    }
+    switch runtimeKind {
+    case .coreML:
+      guard
+        manifest.systemRuntimeIdentifier == "com.apple.CoreML",
+        !roles.contains(.runtime)
+      else {
+        throw FeasibilityValidationError.incompleteArtifactManifest
+      }
+    case .nonCoreML, .reference:
+      guard
+        manifest.systemRuntimeIdentifier == nil,
+        roles.contains(.runtime)
+      else {
+        throw FeasibilityValidationError.incompleteArtifactManifest
+      }
     }
 
     let resolvedRoot = artifactRoot.resolvingSymlinksInPath().standardizedFileURL
@@ -876,6 +888,21 @@ public enum ProtocolValidator {
         "intel_warm_p95_maximum_milliseconds"
       ) == 4_000,
       integer(root, "gate_thresholds", "peak_memory_growth_maximum_bytes") == 786_432_000,
+      boolean(root, "normalization", "collapse_unicode_whitespace_runs") == true,
+      strings(root, "normalization", "remove_one_complete_outer_math_delimiter_pair") == [
+        "$",
+        "$$",
+        #"\("#,
+        #"\["#,
+      ],
+      string(root, "normalization", "unicode_normalization") == "NFC",
+      strings(root, "normalization", "unchanged") == [
+        "commands",
+        "braces",
+        "operator spelling",
+        "environments",
+        "mathematical structure",
+      ],
       boolean(root, "development_comparison", "core_ml_preference") == true,
       boolean(
         root,
@@ -980,11 +1007,28 @@ public enum ProtocolValidator {
   }
 
   private static func integer(_ root: [String: Any], _ path: String...) -> Int? {
-    (value(root, path) as? NSNumber)?.intValue
+    guard
+      let number = value(root, path) as? NSNumber,
+      CFGetTypeID(number) != CFBooleanGetTypeID()
+    else {
+      return nil
+    }
+    let numericValue = number.doubleValue
+    guard numericValue.isFinite, let integerValue = Int(exactly: numericValue) else {
+      return nil
+    }
+    return integerValue
   }
 
   private static func double(_ root: [String: Any], _ path: String...) -> Double? {
-    (value(root, path) as? NSNumber)?.doubleValue
+    guard
+      let number = value(root, path) as? NSNumber,
+      CFGetTypeID(number) != CFBooleanGetTypeID(),
+      number.doubleValue.isFinite
+    else {
+      return nil
+    }
+    return number.doubleValue
   }
 
   private static func boolean(_ root: [String: Any], _ path: String...) -> Bool? {
@@ -1235,6 +1279,9 @@ public enum CandidateGateEvaluator {
     let candidate = freeze.candidate
     guard candidate.id == evidence.candidateID else {
       throw FeasibilityValidationError.unknownCandidateID(evidence.candidateID)
+    }
+    guard candidate.runtimeKind != .reference else {
+      throw FeasibilityValidationError.ineligibleRuntimeKind(candidate.runtimeKind)
     }
 
     let runs = try validatedRuns(
