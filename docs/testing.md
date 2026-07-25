@@ -584,7 +584,7 @@ independent reviewer must inspect every positive image and ground truth and
 confirm that each claimed class is genuinely exercised. The scorer and its
 synthetic unit fixtures are not semantic corpus-review evidence.
 
-Run the focused 17-test suite with:
+Run the focused 18-test suite with:
 
 ```sh
 ./scripts/test-latex-feasibility.sh
@@ -594,13 +594,16 @@ The scorer recomputes the corpus, label, protocol, executable, and complete
 artifact-manifest digests supplied to the CLI. It validates each retained model,
 configuration, preprocessing, decoder, auxiliary, and runtime file or directory
 under that manifest, including empty directory paths, using explicit path
-component boundaries. The CLI resolves the actual running executable before
-hashing it, including when launched by name through `PATH`. Core ML freezes
-require the exact Apple system runtime and forbid a bundled third-party runtime;
-non-Core-ML and reference manifests must bind their runtime artifacts. The
-parser rejects Boolean or fractional values for integer fields and requires the
-complete parsed protocol, including physical, privacy, platform, comparison,
-and normalization fields, to match the compiled semantic digest.
+component boundaries and canonical relative paths. The CLI resolves the actual
+running executable before hashing it, including when launched by name through
+`PATH`. Core ML freezes require the exact Apple system runtime and forbid a
+bundled third-party runtime; non-Core-ML and reference manifests must bind their
+runtime artifacts. Meaningful non-Core-ML latency or accuracy wins require every
+absolute gate to pass; a zero-latency challenger remains comparable against a
+positive Core ML baseline. The parser rejects Boolean or fractional values for
+integer fields and requires the complete parsed protocol, including physical,
+privacy, platform, comparison, and normalization fields, to match the compiled
+semantic digest.
 Reference-only runtimes cannot enter blind gate scoring. A reported gate
 failure exits with status 2.
 Physical hardware identity, AC and thermal state, executable slices, sandbox

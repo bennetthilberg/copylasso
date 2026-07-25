@@ -320,7 +320,27 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
       coreMLReport: coreReport,
       challengerReport: failedChallengerReport
     )
+    XCTAssertFalse(failedChallenger.hasMeaningfulLatencyWin)
     XCTAssertEqual(failedChallenger.recommendedRuntime, .coreML)
+
+    let zeroLatencyChallengerReport = try report(
+      corpus,
+      labels,
+      challengerFreeze,
+      makePassingEvidence(
+        corpus: corpus,
+        labels: labels,
+        freeze: challengerFreeze,
+        armLatency: 0,
+        intelLatency: 0
+      )
+    )
+    let zeroLatencyWin = try RuntimeComparisonEvaluator.evaluate(
+      coreMLReport: coreReport,
+      challengerReport: zeroLatencyChallengerReport
+    )
+    XCTAssertTrue(zeroLatencyWin.hasMeaningfulLatencyWin)
+    XCTAssertEqual(zeroLatencyWin.recommendedRuntime, .nonCoreML)
 
     var failedCoreEvidence = makePassingEvidence(
       corpus: corpus,
@@ -381,6 +401,24 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
       }
     )
     XCTAssertEqual(accuracyWin.recommendedRuntime, .nonCoreML)
+
+    var failedAccuracyEvidence = makePassingEvidence(
+      corpus: corpus,
+      labels: labels,
+      freeze: challengerFreeze
+    )
+    failedAccuracyEvidence.licenseIsRedistributable = false
+    let failedAccuracyWin = try RuntimeComparisonEvaluator.evaluate(
+      coreMLReport: accuracyBaselineReport,
+      challengerReport: try report(
+        corpus,
+        labels,
+        challengerFreeze,
+        failedAccuracyEvidence
+      )
+    )
+    XCTAssertFalse(failedAccuracyWin.hasMeaningfulAccuracyWin)
+    XCTAssertEqual(failedAccuracyWin.recommendedRuntime, .coreML)
 
     var mismatchedChallengerFreeze = challengerFreeze
     mismatchedChallengerFreeze.corpusManifestSHA256 = digest(32_999)
@@ -639,6 +677,63 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
       try ArtifactManifestValidator.validate(
         incomplete,
         runtimeKind: .coreML,
+        under: root
+      )
+    }
+  }
+
+  func testArtifactManifestRejectsNoncanonicalDuplicatePaths() throws {
+    let root = FileManager.default.temporaryDirectory
+      .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    let runtime = root.appendingPathComponent("runtime", isDirectory: true)
+    try FileManager.default.createDirectory(at: runtime, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let model = root.appendingPathComponent("model.bin")
+    try Data("model".utf8).write(to: model)
+    try Data("runtime".utf8).write(to: runtime.appendingPathComponent("engine.dylib"))
+    let modelDigest = try ArtifactDigest.sha256(fileURL: model)
+    let manifest = CandidateArtifactManifest(
+      schemaVersion: 1,
+      systemRuntimeIdentifier: nil,
+      artifacts: [
+        CandidateArtifact(
+          role: .model,
+          kind: .file,
+          relativePath: "model.bin",
+          sha256: modelDigest
+        ),
+        CandidateArtifact(
+          role: .configuration,
+          kind: .file,
+          relativePath: "./model.bin",
+          sha256: modelDigest
+        ),
+        CandidateArtifact(
+          role: .preprocessing,
+          kind: .file,
+          relativePath: ".//model.bin",
+          sha256: modelDigest
+        ),
+        CandidateArtifact(
+          role: .decoder,
+          kind: .file,
+          relativePath: "././model.bin",
+          sha256: modelDigest
+        ),
+        CandidateArtifact(
+          role: .runtime,
+          kind: .directory,
+          relativePath: "runtime",
+          sha256: try ArtifactDigest.sha256Tree(directoryURL: runtime)
+        ),
+      ]
+    )
+
+    assertValidationError(.invalidArtifactPath("./model.bin")) {
+      try ArtifactManifestValidator.validate(
+        manifest,
+        runtimeKind: .nonCoreML,
         under: root
       )
     }

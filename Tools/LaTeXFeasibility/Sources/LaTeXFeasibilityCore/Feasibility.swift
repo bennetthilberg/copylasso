@@ -767,20 +767,20 @@ public enum ArtifactManifestValidator {
     var paths = Set<String>()
     for artifact in manifest.artifacts {
       try validateSHA256(artifact.sha256, field: "artifact.sha256")
-      guard paths.insert(artifact.relativePath).inserted else {
-        throw FeasibilityValidationError.duplicateArtifactPath(artifact.relativePath)
-      }
       let path = artifact.relativePath
       let components = path.split(separator: "/", omittingEmptySubsequences: false)
       guard
         !path.isEmpty,
         !path.hasPrefix("/"),
-        !components.contains(".."),
+        !components.contains(where: { $0.isEmpty || $0 == "." || $0 == ".." }),
         !path.contains("\n"),
         !path.contains("\r"),
         !path.contains("\t")
       else {
         throw FeasibilityValidationError.invalidArtifactPath(path)
+      }
+      guard paths.insert(path).inserted else {
+        throw FeasibilityValidationError.duplicateArtifactPath(path)
       }
       let unresolvedURL =
         resolvedRoot
@@ -1662,8 +1662,14 @@ public enum RuntimeComparisonEvaluator {
       throw FeasibilityValidationError.invalidComparison
     }
 
-    let coreMetrics = try validatedArchitectureReports(coreMLReport)
-    let challengerMetrics = try validatedArchitectureReports(challengerReport)
+    let coreMetrics = try validatedArchitectureReports(
+      coreMLReport,
+      requiresPositiveLatency: true
+    )
+    let challengerMetrics = try validatedArchitectureReports(
+      challengerReport,
+      requiresPositiveLatency: false
+    )
     let latencyChanges: [(improvement: Double, regression: Double, saved: Double)] =
       BenchmarkArchitecture.allCases.map { architecture in
         let core = coreMetrics[architecture]!
@@ -1677,15 +1683,17 @@ public enum RuntimeComparisonEvaluator {
         )
       }
     var hasMeaningfulLatencyWin = false
-    for (index, change) in latencyChanges.enumerated()
-    where change.improvement >= 0.20 && change.saved >= 100 {
-      let otherArchitectureIsAcceptable = latencyChanges.enumerated().allSatisfy {
-        otherIndex, otherChange in
-        otherIndex == index || otherChange.regression <= 0.10
-      }
-      if otherArchitectureIsAcceptable {
-        hasMeaningfulLatencyWin = true
-        break
+    if challengerReport.passed {
+      for (index, change) in latencyChanges.enumerated()
+      where change.improvement >= 0.20 && change.saved >= 100 {
+        let otherArchitectureIsAcceptable = latencyChanges.enumerated().allSatisfy {
+          otherIndex, otherChange in
+          otherIndex == index || otherChange.regression <= 0.10
+        }
+        if otherArchitectureIsAcceptable {
+          hasMeaningfulLatencyWin = true
+          break
+        }
       }
     }
 
@@ -1693,11 +1701,13 @@ public enum RuntimeComparisonEvaluator {
       coreML: coreMetrics,
       challenger: challengerMetrics
     )
-    let hasMeaningfulAccuracyWin = pairedAccuracyImprovements.contains { interval in
-      let requiredImprovement = interval.metric == "overall" ? 0.03 : 0.05
-      return interval.improvement >= requiredImprovement
-        && interval.lower95ConfidenceBound > 0
-    }
+    let hasMeaningfulAccuracyWin =
+      challengerReport.passed
+      && pairedAccuracyImprovements.contains { interval in
+        let requiredImprovement = interval.metric == "overall" ? 0.03 : 0.05
+        return interval.improvement >= requiredImprovement
+          && interval.lower95ConfidenceBound > 0
+      }
 
     let recommendation: RuntimeRecommendation
     if challengerReport.passed
@@ -1720,7 +1730,8 @@ public enum RuntimeComparisonEvaluator {
   }
 
   private static func validatedArchitectureReports(
-    _ report: CandidateGateReport
+    _ report: CandidateGateReport,
+    requiresPositiveLatency: Bool
   ) throws -> [BenchmarkArchitecture: ArchitectureGateReport] {
     var reports: [BenchmarkArchitecture: ArchitectureGateReport] = [:]
     for architectureReport in report.architectureReports {
@@ -1729,7 +1740,8 @@ public enum RuntimeComparisonEvaluator {
       try validateAccuracyBinding(architectureReport)
       guard
         architectureReport.warmP95Milliseconds.isFinite,
-        architectureReport.warmP95Milliseconds > 0,
+        architectureReport.warmP95Milliseconds >= 0,
+        !requiresPositiveLatency || architectureReport.warmP95Milliseconds > 0,
         architectureReport.measurementCount == architectureReport.sampleOutcomes.count,
         Set(identifiers).count == identifiers.count,
         accuracy.overallExactRate.isFinite,
