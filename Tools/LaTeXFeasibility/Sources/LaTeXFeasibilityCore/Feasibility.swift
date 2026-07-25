@@ -830,11 +830,12 @@ public enum ArtifactManifestValidator {
       .filter { $0.kind == .directory }
       .map { $0.relativePath.hasSuffix("/") ? $0.relativePath : $0.relativePath + "/" }
     for actualPath in try artifactPaths(under: resolvedRoot) {
+      let isDirectory = actualPath.hasSuffix("/")
       guard
         filePaths.contains(actualPath)
-          || filePaths.contains(where: { $0.hasPrefix(actualPath) })
+          || (isDirectory && filePaths.contains(where: { $0.hasPrefix(actualPath) }))
           || directoryPaths.contains(where: {
-            actualPath.hasPrefix($0) || $0.hasPrefix(actualPath)
+            actualPath.hasPrefix($0) || (isDirectory && $0.hasPrefix(actualPath))
           })
       else {
         throw FeasibilityValidationError.unboundArtifact(actualPath)

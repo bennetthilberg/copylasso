@@ -231,6 +231,7 @@ done
 
 for required_command in \
     'case "validate-protocol":' \
+    '_NSGetExecutablePath' \
     'CorpusValidator.validateImages' \
     'ProtocolValidator.validateSupported' \
     'ArtifactManifestValidator.validate' \

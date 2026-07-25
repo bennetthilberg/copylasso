@@ -566,6 +566,19 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
     }
     try FileManager.default.removeItem(at: unlistedURL)
 
+    for unboundPrefix in ["model", "run"] {
+      let prefixURL = root.appendingPathComponent(unboundPrefix)
+      try Data(unboundPrefix.utf8).write(to: prefixURL)
+      assertValidationError(.unboundArtifact(unboundPrefix)) {
+        try ArtifactManifestValidator.validate(
+          manifest,
+          runtimeKind: .nonCoreML,
+          under: root
+        )
+      }
+      try FileManager.default.removeItem(at: prefixURL)
+    }
+
     let unlistedDirectory = root.appendingPathComponent("unlisted-directory", isDirectory: true)
     try FileManager.default.createDirectory(
       at: unlistedDirectory,

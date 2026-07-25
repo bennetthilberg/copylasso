@@ -593,8 +593,10 @@ Run the focused 17-test suite with:
 The scorer recomputes the corpus, label, protocol, executable, and complete
 artifact-manifest digests supplied to the CLI. It validates each retained model,
 configuration, preprocessing, decoder, auxiliary, and runtime file or directory
-under that manifest, including empty directory paths. Core ML freezes require
-the exact Apple system runtime and forbid a bundled third-party runtime;
+under that manifest, including empty directory paths, using explicit path
+component boundaries. The CLI resolves the actual running executable before
+hashing it, including when launched by name through `PATH`. Core ML freezes
+require the exact Apple system runtime and forbid a bundled third-party runtime;
 non-Core-ML and reference manifests must bind their runtime artifacts. The
 parser rejects Boolean or fractional values for integer fields and requires the
 complete parsed protocol, including physical, privacy, platform, comparison,

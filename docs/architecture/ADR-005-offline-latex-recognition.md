@@ -127,8 +127,10 @@ exactly match the scorer's complete semantic contract, including physical,
 privacy, platform, comparison, and normalization behavior. Normalization strips
 an outer delimiter only when its first unescaped closing delimiter ends the
 whole expression. Artifact-tree digests include directory entries, including
-empty directories. A Core ML freeze must name Apple's system runtime and
-contain no bundled runtime role, while reference-only runtimes remain
+empty directories, and completeness matching respects path-component
+boundaries. The CLI hashes its actual executable path even when the shell
+invokes it through `PATH`. A Core ML freeze must name Apple's system runtime
+and contain no bundled runtime role, while reference-only runtimes remain
 ineligible for blind gate scoring.
 
 ## Consequences

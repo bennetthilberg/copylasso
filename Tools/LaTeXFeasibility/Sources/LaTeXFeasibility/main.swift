@@ -64,10 +64,7 @@ struct LaTeXFeasibilityCommand {
         runtimeKind: freeze.candidate.runtimeKind,
         under: URL(fileURLWithPath: artifactRootPath, isDirectory: true)
       )
-      let executableURL =
-        URL(fileURLWithPath: CommandLine.arguments[0])
-        .resolvingSymlinksInPath()
-        .standardizedFileURL
+      let executableURL = try currentExecutableURL()
       let report = try CandidateGateEvaluator.evaluate(
         corpus: corpus,
         labels: try JSONDecoder().decode([EvaluationLabel].self, from: labelsData),
@@ -105,17 +102,45 @@ struct LaTeXFeasibilityCommand {
     FileHandle.standardOutput.write(data)
     FileHandle.standardOutput.write(Data([0x0A]))
   }
+
+  private static func currentExecutableURL() throws -> URL {
+    var bufferSize: UInt32 = 0
+    _ = _NSGetExecutablePath(nil, &bufferSize)
+    guard bufferSize > 0 else {
+      throw CommandError.executablePathUnavailable
+    }
+    var buffer = [CChar](repeating: 0, count: Int(bufferSize))
+    guard _NSGetExecutablePath(&buffer, &bufferSize) == 0 else {
+      throw CommandError.executablePathUnavailable
+    }
+    let path = String(
+      decoding: buffer.prefix(while: { $0 != 0 }).map { UInt8(bitPattern: $0) },
+      as: UTF8.self
+    )
+    guard !path.isEmpty else {
+      throw CommandError.executablePathUnavailable
+    }
+    return URL(fileURLWithPath: path)
+      .resolvingSymlinksInPath()
+      .standardizedFileURL
+  }
 }
 
 private enum CommandError: Error, CustomStringConvertible {
+  case executablePathUnavailable
   case usage
 
   var description: String {
-    """
-    Usage:
-      latex-feasibility validate-protocol <protocol.json>
-      latex-feasibility validate-corpus <corpus.json> <image-root>
-      latex-feasibility score <corpus.json> <image-root> <labels.json> <freeze.json> <protocol.json> <artifact-manifest.json> <artifact-root> <evidence.json>
-    """
+    switch self {
+    case .executablePathUnavailable:
+      "The scorer executable path is unavailable."
+    case .usage:
+      """
+      Usage:
+        latex-feasibility validate-protocol <protocol.json>
+        latex-feasibility validate-corpus <corpus.json> <image-root>
+        latex-feasibility score <corpus.json> <image-root> <labels.json> <freeze.json> <protocol.json> <artifact-manifest.json> <artifact-root> <evidence.json>
+      """
+    }
   }
 }
