@@ -104,7 +104,9 @@
     "application_source_changed": false,
     "dependency_or_model_shipped": false,
     "entitlements_changed": false,
+    "production_tree_commit": "ffbd81521855ec0e72bfc8cc6c26476229a76a98",
     "production_tree_digest": "f274c68f08d2c87b282b532f0babf7219ff1b725eb25594e81c44dcdac5ea262",
+    "production_tree_manifest": "g38-production-tree.manifest",
     "version_or_build_changed": false
   },
   "recommendation": "Do not implement G40. Reevaluate only when a maintained, permissively licensed candidate and complete runtime fit the 200 MiB gate, support both architectures on macOS 14, and can be measured on the required physical systems before the blind corpus is unsealed.",

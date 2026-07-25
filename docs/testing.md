@@ -575,7 +575,9 @@ accuracy, deterministic nearest-rank p50/p95, false success, size, memory,
 environment, privacy, platform, and runtime-comparison thresholds. Runtime
 comparison derives its paired accuracy differences and 95% normal-approximation
 intervals from the bound per-sample outcomes rather than accepting caller
-supplied intervals.
+supplied intervals. Normalization removes delimiters only when the first
+unescaped closing delimiter ends the entire expression, so separate top-level
+math spans remain structurally unchanged.
 Class-count validation is deliberately mechanical: it proves only that the
 manifest contains enough declared tags. Before any future unblinding, an
 independent reviewer must inspect every positive image and ground truth and
@@ -591,12 +593,14 @@ Run the focused 17-test suite with:
 The scorer recomputes the corpus, label, protocol, executable, and complete
 artifact-manifest digests supplied to the CLI. It validates each retained model,
 configuration, preprocessing, decoder, auxiliary, and runtime file or directory
-under that manifest. Core ML freezes require the exact Apple system runtime and
-forbid a bundled third-party runtime; non-Core-ML and reference manifests must
-bind their runtime artifacts. The parser rejects Boolean or fractional values
-for integer fields and rejects any threshold or normalization rule that differs
-from the compiled scorer contract. Reference-only runtimes cannot enter blind
-gate scoring. A reported gate failure exits with status 2.
+under that manifest, including empty directory paths. Core ML freezes require
+the exact Apple system runtime and forbid a bundled third-party runtime;
+non-Core-ML and reference manifests must bind their runtime artifacts. The
+parser rejects Boolean or fractional values for integer fields and requires the
+complete parsed protocol, including physical, privacy, platform, comparison,
+and normalization fields, to match the compiled semantic digest.
+Reference-only runtimes cannot enter blind gate scoring. A reported gate
+failure exits with status 2.
 Physical hardware identity, AC and thermal state, executable slices, sandbox
 behavior, license compatibility, and provenance still require independent
 evidence review; JSON assertions alone do not establish them.
@@ -613,8 +617,10 @@ license, provenance, installed-size, and maintained-platform screens, so the
 blind 300-sample corpus was not created or unsealed.
 
 The focused audit confirms the no-go summary and protocol, prevents tracked
-model/runtime binaries, preserves the exact production tree, and distinguishes
-the development comparison from a passing blind evaluation:
+model/runtime binaries, validates the immutable G38 production-tree manifest
+and digest recorded by G39 without pinning later production checkouts to that
+historical tree, and distinguishes the development comparison from a passing
+blind evaluation:
 
 ```sh
 ./scripts/audit-latex-feasibility.sh

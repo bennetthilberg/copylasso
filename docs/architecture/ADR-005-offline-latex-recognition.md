@@ -123,9 +123,13 @@ freeze, scorer, parsed protocol, and complete file/directory artifact-manifest
 digests, and only then run a fresh blind evaluation. Runtime comparison derives
 paired accuracy intervals from the two candidates' bound per-sample outcomes;
 it does not accept caller-supplied confidence bounds. The parsed protocol must
-exactly match the scorer's thresholds and normalization behavior. A Core ML
-freeze must name Apple's system runtime and contain no bundled runtime role,
-while reference-only runtimes remain ineligible for blind gate scoring.
+exactly match the scorer's complete semantic contract, including physical,
+privacy, platform, comparison, and normalization behavior. Normalization strips
+an outer delimiter only when its first unescaped closing delimiter ends the
+whole expression. Artifact-tree digests include directory entries, including
+empty directories. A Core ML freeze must name Apple's system runtime and
+contain no bundled runtime role, while reference-only runtimes remain
+ineligible for blind gate scoring.
 
 ## Consequences
 
@@ -133,4 +137,7 @@ G39 adds no application source, shipping dependency, entitlement, model,
 resource, version, or build change. The benchmark package remains an isolated
 development scorer. Large artifacts and runtime experiments stay outside Git
 and are removed after evidence capture. Issue #49 remains open as a deferred
-enhancement rather than being closed as implemented.
+enhancement rather than being closed as implemented. The reviewed G38
+production boundary is retained as an immutable manifest and digest; canonical
+CI validates that historical record without requiring future product commits to
+reproduce the old tree.

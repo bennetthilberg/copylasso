@@ -14,6 +14,9 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
     XCTAssertEqual(LaTeXNormalizer.normalize("$$x  +\n y$$"), "x + y")
     XCTAssertEqual(LaTeXNormalizer.normalize("\\(x^2\\)"), "x^2")
     XCTAssertEqual(LaTeXNormalizer.normalize("$x_1$"), "x_1")
+    XCTAssertEqual(LaTeXNormalizer.normalize("$x$ + $y$"), "$x$ + $y$")
+    XCTAssertEqual(LaTeXNormalizer.normalize("$$x$$ + $$y$$"), "$$x$$ + $$y$$")
+    XCTAssertEqual(LaTeXNormalizer.normalize("\\(x\\) + \\(y\\)"), "\\(x\\) + \\(y\\)")
     XCTAssertEqual(LaTeXNormalizer.normalize("\\dfrac{1}{2}"), "\\dfrac{1}{2}")
     XCTAssertEqual(LaTeXNormalizer.normalize("x+y"), "x+y")
     XCTAssertNil(LaTeXNormalizer.normalize(" \r\n\t "))
@@ -431,7 +434,7 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
   }
 
   func testProtocolValidationRejectsThresholdDrift() throws {
-    let supported = makeSupportedProtocolData()
+    let supported = try makeSupportedProtocolData()
     XCTAssertNoThrow(try ProtocolValidator.validateSupported(supported))
 
     let drifted = try XCTUnwrap(
@@ -458,6 +461,18 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
       try ProtocolValidator.validateSupported(normalizationDrift)
     }
 
+    let platformDrift = try XCTUnwrap(
+      String(data: supported, encoding: .utf8)?
+        .replacingOccurrences(
+          of: #""macos_major": 14"#,
+          with: #""macos_major": 15"#
+        )
+        .data(using: .utf8)
+    )
+    assertValidationError(.invalidProtocolContract) {
+      try ProtocolValidator.validateSupported(platformDrift)
+    }
+
     for (original, replacement) in [
       (#""minimum_samples": 300"#, #""minimum_samples": 300.5"#),
       (#""schema_version": 1"#, #""schema_version": true"#),
@@ -480,18 +495,32 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
     try FileManager.default.createDirectory(at: runtime, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(at: root) }
 
-    let fileNames = ["model.bin", "configuration.json", "preprocess.json", "decoder.json"]
+    try FileManager.default.createDirectory(
+      at: root.appendingPathComponent("metadata", isDirectory: true),
+      withIntermediateDirectories: false
+    )
+    let fileNames = [
+      "model.bin",
+      "metadata/configuration.json",
+      "preprocess.json",
+      "decoder.json",
+    ]
     for name in fileNames {
       try Data(name.utf8).write(to: root.appendingPathComponent(name))
     }
     try Data("runtime".utf8).write(to: runtime.appendingPathComponent("engine.dylib"))
+    let emptyRuntimeDirectory = runtime.appendingPathComponent("empty-cache", isDirectory: true)
+    try FileManager.default.createDirectory(
+      at: emptyRuntimeDirectory,
+      withIntermediateDirectories: false
+    )
 
     let manifest = CandidateArtifactManifest(
       schemaVersion: 1,
       systemRuntimeIdentifier: nil,
       artifacts: [
         artifact(.model, "model.bin", under: root),
-        artifact(.configuration, "configuration.json", under: root),
+        artifact(.configuration, "metadata/configuration.json", under: root),
         artifact(.preprocessing, "preprocess.json", under: root),
         artifact(.decoder, "decoder.json", under: root),
         CandidateArtifact(
@@ -536,6 +565,33 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
       )
     }
     try FileManager.default.removeItem(at: unlistedURL)
+
+    let unlistedDirectory = root.appendingPathComponent("unlisted-directory", isDirectory: true)
+    try FileManager.default.createDirectory(
+      at: unlistedDirectory,
+      withIntermediateDirectories: false
+    )
+    assertValidationError(.unboundArtifact("unlisted-directory/")) {
+      try ArtifactManifestValidator.validate(
+        manifest,
+        runtimeKind: .nonCoreML,
+        under: root
+      )
+    }
+    try FileManager.default.removeItem(at: unlistedDirectory)
+
+    try FileManager.default.removeItem(at: emptyRuntimeDirectory)
+    assertValidationError(.artifactDigestMismatch("runtime")) {
+      try ArtifactManifestValidator.validate(
+        manifest,
+        runtimeKind: .nonCoreML,
+        under: root
+      )
+    }
+    try FileManager.default.createDirectory(
+      at: emptyRuntimeDirectory,
+      withIntermediateDirectories: false
+    )
 
     try Data("changed".utf8).write(to: runtime.appendingPathComponent("engine.dylib"))
     assertValidationError(.artifactDigestMismatch("runtime")) {
@@ -969,90 +1025,14 @@ final class LaTeXFeasibilityCoreTests: XCTestCase {
     )
   }
 
-  private func makeSupportedProtocolData() -> Data {
-    Data(
-      """
-      {
-        "schema_version": 1,
-        "blind_evaluation": {
-          "corpus": {
-            "minimum_samples": 300,
-            "minimum_positive_samples": 200,
-            "minimum_negative_samples": 100,
-            "required_positive_classes": {
-              "clean_common": 100,
-              "inline": 15,
-              "display": 15,
-              "fractions": 15,
-              "roots": 15,
-              "superscripts": 15,
-              "subscripts": 15,
-              "greek_symbols": 15,
-              "operators": 15,
-              "delimiters": 15,
-              "aligned_equations": 15,
-              "matrices": 15,
-              "degraded": 15,
-              "low_resolution": 15
-            }
-          }
-        },
-        "gate_thresholds": {
-          "accuracy": {
-            "clean_common_structural_minimum": 0.95,
-            "each_positive_class_exact_minimum": 0.70,
-            "negative_false_success_maximum": 0.01,
-            "overall_positive_exact_minimum": 0.85
-          },
-          "installed_growth_maximum_bytes": 209715200,
-          "latency": {
-            "arm64_warm_p95_maximum_milliseconds": 2000,
-            "intel_warm_p95_maximum_milliseconds": 4000
-          },
-          "peak_memory_growth_maximum_bytes": 786432000
-        },
-        "normalization": {
-          "collapse_unicode_whitespace_runs": true,
-          "remove_one_complete_outer_math_delimiter_pair": [
-            "$",
-            "$$",
-            "\\\\(",
-            "\\\\["
-          ],
-          "unicode_normalization": "NFC",
-          "unchanged": [
-            "commands",
-            "braces",
-            "operator spelling",
-            "environments",
-            "mathematical structure"
-          ]
-        },
-        "development_comparison": {
-          "core_ml_preference": true,
-          "non_core_ml_meaningful_win": {
-            "requires_every_absolute_gate": true,
-            "accuracy": {
-              "overall_minimum_improvement": 0.03,
-              "difficult_class_minimum_improvement": 0.05,
-              "paired_95_percent_confidence_interval_must_exclude_zero": true,
-              "paired_confidence_method": "normal_approximation_of_paired_binary_differences",
-              "predefined_difficult_classes": [
-                "aligned_equations",
-                "degraded",
-                "low_resolution",
-                "matrices"
-              ]
-            },
-            "latency": {
-              "minimum_absolute_p95_improvement_milliseconds": 100,
-              "minimum_relative_p95_improvement": 0.20,
-              "other_architecture_maximum_regression": 0.10
-            }
-          }
-        }
-      }
-      """.utf8
+  private func makeSupportedProtocolData() throws -> Data {
+    let repositoryRoot = (0..<5).reduce(URL(fileURLWithPath: #filePath)) { url, _ in
+      url.deletingLastPathComponent()
+    }
+    return try Data(
+      contentsOf: repositoryRoot.appendingPathComponent(
+        "docs/latex-feasibility/protocol.json"
+      )
     )
   }
 

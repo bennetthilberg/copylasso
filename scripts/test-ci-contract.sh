@@ -169,6 +169,12 @@ if [[ "$latex_feasibility_audit_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/audit-latex-feasibility.sh exactly once."
 fi
 
+if /usr/bin/grep -Fq 'actual_production_digest' "$latex_feasibility_audit_script"; then
+    fail "The G39 audit must not pin future production checkouts to the historical G38 tree."
+fi
+/usr/bin/grep -Fq 'g38-production-tree.manifest' "$latex_feasibility_audit_script" || \
+    fail "The G39 audit must bind its historical production boundary to a reviewed manifest."
+
 latex_feasibility_format_paths="$({
     /usr/bin/grep -Ec \
         '^[[:space:]]*Tools/LaTeXFeasibility[[:space:]]*$' \

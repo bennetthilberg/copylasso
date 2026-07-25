@@ -8,7 +8,9 @@ readonly evidence_root="$repository_root/docs/latex-feasibility"
 readonly protocol="$evidence_root/protocol.json"
 readonly summary="$evidence_root/summary.json"
 readonly development_results="$evidence_root/development-results.json"
+readonly production_manifest="$evidence_root/g38-production-tree.manifest"
 readonly expected_production_digest='f274c68f08d2c87b282b532f0babf7219ff1b725eb25594e81c44dcdac5ea262'
+readonly expected_production_commit='ffbd81521855ec0e72bfc8cc6c26476229a76a98'
 
 fail() {
     echo "$1" >&2
@@ -24,6 +26,7 @@ for required_file in \
     "$protocol" \
     "$summary" \
     "$development_results" \
+    "$production_manifest" \
     "$evidence_root/candidate-screening.md" \
     "$evidence_root/runtime-screening.md" \
     "$evidence_root/development-comparison.md" \
@@ -34,7 +37,9 @@ done
 [[ -x "$repository_root/scripts/test-latex-feasibility.sh" ]] || \
     fail "The focused LaTeX feasibility test script must be executable."
 
-/usr/bin/jq -e --arg expected_production_digest "$expected_production_digest" '
+/usr/bin/jq -e \
+    --arg expected_production_digest "$expected_production_digest" \
+    --arg expected_production_commit "$expected_production_commit" '
     .schema_version == 1 and
     .study == "CopyLasso G39 offline LaTeX feasibility" and
     .decision == "no_go" and
@@ -48,7 +53,9 @@ done
     .production_boundary.dependency_or_model_shipped == false and
     .production_boundary.entitlements_changed == false and
     .production_boundary.version_or_build_changed == false and
+    .production_boundary.production_tree_commit == $expected_production_commit and
     .production_boundary.production_tree_digest == $expected_production_digest and
+    .production_boundary.production_tree_manifest == "g38-production-tree.manifest" and
     ([.candidate_results[].candidate] | sort) == [
         "LaTeX_OCR_rec",
         "MixTex ZhEn-LaTeX-OCR",
@@ -62,20 +69,19 @@ done
     .development_comparison.blind_gate_credit == false
     ' "$summary" >/dev/null || fail "The G39 summary does not record the approved no-go."
 
-actual_production_digest="$(
-    git -C "$repository_root" ls-files -s -- \
-        CopyLasso \
-        CopyLassoTests \
-        CopyLassoUITests \
-        CopyLasso.xcodeproj \
-        Configuration \
-        THIRD_PARTY_NOTICES.md |
-        LC_ALL=C /usr/bin/sort |
-        /usr/bin/shasum -a 256 |
+LC_ALL=C /usr/bin/sort -cu "$production_manifest" || \
+    fail "The historical G38 production manifest must be sorted and unique."
+if /usr/bin/grep -Ev \
+    $'^(100644|100755) [0-9a-f]{40} 0\t(CopyLasso/|CopyLassoTests/|CopyLassoUITests/|CopyLasso\\.xcodeproj/|Configuration/|THIRD_PARTY_NOTICES\\.md$)' \
+    "$production_manifest"; then
+    fail "The historical G38 production manifest contains an invalid entry."
+fi
+recorded_production_digest="$(
+    /usr/bin/shasum -a 256 "$production_manifest" |
         /usr/bin/awk '{print $1}'
 )"
-[[ "$actual_production_digest" == "$expected_production_digest" ]] || \
-    fail "The tracked production tree no longer matches the reviewed G38 boundary."
+[[ "$recorded_production_digest" == "$expected_production_digest" ]] || \
+    fail "The historical G38 production manifest no longer matches its reviewed digest."
 
 /usr/bin/jq -e '
     .schema_version == 1 and
@@ -193,11 +199,15 @@ for required_source in \
     'validateImages(' \
     'ArtifactManifestValidator' \
     'sha256Tree(directoryURL:' \
+    'records.append("\(relativePath)/\t-\n")' \
+    'artifactPaths(under:' \
     'ArtifactDigest.sha256' \
     'manifest.systemRuntimeIdentifier == "com.apple.CoreML"' \
     '!roles.contains(.runtime)' \
     'case .nonCoreML, .reference:' \
     'string(root, "normalization", "unicode_normalization") == "NFC"' \
+    'supportedProtocolCanonicalSHA256' \
+    'enclosesWholeExpression' \
     'CFGetTypeID(number) != CFBooleanGetTypeID()' \
     'Int(exactly: numericValue)' \
     'warmP50Milliseconds' \

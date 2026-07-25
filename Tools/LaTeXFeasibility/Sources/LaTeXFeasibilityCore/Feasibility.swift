@@ -580,10 +580,7 @@ public enum LaTeXNormalizer {
       ("$", "$"),
     ]
     for (prefix, suffix) in delimiterPairs
-    where value.hasPrefix(prefix)
-      && value.hasSuffix(suffix)
-      && value.count >= prefix.count + suffix.count
-    {
+    where enclosesWholeExpression(value, prefix: prefix, suffix: suffix) {
       value.removeFirst(prefix.count)
       value.removeLast(suffix.count)
       value = value.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -596,6 +593,48 @@ public enum LaTeXNormalizer {
       .filter { !$0.isEmpty }
       .joined(separator: " ")
     return value.isEmpty ? nil : value
+  }
+
+  private static func enclosesWholeExpression(
+    _ value: String,
+    prefix: String,
+    suffix: String
+  ) -> Bool {
+    guard
+      value.hasPrefix(prefix),
+      value.hasSuffix(suffix),
+      value.count >= prefix.count + suffix.count
+    else {
+      return false
+    }
+
+    let contentStart = value.index(value.startIndex, offsetBy: prefix.count)
+    let expectedSuffixStart = value.index(value.endIndex, offsetBy: -suffix.count)
+    var searchStart = contentStart
+    while searchStart < value.endIndex,
+      let match = value.range(
+        of: suffix,
+        range: searchStart..<value.endIndex
+      )
+    {
+      if !isEscaped(match.lowerBound, in: value) {
+        return match.lowerBound == expectedSuffixStart
+      }
+      searchStart = match.upperBound
+    }
+    return false
+  }
+
+  private static func isEscaped(_ index: String.Index, in value: String) -> Bool {
+    var cursor = index
+    var precedingBackslashes = 0
+    while cursor > value.startIndex {
+      let previous = value.index(before: cursor)
+      guard value[previous] == "\\" else { break }
+      precedingBackslashes += 1
+      cursor = previous
+    }
+    return precedingBackslashes.isMultiple(of: 2) == false
   }
 }
 
@@ -672,6 +711,7 @@ public enum ArtifactDigest {
         throw FeasibilityValidationError.invalidArtifactPath(relativePath)
       }
       if values.isDirectory == true {
+        records.append("\(relativePath)/\t-\n")
         continue
       }
       guard values.isRegularFile == true else {
@@ -789,17 +829,20 @@ public enum ArtifactManifestValidator {
     let directoryPaths = manifest.artifacts
       .filter { $0.kind == .directory }
       .map { $0.relativePath.hasSuffix("/") ? $0.relativePath : $0.relativePath + "/" }
-    for actualPath in try regularFilePaths(under: resolvedRoot) {
+    for actualPath in try artifactPaths(under: resolvedRoot) {
       guard
         filePaths.contains(actualPath)
-          || directoryPaths.contains(where: { actualPath.hasPrefix($0) })
+          || filePaths.contains(where: { $0.hasPrefix(actualPath) })
+          || directoryPaths.contains(where: {
+            actualPath.hasPrefix($0) || $0.hasPrefix(actualPath)
+          })
       else {
         throw FeasibilityValidationError.unboundArtifact(actualPath)
       }
     }
   }
 
-  private static func regularFilePaths(under root: URL) throws -> [String] {
+  private static func artifactPaths(under root: URL) throws -> [String] {
     guard
       let enumerator = FileManager.default.enumerator(
         at: root,
@@ -831,6 +874,7 @@ public enum ArtifactManifestValidator {
         throw FeasibilityValidationError.invalidArtifactPath(relativePath)
       }
       if values.isDirectory == true {
+        paths.append(relativePath + "/")
         continue
       }
       guard values.isRegularFile == true else {
@@ -843,9 +887,17 @@ public enum ArtifactManifestValidator {
 }
 
 public enum ProtocolValidator {
+  private static let supportedProtocolCanonicalSHA256 =
+    "bb2ad5fab8f974670e7966ec265e4a3250883746c9d821550108cc33250b9e05"
+
   public static func validateSupported(_ data: Data) throws {
     guard
       let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+      let canonicalData = try? JSONSerialization.data(
+        withJSONObject: root,
+        options: [.sortedKeys]
+      ),
+      ArtifactDigest.sha256(canonicalData) == supportedProtocolCanonicalSHA256,
       integer(root, "schema_version") == 1,
       integer(root, "blind_evaluation", "corpus", "minimum_samples") == 300,
       integer(root, "blind_evaluation", "corpus", "minimum_positive_samples") == 200,
