@@ -41,7 +41,7 @@ The result must report `CopyLasso-0.1.1.dmg: OK`. Then:
 
 Open **Settings…** from the menu to change or clear the shortcut, enable Launch at Login, review privacy information, or reopen first-run setup when it is incomplete.
 
-Current source also includes the configurable success sound planned for the first v0.2 release. It is enabled by default and can be disabled with **Settings > Play Sound After Copying**. It plays only after recognized content reaches the clipboard; cancellation, no result, permission denial, recognition failure, and clipboard failure remain silent. The public CopyLasso 0.1.1 download retains its original silent feedback behavior.
+Current source also includes the brief, friendly configurable success sound planned for the first v0.2 release. It is enabled by default and can be disabled with **Settings > Play Sound After Copying**. It plays only after recognized content reaches the clipboard; cancellation, no result, permission denial, recognition failure, and clipboard failure remain silent. The public CopyLasso 0.1.1 download retains its original silent feedback behavior.
 
 Current source also extends the existing **Capture** action and shortcut to recognize QR, Code 128, Data Matrix, PDF417, and Aztec codes visible on screen. Text and code recognition run concurrently after one selection; an eligible code wins when both are present, while selections without a supported code fall back to ordinary OCR. CopyLasso copies recognized payloads as inert plain text and never opens a URL or otherwise acts on a payload. Unified code recognition is present in current source but is not part of the public CopyLasso 0.1.1 download.
 
