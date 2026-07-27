@@ -1,0 +1,152 @@
+{
+  "blind_evaluation": {
+    "candidate_limit": 1,
+    "corpus": {
+      "minimum_negative_samples": 100,
+      "minimum_positive_samples": 200,
+      "minimum_samples": 300,
+      "required_positive_classes": {
+        "aligned_equations": 15,
+        "clean_common": 100,
+        "degraded": 15,
+        "delimiters": 15,
+        "display": 15,
+        "fractions": 15,
+        "greek_symbols": 15,
+        "inline": 15,
+        "low_resolution": 15,
+        "matrices": 15,
+        "operators": 15,
+        "roots": 15,
+        "subscripts": 15,
+        "superscripts": 15
+      }
+    },
+    "semantic_corpus_review": {
+      "before_unblinding": true,
+      "class_tags_are_mechanical_claims_not_semantic_proof": true,
+      "independent_reviewer_required": true,
+      "reviewer_confirms_each_positive_ground_truth_exercises_every_claimed_class": true
+    },
+    "freeze_before_unblinding": [
+      "candidate model and runtime",
+      "model and runtime artifact digests",
+      "preprocessing",
+      "decoder and token limits",
+      "normalization",
+      "scorer executable",
+      "corpus manifest and image-byte digests",
+      "label-file digest",
+      "this protocol"
+    ],
+    "invalidation_rule": "Any frozen-input change after a label or candidate output is inspected invalidates the evaluation and requires a fresh unseen corpus.",
+    "status_for_g39": "not_started_no_candidate_survived_preblind_hard_gates"
+  },
+  "decision_order": [
+    "license_and_provenance",
+    "complete_installed_size",
+    "macos_14_and_both_architectures",
+    "offline_sandbox_and_supply_chain",
+    "development_comparison",
+    "single_candidate_freeze",
+    "blind_evaluation",
+    "physical_reference_hardware"
+  ],
+  "development_comparison": {
+    "blind_gate_credit": false,
+    "core_ml_preference": true,
+    "non_core_ml_meaningful_win": {
+      "accuracy": {
+        "predefined_difficult_classes": [
+          "aligned_equations",
+          "degraded",
+          "low_resolution",
+          "matrices"
+        ],
+        "difficult_class_minimum_improvement": 0.05,
+        "no_class_may_miss_absolute_gate": true,
+        "overall_minimum_improvement": 0.03,
+        "paired_95_percent_confidence_interval_must_exclude_zero": true,
+        "paired_confidence_method": "normal_approximation_of_paired_binary_differences"
+      },
+      "latency": {
+        "minimum_absolute_p95_improvement_milliseconds": 100,
+        "minimum_relative_p95_improvement": 0.2,
+        "other_architecture_maximum_regression": 0.1
+      },
+      "requires_every_absolute_gate": true
+    }
+  },
+  "gate_thresholds": {
+    "accuracy": {
+      "clean_common_structural_minimum": 0.95,
+      "each_positive_class_exact_minimum": 0.7,
+      "negative_false_success_maximum": 0.01,
+      "overall_positive_exact_minimum": 0.85
+    },
+    "installed_growth_maximum_bytes": 209715200,
+    "latency": {
+      "arm64_warm_p95_maximum_milliseconds": 2000,
+      "intel_warm_p95_maximum_milliseconds": 4000
+    },
+    "peak_memory_growth_maximum_bytes": 786432000
+  },
+  "normalization": {
+    "collapse_unicode_whitespace_runs": true,
+    "remove_one_complete_outer_math_delimiter_pair": [
+      "$",
+      "$$",
+      "\\(",
+      "\\["
+    ],
+    "unicode_normalization": "NFC",
+    "unchanged": [
+      "commands",
+      "braces",
+      "operator spelling",
+      "environments",
+      "mathematical structure"
+    ]
+  },
+  "physical_performance_environment": {
+    "arm64": "base M1 MacBook Air with 8 GB memory or demonstrably slower supported arm64 hardware",
+    "intel": "2018 MacBook Air with 1.6 GHz dual-core Intel Core i5 and 8 GB memory or demonstrably slower supported Intel hardware",
+    "macos_major": 14,
+    "requirements": [
+      "AC power",
+      "Low Power Mode off",
+      "nominal thermal pressure",
+      "recorded model identifier",
+      "recorded warm-up and run count"
+    ]
+  },
+  "privacy_and_platform": {
+    "analytics_or_telemetry": false,
+    "cloud_fallback": false,
+    "macos_minimum": 14,
+    "network_required_during_recognition": false,
+    "persist_image_or_output": false,
+    "supported_executable_architectures": [
+      "arm64",
+      "x86_64"
+    ],
+    "universal_2_required": true
+  },
+  "schema_version": 1,
+  "scorer_contract": {
+    "artifact_manifest_binds_complete_file_and_directory_set": true,
+    "comparison_reports_bind_candidate_runtime_and_common_corpus_label_scorer_protocol_digests": true,
+    "derives_paired_confidence_interval_from_bound_sample_outcomes": true,
+    "failed_gate_exit_code": 2,
+    "mechanical_class_counts_require_independent_semantic_review": true,
+    "nearest_rank_percentiles": [
+      50,
+      95
+    ],
+    "no_qualified_runtime_is_distinct_from_core_ml_preference": true,
+    "recomputes_supplied_artifact_digests": true,
+    "validates_parsed_protocol_against_compiled_thresholds": true,
+    "requires_independent_review_of_physical_and_legal_evidence": true
+  },
+  "study": "CopyLasso G39 offline LaTeX feasibility"
+}

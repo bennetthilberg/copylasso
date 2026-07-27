@@ -33,7 +33,7 @@ for required_text in \
     '# CopyLasso v0.2 Product Contract' \
     '**Status:** Approved scope for the planned v0.2 release' \
     '**Approved:** July 22, 2026' \
-    '**Implementation status:** In progress; the secure updater, configurable success sound, and unified on-screen code recognition are implemented in source but are not part of the public CopyLasso 0.1.1 download.' \
+    '**Implementation status:** In progress; the secure updater, configurable success sound, and unified on-screen code recognition are implemented in source but are not part of the public CopyLasso 0.1.1 download. G39 recommends no-go for offline LaTeX recognition, so no LaTeX implementation is present.' \
     '[v0.1 product contract](v0.1-product-contract.md)' \
     'automatic update checks are enabled by default' \
     'disable automatic checks in Settings' \
@@ -59,6 +59,8 @@ for required_text in \
     'at least 15 examples' \
     'blind evaluation corpus' \
     'Any change after unblinding invalidates the result' \
+    'A G39 study applies the gates sequentially.' \
+    'If no candidate survives them, G39 records no-go without' \
     'at least 95% structurally correct' \
     'Accuracy over all positive math samples is at least 85%' \
     'no reported positive class is below 70% normalized exact match' \

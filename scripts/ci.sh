@@ -44,7 +44,8 @@ echo "Linting Swift sources"
 xcrun swift-format lint --recursive --strict \
     CopyLasso \
     CopyLassoTests \
-    CopyLassoUITests
+    CopyLassoUITests \
+    Tools/LaTeXFeasibility
 
 echo "Auditing privacy, security, entitlements, and dependencies"
 ./scripts/audit-privacy-security.sh
@@ -81,6 +82,12 @@ echo "Auditing the approved v0.2 product contract"
 
 echo "Auditing on-screen code recognition"
 ./scripts/audit-code-recognition.sh
+
+echo "Testing offline LaTeX feasibility scoring"
+./scripts/test-latex-feasibility.sh
+
+echo "Auditing offline LaTeX feasibility evidence"
+./scripts/audit-latex-feasibility.sh
 
 readonly committed_development_team_pattern='^[[:space:]]*"?DEVELOPMENT_TEAM(\[[^]]+\])?"?[[:space:]]*=[[:space:]]*[A-Z0-9]{10};'
 
