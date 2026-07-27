@@ -516,7 +516,7 @@ maintainer-accepted v0.1 residuals.
 
 ## G37 Configurable Success Sound
 
-G37 adds one original 0.18-second bundled success sound, enabled by default through a versioned Boolean preference. `CaptureCommand` requests it exactly once only after a nonempty clipboard write succeeds. Permission denial, selection cancellation, no text, capture/OCR/formatting failure, clipboard failure, and disabled preference paths remain silent. Playback has no content input and cannot turn a successful copy into a failure.
+G37 introduced one original bundled success sound, enabled by default through a versioned Boolean preference. `CaptureCommand` requests it exactly once only after a nonempty clipboard write succeeds. Permission denial, selection cancellation, no text, capture/OCR/formatting failure, clipboard failure, and disabled preference paths remain silent. Playback has no content input and cannot turn a successful copy into a failure.
 
 Direct tests cover absent/malformed preference migration, explicit opt-out preservation, persistence, Debug reset, native Settings binding, enabled/disabled/unavailable/failed playback, restart-on-rapid-reuse behavior, idempotent stop cleanup, success-only command ordering, ten immediate successes, and silence on every non-success branch. The selection-activation suite also proves a capture begun while CopyLasso Settings is already active completes restoration immediately without deactivating or waiting for another application click, so recognition and HUD presentation are not delayed. Signed UI checks keep the first status-menu divider immediately after Capture, confirm Settings omits redundant visible captions while preserving accessible control help, and verify the Capture row expands from its cleared state to show both suggested and custom saved shortcut glyphs. The tracked audit regenerates the asset byte-for-byte, verifies its fixed format and digest, confines `NSSound` to one service, checks both built bundles, and rejects recording, microphone, system-audio-capture, notification, and alternate system-sound APIs:
 
@@ -535,6 +535,18 @@ The signed manual matrix uses the same development-signed Debug app for every ro
 7. Inspect System Settings privacy panes and confirm G37 requests no Microphone, System Audio Recording Only, Accessibility, Input Monitoring, or notification authorization.
 
 Actual audibility, mute/volume, hardware-output routing, and VoiceOver speech remain physical manual evidence. Automation owns asset integrity, invocation policy, state transitions, privacy isolation, error handling, and cleanup.
+
+## G40A Success-Sound Refinement
+
+G40A changes only the identity of the single G37 audio resource. After eighteen deterministic project-authored auditions, the maintainer selected a 0.188005-second warm two-step lift with a restrained harmonic halo. The preference key and migration, default-on behavior, Settings toggle, `NSSound` boundary, success-only command ordering, playback restart and stop behavior, focus handling, accessibility feedback, and every silent outcome remain unchanged.
+
+The focused red step updated the existing asset audit to the selected candidate's reviewed digest and format before the product resource changed; it rejected the old WAV by digest. The shipping generator then reproduced the selected audition exactly under both native arm64 and Rosetta x86_64. The ordinary configurable-sound audit owns the selected SHA-256, frame count, duration, format, byte-for-byte regeneration, one-audio-resource limit, playback API confinement, documentation, and exact Debug and Universal 2 Release bundle bytes:
+
+```sh
+./scripts/audit-success-sound.sh
+```
+
+Manual acceptance uses the signed development app and repeats a successful capture with sound enabled and disabled. The enabled result must play the selected friendly confirmation once while clipboard, HUD, and focus behavior remain correct; the disabled result must remain silent with the same clipboard, HUD, and focus behavior. This refinement adds no sound chooser, alternate shipped asset, volume control, permission, dependency, or playback path.
 
 ## G38 On-Screen Code Recognition
 

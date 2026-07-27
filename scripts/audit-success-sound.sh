@@ -10,7 +10,7 @@ readonly settings_store="$repository_root/CopyLasso/Settings/AppSettingsStore.sw
 readonly settings_view="$repository_root/CopyLasso/SharedUI/SettingsView.swift"
 readonly workflow="$repository_root/CopyLasso/CaptureWorkflow/CaptureCommand.swift"
 readonly app_root="$repository_root/CopyLasso/App/CopyLassoApp.swift"
-readonly expected_digest='32a817dc86c838b94b3803bf8ea16e469450a51a2fb63444e35d850798cae2a5'
+readonly expected_digest='e98be6b3eef44bffa5f5759ee83e99efd1ab3dfb820054a3d910be9b54cd2299'
 
 fail() {
     echo "$1" >&2
@@ -50,12 +50,18 @@ if ! /usr/bin/cmp -s "$asset" "$generated_asset"; then
     fail "The checked-in success sound is not reproducible from its generator."
 fi
 
+if /usr/bin/grep -Eq \
+    'triangleSample|primaryIncrement|overtoneIncrement|noiseState' \
+    "$generator"; then
+    fail "The retired sharp triangle-wave sound design returned."
+fi
+
 audio_info="$(/usr/bin/afinfo "$asset")"
 for expected_audio_property in \
     'File type ID:   WAVE' \
     'Data format:     1 ch,  44100 Hz, Int16' \
-    'estimated duration: 0.180000 sec' \
-    'audio packets: 7938' \
+    'estimated duration: 0.188005 sec' \
+    'audio packets: 8291' \
     'audio data file offset: 44'; do
     /usr/bin/grep -Fq "$expected_audio_property" <<< "$audio_info" || \
         fail "The success sound has an unexpected format: $expected_audio_property"
@@ -97,9 +103,12 @@ done
 
 for required_documentation in \
     "$repository_root/docs/brand-assets.md:CopyLassoSuccess.wav" \
-    "$repository_root/docs/brand-assets.md:32a817dc86c838b94b3803bf8ea16e469450a51a2fb63444e35d850798cae2a5" \
+    "$repository_root/docs/brand-assets.md:e98be6b3eef44bffa5f5759ee83e99efd1ab3dfb820054a3d910be9b54cd2299" \
+    "$repository_root/docs/brand-assets.md:warm two-step lift" \
     "$repository_root/PRIVACY.md:Success sound playback receives no captured pixels, recognized content, or clipboard text." \
-    "$repository_root/docs/testing.md:## G37 Configurable Success Sound"; do
+    "$repository_root/docs/testing.md:## G37 Configurable Success Sound" \
+    "$repository_root/docs/testing.md:## G40A Success-Sound Refinement" \
+    "$repository_root/docs/security-and-privacy-review.md:seeded texture and analytic partials"; do
     documentation_file="${required_documentation%%:*}"
     required_text="${required_documentation#*:}"
     /usr/bin/grep -Fq "$required_text" "$documentation_file" || \

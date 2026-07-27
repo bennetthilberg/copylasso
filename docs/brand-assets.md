@@ -22,9 +22,9 @@ Icon Composer supplies the platform mask, depth treatment, and distinct Default,
 
 ## Success Sound
 
-`CopyLasso/Resources/CopyLassoSuccess.wav` is an original project-authored confirmation sound created on July 23, 2026 for G37. It contains no recording, sample, Apple system sound, or third-party audio. The checked-in `scripts/generate-success-sound.swift` source constructs it deterministically from integer-generated triangle partials and a seeded quiet transient, all distributed under CopyLasso's MIT license.
+`CopyLasso/Resources/CopyLassoSuccess.wav` is original project-authored confirmation audio introduced on July 23, 2026 for G37 and refined through maintainer audition on July 27, 2026 for G40A. It contains no recording, sample, Apple system sound, or third-party audio. The maintainer selected the seventeenth of eighteen project-authored candidates: a warm two-step lift with a restrained futuristic halo.
 
-The asset is mono 16-bit PCM WAV at 44.1 kHz, contains 7,938 frames, and lasts 0.18 seconds. Its SHA-256 is `32a817dc86c838b94b3803bf8ea16e469450a51a2fb63444e35d850798cae2a5`. Canonical CI regenerates the file, requires byte equality and the reviewed format, and compares the exact source byte with the Debug and Universal 2 Release resources. Playback uses AppKit's public asynchronous `NSSound` file interface; CopyLasso does not copy or invoke the private macOS screenshot sound.
+The checked-in `scripts/generate-success-sound.swift` source constructs the sound deterministically from seeded filtered texture, two damped struck-tone voices, a short harmonic accent, subtle room reflections, and soft limiting. The asset is mono 16-bit PCM WAV at 44.1 kHz, contains 8,291 frames, and lasts 0.188005 seconds. Its SHA-256 is `e98be6b3eef44bffa5f5759ee83e99efd1ab3dfb820054a3d910be9b54cd2299`. Native arm64 and Rosetta x86_64 generation produce identical bytes. Canonical CI regenerates the file, requires byte equality and the reviewed format, and compares the exact source bytes with the Debug and Universal 2 Release resources. The generator and audio are distributed under CopyLasso's MIT license. Playback uses AppKit's public asynchronous `NSSound` file interface; CopyLasso does not copy or invoke the private macOS screenshot sound.
 
 ## Exact-Name Review
 

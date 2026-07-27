@@ -142,7 +142,7 @@ KeyboardShortcuts declares no transitive dependency. The Release executable cont
 
 Sparkle is a shipping binary framework in G36. Its exact tag, source revision, official artifact checksum, complete shipped license bundle, About acknowledgement, fixed configuration, entitlement boundary, and justification are recorded in [Third-Party Notices](../THIRD_PARTY_NOTICES.md), [ADR-004](architecture/ADR-004-secure-updates.md), and the secure-update audit. `SUEnableDownloaderService` is false; the bundled downloader XPC is inert and receives no downloader-service Mach entitlement. Release qualification must repeat advisory, framework-signature, nested-code, architecture, and notarization checks.
 
-`CopyLassoSuccess.wav` is original project-authored audio generated deterministically by the tracked integer-only script. It contains no third-party recording, dependency, content, or metadata; its construction, fixed digest, and provenance are recorded in [Brand Assets](brand-assets.md).
+`CopyLassoSuccess.wav` is original project-authored audio generated deterministically by the tracked synthesis script from seeded texture and analytic partials. It contains no third-party recording, dependency, content, or metadata; its construction, fixed digest, cross-architecture reproduction, and provenance are recorded in [Brand Assets](brand-assets.md).
 
 GitHub's tag readback records Sparkle 2.9.4 as a non-draft, non-prerelease release published July 3, 2026. A July 22, 2026 GitHub Advisory Database query for `sparkle@2.9.4` returned zero matching Swift advisories. This is a dated result, not a permanent guarantee; repeat it and review upstream release/security notices before every updater-enabled release.
 
