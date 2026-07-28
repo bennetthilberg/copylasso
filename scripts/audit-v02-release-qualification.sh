@@ -11,6 +11,9 @@ readonly entitlements="$repository_root/CopyLasso/CopyLasso.entitlements"
 readonly workflow="$repository_root/.github/workflows/release.yml"
 readonly success_sound="$repository_root/CopyLasso/Resources/CopyLassoSuccess.wav"
 readonly expected_success_sound_digest='e98be6b3eef44bffa5f5759ee83e99efd1ab3dfb820054a3d910be9b54cd2299'
+readonly candidate_source_commit='43f1d0c676b08fb24b49fc628213fede90c4ed9d'
+readonly expected_candidate_input_tree_digest='0d74006393ea86b449e87f44088a2b77455b0d7c545fd9fcbac1f99297cf5bcc'
+readonly candidate_evidence_tree_pattern=$'\t(docs/release-candidate-qualification\\.md|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/v0\\.2-release-candidate\\.md|docs/v0\\.2-release-qualification\\.md|scripts/audit-v02-release-qualification\\.sh)$'
 
 fail() {
     echo "$1" >&2
@@ -18,15 +21,15 @@ fail() {
 }
 
 require_file() {
-    [[ -f "$repository_root/$1" ]] || fail "Required G41 file is missing: $1"
+    [[ -f "$repository_root/$1" ]] || fail "Required v0.2 qualification file is missing: $1"
 }
 
 require_text() {
     local relative_path="$1"
     local required_text="$2"
 
-    /usr/bin/grep -Fq "$required_text" "$repository_root/$relative_path" || \
-        fail "$relative_path is missing required G41 text: $required_text"
+    /usr/bin/grep -Fq -- "$required_text" "$repository_root/$relative_path" || \
+        fail "$relative_path is missing required v0.2 qualification text: $required_text"
 }
 
 for required_file in \
@@ -40,6 +43,7 @@ for required_file in \
     SECURITY.md \
     docs/v0.2-product-contract.md \
     docs/v0.2-release-qualification.md \
+    docs/v0.2-release-candidate.md \
     docs/release-notes/0.2.0.md \
     docs/release-checklist.md; do
     require_file "$required_file"
@@ -65,12 +69,54 @@ require_text docs/v0.2-product-contract.md \
 require_text docs/v0.2-release-qualification.md '# CopyLasso v0.2 Source Qualification'
 require_text docs/v0.2-release-qualification.md 'Public release remains `0.1.1`.'
 require_text docs/v0.2-release-qualification.md 'G42 is a later release gate'
+require_text docs/v0.2-release-qualification.md \
+    'The exact G42 candidate qualification is recorded in'
+require_text docs/v0.2-release-qualification.md \
+    '[`v0.2-release-candidate.md`](v0.2-release-candidate.md).'
+require_text docs/v0.2-release-candidate.md \
+    '# CopyLasso v0.2 Release Candidate Qualification'
+require_text docs/v0.2-release-candidate.md '**Candidate:** `v0.2.0-rc.1`'
+require_text docs/v0.2-release-candidate.md \
+    '**Source commit:** `43f1d0c676b08fb24b49fc628213fede90c4ed9d`'
+require_text docs/v0.2-release-candidate.md \
+    '**Decision:** Approved by the maintainer for G43 publication'
+require_text docs/v0.2-release-candidate.md \
+    'Public release remains `0.1.1`; no v0.2 feed or public artifact was published.'
+require_text docs/v0.2-release-candidate.md \
+    '`0b40f9524389b684124189ce743109429af97baf124e28bf1d12313eba26d807`.'
+require_text docs/v0.2-release-candidate.md \
+    '| `CopyLasso-0.2.0.dmg` | 3,665,931 | `697cb008cf294b32500e2ad84e5777a51fe8b88916856c5a8e9f1ec4eb74ba19` |'
+require_text docs/v0.2-release-candidate.md \
+    '| `CopyLasso-0.2.0.dmg.sha256` | 86 | `6dfd44d92f6af1c14d765bc6c827ed3e9a0edd5ffe289c3e74ac6e1dd0c834b0` |'
+require_text docs/v0.2-release-candidate.md \
+    '| `CopyLasso-0.2.0.dSYM.zip` | 6,094,121 | `b644da8776f857c1f42a95f903b315b7dde418000d173b48829c5ee346bc4754` |'
+require_text docs/v0.2-release-candidate.md \
+    '| `CopyLasso-0.2.0-verification.zip` | 3,708,469 | `e4d424bdd9675b00ffa647bccdc3f3bc47b43b4d041535c0898f79cf79e3a073` |'
+require_text docs/v0.2-release-candidate.md \
+    '`a80260d6cd501ffee65ec41cbe1a232b9de662a9b41b4d78a0cd9b361bfe9fe6`.'
+require_text docs/v0.2-release-candidate.md '## Release-Delta Smoke'
+require_text docs/v0.2-release-candidate.md \
+    'The scoped Screen Recording permission was reset only for CopyLasso.'
+require_text docs/v0.2-release-candidate.md \
+    'automatic updates were enabled in'
+require_text docs/v0.2-release-candidate.md \
+    'Capture remained usable and copied'
+require_text docs/v0.2-release-candidate.md \
+    'The controlled QR precedence smoke copied the inert payload without opening a'
+require_text docs/v0.2-release-candidate.md \
+    'no payload action and no LaTeX command,'
 require_text docs/release-notes/0.2.0.md '# CopyLasso 0.2.0'
 require_text docs/release-notes/0.2.0.md 'QR, Code 128, Data Matrix, PDF417, and Aztec'
 require_text docs/release-notes/0.2.0.md 'CopyLasso 0.1.x does not contain an updater'
 require_text docs/release-notes/0.2.0.md 'LaTeX recognition is not included'
 require_text docs/release-checklist.md '## G41 - v0.2 Feature Qualification'
 require_text docs/release-checklist.md '## G42 - v0.2 Release Candidate'
+require_text docs/release-checklist.md \
+    '- [x] After G41 merges, dispatch the protected workflow from the exact protected-main commit with a new positive `candidate_number`.'
+require_text docs/release-checklist.md \
+    '- [x] Create and qualify one immutable private `v0.2.0-rc.N` draft, four restricted assets, authenticated update metadata, and browser-quarantined installation without rebuilding.'
+require_text docs/release-checklist.md \
+    '- [x] Exercise the private staged updater path, classify blockers and accepted gaps, and obtain explicit maintainer approval or rejection. Do not publish.'
 
 require_text THIRD_PARTY_NOTICES.md '## KeyboardShortcuts 3.0.1'
 require_text THIRD_PARTY_NOTICES.md '## Sparkle 2.9.4'
@@ -93,6 +139,15 @@ require_text CopyLasso/CaptureWorkflow/CaptureCommand.swift \
 require_text CopyLasso/Services/SparkleUpdateService.swift 'import Sparkle'
 require_text Configuration/CopyLasso-Info.plist \
     '<string>https://updates.copylasso.com/appcast.xml</string>'
+
+actual_candidate_input_tree_digest="$(
+    git -C "$repository_root" ls-tree -r --full-tree HEAD |
+        /usr/bin/grep -Ev "$candidate_evidence_tree_pattern" |
+        /usr/bin/shasum -a 256 |
+        /usr/bin/awk '{print $1}'
+)"
+[[ "$actual_candidate_input_tree_digest" == "$expected_candidate_input_tree_digest" ]] || \
+    fail "A tracked candidate input differs from source commit $candidate_source_commit."
 require_text CopyLassoTests/Settings/UserDefaultsSettingsStoreTests.swift \
     'testVersion011PreferencesRemainCompatibleWithVersion020Migration'
 require_text CopyLassoTests/Update/UpdateControllerTests.swift \

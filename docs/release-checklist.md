@@ -172,9 +172,9 @@ inferred pass; see [`v0.2-release-qualification.md`](v0.2-release-qualification.
 
 ## G42 - v0.2 Release Candidate
 
-- [ ] After G41 merges, dispatch the protected workflow from the exact protected-main commit with a new positive `candidate_number`.
-- [ ] Create and qualify one immutable private `v0.2.0-rc.N` draft, four restricted assets, authenticated update metadata, and browser-quarantined installation without rebuilding.
-- [ ] Exercise the private staged updater path, classify blockers and accepted gaps, and obtain explicit maintainer approval or rejection. Do not publish.
+- [x] After G41 merges, dispatch the protected workflow from the exact protected-main commit with a new positive `candidate_number`.
+- [x] Create and qualify one immutable private `v0.2.0-rc.N` draft, four restricted assets, authenticated update metadata, and browser-quarantined installation without rebuilding.
+- [x] Exercise the private staged updater path, classify blockers and accepted gaps, and obtain explicit maintainer approval or rejection. Do not publish.
 
 ## G43 - Publish CopyLasso v0.2.0
 

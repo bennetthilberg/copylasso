@@ -31,10 +31,15 @@ the release delta:
    public release or feed exists.
 
 Every result must identify the exact commit, `v0.2.0-rc.N` tag, and DMG digest.
-Any tracked correction abandons the candidate and reruns the complete protected
-gate with a new positive number. Keep the draft private, retain the dSYM and
-verification bundle as restricted evidence, and stop for explicit maintainer
-approval or rejection. G42 never publishes.
+Any tracked correction to application code, release configuration, packaging
+inputs, reviewed notes, dependencies, entitlements, or shipped assets abandons
+the candidate and reruns the complete protected gate with a new positive
+number. A later evidence-only qualification commit may record factual results
+for the unchanged candidate only when an exact path-scoped diff proves that no
+candidate input changed and the canonical audit enforces that boundary. Keep
+the draft private, retain the dSYM and verification bundle as restricted
+evidence, and stop for explicit maintainer approval or rejection. G42 never
+publishes.
 
 ## G32 v0.1.1 Maintenance Qualification
 
