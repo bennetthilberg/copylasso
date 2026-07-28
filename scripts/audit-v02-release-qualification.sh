@@ -18,15 +18,15 @@ fail() {
 }
 
 require_file() {
-    [[ -f "$repository_root/$1" ]] || fail "Required G41 file is missing: $1"
+    [[ -f "$repository_root/$1" ]] || fail "Required v0.2 qualification file is missing: $1"
 }
 
 require_text() {
     local relative_path="$1"
     local required_text="$2"
 
-    /usr/bin/grep -Fq "$required_text" "$repository_root/$relative_path" || \
-        fail "$relative_path is missing required G41 text: $required_text"
+    /usr/bin/grep -Fq -- "$required_text" "$repository_root/$relative_path" || \
+        fail "$relative_path is missing required v0.2 qualification text: $required_text"
 }
 
 for required_file in \
@@ -40,6 +40,7 @@ for required_file in \
     SECURITY.md \
     docs/v0.2-product-contract.md \
     docs/v0.2-release-qualification.md \
+    docs/v0.2-release-candidate.md \
     docs/release-notes/0.2.0.md \
     docs/release-checklist.md; do
     require_file "$required_file"
@@ -65,12 +66,31 @@ require_text docs/v0.2-product-contract.md \
 require_text docs/v0.2-release-qualification.md '# CopyLasso v0.2 Source Qualification'
 require_text docs/v0.2-release-qualification.md 'Public release remains `0.1.1`.'
 require_text docs/v0.2-release-qualification.md 'G42 is a later release gate'
+require_text docs/v0.2-release-qualification.md \
+    'The exact G42 candidate qualification is recorded in'
+require_text docs/v0.2-release-qualification.md \
+    '[`v0.2-release-candidate.md`](v0.2-release-candidate.md).'
+require_text docs/v0.2-release-candidate.md \
+    '# CopyLasso v0.2 Release Candidate Qualification'
+require_text docs/v0.2-release-candidate.md '**Candidate:** `v0.2.0-rc.1`'
+require_text docs/v0.2-release-candidate.md \
+    '**Source commit:** `43f1d0c676b08fb24b49fc628213fede90c4ed9d`'
+require_text docs/v0.2-release-candidate.md \
+    '**Decision:** Approved by the maintainer for G43 publication'
+require_text docs/v0.2-release-candidate.md \
+    'Public release remains `0.1.1`; no v0.2 feed or public artifact was published.'
 require_text docs/release-notes/0.2.0.md '# CopyLasso 0.2.0'
 require_text docs/release-notes/0.2.0.md 'QR, Code 128, Data Matrix, PDF417, and Aztec'
 require_text docs/release-notes/0.2.0.md 'CopyLasso 0.1.x does not contain an updater'
 require_text docs/release-notes/0.2.0.md 'LaTeX recognition is not included'
 require_text docs/release-checklist.md '## G41 - v0.2 Feature Qualification'
 require_text docs/release-checklist.md '## G42 - v0.2 Release Candidate'
+require_text docs/release-checklist.md \
+    '- [x] After G41 merges, dispatch the protected workflow from the exact protected-main commit with a new positive `candidate_number`.'
+require_text docs/release-checklist.md \
+    '- [x] Create and qualify one immutable private `v0.2.0-rc.N` draft, four restricted assets, authenticated update metadata, and browser-quarantined installation without rebuilding.'
+require_text docs/release-checklist.md \
+    '- [x] Exercise the private staged updater path, classify blockers and accepted gaps, and obtain explicit maintainer approval or rejection. Do not publish.'
 
 require_text THIRD_PARTY_NOTICES.md '## KeyboardShortcuts 3.0.1'
 require_text THIRD_PARTY_NOTICES.md '## Sparkle 2.9.4'
