@@ -12,6 +12,8 @@ readonly workflow="$repository_root/.github/workflows/release.yml"
 readonly success_sound="$repository_root/CopyLasso/Resources/CopyLassoSuccess.wav"
 readonly expected_success_sound_digest='e98be6b3eef44bffa5f5759ee83e99efd1ab3dfb820054a3d910be9b54cd2299'
 readonly candidate_source_commit='43f1d0c676b08fb24b49fc628213fede90c4ed9d'
+readonly expected_candidate_input_tree_digest='0d74006393ea86b449e87f44088a2b77455b0d7c545fd9fcbac1f99297cf5bcc'
+readonly candidate_evidence_tree_pattern=$'\t(docs/release-candidate-qualification\\.md|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/v0\\.2-release-candidate\\.md|docs/v0\\.2-release-qualification\\.md|scripts/audit-v02-release-qualification\\.sh)$'
 
 fail() {
     echo "$1" >&2
@@ -138,22 +140,14 @@ require_text CopyLasso/Services/SparkleUpdateService.swift 'import Sparkle'
 require_text Configuration/CopyLasso-Info.plist \
     '<string>https://updates.copylasso.com/appcast.xml</string>'
 
-git -C "$repository_root" cat-file -e "$candidate_source_commit^{commit}" || \
-    fail "The approved v0.2 candidate source commit is unavailable."
-while IFS= read -r changed_path; do
-    case "$changed_path" in
-        docs/release-candidate-qualification.md | \
-            docs/release-checklist.md | \
-            docs/release-workflow.md | \
-            docs/v0.2-release-candidate.md | \
-            docs/v0.2-release-qualification.md | \
-            scripts/audit-v02-release-qualification.sh)
-            ;;
-        *)
-            fail "A tracked path outside the G42 evidence boundary changed after the candidate: $changed_path"
-            ;;
-    esac
-done < <(git -C "$repository_root" diff --name-only "$candidate_source_commit" --)
+actual_candidate_input_tree_digest="$(
+    git -C "$repository_root" ls-tree -r --full-tree HEAD |
+        /usr/bin/grep -Ev "$candidate_evidence_tree_pattern" |
+        /usr/bin/shasum -a 256 |
+        /usr/bin/awk '{print $1}'
+)"
+[[ "$actual_candidate_input_tree_digest" == "$expected_candidate_input_tree_digest" ]] || \
+    fail "A tracked candidate input differs from source commit $candidate_source_commit."
 require_text CopyLassoTests/Settings/UserDefaultsSettingsStoreTests.swift \
     'testVersion011PreferencesRemainCompatibleWithVersion020Migration'
 require_text CopyLassoTests/Update/UpdateControllerTests.swift \
