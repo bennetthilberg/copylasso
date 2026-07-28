@@ -11,6 +11,7 @@ readonly entitlements="$repository_root/CopyLasso/CopyLasso.entitlements"
 readonly workflow="$repository_root/.github/workflows/release.yml"
 readonly success_sound="$repository_root/CopyLasso/Resources/CopyLassoSuccess.wav"
 readonly expected_success_sound_digest='e98be6b3eef44bffa5f5759ee83e99efd1ab3dfb820054a3d910be9b54cd2299'
+readonly candidate_source_commit='43f1d0c676b08fb24b49fc628213fede90c4ed9d'
 
 fail() {
     echo "$1" >&2
@@ -79,6 +80,29 @@ require_text docs/v0.2-release-candidate.md \
     '**Decision:** Approved by the maintainer for G43 publication'
 require_text docs/v0.2-release-candidate.md \
     'Public release remains `0.1.1`; no v0.2 feed or public artifact was published.'
+require_text docs/v0.2-release-candidate.md \
+    '`0b40f9524389b684124189ce743109429af97baf124e28bf1d12313eba26d807`.'
+require_text docs/v0.2-release-candidate.md \
+    '| `CopyLasso-0.2.0.dmg` | 3,665,931 | `697cb008cf294b32500e2ad84e5777a51fe8b88916856c5a8e9f1ec4eb74ba19` |'
+require_text docs/v0.2-release-candidate.md \
+    '| `CopyLasso-0.2.0.dmg.sha256` | 86 | `6dfd44d92f6af1c14d765bc6c827ed3e9a0edd5ffe289c3e74ac6e1dd0c834b0` |'
+require_text docs/v0.2-release-candidate.md \
+    '| `CopyLasso-0.2.0.dSYM.zip` | 6,094,121 | `b644da8776f857c1f42a95f903b315b7dde418000d173b48829c5ee346bc4754` |'
+require_text docs/v0.2-release-candidate.md \
+    '| `CopyLasso-0.2.0-verification.zip` | 3,708,469 | `e4d424bdd9675b00ffa647bccdc3f3bc47b43b4d041535c0898f79cf79e3a073` |'
+require_text docs/v0.2-release-candidate.md \
+    '`a80260d6cd501ffee65ec41cbe1a232b9de662a9b41b4d78a0cd9b361bfe9fe6`.'
+require_text docs/v0.2-release-candidate.md '## Release-Delta Smoke'
+require_text docs/v0.2-release-candidate.md \
+    'The scoped Screen Recording permission was reset only for CopyLasso.'
+require_text docs/v0.2-release-candidate.md \
+    'automatic updates were enabled in'
+require_text docs/v0.2-release-candidate.md \
+    'Capture remained usable and copied'
+require_text docs/v0.2-release-candidate.md \
+    'The controlled QR precedence smoke copied the inert payload without opening a'
+require_text docs/v0.2-release-candidate.md \
+    'no payload action and no LaTeX command,'
 require_text docs/release-notes/0.2.0.md '# CopyLasso 0.2.0'
 require_text docs/release-notes/0.2.0.md 'QR, Code 128, Data Matrix, PDF417, and Aztec'
 require_text docs/release-notes/0.2.0.md 'CopyLasso 0.1.x does not contain an updater'
@@ -113,6 +137,23 @@ require_text CopyLasso/CaptureWorkflow/CaptureCommand.swift \
 require_text CopyLasso/Services/SparkleUpdateService.swift 'import Sparkle'
 require_text Configuration/CopyLasso-Info.plist \
     '<string>https://updates.copylasso.com/appcast.xml</string>'
+
+git -C "$repository_root" cat-file -e "$candidate_source_commit^{commit}" || \
+    fail "The approved v0.2 candidate source commit is unavailable."
+while IFS= read -r changed_path; do
+    case "$changed_path" in
+        docs/release-candidate-qualification.md | \
+            docs/release-checklist.md | \
+            docs/release-workflow.md | \
+            docs/v0.2-release-candidate.md | \
+            docs/v0.2-release-qualification.md | \
+            scripts/audit-v02-release-qualification.sh)
+            ;;
+        *)
+            fail "A tracked path outside the G42 evidence boundary changed after the candidate: $changed_path"
+            ;;
+    esac
+done < <(git -C "$repository_root" diff --name-only "$candidate_source_commit" --)
 require_text CopyLassoTests/Settings/UserDefaultsSettingsStoreTests.swift \
     'testVersion011PreferencesRemainCompatibleWithVersion020Migration'
 require_text CopyLassoTests/Update/UpdateControllerTests.swift \

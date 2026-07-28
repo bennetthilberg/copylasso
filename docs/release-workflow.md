@@ -129,7 +129,12 @@ restricted verification bundle contains the exact authenticated `appcast.xml`
 generated for that candidate. Readback must prove the target commit, derived
 tag, draft and prerelease state, reviewed `0.2.0` notes, asset names, GitHub
 asset digests, checksum, and authenticated update metadata. Any later tracked
-change abandons that candidate and requires a new positive candidate number.
+change to application code, release configuration, packaging inputs, reviewed
+notes, dependencies, entitlements, or shipped assets abandons that candidate
+and requires a new positive candidate number. A later evidence-only
+qualification commit may record factual results for the unchanged candidate
+only when an exact path-scoped diff proves that no candidate input changed and
+the canonical audit enforces that boundary.
 
 Leaving `candidate_number` blank selects a private G42 rehearsal. A positive
 canonical integer selects the G42 candidate path. Values with a sign, leading
