@@ -154,13 +154,16 @@ matrix and accepted-risk record.
 
 ## G41 - v0.2 Feature Qualification
 
+An unchecked G41 manual row is an explicitly retained Blocked result, not an
+inferred pass; see [`v0.2-release-qualification.md`](v0.2-release-qualification.md).
+
 - [x] Freeze source at `0.2.0 (3)` with updater, candidate-17 sound, unified text/code recognition, and no LaTeX implementation.
 - [x] Finalize the undated changelog draft, reviewed release notes, public-versus-source wording, known limitations, manual 0.1.x updater bootstrap, and scoped uninstall.
 - [x] Pass the v0.2 contract and release-qualification audits exactly once through canonical CI, plus focused preference, updater, sound, recognition, lifecycle, accessibility, and privacy tests.
-- [ ] Complete the signed current-host functional, appearance, VoiceOver, multi-display, lifecycle, latency, idle, memory, and 100-cycle delta matrix without promoting historical blocked rows.
+- [x] Complete the signed current-host functional, appearance, VoiceOver, multi-display, lifecycle, latency, idle, memory, and 100-cycle delta matrix without promoting historical blocked rows.
 - [ ] Complete one fresh, narrow real macOS 14 browser-quarantined clean-install smoke from the preserved stopped Sonoma baseline.
 - [x] Verify an exact-head Developer ID application, notarization, stapled DMG, checksum, Gatekeeper, Universal 2 slices, dSYM, reviewed entitlements, and locally authenticated update metadata.
-- [ ] Pass local and hosted arm64/x86_64 plus maintained macOS 15 checks and exact-head review; stop with a ready PR and no release candidate.
+- [x] Pass local and hosted arm64/x86_64 plus maintained macOS 15 checks and exact-head review; stop with a ready PR and no release candidate.
 
 ## G42 - v0.2 Release Candidate
 
