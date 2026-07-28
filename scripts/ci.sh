@@ -80,6 +80,9 @@ echo "Testing platform and reinstall qualification"
 echo "Auditing the approved v0.2 product contract"
 ./scripts/audit-v02-contract.sh
 
+echo "Auditing the qualified v0.2 release source"
+./scripts/audit-v02-release-qualification.sh
+
 echo "Auditing on-screen code recognition"
 ./scripts/audit-code-recognition.sh
 

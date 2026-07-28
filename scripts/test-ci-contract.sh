@@ -12,6 +12,7 @@ readonly release_workflow_audit_script="$repository_root/scripts/audit-release-w
 readonly platform_qualification_audit_script="$repository_root/scripts/audit-platform-qualification.sh"
 readonly platform_qualification_test_script="$repository_root/scripts/test-platform-qualification.sh"
 readonly v02_contract_audit_script="$repository_root/scripts/audit-v02-contract.sh"
+readonly v02_release_qualification_audit_script="$repository_root/scripts/audit-v02-release-qualification.sh"
 readonly code_recognition_audit_script="$repository_root/scripts/audit-code-recognition.sh"
 readonly latex_feasibility_audit_script="$repository_root/scripts/audit-latex-feasibility.sh"
 readonly latex_feasibility_test_script="$repository_root/scripts/test-latex-feasibility.sh"
@@ -142,6 +143,15 @@ if [[ "$v02_contract_audit_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/audit-v02-contract.sh exactly once."
 fi
 
+v02_release_qualification_audit_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/audit-v02-release-qualification\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$v02_release_qualification_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-v02-release-qualification.sh exactly once."
+fi
+
 code_recognition_audit_invocations="$({
     /usr/bin/grep -Ec \
         '^[[:space:]]*\./scripts/audit-code-recognition\.sh[[:space:]]*$' \
@@ -263,6 +273,10 @@ fi
 
 if [[ ! -x "$v02_contract_audit_script" ]]; then
     fail "The v0.2 product-contract audit must be executable."
+fi
+
+if [[ ! -x "$v02_release_qualification_audit_script" ]]; then
+    fail "The v0.2 release-qualification audit must be executable."
 fi
 
 if [[ ! -x "$code_recognition_audit_script" ]] || \

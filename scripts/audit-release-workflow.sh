@@ -83,7 +83,7 @@ require_text "$workflow" 'candidate_number:'
 require_text "$workflow" 'COPYLASSO_CANDIDATE_NUMBER: ${{ inputs.candidate_number }}'
 require_text "$workflow" 'assert_release_candidate_number "$COPYLASSO_CANDIDATE_NUMBER"'
 require_text "$workflow" 'release_candidate_tag "$COPYLASSO_CANDIDATE_NUMBER"'
-require_text "$workflow" 'release_tag="v${COPYLASSO_G28_VERSION}-g32.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"'
+require_text "$workflow" 'release_tag="v${COPYLASSO_G28_VERSION}-g42.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"'
 if [[ "$(/usr/bin/grep -Fc '${{ inputs.' "$workflow")" != "1" ]]; then
     fail "candidate_number must be the protected workflow's sole dispatch input."
 fi
@@ -261,11 +261,12 @@ for required_documentation_text in \
     'credential cleanup' \
     'Draft creation is transactional' \
     'Never publish a private rehearsal' \
-    'v0.1.1-rc.N' \
+    'v0.2.0-rc.N' \
     'candidate_number' \
     'asset digests' \
     'tag is created last' \
     'G32' \
+    'G42' \
     'COPYLASSO_SPARKLE_PRIVATE_KEY' \
     'encrypted offline recovery copy' \
     '`appcast.xml` generated for that exact candidate' \
@@ -286,11 +287,12 @@ for required_qualification_text in \
     require_text "$qualification_documentation" "$required_qualification_text"
 done
 for required_release_note_text in \
-    'CopyLasso 0.1.1' \
+    'CopyLasso 0.2.0' \
     'free and open-source' \
     'private, offline, and local' \
-    'Settings now appears immediately' \
-    'Updates remain manual'; do
+    'User-controlled secure updates' \
+    'QR, Code 128, Data Matrix, PDF417, and Aztec' \
+    'CopyLasso 0.1.x does not contain an updater'; do
     require_text "$release_notes" "$required_release_note_text"
 done
 require_text "$product_contract" \

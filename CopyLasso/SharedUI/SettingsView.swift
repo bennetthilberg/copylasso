@@ -65,6 +65,7 @@ struct SettingsView: View {
             set: { settingsController.setLaunchAtLoginEnabled($0) }
           )
         )
+        .accessibilityLabel(AccessibilityAuditCopy.launchAtLoginLabel)
         .accessibilityHint(AccessibilityAuditCopy.launchAtLoginHelp)
         .accessibilityIdentifier("copylasso.settings.launch-at-login")
         LaunchAtLoginStatusView(

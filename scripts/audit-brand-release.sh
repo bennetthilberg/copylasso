@@ -143,13 +143,13 @@ if [[ "$(/usr/bin/grep -c \
     fail "Every application configuration must embed the open-source creator description."
 fi
 
-if [[ "$COPYLASSO_RELEASE_VERSION" != "0.1.1" ]] || \
-    [[ "$COPYLASSO_RELEASE_BUILD" != "2" ]] || \
+if [[ "$COPYLASSO_RELEASE_VERSION" != "0.2.0" ]] || \
+    [[ "$COPYLASSO_RELEASE_BUILD" != "3" ]] || \
     /usr/bin/grep -Eq \
         '^[[:space:]]+(MARKETING_VERSION|CURRENT_PROJECT_VERSION)[[:space:]]*=' \
         CopyLasso.xcodeproj/project.pbxproj || \
     [[ "$(/usr/bin/grep -c 'PRODUCT_BUNDLE_IDENTIFIER = io.github.bennetthilberg.copylasso;' CopyLasso.xcodeproj/project.pbxproj)" != 1 ]]; then
-    fail "Version 0.1.1, build 2, and the production bundle identifier must remain final."
+    fail "Qualified version 0.2.0, build 3, and the production bundle identifier must remain final."
 fi
 
 for text in \
@@ -168,15 +168,17 @@ for text in \
 done
 
 require_text README.md 'CopyLasso 0.1.1 is the latest public release.'
+require_text README.md 'Current source is release-qualified as CopyLasso 0.2.0 (3).'
 require_text README.md 'https://github.com/bennetthilberg/copylasso/releases/tag/v0.1.1'
 require_text README.md 'https://github.com/bennetthilberg/copylasso/releases/download/v0.1.1/CopyLasso-0.1.1.dmg'
 require_text README.md 'https://github.com/bennetthilberg/copylasso/releases/download/v0.1.1/CopyLasso-0.1.1.dmg.sha256'
 require_text CHANGELOG.md '## 0.1.1 - 2026-07-21'
+require_text CHANGELOG.md '## 0.2.0 - Unreleased'
 require_text CHANGELOG.md '## 0.1.0 - 2026-07-19'
 require_text CHANGELOG.md 'pasteboard clear-success followed by text-write rejection'
 require_text SECURITY.md 'CopyLasso 0.1.x'
 require_text CONTRIBUTING.md 'CopyLasso 0.1.1 is publicly released.'
-require_text PRIVACY.md '**Status:** Approved privacy contract for CopyLasso 0.1.x and the updater, configurable success sound, and unified on-screen code recognition present in source for the planned v0.2 release.'
+require_text PRIVACY.md '**Status:** Approved privacy contract for public CopyLasso 0.1.x and release-qualified CopyLasso 0.2.0 source.'
 require_text docs/release-checklist.md '## G26 - Developer ID Signing And Notarization'
 require_text docs/release-checklist.md '## G27 - Reproducible Release Package'
 require_text docs/release-checklist.md '## G28 - Protected Release Workflow'
@@ -187,9 +189,12 @@ require_text docs/release-checklist.md 'disposable local macOS user account'
 require_text docs/release-checklist.md 'candidate_number'
 require_text docs/release-checklist.md '## G31 - Final Tag And Publication'
 require_text docs/release-checklist.md '## G32 - v0.1.1 Settings Hotfix'
+require_text docs/release-checklist.md '## G41 - v0.2 Feature Qualification'
+require_text docs/release-checklist.md '## G42 - v0.2 Release Candidate'
 require_text docs/release-workflow.md '## G30 Protected Candidate Handoff'
 require_text docs/release-workflow.md 'In the post-merge protected run'
 require_text docs/release-workflow.md 'The G28 rehearsal draft and its assets cannot serve as G30 evidence.'
+require_text docs/release-workflow.md '## G42 v0.2 Candidate Handoff'
 require_text docs/clean-install-testing.md 'v0.1.0-g28.295914448081'
 require_text docs/clean-install-testing.md '0b38f85acd7507cbacfacb820d534ac60907c8d12bec08c3b7f41f6cf1d1952f'
 require_text docs/clean-install-testing.md 'io.github.bennetthilberg.copylasso'
@@ -216,13 +221,14 @@ require_text docs/v0.1-product-contract.md \
     '**Implementation status:** Released as 0.1.0 on July 19, 2026; maintained as 0.1.1 on July 21, 2026'
 require_text docs/v0.1-product-contract.md 'clipboard may change'
 require_text docs/security-and-privacy-review.md \
-    'This review describes the public CopyLasso 0.1.x boundary and the secure updater, configurable success sound, and unified on-screen code recognition now present in source for the planned v0.2 release.'
+    'This review describes the public CopyLasso 0.1.x boundary and the release-qualified CopyLasso 0.2.0 source.'
 require_text docs/release-candidate-qualification.md '## Exact Candidate Smoke Matrix'
 require_text docs/release-candidate-qualification.md '## G32 v0.1.1 Maintenance Qualification'
 require_text docs/release-candidate-qualification.md 'Do not resume VirtualBuddy'
 require_text docs/release-notes/0.1.0.md 'CopyLasso 0.1.0'
 require_text docs/release-notes/0.1.0.md 'Locking the Mac during an active drag'
 require_text docs/release-notes/0.1.1.md 'Settings now appears immediately'
+require_text docs/release-notes/0.2.0.md 'User-controlled secure updates'
 if [[ "$(/usr/bin/sed -n '/^## G31 - Final Tag And Publication$/,/^## G32 - v0.1.1 Settings Hotfix$/p' \
     docs/release-checklist.md | /usr/bin/grep -c '^- \[x\]')" != 7 ]]; then
     fail "Every G31 publication checklist row must be complete."
@@ -258,6 +264,9 @@ readonly public_copy=(
     docs/release-checklist.md
     docs/release-notes/0.1.0.md
     docs/release-notes/0.1.1.md
+    docs/release-notes/0.2.0.md
+    docs/v0.2-product-contract.md
+    docs/v0.2-release-qualification.md
     docs/v0.1-product-contract.md
 )
 readonly prohibited_public_pattern='TODO|example\.com|your organization|template organization|[Tt]ext[Ss]niper|[Oo][Cc][Rr][Aa][Cc][Yy]'

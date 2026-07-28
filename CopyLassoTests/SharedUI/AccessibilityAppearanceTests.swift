@@ -106,6 +106,10 @@ final class AccessibilityAppearanceTests: XCTestCase {
     )
     XCTAssertTrue(AccessibilityAuditCopy.shortcutRecorderHelp.contains("clear"))
     XCTAssertEqual(
+      AccessibilityAuditCopy.launchAtLoginLabel,
+      "Launch CopyLasso at Login"
+    )
+    XCTAssertEqual(
       AccessibilityAuditCopy.suggestedShortcutHelp,
       "Restore the suggested Shift-Command-2 shortcut."
     )

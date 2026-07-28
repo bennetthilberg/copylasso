@@ -106,12 +106,12 @@ matrix and accepted-risk record.
 
 ## G35 - Secure Update Architecture Proof
 
-- [ ] Compare a maintained permissive updater with a first-party implementation and record the accepted architecture, scope, dependency pin, license, and acknowledgement gate.
-- [ ] Threat-model feed, hosting, transport, workflow, signing-key, replay/downgrade, malformed input, interruption, disk, cancellation, privacy, and recovery boundaries.
-- [ ] Prove real comparator and offline Ed25519 archive/appcast behavior with only ephemeral fixture keys; reject tampering, wrong keys, mismatched metadata, unapproved URLs, replay, downgrade, malformed/oversized input, and interrupted transactions.
-- [ ] Confirm Sparkle remains test-only, CopyLasso.app has no updater configuration or network entitlement, release metadata remains `0.1.1 (2)`, and no key, appcast, or public update artifact is created.
-- [ ] Run focused proofs, privacy/security and secure-update audits, canonical arm64/x86_64 pipelines, hosted checks, exact-head review, and ready-PR readback.
-- [ ] Preserve the operations and 0.1.x manual-bootstrap record for G36; do not create production key material, publish a feed, install an update, or start G36.
+- [x] Compare a maintained permissive updater with a first-party implementation and record the accepted architecture, scope, dependency pin, license, and acknowledgement gate.
+- [x] Threat-model feed, hosting, transport, workflow, signing-key, replay/downgrade, malformed input, interruption, disk, cancellation, privacy, and recovery boundaries.
+- [x] Prove real comparator and offline Ed25519 archive/appcast behavior with only ephemeral fixture keys; reject tampering, wrong keys, mismatched metadata, unapproved URLs, replay, downgrade, malformed/oversized input, and interrupted transactions.
+- [x] Confirm Sparkle remains test-only during G35, CopyLasso.app has no updater configuration or network entitlement at that historical goal, release metadata remains `0.1.1 (2)`, and no key, appcast, or public update artifact is created.
+- [x] Run focused proofs, privacy/security and secure-update audits, canonical arm64/x86_64 pipelines, hosted checks, exact-head review, and ready-PR readback.
+- [x] Preserve the operations and 0.1.x manual-bootstrap record for G36; do not create production key material, publish a feed, install an update, or start G36.
 
 ## G36 - User-Controlled Secure Updates
 
@@ -132,4 +132,56 @@ matrix and accepted-risk record.
 - [x] Request sound exactly once only after a successful nonempty clipboard write; keep cancellation, no text, permission, selection, capture, OCR, formatting, and clipboard-failure paths silent.
 - [x] Confirm playback receives no private content, fails silently when unavailable, never requests recording or notification permission, never activates the app, and never delays or fails capture.
 - [x] Verify rapid reuse restarts one short sound without stacking and lifecycle cancellation/termination performs idempotent cleanup.
-- [ ] Run focused service/workflow/settings tests, deterministic asset and privacy audits, canonical arm64/x86_64 pipelines, hosted checks, signed manual audibility/accessibility/output checks, exact-head review, and ready-PR readback.
+- [x] Run focused service/workflow/settings tests, deterministic asset and privacy audits, canonical arm64/x86_64 pipelines, hosted checks, signed manual audibility/accessibility/output checks, exact-head review, and ready-PR readback.
+
+## G38 - Unified On-Screen Code Recognition
+
+- [x] Recognize QR, Code 128, Data Matrix, PDF417, and Aztec through the existing Capture command and shortcut, with code precedence and OCR fallback.
+- [x] Keep payloads inert, local, memory-only, deterministically ordered, deduplicated, and protected from ambiguous multiline merging.
+- [x] Pass deterministic real-Vision fixtures, workflow integration, shortcut/Space regressions, privacy audits, signed UI smoke, both canonical architectures, hosted checks, and exact-head review.
+- [x] Leave issue #38 open for public-release verification and create no file, camera, payload-action, or additional-permission path.
+
+## G39 - Offline LaTeX Feasibility
+
+- [x] Screen candidate models and runtimes against licensing, provenance, size, macOS 14, Universal 2, sandbox, and required-hardware preblind gates.
+- [x] Record no-go because no candidate passed every mandatory preblind gate; do not unseal a blind corpus or create production LaTeX code, model data, dependency, command, or UI.
+- [x] Pass deterministic feasibility tests, production-boundary audit, both canonical architectures, hosted checks, exact-head review, and maintainer no-go confirmation.
+
+## G40A - Refined Success Sound
+
+- [x] Replace the original sound with maintainer-selected candidate 17 while retaining the existing default, preference, playback timing, accessibility, and failure policy.
+- [x] Prove deterministic native/Rosetta generation, exact bundled digest, one shipped audio asset, sound and workflow tests, both canonical architectures, hosted checks, exact-head review, and signed enabled/disabled listening acceptance.
+
+## G41 - v0.2 Feature Qualification
+
+An unchecked G41 manual row is an explicitly retained Blocked result, not an
+inferred pass; see [`v0.2-release-qualification.md`](v0.2-release-qualification.md).
+
+- [x] Freeze source at `0.2.0 (3)` with updater, candidate-17 sound, unified text/code recognition, and no LaTeX implementation.
+- [x] Finalize the undated changelog draft, reviewed release notes, public-versus-source wording, known limitations, manual 0.1.x updater bootstrap, and scoped uninstall.
+- [x] Pass the v0.2 contract and release-qualification audits exactly once through canonical CI, plus focused preference, updater, sound, recognition, lifecycle, accessibility, and privacy tests.
+- [x] Complete the signed current-host functional, appearance, VoiceOver, multi-display, lifecycle, latency, idle, memory, and 100-cycle delta matrix without promoting historical blocked rows.
+- [ ] Complete every row of one fresh, narrow real macOS 14
+      browser-quarantined clean-install smoke. A separate Sonoma 14.6.1 guest
+      passed download, quarantine, digest, install, Gatekeeper, onboarding,
+      permission denial/recovery, OCR, settings, safe unavailable-update
+      handling, and quit/relaunch; VirtualBuddy input/audio limitations keep QR
+      precedence, audible sound, and post-updater capture Blocked.
+- [x] Verify an exact-head Developer ID application, notarization, stapled DMG, checksum, Gatekeeper, Universal 2 slices, dSYM, reviewed entitlements, and locally authenticated update metadata.
+- [x] Pass local and hosted arm64/x86_64 plus maintained macOS 15 checks and exact-head review; stop with a ready PR and no release candidate.
+
+## G42 - v0.2 Release Candidate
+
+- [ ] After G41 merges, dispatch the protected workflow from the exact protected-main commit with a new positive `candidate_number`.
+- [ ] Create and qualify one immutable private `v0.2.0-rc.N` draft, four restricted assets, authenticated update metadata, and browser-quarantined installation without rebuilding.
+- [ ] Exercise the private staged updater path, classify blockers and accepted gaps, and obtain explicit maintainer approval or rejection. Do not publish.
+
+## G43 - Publish CopyLasso v0.2.0
+
+- [ ] Publish only the approved candidate DMG, checksum, and authenticated update metadata under immutable signed tags.
+- [ ] Verify public bytes, source archives, genuine-quarantine manual installation, and the authenticated public updater path. Do not publish a website, Mac App Store build, or Homebrew Cask.
+
+## G44 - Close the v0.2 Release State
+
+- [ ] Date the changelog from the actual publication timestamp and update release-state documentation without changing immutable release bytes.
+- [ ] Close only shipped-and-publicly-verified feature issues, install the exact public app locally, and read back protected main, checks, tags, assets, feed, source archives, issues, and the final ready PR.

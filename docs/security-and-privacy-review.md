@@ -1,6 +1,8 @@
 # Security And Privacy Review
 
-This review describes the public CopyLasso 0.1.x boundary and the secure updater, configurable success sound, and unified on-screen code recognition now present in source for the planned v0.2 release. It reconciles the source, built products, dependency graph, entitlements, persistence, and public privacy promises. The public 0.1.1 artifact remains the current release and contains none of these three features.
+This review describes the public CopyLasso 0.1.x boundary and the release-qualified CopyLasso 0.2.0 source. It reconciles the source, built
+products, dependency graph, entitlements, persistence, and public privacy
+promises. The public 0.1.1 artifact remains the current release and contains none of the v0.2 features.
 
 ## Result
 
@@ -59,9 +61,21 @@ An inspected development container contained preference/window metadata, one 240
 
 Settings links ask macOS to open the user's default browser. CopyLasso itself does not fetch those URLs. The shipping updater is isolated from core capture and has one fixed feed URL. Automatic checks default on at a 24-hour interval but can be disabled; manual checks remain available. Download and install never occur automatically. The user sees authenticated version, inline plain-text notes, and exact size before download, then explicitly confirms download and later install/relaunch.
 
-The feed server and GitHub can observe ordinary transport metadata, including IP address, request time, and the CopyLasso/Sparkle versions in the ordinary user agent. Requests contain no pixels, geometry, recognized text, clipboard data, HUD preview, frontmost-application identity, hardware profile, stable identifier, analytics event, or telemetry. The public 0.1.x line remains a manual-update bootstrap; G36 creates no public feed or release.
+The feed server and GitHub can observe ordinary transport metadata, including
+IP address, request time, and the CopyLasso/Sparkle versions in the ordinary
+user agent. Requests contain no pixels, geometry, recognized text, clipboard
+data, HUD preview, frontmost-application identity, hardware profile, stable
+identifier, analytics event, or telemetry. The public 0.1.x line remains a
+manual-update bootstrap; G41 creates no public feed or release.
 
-Local Apple Development signing adds `com.apple.security.get-task-allow` to audited development-signed products. That key is not present in the tracked product entitlement or a Developer ID artifact. The public 0.1.1 application was verified to contain only the Boolean App Sandbox entitlement before and after notarization. Every G36 Developer ID candidate must instead verify exactly Boolean App Sandbox, Boolean outbound network client, and the two production-bundle Sparkle installer-service names, with no `get-task-allow`, downloader-service name, or unrelated capability.
+Local Apple Development signing adds `com.apple.security.get-task-allow` to
+audited development-signed products. That key is not present in the tracked
+product entitlement or a Developer ID artifact. The public 0.1.1 application
+was verified to contain only the Boolean App Sandbox entitlement before and
+after notarization. Every v0.2 Developer ID artifact must instead verify
+exactly Boolean App Sandbox, Boolean outbound network client, and the two
+production-bundle Sparkle installer-service names, with no `get-task-allow`,
+downloader-service name, or unrelated capability.
 
 ## Trust Boundaries And Misuse Cases
 
@@ -140,7 +154,15 @@ part of the dependency inventory below.
 
 KeyboardShortcuts declares no transitive dependency. The Release executable contains its code statically. CopyLasso uses native permission-free hotkey registration for event delivery, while the package supplies the SwiftUI recorder, persistence, conflict validation, and menu presentation. Its exact license text and attribution are in [Third-Party Notices](../THIRD_PARTY_NOTICES.md). A July 22, 2026 GitHub Advisory Database query for KeyboardShortcuts 3.0.1 returned zero matching Swift advisories; this time-sensitive check must be repeated for each release.
 
-Sparkle is a shipping binary framework in G36. Its exact tag, source revision, official artifact checksum, complete shipped license bundle, About acknowledgement, fixed configuration, entitlement boundary, and justification are recorded in [Third-Party Notices](../THIRD_PARTY_NOTICES.md), [ADR-004](architecture/ADR-004-secure-updates.md), and the secure-update audit. `SUEnableDownloaderService` is false; the bundled downloader XPC is inert and receives no downloader-service Mach entitlement. Release qualification must repeat advisory, framework-signature, nested-code, architecture, and notarization checks.
+Sparkle is a shipping binary framework in release-qualified v0.2 source. Its
+exact tag, source revision, official artifact checksum, complete shipped
+license bundle, About acknowledgement, fixed configuration, entitlement
+boundary, and justification are recorded in [Third-Party
+Notices](../THIRD_PARTY_NOTICES.md), [ADR-004](architecture/ADR-004-secure-updates.md),
+and the secure-update audit. `SUEnableDownloaderService` is false; the bundled
+downloader XPC is inert and receives no downloader-service Mach entitlement.
+Release qualification repeats advisory, framework-signature, nested-code,
+architecture, and notarization checks.
 
 `CopyLassoSuccess.wav` is original project-authored audio generated deterministically by the tracked synthesis script from seeded texture and analytic partials. It contains no third-party recording, dependency, content, or metadata; its construction, fixed digest, cross-architecture reproduction, and provenance are recorded in [Brand Assets](brand-assets.md).
 

@@ -2,10 +2,11 @@
 
 The manually dispatched workflow builds one signed, notarized, and verified
 CopyLasso release from the exact protected `main` commit. It creates a private
-draft prerelease and never publishes it. G32 uses that existing trust boundary
-for the `0.1.1` Settings-presentation hotfix. A final release is published only
-after the draft, asset digests, checksum, signed application, Gatekeeper result,
-and smoke test have been independently read back.
+draft prerelease and never publishes it. G41 updates this source-only trust
+boundary for G42 and version `0.2.0`; it does not dispatch the workflow. A final
+release is published only after the draft, asset digests, checksum, signed
+application, Gatekeeper result, authenticated update metadata, and smoke test
+have been independently read back.
 
 ## Trust Boundary
 
@@ -78,9 +79,10 @@ no account identifier. Archive and export therefore use the same protected ident
 interactive Xcode account or permission to create signing assets. The local G26 automatic export
 contract remains separate.
 
-## Run A Private Rehearsal
+## Run a Private G42 Rehearsal
 
-After the G32 source pull request is reviewed, green, and separately merged:
+Only after the G41 source pull request is reviewed, green, and separately
+merged, and G42 is explicitly approved:
 
 1. Open **Actions > Protected Release Candidate > Run workflow** and select `main`.
 2. Confirm the run's commit is the intended protected `main` commit.
@@ -96,7 +98,7 @@ complete workflow again.
 The workflow uses the established Developer ID application verifier and release
 package process. Its protected commit is both the application payload commit
 and packaging commit. A blank candidate number uses the nonrelease form
-`v0.1.1-g32.<run>` so it cannot be mistaken for G32's `v0.1.1-rc.N` candidate.
+`v0.2.0-g42.<run>` so it cannot be mistaken for G42's `v0.2.0-rc.N` candidate.
 
 ## G30 Protected Candidate Handoff
 
@@ -104,12 +106,47 @@ G30 introduced the two-phase protected candidate handoff used for the public
 `0.1.0` release: first merge the reviewed workflow enablement, then dispatch a
 candidate from that exact protected `main` commit.
 
-The G28 rehearsal draft and its assets cannot serve as G30 evidence. That historical release
-record remains immutable; G32 reuses the same trust boundary with new version-derived names.
+The G28 rehearsal draft and its assets cannot serve as G30 evidence. That
+historical release record remains immutable. G32 later reused the same trust
+boundary for `0.1.1`; G42 uses the current version-derived names without
+altering either historical record.
+
+## G42 v0.2 Candidate Handoff
+
+G42 has two ordered phases.
+
+1. Merge the reviewed G41 source-enablement pull request to protected `main`.
+   Because `workflow_dispatch` uses the workflow on the default branch, no
+   rehearsal or candidate can be created from the unmerged G41 branch.
+2. In a separately approved post-merge protected run, supply only a validated
+   positive `candidate_number`. The workflow derives `v0.2.0-rc.N`, refuses an
+   existing tag or release, and builds the exact protected `main` commit through
+   the complete quality gate and `release` environment.
+
+The job signs, notarizes, staples, packages, removes temporary credentials, and
+transactionally creates a draft prerelease with the four-asset contract. Its
+restricted verification bundle contains the exact authenticated `appcast.xml`
+generated for that candidate. Readback must prove the target commit, derived
+tag, draft and prerelease state, reviewed `0.2.0` notes, asset names, GitHub
+asset digests, checksum, and authenticated update metadata. Any later tracked
+change abandons that candidate and requires a new positive candidate number.
+
+Leaving `candidate_number` blank selects a private G42 rehearsal. A positive
+canonical integer selects the G42 candidate path. Values with a sign, leading
+zero, decimal, whitespace, or tag text are rejected before they influence a tag
+or path. No arbitrary tag, ref, or mode input exists. The tag is created last,
+and the helper never replaces, patches, moves, or force-updates a ref or release.
+
+The reviewed candidate body is
+[`release-notes/0.2.0.md`](release-notes/0.2.0.md). Follow
+[`v0.2-release-qualification.md`](v0.2-release-qualification.md) and the G42
+rows in [`release-checklist.md`](release-checklist.md). G41 only enables this
+path; it uploads nothing, creates no candidate, and publishes no feed.
 
 ## G32 Maintenance Candidate Handoff
 
-G32 has two ordered phases.
+The completed G32 maintenance handoff is historical evidence for public
+`0.1.1`. It had two ordered phases.
 
 1. Land a reviewed source-enablement pull request that adds a distinct RC mode to the protected
    workflow, draft helper, static audit, and regression tests. Because `workflow_dispatch` uses the
@@ -123,11 +160,9 @@ G32 has two ordered phases.
    state, asset names, GitHub asset digests, and DMG checksum. Any later tracked change abandons that
    candidate and uses a new number.
 
-`candidate_number` is the workflow's sole input. Leaving it blank selects a
-private G32 rehearsal; a positive canonical integer selects the G32 candidate
-path. Values with a sign, leading zero, decimal,
-whitespace, or tag text are rejected before they influence a tag or path. No arbitrary tag, ref, or
-mode input exists.
+At that historical point, `candidate_number` was the workflow's sole input. A
+blank value selected a private G32 rehearsal and a positive canonical integer
+selected the G32 candidate path.
 
 The helper derives the RC tag independently, refuses both an existing release and an existing
 Git ref, and uploads without replacement. It reads back the draft body from the reviewed
@@ -157,14 +192,14 @@ does not count. Follow [`release-candidate-qualification.md`](release-candidate-
 clean-account preflight, exact smoke matrix, accepted gaps, risk classification, and evidence
 boundary.
 
-## Draft Assets And Local Readback
+## Current Draft Assets and Local Readback
 
 The draft prerelease contains exactly:
 
-- `CopyLasso-0.1.1.dmg`;
-- `CopyLasso-0.1.1.dmg.sha256`;
-- `CopyLasso-0.1.1.dSYM.zip`; and
-- `CopyLasso-0.1.1-verification.zip`.
+- `CopyLasso-0.2.0.dmg`;
+- `CopyLasso-0.2.0.dmg.sha256`;
+- `CopyLasso-0.2.0.dSYM.zip`; and
+- `CopyLasso-0.2.0-verification.zip`.
 
 The verification bundle contains the exact stapled source application, the authenticated
 `appcast.xml` generated for that exact candidate, and the portable records
@@ -223,6 +258,6 @@ notarization, stapling, package verification, or credential cleanup prevent draf
 - **Stale draft:** delete the incomplete rehearsal through GitHub Releases. Never overwrite assets
   under an existing draft tag.
 
-G32 stops its protected-workflow phase after one exact run, downloaded local
-re-verification, log and cleanup inspection, and a verified draft release. It
-does not publish until the separately verified promotion step.
+G42 stops after one exact run, downloaded local re-verification, log and
+cleanup inspection, authenticated updater-path smoke, and a verified draft
+release. It does not publish until the separately approved G43 promotion step.

@@ -1,5 +1,41 @@
 # Release Candidate Qualification
 
+## G42 v0.2.0 Candidate Qualification
+
+G41 enables, but does not dispatch, the protected v0.2 workflow. After that
+pull request is separately merged and G42 is approved, the workflow derives
+`v0.2.0-rc.N` from a positive `candidate_number` and creates a private draft
+prerelease for the exact protected `main` commit. The reviewed body is
+[`release-notes/0.2.0.md`](release-notes/0.2.0.md), and the four restricted
+assets are `CopyLasso-0.2.0.dmg`, `CopyLasso-0.2.0.dmg.sha256`,
+`CopyLasso-0.2.0.dSYM.zip`, and
+`CopyLasso-0.2.0-verification.zip`.
+
+Qualify that immutable candidate against the G41 source record and repeat only
+the release delta:
+
+1. Read back the private draft, direct candidate tag, target commit, reviewed
+   notes, four asset names and GitHub digests, checksum, Developer ID
+   signatures, notarization, Gatekeeper result, Universal 2 slices, production
+   identity, version `0.2.0`, and build `3`.
+2. Verify the restricted appcast has one authenticated candidate entry, exact
+   byte length and immutable GitHub enclosure URL, inline plain-text notes, a
+   matching compiled public key, and valid enclosure and feed signatures.
+3. Download the exact private DMG and checksum through a genuine browser
+   quarantine path. Confirm clean launch and Screen Recording recovery, then
+   smoke OCR, code-over-text precedence, all five supported code formats,
+   success sound enabled and disabled, updater enabled and disabled, an offline
+   update failure that does not affect capture, and quit/relaunch.
+4. Confirm no payload is interpreted or opened, no LaTeX command or model is
+   present, no update is installed without a separate user decision, and no
+   public release or feed exists.
+
+Every result must identify the exact commit, `v0.2.0-rc.N` tag, and DMG digest.
+Any tracked correction abandons the candidate and reruns the complete protected
+gate with a new positive number. Keep the draft private, retain the dSYM and
+verification bundle as restricted evidence, and stop for explicit maintainer
+approval or rejection. G42 never publishes.
+
 ## G32 v0.1.1 Maintenance Qualification
 
 For the Settings-presentation hotfix, the same protected trust boundary applies

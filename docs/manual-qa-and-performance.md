@@ -854,3 +854,24 @@ recorded in [Clean Installation Testing](clean-install-testing.md).
 | Complete scoped uninstall and clean reinstall | **Pass** - clean onboarding, fresh permission recovery, and successful capture followed removal of only production CopyLasso state |
 | Disposable user deletion and recreation | **Skipped by maintainer** - old account and home deleted; replacement creation and account-isolation test not run |
 | Restored maintainer installation and settings | **Pass** - exact app, shortcut, login item, permission, capture, and sole production registration restored |
+
+## G41 v0.2 Qualification Delta
+
+G41 does not relabel or promote the historical G24 and G33 rows above. Its
+compact signed-host, performance, lifecycle, accessibility, multi-display, and
+macOS 14 delta is recorded in
+[CopyLasso v0.2 Source Qualification](v0.2-release-qualification.md). Every new
+observation must identify the exact `0.2.0 (3)` commit and artifact. A blocked
+VM or physical row remains Blocked rather than being inferred from automation
+or earlier releases.
+
+The July 27 G41 current-host pass uses a clean Apple Development-signed Debug
+app with no embedded XCTest payload. Isolated signed UI batches passed the
+menu, Settings, About, updater, unified feedback, permission recovery, focus,
+appearance, keyboard, and corrected Launch at Login accessibility contracts.
+The clean app also passed a 60-second settled-idle run at 0.0% CPU with a
+one-page physical-footprint difference. The attached-host display count was
+one, and the available UI automation could not faithfully produce the physical
+30-text/30-code timing series or signed-process 100-cycle checkpoints. Those
+rows remain Blocked in the linked record; the 100-result service-boundary pass
+is recorded separately and is not substituted for them.
