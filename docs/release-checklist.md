@@ -161,7 +161,12 @@ inferred pass; see [`v0.2-release-qualification.md`](v0.2-release-qualification.
 - [x] Finalize the undated changelog draft, reviewed release notes, public-versus-source wording, known limitations, manual 0.1.x updater bootstrap, and scoped uninstall.
 - [x] Pass the v0.2 contract and release-qualification audits exactly once through canonical CI, plus focused preference, updater, sound, recognition, lifecycle, accessibility, and privacy tests.
 - [x] Complete the signed current-host functional, appearance, VoiceOver, multi-display, lifecycle, latency, idle, memory, and 100-cycle delta matrix without promoting historical blocked rows.
-- [ ] Complete one fresh, narrow real macOS 14 browser-quarantined clean-install smoke from the preserved stopped Sonoma baseline.
+- [ ] Complete every row of one fresh, narrow real macOS 14
+      browser-quarantined clean-install smoke. A separate Sonoma 14.6.1 guest
+      passed download, quarantine, digest, install, Gatekeeper, onboarding,
+      permission denial/recovery, OCR, settings, safe unavailable-update
+      handling, and quit/relaunch; VirtualBuddy input/audio limitations keep QR
+      precedence, audible sound, and post-updater capture Blocked.
 - [x] Verify an exact-head Developer ID application, notarization, stapled DMG, checksum, Gatekeeper, Universal 2 slices, dSYM, reviewed entitlements, and locally authenticated update metadata.
 - [x] Pass local and hosted arm64/x86_64 plus maintained macOS 15 checks and exact-head review; stop with a ready PR and no release candidate.
 
