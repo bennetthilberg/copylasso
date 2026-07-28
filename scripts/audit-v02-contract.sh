@@ -33,7 +33,7 @@ for required_text in \
     '# CopyLasso v0.2 Product Contract' \
     '**Status:** Approved scope for the planned v0.2 release' \
     '**Approved:** July 22, 2026' \
-    '**Implementation status:** In progress; the secure updater, configurable success sound, and unified on-screen code recognition are implemented in source but are not part of the public CopyLasso 0.1.1 download. G39 recommends no-go for offline LaTeX recognition, so no LaTeX implementation is present.' \
+    '**Implementation status:** Release-qualified in source as 0.2.0 (3); not publicly released.' \
     '[v0.1 product contract](v0.1-product-contract.md)' \
     'automatic update checks are enabled by default' \
     'disable automatic checks in Settings' \
@@ -75,13 +75,14 @@ for required_text in \
     'Universal 2' \
     'redistributable licensing' \
     '## Privacy, Security, and Data Lifetime' \
-    'Text, code payloads, LaTeX output, clipboard data, and HUD previews never' \
+    'Text, code payloads, clipboard data, and HUD previews never' \
     '## Accessibility, Focus, and Failure Behavior' \
     'Keyboard-only and VoiceOver users can check, defer, confirm, cancel, and retry' \
     'No outcome relies on sound or color alone.' \
-    '0.1.1 (2)' \
-    'G41 may freeze `0.2.0 (3)`' \
-    'G40 is omitted if G39 concludes no-go' \
+    'publicly available as version and build `0.1.1 (2)`' \
+    'G41 freezes the qualified source at `0.2.0 (3)`' \
+    'G39 concluded no-go, so CopyLasso 0.2.0 contains no LaTeX recognition' \
+    'G40 is omitted.' \
     'issue #36' \
     'issue #38' \
     'issue #47' \
@@ -95,13 +96,13 @@ if /usr/bin/grep -Eq '(^|[^0-9])0\.2\.0[[:space:]]*\([[:space:]]*[12][[:space:]]
 fi
 
 /usr/bin/grep -Eq \
-    '^COPYLASSO_RELEASE_VERSION[[:space:]]*=[[:space:]]*0\.1\.1[[:space:]]*$' \
+    '^COPYLASSO_RELEASE_VERSION[[:space:]]*=[[:space:]]*0\.2\.0[[:space:]]*$' \
     "$release_metadata" || \
-    fail "G34 must leave the current release version at 0.1.1."
+    fail "G41 must freeze the current source at version 0.2.0."
 /usr/bin/grep -Eq \
-    '^COPYLASSO_RELEASE_BUILD[[:space:]]*=[[:space:]]*2[[:space:]]*$' \
+    '^COPYLASSO_RELEASE_BUILD[[:space:]]*=[[:space:]]*3[[:space:]]*$' \
     "$release_metadata" || \
-    fail "G34 must leave the current release build at 2."
+    fail "G41 must freeze the current source at build 3."
 
 [[ -f "$entitlements" ]] || fail "The approved v0.2 sandbox entitlements file is missing."
 entitlements_json="$(/usr/bin/plutil -convert json -o - "$entitlements")" || \
@@ -123,11 +124,11 @@ if ! /usr/bin/jq -e '
 fi
 
 for documentation_contract in \
-    "$repository_root/README.md:Current source includes the user-controlled secure updater planned for the first v0.2 release." \
+    "$repository_root/README.md:Current source includes the user-controlled secure updater frozen for v0.2." \
     "$repository_root/README.md:The public CopyLasso 0.1.1 download still updates manually." \
     "$repository_root/PRIVACY.md:Update requests send no screen pixels" \
     "$repository_root/PRIVACY.md:The public CopyLasso 0.1.x line still updates manually." \
-    "$repository_root/docs/security-and-privacy-review.md:The public 0.1.1 artifact remains the current release and contains none of these three features."; do
+    "$repository_root/docs/security-and-privacy-review.md:The public 0.1.1 artifact remains the current release and contains none of the v0.2 features."; do
     documentation_file="${documentation_contract%%:*}"
     required_text="${documentation_contract#*:}"
     /usr/bin/grep -Fq "$required_text" "$documentation_file" || \

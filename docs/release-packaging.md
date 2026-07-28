@@ -97,3 +97,32 @@ G28 invokes this same package script only after it has archived, exported, notar
 verified an application from the exact protected workflow commit. It constructs the same
 commit-addressed handoff layout, uses that commit as both payload and packaging provenance, and does
 not weaken any G27 package check. See [`release-workflow.md`](release-workflow.md).
+
+## G41 exact-head qualification package
+
+G41 creates one local, nonpublic qualification package only after the final
+tracked commit. Its root is
+`~/Library/Developer/CopyLasso/G41/<full-commit>/`, outside the repository. The
+archive and export use the local Developer ID Application identity and the
+existing `copylasso-notary` Keychain profile. The resulting application and DMG
+must identify production bundle `io.github.bennetthilberg.copylasso`, version
+`0.2.0`, build `3`, both `arm64` and `x86_64`, Hardened Runtime, secure
+timestamps, the reviewed sandbox entitlements, valid nested signatures,
+accepted notarization, stapled tickets, and Gatekeeper acceptance.
+
+The directory retains the archive, exported stapled application, checksum,
+dSYM, accepted notarization records, content-free verification evidence, and
+one locally generated authenticated update record. The update record must use
+the protected signing boundary, byte-match the compiled public key, validate
+both feed and enclosure signatures, and reject both tampering and the wrong
+key. It is qualification evidence only: do not upload an asset, publish an
+appcast, create a tag or release, or copy the private key into the package.
+
+Any application or configuration correction after packaging invalidates the
+affected evidence. Recreate the package under the corrected commit rather than
+editing, re-signing, or replacing files in the prior commit-addressed
+directory. G42 later rebuilds from protected `main`; G41's local package never
+serves as a release candidate.
+
+The current derived artifact names are `CopyLasso-0.2.0.dmg`,
+`CopyLasso-0.2.0.dmg.sha256`, and `CopyLasso-0.2.0.dSYM.zip`.

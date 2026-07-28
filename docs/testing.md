@@ -336,7 +336,15 @@ identity, traversal, and installed-app boundaries without mutating the host.
 
 Signed XCUITests remain focused on first-run, Settings, menu, recovery, and accessibility behavior. They contain no unconditional retry. Hosted CI builds the bundle but cannot truthfully execute the unsigned runner or automate TCC dialogs. A locked local session is recorded as infrastructure-blocked rather than a pass; the signed matrices earlier in this document remain required.
 
-The versioned release checklist and performance result sheet are maintained in [Manual QA and Performance](manual-qa-and-performance.md). G24 executed that document from one clean, stably signed Debug state; partial or historical evidence must not be promoted into a release pass. The reusable procedure, partial browser-quarantined Sonoma rehearsal, incomplete latest-stable attempt, and accepted restart/reinstall gaps are recorded separately in [Clean Installation Testing](clean-install-testing.md).
+The versioned release checklist and performance result sheet are maintained in
+[Manual QA and Performance](manual-qa-and-performance.md). G24 executed that
+document from one clean, stably signed Debug state; partial or historical
+evidence must not be promoted into a release pass. G41 records only fresh v0.2
+delta evidence in [v0.2 Source Qualification](v0.2-release-qualification.md)
+while retaining the historical classifications. The reusable install
+procedure, partial browser-quarantined Sonoma rehearsal, incomplete
+latest-stable attempt, and accepted restart/reinstall gaps are recorded
+separately in [Clean Installation Testing](clean-install-testing.md).
 
 ## v0.2 Product Contract Audit
 
@@ -344,9 +352,8 @@ The versioned release checklist and performance result sheet are maintained in [
 [v0.2 product contract](v0.2-product-contract.md). Canonical CI invokes it
 exactly once, and `scripts/test-ci-contract.sh` enforces that invocation. The
 audit checks the approved update, sound, command, QR/barcode, LaTeX, privacy,
-accessibility, and version/build decisions while also proving the shipped
-0.1.1 release metadata remains unchanged and the G36 updater does not falsely
-claim that the public 0.1.1 artifact contains it.
+accessibility, and version/build decisions while proving that source is frozen
+at `0.2.0 (3)` and public CopyLasso 0.1.1 remains clearly distinguished.
 
 Run the focused gate with:
 
@@ -355,10 +362,26 @@ Run the focused gate with:
 ./scripts/test-ci-contract.sh
 ```
 
-This remains a documentation and scope gate. G36 separately qualifies the
-updater and its exact network entitlements. The audit does not qualify a public
-feed, new capture mode, sound asset, recognition dependency, or v0.2 release.
-Those require their later approved goals and direct behavioral tests.
+This remains a documentation and scope gate. G41 adds a separate integration
+audit plus direct behavioral, built-product, signed manual, package, and
+minimum-system evidence. Neither audit qualifies a public feed, tag, release,
+or release candidate.
+
+## G41 v0.2 Release Qualification
+
+`scripts/audit-v02-release-qualification.sh` binds the frozen feature set,
+`0.2.0 (3)` metadata, public-versus-source wording, updater-only networking,
+success-sound identity, unified text/code recognition, acknowledgements,
+absence of content persistence or egress, and the accepted LaTeX no-go. The CI
+contract requires exactly one invocation.
+
+The automated suite repeats upgrade/default preference behavior, updater
+enabled/disabled and offline isolation, text/code precedence and failure
+isolation, sound-after-write ordering, accessibility, focus, lifecycle, and
+mixed-mode reuse. The manual boundary remains necessary for real global
+shortcut delivery, TCC, output audio, VoiceOver, physical displays, sleep,
+Gatekeeper, notarization, and genuine browser quarantine. Fresh results and
+explicit blockers are recorded without promoting historical G24 or G33 gaps.
 
 ## G35 Secure-Update Architecture Proof
 

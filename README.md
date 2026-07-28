@@ -5,6 +5,8 @@
 CopyLasso is a free and open-source macOS utility for copying visible text from anywhere on screen. Press `⇧⌘2`, drag around text, and receive recognized plain text on the clipboard. Recognition runs locally with Apple's Vision framework, and CopyLasso does not retain a screenshot or OCR history.
 
 CopyLasso 0.1.1 is the latest public release.
+Current source is release-qualified as CopyLasso 0.2.0 (3). It remains
+unpublished until the separate release-candidate and publication gates.
 
 ## Requirements
 
@@ -41,9 +43,23 @@ The result must report `CopyLasso-0.1.1.dmg: OK`. Then:
 
 Open **Settings…** from the menu to change or clear the shortcut, enable Launch at Login, review privacy information, or reopen first-run setup when it is incomplete.
 
-Current source also includes the brief, friendly configurable success sound planned for the first v0.2 release. It is enabled by default and can be disabled with **Settings > Play Sound After Copying**. It plays only after recognized content reaches the clipboard; cancellation, no result, permission denial, recognition failure, and clipboard failure remain silent. The public CopyLasso 0.1.1 download retains its original silent feedback behavior.
+Current source includes the brief, friendly configurable success sound frozen
+for v0.2. It is enabled by default and can be disabled with **Settings > Play
+Sound After Copying**. It plays only after recognized content reaches the
+clipboard; cancellation, no result, permission denial, recognition failure,
+and clipboard failure remain silent. The public CopyLasso 0.1.1 download
+retains its original silent feedback behavior.
 
-Current source also extends the existing **Capture** action and shortcut to recognize QR, Code 128, Data Matrix, PDF417, and Aztec codes visible on screen. Text and code recognition run concurrently after one selection; an eligible code wins when both are present, while selections without a supported code fall back to ordinary OCR. CopyLasso copies recognized payloads as inert plain text and never opens a URL or otherwise acts on a payload. Unified code recognition is present in current source but is not part of the public CopyLasso 0.1.1 download.
+Current source also freezes unified on-screen code recognition for v0.2. The
+existing **Capture** action and shortcut recognize QR, Code 128, Data Matrix,
+PDF417, and Aztec codes visible on screen. Text and code recognition run
+concurrently after one selection; an eligible code wins when both are present,
+while selections without a supported code fall back to ordinary OCR. CopyLasso
+copies recognized payloads as inert plain text and never opens a URL or
+otherwise acts on a payload. This is not part of the public CopyLasso 0.1.1
+download.
+
+Unified code recognition is present in current source but is not part of the public CopyLasso 0.1.1 download.
 
 ## Permission and Recovery
 
@@ -58,12 +74,12 @@ CopyLasso's capture workflow is private, offline, and local by design:
 - Captured pixels and unbounded recognized text stay in memory only for the active operation.
 - Screenshots, OCR results, clipboard history, and HUD previews are never logged, persisted, or transmitted.
 - The application has no accounts, analytics, telemetry, cloud OCR, or content-upload service.
-- Current source includes the user-controlled secure updater planned for the first v0.2 release. It checks one fixed, cryptographically authenticated feed, sends no screen, OCR, clipboard, hardware-profile, or stable-identifier data, and is independent from capture.
+- Current source includes the user-controlled secure updater frozen for v0.2. It checks one fixed, cryptographically authenticated feed, sends no screen, OCR, clipboard, hardware-profile, or stable-identifier data, and is independent from capture.
 - Current source's optional success sound receives no captured pixels, recognized content, or clipboard text and requests no microphone or notification permission.
 - Current source recognizes supported code payloads locally with Vision, keeps complete payloads only in the active operation, and treats them only as clipboard text.
 - Clipboard access is write-only and plain-text-only. CopyLasso never reads the existing clipboard to preserve or restore its contents.
 
-See the [privacy policy](PRIVACY.md), [security and privacy review](docs/security-and-privacy-review.md), and [v0.1 product contract](docs/v0.1-product-contract.md) for the reviewed guarantees and boundaries.
+See the [privacy policy](PRIVACY.md), [security and privacy review](docs/security-and-privacy-review.md), [v0.1 product contract](docs/v0.1-product-contract.md), and [v0.2 product contract](docs/v0.2-product-contract.md) for the reviewed guarantees and boundaries.
 
 ## Known Limitations
 
@@ -87,9 +103,10 @@ Clone the repository, open `CopyLasso.xcodeproj`, and run the shared `CopyLasso`
 
 Architecture and test details are documented in [Architecture Overview](docs/architecture/overview.md), [Testing](docs/testing.md), and [Manual QA and Performance](docs/manual-qa-and-performance.md). The exact shipping KeyboardShortcuts and Sparkle dependencies and licenses are recorded in [Third-Party Notices](THIRD_PARTY_NOTICES.md); the updater trust boundary is recorded in [ADR-004](docs/architecture/ADR-004-secure-updates.md).
 
-## Secure Updates In Current Source
+## Secure Updates In Release-Qualified Source
 
-The public CopyLasso 0.1.1 download still updates manually. Current source adds the updater for the first v0.2 release:
+The public CopyLasso 0.1.1 download still updates manually. Current source
+contains the updater frozen for CopyLasso 0.2.0:
 
 - automatic checks default on and run at most once per 24 hours;
 - **Settings > Automatically Check for Updates** disables or reenables scheduled checks;
@@ -98,7 +115,15 @@ The public CopyLasso 0.1.1 download still updates manually. Current source adds 
 - **Download** begins retrieval, and a separate **Install and Relaunch** confirmation is required after verification; and
 - **Later**, **Cancel**, closing the panel, an offline connection, or verification failure leaves the installed app unchanged.
 
-Update checks use only `https://updates.copylasso.com/appcast.xml`, and accepted packages must use the version-matched immutable CopyLasso asset on GitHub Releases. The updater disables system profiling, cookies, external release-note downloads, automatic downloads, and automatic installation. Capture, OCR, clipboard output, Settings, onboarding, and Launch at Login continue to work when update networking is unavailable. G36 creates no public feed or updater-enabled release; those remain separate release gates.
+Update checks use only `https://updates.copylasso.com/appcast.xml`, and accepted
+packages must use the version-matched immutable CopyLasso asset on GitHub
+Releases. The updater disables system profiling, cookies, external release-note
+downloads, automatic downloads, and automatic installation. Capture, OCR,
+clipboard output, Settings, onboarding, and Launch at Login continue to work
+when update networking is unavailable. No public v0.2 feed or updater-enabled
+release exists during G41.
+
+The public CopyLasso 0.1.x line still updates manually.
 
 ## Contributing
 

@@ -253,10 +253,10 @@ for application in \
     done
 done
 
-require_literal "$release_metadata" 'COPYLASSO_RELEASE_VERSION = 0.1.1' \
-    "G36 must not change the released version."
-require_literal "$release_metadata" 'COPYLASSO_RELEASE_BUILD = 2' \
-    "G36 must not change the released build."
+require_literal "$release_metadata" 'COPYLASSO_RELEASE_VERSION = 0.2.0' \
+    "G41 must freeze the first updater-enabled version at 0.2.0."
+require_literal "$release_metadata" 'COPYLASSO_RELEASE_BUILD = 3' \
+    "G41 must freeze the first updater-enabled build at 3."
 
 require_literal "$repository_root/docs/architecture/ADR-004-secure-updates.md" \
     'https://updates.copylasso.com/appcast.xml' \
@@ -293,7 +293,7 @@ require_literal "$repository_root/README.md" \
     'The public CopyLasso 0.1.1 download still updates manually.' \
     "README must distinguish the current public artifact from the updater-enabled source."
 require_literal "$repository_root/CHANGELOG.md" \
-    'A user-controlled secure update path for the planned v0.2 release' \
+    'A user-controlled secure update path, with optional daily checks' \
     "The unreleased changelog must record the G36 update capability."
 require_literal "$repository_root/PRIVACY.md" \
     'Update requests send no screen pixels' \

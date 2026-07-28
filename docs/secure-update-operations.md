@@ -148,3 +148,20 @@ ordinary Debug, Release, and Developer ID builds omit it and are audited for
 the marker's absence. The fixture initially serves a signature-invalid copy of
 the otherwise valid appcast, then swaps in the exact signed copy for the update.
 Its state and TCC identity cannot be mistaken for the production app.
+
+## G41 Qualification and G42 Handoff
+
+G41 freezes updater-enabled source at `0.2.0 (3)` while public CopyLasso remains
+`0.1.1`. The first updater-enabled release must still be installed manually;
+there is no public v0.2 appcast or updater-enabled artifact during G41. The
+exact-head qualification package may generate one authenticated appcast
+locally, verify its key match and feed/enclosure signatures, and prove tamper
+and wrong-key rejection. That record remains outside the repository and is
+never uploaded or served.
+
+After G41 is separately merged, G42 may dispatch the protected workflow from
+that exact protected `main` commit. G42 derives `v0.2.0-rc.N`, places its
+candidate-specific appcast only in the restricted verification bundle, and
+tests the private staged updater path. It remains draft-only and exposes no
+publication path. Public feed publication and immutable release promotion are
+separate G43 decisions.

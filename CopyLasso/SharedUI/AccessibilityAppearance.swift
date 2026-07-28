@@ -84,6 +84,7 @@ enum AccessibilityAuditCopy {
   static let shortcutRecorderLabel = "Capture keyboard shortcut"
   static let shortcutRecorderHelp =
     "Record a global keyboard shortcut, or clear it to use only the menu command."
+  static let launchAtLoginLabel = "Launch CopyLasso at Login"
   static let launchAtLoginHelp =
     "Choose whether CopyLasso starts automatically when you log in."
   static let suggestedShortcutHelp =

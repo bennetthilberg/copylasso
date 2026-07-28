@@ -30,6 +30,28 @@ final class UpdateControllerTests: XCTestCase {
     XCTAssertEqual(service.automaticPreferenceWriteCount, 1)
   }
 
+  func testVersion011UpgradeUsesUpdaterDefaultWhenNoPreferenceExists() {
+    let service = StubUpdateService()
+    service.seedAutomaticallyChecksForUpdates(true)
+    let controller = UpdateController(service: service)
+
+    controller.start()
+
+    XCTAssertTrue(controller.automaticallyChecksForUpdates)
+    XCTAssertEqual(service.automaticPreferenceWriteCount, 0)
+  }
+
+  func testVersion011UpgradePreservesExplicitUpdaterOptOut() {
+    let service = StubUpdateService()
+    service.seedAutomaticallyChecksForUpdates(false)
+    let controller = UpdateController(service: service)
+
+    controller.start()
+
+    XCTAssertFalse(controller.automaticallyChecksForUpdates)
+    XCTAssertEqual(service.automaticPreferenceWriteCount, 0)
+  }
+
   func testManualCheckRoutesEvenWhenAutomaticChecksAreDisabled() {
     let service = StubUpdateService()
     service.seedAutomaticallyChecksForUpdates(false)

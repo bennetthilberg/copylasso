@@ -1,6 +1,6 @@
 # CopyLasso Privacy
 
-**Status:** Approved privacy contract for CopyLasso 0.1.x and the updater, configurable success sound, and unified on-screen code recognition present in source for the planned v0.2 release.
+**Status:** Approved privacy contract for public CopyLasso 0.1.x and release-qualified CopyLasso 0.2.0 source.
 
 CopyLasso is designed as a local-first macOS utility. Its core job is to capture a user-selected screen region, recognize visible text, and place the result on the clipboard without uploading or retaining the captured content.
 
@@ -14,7 +14,7 @@ CopyLasso is designed as a local-first macOS utility. Its core job is to capture
 
 ## Data Not Collected or Retained
 
-CopyLasso v0.1 has no:
+CopyLasso has no:
 
 - screenshot, OCR, or clipboard history;
 - cloud OCR or content upload;
@@ -52,6 +52,9 @@ Automatic checks default on, run no more often than every 24 hours, and can be d
 
 Update transport can expose ordinary connection metadata such as the user's IP address and request time to the feed host and GitHub. Sparkle's ordinary user agent identifies the CopyLasso version and Sparkle version. Update requests send no screen pixels, selected rectangle, recognized text, clipboard data, HUD preview, frontmost-application identity, hardware profile, stable user or device identifier, analytics event, or telemetry. CopyLasso does not retain feed bodies or release notes after the active update transaction. Settings links still ask macOS to open the default browser rather than fetching those pages in CopyLasso.
 
-The public CopyLasso 0.1.x line still updates manually. It does not contain Capture Code. Users must manually install the first updater-enabled release before authenticated checks can begin; G36 does not publish a feed or a release.
+The public CopyLasso 0.1.x line still updates manually. It does not contain code
+recognition. Users must manually install the first updater-enabled release
+before authenticated checks can begin. Release-qualified 0.2.0 source does not
+publish a feed or a release during G41.
 
 The detailed, release-blocking privacy requirements are part of the public [v0.1 product contract](docs/v0.1-product-contract.md). The implementation data flow, entitlements, dependency inventory, trust boundaries, and misuse cases are reconciled in the [security and privacy review](docs/security-and-privacy-review.md).

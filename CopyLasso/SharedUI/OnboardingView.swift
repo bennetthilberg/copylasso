@@ -51,6 +51,7 @@ struct OnboardingView: View {
 
         Section("Availability") {
           Toggle("Launch CopyLasso at Login", isOn: $launchAtLogin)
+            .accessibilityLabel(AccessibilityAuditCopy.launchAtLoginLabel)
             .accessibilityHint(AccessibilityAuditCopy.launchAtLoginHelp)
             .accessibilityIdentifier("copylasso.onboarding.launch-at-login")
           Text("This choice is applied only after you continue.")
