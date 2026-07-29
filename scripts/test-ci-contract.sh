@@ -13,6 +13,8 @@ readonly platform_qualification_audit_script="$repository_root/scripts/audit-pla
 readonly platform_qualification_test_script="$repository_root/scripts/test-platform-qualification.sh"
 readonly v02_contract_audit_script="$repository_root/scripts/audit-v02-contract.sh"
 readonly v02_release_qualification_audit_script="$repository_root/scripts/audit-v02-release-qualification.sh"
+readonly v02_publication_audit_script="$repository_root/scripts/audit-v02-publication.sh"
+readonly v02_publication_test_script="$repository_root/scripts/test-v02-publication.sh"
 readonly code_recognition_audit_script="$repository_root/scripts/audit-code-recognition.sh"
 readonly latex_feasibility_audit_script="$repository_root/scripts/audit-latex-feasibility.sh"
 readonly latex_feasibility_test_script="$repository_root/scripts/test-latex-feasibility.sh"
@@ -152,6 +154,24 @@ if [[ "$v02_release_qualification_audit_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/audit-v02-release-qualification.sh exactly once."
 fi
 
+v02_publication_test_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/test-v02-publication\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$v02_publication_test_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/test-v02-publication.sh exactly once."
+fi
+
+v02_publication_audit_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/audit-v02-publication\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$v02_publication_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-v02-publication.sh exactly once."
+fi
+
 code_recognition_audit_invocations="$({
     /usr/bin/grep -Ec \
         '^[[:space:]]*\./scripts/audit-code-recognition\.sh[[:space:]]*$' \
@@ -277,6 +297,11 @@ fi
 
 if [[ ! -x "$v02_release_qualification_audit_script" ]]; then
     fail "The v0.2 release-qualification audit must be executable."
+fi
+
+if [[ ! -x "$v02_publication_audit_script" ]] || \
+    [[ ! -x "$v02_publication_test_script" ]]; then
+    fail "The v0.2 publication audit and focused tests must be executable."
 fi
 
 if [[ ! -x "$code_recognition_audit_script" ]] || \

@@ -266,3 +266,32 @@ notarization, stapling, package verification, or credential cleanup prevent draf
 G42 stops after one exact run, downloaded local re-verification, log and
 cleanup inspection, authenticated updater-path smoke, and a verified draft
 release. It does not publish until the separately approved G43 promotion step.
+
+## G43 Publication Preparation
+
+G43 uses a separate protected manual workflow after its publication-control PR
+is merged. It does not rebuild, resign, renotarize, staple, or repackage the
+application. Instead, it downloads the exact approved G42 draft by its fixed
+release ID, verifies all four restricted asset records and bytes, reconstructs
+the verification bundle, and reruns the complete package verifier against the
+frozen candidate source commit.
+
+The G43 workflow has no dispatch inputs. It exposes the existing Sparkle seed
+only to one appcast-generation step and the approved release team only to one
+package-verification step. It receives no Developer ID certificate or
+notarization credential. The generated appcast changes only the enclosure URL
+from the private RC tag to the immutable final `v0.2.0` tag, then re-signs and
+verifies both the feed and exact approved DMG.
+
+After every check passes, the workflow creates one private, non-prerelease
+final draft with exactly the approved DMG and checksum. It creates no Git tag,
+contains no publication API call, and deploys no feed. A restricted workflow
+artifact carries the signed feed-only bundle and content-free readbacks into
+the separately approved public transaction described in
+[`v0.2-publication-runbook.md`](v0.2-publication-runbook.md).
+
+The existing protected candidate workflow remains draft-only. The final
+annotated signed tag, public-release transition, Cloudflare Pages feed
+deployment, external-DNS CNAME, public browser download, and updater smoke are
+manual G43 gates after the preparation PR is merged. G44 owns all
+post-publication documentation and issue-state changes.

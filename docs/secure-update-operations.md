@@ -165,3 +165,25 @@ candidate-specific appcast only in the restricted verification bundle, and
 tests the private staged updater path. It remains draft-only and exposes no
 publication path. Public feed publication and immutable release promotion are
 separate G43 decisions.
+
+## G43 Production Feed
+
+The production endpoint is
+`https://updates.copylasso.com/appcast.xml`. G43 serves it from a feed-only
+Cloudflare Pages Direct Upload project. The authoritative domain remains at
+Spaceship; only the `updates` CNAME points to the assigned Pages hostname.
+Neither the apex domain nor its nameservers change.
+
+The deployment contains only the signed `appcast.xml` and a Pages `_headers`
+policy. There is no index, general website, script, analytics endpoint,
+redirect, or content API. The appcast uses a five-minute revalidation window,
+`no-transform`, an XML content type, and `nosniff`. Transport is not the trust
+boundary: Sparkle must still validate the signed feed, exact version/build,
+immutable GitHub enclosure URL, declared length, and enclosure signature before
+offering an update.
+
+G43 deploys the feed only after the signed final tag and two-asset GitHub
+release pass public readback. Future feed updates use a new immutable Pages
+deployment and the same reviewed signing boundary. A hosting failure never
+authorizes unsigned metadata, a replacement release asset, or movement of an
+existing release tag.

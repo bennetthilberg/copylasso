@@ -12,8 +12,8 @@ readonly workflow="$repository_root/.github/workflows/release.yml"
 readonly success_sound="$repository_root/CopyLasso/Resources/CopyLassoSuccess.wav"
 readonly expected_success_sound_digest='e98be6b3eef44bffa5f5759ee83e99efd1ab3dfb820054a3d910be9b54cd2299'
 readonly candidate_source_commit='43f1d0c676b08fb24b49fc628213fede90c4ed9d'
-readonly expected_candidate_input_tree_digest='0d74006393ea86b449e87f44088a2b77455b0d7c545fd9fcbac1f99297cf5bcc'
-readonly candidate_evidence_tree_pattern=$'\t(docs/release-candidate-qualification\\.md|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/v0\\.2-release-candidate\\.md|docs/v0\\.2-release-qualification\\.md|scripts/audit-v02-release-qualification\\.sh)$'
+readonly expected_candidate_input_tree_digest='47a367063124ad996c7acd274ffc77632275ad2f08aee6deb6600602d132fe4b'
+readonly candidate_evidence_tree_pattern=$'\t(\\.github/workflows/prepare-publication\\.yml|docs/release-candidate-qualification\\.md|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/v0\\.2-publication-runbook\\.md|docs/v0\\.2-release-candidate\\.md|docs/v0\\.2-release-qualification\\.md|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/ci\\.sh|scripts/create-v02-publication-draft\\.sh|scripts/download-v02-candidate\\.sh|scripts/generate-release-appcast\\.sh|scripts/lib/v02-publication-transaction\\.sh|scripts/lib/v02-publication-verification\\.sh|scripts/prepare-update-feed\\.sh|scripts/test-ci-contract\\.sh|scripts/test-v02-publication\\.sh|scripts/verify-v02-candidate-package\\.sh)$'
 
 fail() {
     echo "$1" >&2
@@ -147,7 +147,7 @@ actual_candidate_input_tree_digest="$(
         /usr/bin/awk '{print $1}'
 )"
 [[ "$actual_candidate_input_tree_digest" == "$expected_candidate_input_tree_digest" ]] || \
-    fail "A tracked candidate input differs from source commit $candidate_source_commit."
+    fail "A tracked candidate input differs from source commit $candidate_source_commit; only reviewed evidence and publication-control paths may change."
 require_text CopyLassoTests/Settings/UserDefaultsSettingsStoreTests.swift \
     'testVersion011PreferencesRemainCompatibleWithVersion020Migration'
 require_text CopyLassoTests/Update/UpdateControllerTests.swift \

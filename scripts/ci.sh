@@ -83,6 +83,12 @@ echo "Auditing the approved v0.2 product contract"
 echo "Auditing the qualified v0.2 release source"
 ./scripts/audit-v02-release-qualification.sh
 
+echo "Testing v0.2 publication controls"
+./scripts/test-v02-publication.sh
+
+echo "Auditing v0.2 publication controls"
+./scripts/audit-v02-publication.sh
+
 echo "Auditing on-screen code recognition"
 ./scripts/audit-code-recognition.sh
 
