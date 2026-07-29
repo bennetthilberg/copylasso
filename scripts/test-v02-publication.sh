@@ -586,6 +586,7 @@ fi
 
 (
     readonly release_notes="$release_notes_path"
+    readonly gh_binary="$fake_gh"
     run_transaction success \
         "$temporary_directory/transaction-readonly-caller.json"
 )
