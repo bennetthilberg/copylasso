@@ -98,6 +98,15 @@ create_release_payload_manifest "$source_app" "$changed_manifest"
 expect_failure "payload differs from the qualified G26 application" \
     assert_release_payload_manifests_match "$source_manifest" "$changed_manifest"
 
+transport_manifest="$temporary_directory/transport.manifest"
+/usr/bin/sed -E 's/^((directory|file|link)	)[0-9]+	/\1700	/' \
+    "$source_manifest" > "$transport_manifest"
+assert_release_payload_manifest_contents_match \
+    "$source_manifest" "$transport_manifest"
+expect_failure "payload contents differ from the qualified application" \
+    assert_release_payload_manifest_contents_match \
+    "$source_manifest" "$changed_manifest"
+
 dmg_fixture="$temporary_directory/CopyLasso-0.2.0.dmg"
 printf 'disk image fixture\n' > "$dmg_fixture"
 checksum_fixture="$temporary_directory/CopyLasso-0.2.0.dmg.sha256"
