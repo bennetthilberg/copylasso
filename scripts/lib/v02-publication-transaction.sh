@@ -11,9 +11,9 @@ create_v02_publication_draft_transaction() (
 
     local repository="$1"
     local candidate_directory="$2"
-    local release_notes="$3"
+    local transaction_release_notes="$3"
     local readback="$4"
-    local gh_binary="$5"
+    local transaction_gh_binary="$5"
     local final_assertion="${6:-assert_v02_publication_draft_record}"
     local publication_transaction_directory
     local creation_record
@@ -36,7 +36,7 @@ create_v02_publication_draft_transaction() (
     final_tag_lookup="$publication_transaction_directory/final-tag-lookup.txt"
     final_record="$publication_transaction_directory/final.json"
     COPYLASSO_G43_TRANSACTION_REPOSITORY="$repository"
-    COPYLASSO_G43_TRANSACTION_GH_BINARY="$gh_binary"
+    COPYLASSO_G43_TRANSACTION_GH_BINARY="$transaction_gh_binary"
     COPYLASSO_G43_TRANSACTION_DIRECTORY="$publication_transaction_directory"
     COPYLASSO_G43_TRANSACTION_RELEASE_IDENTIFIER=""
     COPYLASSO_G43_TRANSACTION_COMMITTED="false"
@@ -58,7 +58,7 @@ create_v02_publication_draft_transaction() (
     trap cleanup_v02_publication_draft_transaction EXIT
 
     read_all_v02_publication_releases() {
-        if ! "$gh_binary" api \
+        if ! "$transaction_gh_binary" api \
             --paginate \
             --slurp \
             "repos/$repository/releases?per_page=100" > "$release_listing"; then
@@ -77,7 +77,8 @@ create_v02_publication_draft_transaction() (
         local lookup_message="$4"
         local status_line
 
-        if "$gh_binary" api --include "$endpoint" > "$response" 2>/dev/null; then
+        if "$transaction_gh_binary" api \
+            --include "$endpoint" > "$response" 2>/dev/null; then
             v02_publication_fail "$existing_message"
         fi
         status_line="$(/usr/bin/sed -n '1{s/\r$//;p;}' "$response")"
@@ -90,7 +91,7 @@ create_v02_publication_draft_transaction() (
         "$final_release_lookup" \
         "A release already exists for the final v0.2 tag." \
         "The final v0.2 release could not be checked."
-    if ! "$gh_binary" api \
+    if ! "$transaction_gh_binary" api \
         "repos/$repository/releases/latest" > "$latest_release_record"; then
         v02_publication_fail "The latest public release could not be checked."
     fi
@@ -109,7 +110,7 @@ create_v02_publication_draft_transaction() (
         "The final v0.2 tag already exists." \
         "The final v0.2 tag could not be checked."
 
-    if ! "$gh_binary" api \
+    if ! "$transaction_gh_binary" api \
         --method POST \
         "repos/$repository/releases" \
         -f "tag_name=$COPYLASSO_V02_FINAL_TAG" \
@@ -118,14 +119,14 @@ create_v02_publication_draft_transaction() (
         -F draft=true \
         -F prerelease=false \
         -f make_latest=false \
-        -F "body=@$release_notes" \
+        -F "body=@$transaction_release_notes" \
         > "$creation_record"; then
         read_all_v02_publication_releases
         if ! /usr/bin/jq -er \
             --arg tag "$COPYLASSO_V02_FINAL_TAG" \
             --arg commit "$COPYLASSO_V02_CANDIDATE_COMMIT" \
             --arg name "$COPYLASSO_V02_RELEASE_NAME" \
-            --rawfile body "$release_notes" '
+            --rawfile body "$transaction_release_notes" '
             [.[][] | select(
                 .tag_name == $tag
                 and .target_commitish == $commit
@@ -151,23 +152,23 @@ create_v02_publication_draft_transaction() (
         v02_publication_fail "The final v0.2 draft has no valid identifier."
     COPYLASSO_G43_TRANSACTION_RELEASE_IDENTIFIER="$release_identifier"
     assert_v02_publication_release_identity \
-        "$creation_record" "$release_notes" true false
+        "$creation_record" "$transaction_release_notes" true false
     [[ "$(/usr/bin/jq -er '.assets | length' \
         "$creation_record" 2>/dev/null || true)" == "0" ]] || \
         v02_publication_fail "The newly created final v0.2 draft was not empty."
 
     upload_succeeded="true"
-    if ! "$gh_binary" release upload "$COPYLASSO_V02_FINAL_TAG" \
+    if ! "$transaction_gh_binary" release upload "$COPYLASSO_V02_FINAL_TAG" \
         "$candidate_directory/$COPYLASSO_RELEASE_DMG" \
         "$candidate_directory/$COPYLASSO_RELEASE_CHECKSUM" \
         --repo "$repository"; then
         upload_succeeded="false"
     fi
-    if ! "$gh_binary" api \
+    if ! "$transaction_gh_binary" api \
         "repos/$repository/releases/$release_identifier" > "$final_record"; then
         v02_publication_fail "The final v0.2 draft could not be read back."
     fi
-    if ! "$final_assertion" "$final_record" "$release_notes"; then
+    if ! "$final_assertion" "$final_record" "$transaction_release_notes"; then
         if [[ "$upload_succeeded" == "false" ]]; then
             v02_publication_fail \
                 "The final v0.2 asset upload failed and exact readback did not prove completion."
