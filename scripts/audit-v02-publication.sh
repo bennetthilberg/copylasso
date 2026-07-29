@@ -7,11 +7,19 @@ readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && /bin/pwd -
 source "$repository_root/scripts/lib/v02-publication-verification.sh"
 
 usage() {
-    echo "Usage: audit-v02-publication.sh [--handoff /path/to/private-handoff]" >&2
+    cat >&2 <<'TEXT'
+Usage: audit-v02-publication.sh
+       audit-v02-publication.sh \
+         --handoff /path/to/private-handoff \
+         --candidate-dir /path/to/downloaded/G42/assets \
+         --application /path/to/qualified/CopyLasso.app
+TEXT
     exit 64
 }
 
 handoff=""
+candidate_directory=""
+application=""
 while [[ "$#" -gt 0 ]]; do
     case "$1" in
         --handoff)
@@ -19,9 +27,22 @@ while [[ "$#" -gt 0 ]]; do
             handoff="$2"
             shift 2
             ;;
+        --candidate-dir)
+            [[ "$#" -ge 2 ]] || usage
+            candidate_directory="$2"
+            shift 2
+            ;;
+        --application)
+            [[ "$#" -ge 2 ]] || usage
+            application="$2"
+            shift 2
+            ;;
         *) usage ;;
     esac
 done
+if [[ -n "$handoff" || -n "$candidate_directory" || -n "$application" ]]; then
+    [[ -n "$handoff" && -n "$candidate_directory" && -n "$application" ]] || usage
+fi
 
 readonly workflow="$repository_root/.github/workflows/prepare-publication.yml"
 readonly candidate_workflow="$repository_root/.github/workflows/release.yml"
@@ -32,6 +53,7 @@ readonly draft_creator="$repository_root/scripts/create-v02-publication-draft.sh
 readonly feed_preparer="$repository_root/scripts/prepare-update-feed.sh"
 readonly verifier_library="$repository_root/scripts/lib/v02-publication-verification.sh"
 readonly transaction_library="$repository_root/scripts/lib/v02-publication-transaction.sh"
+readonly signature_verifier_source="$repository_root/scripts/lib/verify-sparkle-signatures.swift"
 readonly focused_tests="$repository_root/scripts/test-v02-publication.sh"
 readonly runbook="$repository_root/docs/v0.2-publication-runbook.md"
 readonly release_workflow_documentation="$repository_root/docs/release-workflow.md"
@@ -67,6 +89,7 @@ for readable in \
     "$candidate_workflow" \
     "$verifier_library" \
     "$transaction_library" \
+    "$signature_verifier_source" \
     "$runbook" \
     "$release_workflow_documentation" \
     "$update_operations" \
@@ -204,6 +227,7 @@ for required_generator_text in \
     require_text "$appcast_generator" "$required_generator_text"
 done
 for required_draft_text in \
+    '--include' \
     'draft=true' \
     'prerelease=false' \
     'make_latest=false' \
@@ -215,6 +239,13 @@ for required_draft_text in \
     require_text "$transaction_library" "$required_draft_text"
 done
 require_text "$transaction_library" 'assert_v02_prepublication_latest_record'
+require_text "$verifier_library" 'assert_v02_sparkle_signatures'
+require_text "$verifier_library" 'verify-sparkle-signatures.swift'
+require_text "$signature_verifier_source" 'Curve25519.Signing.PublicKey'
+require_text "$signature_verifier_source" 'isValidSignature(feedSignature'
+require_text "$signature_verifier_source" 'isValidSignature(enclosureSignature'
+require_text "$workflow" '--candidate-dir "$COPYLASSO_G43_CANDIDATE"'
+require_text "$workflow" '--application'
 if /usr/bin/grep -Eq \
     'git/refs|--method PATCH|--clobber|make_latest=true|draft=false' \
     "$draft_creator" "$transaction_library"; then
@@ -277,9 +308,14 @@ if [[ -n "$handoff" ]]; then
     assert_v02_candidate_tag_record "$handoff/candidate-tag.json"
     assert_v02_publication_draft_record \
         "$handoff/final-draft.json" "$notes"
+    assert_v02_candidate_files "$candidate_directory"
     assert_v02_feed_bundle "$handoff/feed"
     assert_v02_appcast_contract \
         "$handoff/feed/$COPYLASSO_V02_PUBLIC_APPCAST_NAME" "$notes"
+    assert_v02_sparkle_signatures \
+        "$handoff/feed/$COPYLASSO_V02_PUBLIC_APPCAST_NAME" \
+        "$candidate_directory/$COPYLASSO_RELEASE_DMG" \
+        "$application"
     /usr/bin/jq -e \
         --arg candidate_commit "$COPYLASSO_V02_CANDIDATE_COMMIT" \
         --arg candidate_tag "$COPYLASSO_V02_CANDIDATE_TAG" \

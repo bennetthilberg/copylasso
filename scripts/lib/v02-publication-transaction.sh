@@ -19,6 +19,8 @@ create_v02_publication_draft_transaction() (
     local creation_record
     local release_listing
     local latest_release_record
+    local final_release_lookup
+    local final_tag_lookup
     local final_record
     local release_identifier=""
     local draft_committed="false"
@@ -30,6 +32,8 @@ create_v02_publication_draft_transaction() (
     creation_record="$publication_transaction_directory/created.json"
     release_listing="$publication_transaction_directory/releases.json"
     latest_release_record="$publication_transaction_directory/latest-release.json"
+    final_release_lookup="$publication_transaction_directory/final-release-lookup.txt"
+    final_tag_lookup="$publication_transaction_directory/final-tag-lookup.txt"
     final_record="$publication_transaction_directory/final.json"
     COPYLASSO_G43_TRANSACTION_REPOSITORY="$repository"
     COPYLASSO_G43_TRANSACTION_GH_BINARY="$gh_binary"
@@ -66,11 +70,26 @@ create_v02_publication_draft_transaction() (
             v02_publication_fail "The existing-release listing is invalid."
     }
 
-    if "$gh_binary" api \
+    assert_v02_publication_resource_absent() {
+        local endpoint="$1"
+        local response="$2"
+        local existing_message="$3"
+        local lookup_message="$4"
+        local status_line
+
+        if "$gh_binary" api --include "$endpoint" > "$response" 2>/dev/null; then
+            v02_publication_fail "$existing_message"
+        fi
+        status_line="$(/usr/bin/sed -n '1{s/\r$//;p;}' "$response")"
+        [[ "$status_line" =~ ^HTTP/[0-9.]+[[:space:]]+404([[:space:]]|$) ]] || \
+            v02_publication_fail "$lookup_message"
+    }
+
+    assert_v02_publication_resource_absent \
         "repos/$repository/releases/tags/$COPYLASSO_V02_FINAL_TAG" \
-        >/dev/null 2>&1; then
-        v02_publication_fail "A release already exists for the final v0.2 tag."
-    fi
+        "$final_release_lookup" \
+        "A release already exists for the final v0.2 tag." \
+        "The final v0.2 release could not be checked."
     if ! "$gh_binary" api \
         "repos/$repository/releases/latest" > "$latest_release_record"; then
         v02_publication_fail "The latest public release could not be checked."
@@ -84,11 +103,11 @@ create_v02_publication_draft_transaction() (
         v02_publication_fail "The existing-release listing is invalid."
     [[ "$existing_release_count" == "0" ]] || \
         v02_publication_fail "A release already exists for the final v0.2 tag."
-    if "$gh_binary" api \
+    assert_v02_publication_resource_absent \
         "repos/$repository/git/ref/tags/$COPYLASSO_V02_FINAL_TAG" \
-        >/dev/null 2>&1; then
-        v02_publication_fail "The final v0.2 tag already exists."
-    fi
+        "$final_tag_lookup" \
+        "The final v0.2 tag already exists." \
+        "The final v0.2 tag could not be checked."
 
     if ! "$gh_binary" api \
         --method POST \

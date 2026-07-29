@@ -350,6 +350,86 @@ expect_failure "destination already exists" \
     --release-notes "$release_notes_path" \
     --output-dir "$feed_fixture"
 
+readonly sparkle_fixture_archive="$temporary_directory/sparkle-fixture.dmg"
+readonly sparkle_fixture_signer_source="$temporary_directory/sign-sparkle-fixture.swift"
+readonly sparkle_fixture_signer="$temporary_directory/sign-sparkle-fixture"
+readonly sparkle_fixture_appcast="$temporary_directory/signed-appcast.xml"
+readonly sparkle_fixture_public_key="$temporary_directory/sparkle-public-key.txt"
+readonly sparkle_fixture_application="$temporary_directory/CopyLasso.app"
+/usr/bin/printf 'fixture dmg\n' > "$sparkle_fixture_archive"
+cat > "$sparkle_fixture_signer_source" <<'SWIFT'
+import CryptoKit
+import Foundation
+
+guard CommandLine.arguments.count == 5 else {
+  exit(64)
+}
+
+let templateURL = URL(fileURLWithPath: CommandLine.arguments[1])
+let archiveURL = URL(fileURLWithPath: CommandLine.arguments[2])
+let appcastURL = URL(fileURLWithPath: CommandLine.arguments[3])
+let publicKeyURL = URL(fileURLWithPath: CommandLine.arguments[4])
+let seed = Data((0..<32).map(UInt8.init))
+let privateKey = try Curve25519.Signing.PrivateKey(rawRepresentation: seed)
+let archive = try Data(contentsOf: archiveURL)
+let archiveSignature = try privateKey.signature(for: archive).base64EncodedString()
+let template = try String(contentsOf: templateURL, encoding: .utf8)
+let content = template.replacingOccurrences(
+  of: "fixture-signature",
+  with: archiveSignature
+)
+guard content != template, let contentData = content.data(using: .utf8) else {
+  exit(1)
+}
+let feedSignature = try privateKey.signature(for: contentData).base64EncodedString()
+let signingBlock = """
+<!-- sparkle-signatures:
+edSignature: \(feedSignature)
+length: \(contentData.count)
+-->
+
+"""
+var signedFeed = contentData
+signedFeed.append(Data(signingBlock.utf8))
+try signedFeed.write(to: appcastURL, options: .atomic)
+try Data(privateKey.publicKey.rawRepresentation.base64EncodedString().utf8)
+  .write(to: publicKeyURL, options: .atomic)
+SWIFT
+/usr/bin/xcrun swiftc \
+    "$sparkle_fixture_signer_source" \
+    -o "$sparkle_fixture_signer"
+"$sparkle_fixture_signer" \
+    "$appcast_fixture" \
+    "$sparkle_fixture_archive" \
+    "$sparkle_fixture_appcast" \
+    "$sparkle_fixture_public_key"
+/bin/mkdir -p "$sparkle_fixture_application/Contents"
+/usr/bin/plutil -create xml1 \
+    "$sparkle_fixture_application/Contents/Info.plist"
+/usr/bin/plutil -insert SUPublicEDKey -string \
+    "$(/bin/cat "$sparkle_fixture_public_key")" \
+    "$sparkle_fixture_application/Contents/Info.plist"
+/usr/bin/plutil -insert SURequireSignedFeed -bool true \
+    "$sparkle_fixture_application/Contents/Info.plist"
+assert_v02_sparkle_signatures \
+    "$sparkle_fixture_appcast" \
+    "$sparkle_fixture_archive" \
+    "$sparkle_fixture_application"
+/usr/bin/perl -0pe 's/CopyLasso/CopyLassp/' \
+    "$sparkle_fixture_appcast" > "$temporary_directory/tampered-appcast.xml"
+expect_failure "Sparkle signature verification failed" \
+    assert_v02_sparkle_signatures \
+    "$temporary_directory/tampered-appcast.xml" \
+    "$sparkle_fixture_archive" \
+    "$sparkle_fixture_application"
+/bin/cp "$sparkle_fixture_archive" "$temporary_directory/tampered-archive.dmg"
+/usr/bin/printf 'tampered\n' >> "$temporary_directory/tampered-archive.dmg"
+expect_failure "Sparkle signature verification failed" \
+    assert_v02_sparkle_signatures \
+    "$sparkle_fixture_appcast" \
+    "$temporary_directory/tampered-archive.dmg" \
+    "$sparkle_fixture_application"
+
 readonly transaction_candidate="$temporary_directory/transaction-candidate"
 /bin/mkdir "$transaction_candidate"
 /usr/bin/printf 'fixture dmg\n' > \
@@ -387,11 +467,21 @@ cat > "$fake_gh" <<'SCRIPT'
 set -euo pipefail
 printf '%s\n' "$*" >> "$FAKE_GH_LOG"
 if [[ "$1" == "api" && "$*" == *"releases/tags/"* ]]; then
-    [[ "${FAKE_GH_MODE:-success}" != "preexisting-release" ]] || {
-        /bin/cat "$FAKE_GH_FINAL_RECORD"
-        exit 0
-    }
-    exit 1
+    case "${FAKE_GH_MODE:-success}" in
+        preexisting-release)
+            /usr/bin/printf 'HTTP/2.0 200 OK\n\n'
+            /bin/cat "$FAKE_GH_FINAL_RECORD"
+            exit 0
+            ;;
+        release-lookup-error)
+            /usr/bin/printf 'HTTP/2.0 503 Service Unavailable\n\n{}\n'
+            exit 1
+            ;;
+        *)
+            /usr/bin/printf 'HTTP/2.0 404 Not Found\n\n{}\n'
+            exit 1
+            ;;
+    esac
 fi
 if [[ "$1" == "api" && "$*" == *"releases/latest"* ]]; then
     if [[ "${FAKE_GH_MODE:-success}" == "wrong-latest" ]]; then
@@ -417,11 +507,20 @@ if [[ "$1" == "api" && "$*" == *"/releases?per_page=100"* ]]; then
     exit 0
 fi
 if [[ "$1" == "api" && "$*" == *"git/ref/tags/"* ]]; then
-    [[ "${FAKE_GH_MODE:-success}" != "preexisting-tag" ]] || {
-        /usr/bin/printf '{}\n'
-        exit 0
-    }
-    exit 1
+    case "${FAKE_GH_MODE:-success}" in
+        preexisting-tag)
+            /usr/bin/printf 'HTTP/2.0 200 OK\n\n{}\n'
+            exit 0
+            ;;
+        tag-lookup-error)
+            /usr/bin/printf 'HTTP/2.0 401 Unauthorized\n\n{}\n'
+            exit 1
+            ;;
+        *)
+            /usr/bin/printf 'HTTP/2.0 404 Not Found\n\n{}\n'
+            exit 1
+            ;;
+    esac
 fi
 if [[ "$1" == "api" && "$*" == *"--method POST"* && "$*" == *"/releases"* ]]; then
     [[ "${FAKE_GH_MODE:-success}" != ambiguous-create* ]] || exit 1
@@ -516,6 +615,14 @@ for collision_mode in preexisting-release preexisting-listing preexisting-tag; d
         "$temporary_directory/transaction-$collision_mode.json"
     if /usr/bin/grep -Fq -- '--method POST' "$fake_gh_log"; then
         fail "A pre-existing final release or tag must prevent every mutation."
+    fi
+done
+for lookup_error_mode in release-lookup-error tag-lookup-error; do
+    expect_failure "could not be checked" \
+        run_transaction "$lookup_error_mode" \
+        "$temporary_directory/transaction-$lookup_error_mode.json"
+    if /usr/bin/grep -Fq -- '--method POST' "$fake_gh_log"; then
+        fail "A failed final release or tag lookup must prevent every mutation."
     fi
 done
 expect_failure "existing-release listing is invalid" \

@@ -439,6 +439,70 @@ assert_v02_appcast_contract() {
         v02_publication_fail "The authenticated public appcast notes differ from the approved source."
 }
 
+assert_v02_sparkle_signatures() {
+    local appcast="$1"
+    local archive="$2"
+    local application="$3"
+    local application_info="$application/Contents/Info.plist"
+    local public_key
+    local public_key_bytes
+    local enclosure_signature
+
+    [[ -f "$appcast" && ! -L "$appcast" && -s "$appcast" ]] || \
+        v02_publication_fail "The signed Sparkle appcast is unavailable."
+    [[ -f "$archive" && ! -L "$archive" && -s "$archive" ]] || \
+        v02_publication_fail "The signed Sparkle enclosure is unavailable."
+    [[ -d "$application" && ! -L "$application" &&
+        -f "$application_info" && ! -L "$application_info" ]] || \
+        v02_publication_fail "The qualified CopyLasso application is unavailable."
+    [[ "$(/usr/bin/plutil -extract SURequireSignedFeed raw -o - \
+        "$application_info" 2>/dev/null || true)" == "true" ]] || \
+        v02_publication_fail "The qualified application does not require a signed feed."
+
+    public_key="$(
+        /usr/bin/plutil -extract SUPublicEDKey raw -o - \
+            "$application_info" 2>/dev/null || true
+    )"
+    public_key_bytes="$(
+        /usr/bin/printf '%s' "$public_key" |
+            /usr/bin/base64 -D 2>/dev/null |
+            /usr/bin/wc -c |
+            /usr/bin/tr -d ' '
+    )"
+    [[ "$public_key_bytes" == "32" ]] || \
+        v02_publication_fail "The qualified application has an invalid Sparkle public key."
+    enclosure_signature="$(
+        /usr/bin/xmllint --nonet --xpath \
+            'string(//*[local-name()="enclosure"]/@*[local-name()="edSignature"])' \
+            "$appcast" 2>/dev/null || true
+    )"
+    [[ -n "$enclosure_signature" ]] || \
+        v02_publication_fail "The Sparkle enclosure signature is unavailable."
+
+    if ! (
+        set -euo pipefail
+        local sparkle_verification_directory
+        local verifier
+
+        sparkle_verification_directory="$(/usr/bin/mktemp -d \
+            "${TMPDIR:-/private/tmp}/copylasso-g43-sparkle-verification.XXXXXX")"
+        trap '/bin/rm -rf "$sparkle_verification_directory"' EXIT
+        verifier="$sparkle_verification_directory/verify-sparkle-signatures"
+        /usr/bin/xcrun swiftc \
+            "$copylasso_v02_publication_root/scripts/lib/verify-sparkle-signatures.swift" \
+            -o "$verifier" \
+            > "$sparkle_verification_directory/build.log" 2>&1
+        "$verifier" \
+            "$public_key" \
+            "$appcast" \
+            "$archive" \
+            "$enclosure_signature"
+    ); then
+        v02_publication_fail \
+            "Sparkle signature verification failed against the key shipped in CopyLasso."
+    fi
+}
+
 assert_v02_feed_bundle() {
     local directory="$1"
     local expected_names

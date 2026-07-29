@@ -165,7 +165,10 @@ jobs:
               appcast_sha256: $appcast_sha256
             }' > "$COPYLASSO_G43_HANDOFF/publication-manifest.json"
           ./scripts/audit-v02-publication.sh \
-            --handoff "$COPYLASSO_G43_HANDOFF"
+            --handoff "$COPYLASSO_G43_HANDOFF" \
+            --candidate-dir "$COPYLASSO_G43_CANDIDATE" \
+            --application \
+            "$COPYLASSO_G43_VERIFICATION/extracted/payload/$COPYLASSO_V02_CANDIDATE_COMMIT/export/CopyLasso.app"
 
       - name: Upload private publication handoff
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
