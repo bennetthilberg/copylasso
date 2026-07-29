@@ -11,7 +11,7 @@ create_v02_publication_draft_transaction() (
 
     local repository="$1"
     local candidate_directory="$2"
-    local release_notes="$3"
+    local transaction_release_notes="$3"
     local readback="$4"
     local gh_binary="$5"
     local final_assertion="${6:-assert_v02_publication_draft_record}"
@@ -118,14 +118,14 @@ create_v02_publication_draft_transaction() (
         -F draft=true \
         -F prerelease=false \
         -f make_latest=false \
-        -F "body=@$release_notes" \
+        -F "body=@$transaction_release_notes" \
         > "$creation_record"; then
         read_all_v02_publication_releases
         if ! /usr/bin/jq -er \
             --arg tag "$COPYLASSO_V02_FINAL_TAG" \
             --arg commit "$COPYLASSO_V02_CANDIDATE_COMMIT" \
             --arg name "$COPYLASSO_V02_RELEASE_NAME" \
-            --rawfile body "$release_notes" '
+            --rawfile body "$transaction_release_notes" '
             [.[][] | select(
                 .tag_name == $tag
                 and .target_commitish == $commit
@@ -151,7 +151,7 @@ create_v02_publication_draft_transaction() (
         v02_publication_fail "The final v0.2 draft has no valid identifier."
     COPYLASSO_G43_TRANSACTION_RELEASE_IDENTIFIER="$release_identifier"
     assert_v02_publication_release_identity \
-        "$creation_record" "$release_notes" true false
+        "$creation_record" "$transaction_release_notes" true false
     [[ "$(/usr/bin/jq -er '.assets | length' \
         "$creation_record" 2>/dev/null || true)" == "0" ]] || \
         v02_publication_fail "The newly created final v0.2 draft was not empty."
@@ -167,7 +167,7 @@ create_v02_publication_draft_transaction() (
         "repos/$repository/releases/$release_identifier" > "$final_record"; then
         v02_publication_fail "The final v0.2 draft could not be read back."
     fi
-    if ! "$final_assertion" "$final_record" "$release_notes"; then
+    if ! "$final_assertion" "$final_record" "$transaction_release_notes"; then
         if [[ "$upload_succeeded" == "false" ]]; then
             v02_publication_fail \
                 "The final v0.2 asset upload failed and exact readback did not prove completion."

@@ -584,6 +584,14 @@ if /usr/bin/grep -Eq -- '--clobber|--method PATCH|make_latest=true|git/refs' \
     fail "A successful publication-draft transaction attempted a prohibited mutation."
 fi
 
+(
+    readonly release_notes="$release_notes_path"
+    run_transaction success \
+        "$temporary_directory/transaction-readonly-caller.json"
+)
+[[ -f "$temporary_directory/transaction-readonly-caller.json" ]] || \
+    fail "A readonly caller release-notes binding broke the draft transaction."
+
 run_transaction ambiguous-create \
     "$temporary_directory/transaction-ambiguous-create.json"
 if /usr/bin/grep -Fq -- '--method DELETE' "$fake_gh_log"; then
