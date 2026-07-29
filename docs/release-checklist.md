@@ -178,8 +178,17 @@ inferred pass; see [`v0.2-release-qualification.md`](v0.2-release-qualification.
 
 ## G43 - Publish CopyLasso v0.2.0
 
-- [ ] Publish only the approved candidate DMG, checksum, and authenticated update metadata under immutable signed tags.
-- [ ] Verify public bytes, source archives, genuine-quarantine manual installation, and the authenticated public updater path. Do not publish a website, Mac App Store build, or Homebrew Cask.
+- [ ] Merge the green G43 publication-control PR before dispatching the protected preparation workflow.
+- [ ] Dispatch the input-free G43 workflow from that exact protected-main commit and approve the existing `release` environment.
+- [ ] Read back the unchanged private `v0.2.0-rc.1` candidate, four restricted assets, exact source commit, reviewed notes, and all recorded sizes and SHA-256 digests.
+- [ ] Reverify the exact candidate package without rebuilding, then generate and independently authenticate one final-URL `appcast.xml` through the existing Sparkle signing boundary.
+- [ ] Create and read back one private, non-prerelease `v0.2.0` draft containing only the approved DMG and checksum. Keep the dSYM and verification bundle restricted to the RC draft.
+- [ ] Create a signed annotated `v0.2.0` tag on the same source commit as `v0.2.0-rc.1`; verify it locally and require GitHub `verified: true` before publication.
+- [ ] Publish the exact final draft by release ID as public, non-prerelease, and latest without replacing an asset or moving either tag.
+- [ ] Establish the feed-only Cloudflare Pages project and `updates.copylasso.com` CNAME without changing apex DNS or nameservers, then deploy the exact signed appcast only after the public GitHub URL is valid.
+- [ ] Verify public release state, two uploaded assets, generated source archives, feed and enclosure signatures, final URL and length, version ordering, and unauthenticated download behavior.
+- [ ] Perform a genuine-quarantine Safari download, complete signature/notarization/Gatekeeper/package verification, manual installation smoke, and isolated public updater-path smoke.
+- [ ] Confirm `0.1.x` users are told to install `0.2.0` manually and publish no website, Mac App Store build, Homebrew Cask, or unrelated artifact.
 
 ## G44 - Close the v0.2 Release State
 
