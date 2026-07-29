@@ -159,11 +159,11 @@ fi
 
 create_release_payload_manifest "$qualified_payload" "$temporary_directory/source-payload.manifest"
 create_release_payload_manifest "$mounted_application" "$temporary_directory/mounted-payload.manifest"
+assert_release_payload_manifest_contents_match \
+    "$expected_payload_manifest" \
+    "$temporary_directory/source-payload.manifest"
 assert_release_payload_manifests_match \
-    "$temporary_directory/source-payload.manifest" \
-    "$expected_payload_manifest"
-assert_release_payload_manifests_match \
-    "$temporary_directory/source-payload.manifest" \
+    "$expected_payload_manifest" \
     "$temporary_directory/mounted-payload.manifest"
 
 /usr/bin/hdiutil detach "$mount_point" > "$temporary_directory/dmg-detach.txt"

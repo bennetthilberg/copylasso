@@ -101,6 +101,20 @@ assert_release_payload_manifests_match() {
     fi
 }
 
+assert_release_payload_manifest_contents_match() {
+    local expected_manifest="$1"
+    local actual_manifest="$2"
+
+    [[ -f "$expected_manifest" && -f "$actual_manifest" ]] || \
+        release_package_fail "A release payload manifest is missing."
+    if ! /usr/bin/cmp -s \
+        <(/usr/bin/cut -f 1,3- "$expected_manifest") \
+        <(/usr/bin/cut -f 1,3- "$actual_manifest"); then
+        release_package_fail \
+            "The packaged payload contents differ from the qualified application."
+    fi
+}
+
 assert_release_checksum() {
     local image_path="$1"
     local checksum_path="$2"
