@@ -20,6 +20,10 @@ import SwiftUI
       arguments.contains("--g14-live-capture")
     }
 
+    var showsUpdateOffer: Bool {
+      arguments.contains("--g43a-update-offer")
+    }
+
     var usesDebugCaptureService: Bool {
       (isUITesting || isLiveSelectionTesting) && !isLiveCaptureTesting
     }
@@ -99,6 +103,19 @@ struct CopyLassoApp: App {
     let updateController = UpdateController(service: updateService)
     self.updateController = updateController
     updateController.start()
+
+    #if DEBUG
+      if runtimeOptions.showsUpdateOffer {
+        let releaseNotes =
+          ProcessInfo.processInfo.environment["COPYLASSO_G43A_UPDATE_NOTES"]
+          ?? "# CopyLasso 0.2.0\n\nNo release-note fixture was provided."
+        DispatchQueue.main.async {
+          SystemSecureUpdatePresenter().showUpdateAvailable(
+            Self.debugUpdateOffer(releaseNotes: releaseNotes)
+          ) { _ in }
+        }
+      }
+    #endif
 
     settingsController = SettingsController(
       settingsStore: settingsStore,
@@ -192,6 +209,15 @@ struct CopyLassoApp: App {
   }
 
   #if DEBUG
+    private static func debugUpdateOffer(releaseNotes: String) -> SecureUpdateOffer {
+      SecureUpdateOffer(
+        displayVersion: "0.2.0",
+        build: "3",
+        releaseNotes: releaseNotes,
+        contentLength: 3_700_000
+      )
+    }
+
     private static func debugLaunchAtLoginStatus(arguments: [String]) -> LaunchAtLoginStatus {
       guard
         let argument = arguments.first(where: {

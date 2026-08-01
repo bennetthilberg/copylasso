@@ -742,6 +742,32 @@ final class CopyLassoUITests: XCTestCase {
   }
 
   @MainActor
+  func testUpdateOfferRendersBoundedScrollableNotesAndSupportsEscape() throws {
+    let app = completedApp(extraArguments: ["--g43a-update-offer"])
+    app.launchEnvironment["COPYLASSO_G43A_UPDATE_NOTES"] = try Self.reviewedV020ReleaseNotes()
+    app.launch()
+    defer { app.terminate() }
+
+    let panel = app.dialogs["copylasso.update.offer"]
+    XCTAssertTrue(panel.waitForExistence(timeout: 5))
+    XCTAssertLessThanOrEqual(panel.frame.width, 600)
+    XCTAssertLessThanOrEqual(panel.frame.height, 520)
+
+    let notes = app.scrollViews["copylasso.update.release-notes"]
+    XCTAssertTrue(notes.exists)
+    XCTAssertEqual(notes.label, "Release Notes")
+    XCTAssertTrue(app.staticTexts["CopyLasso 0.2.0"].exists)
+    XCTAssertTrue(app.staticTexts["What Is New"].exists)
+    XCTAssertFalse(app.staticTexts["# CopyLasso 0.2.0"].exists)
+    XCTAssertTrue(app.buttons["copylasso.update.download"].isEnabled)
+    XCTAssertTrue(app.buttons["copylasso.update.later"].isEnabled)
+    retainScreenshot(named: "CopyLasso bounded update offer")
+
+    app.typeKey(XCUIKeyboardKey.escape, modifierFlags: [])
+    XCTAssertTrue(panel.waitForNonExistence(timeout: 5))
+  }
+
+  @MainActor
   private func statusItem(in app: XCUIApplication) -> XCUIElement {
     app.menuBars.statusItems["CopyLasso"]
   }
@@ -833,4 +859,14 @@ final class CopyLassoUITests: XCTestCase {
     "About CopyLasso",
     "Quit CopyLasso",
   ]
+
+  private static func reviewedV020ReleaseNotes() throws -> String {
+    let repositoryRoot = URL(fileURLWithPath: #filePath)
+      .deletingLastPathComponent()
+      .deletingLastPathComponent()
+    let data = try Data(
+      contentsOf: repositoryRoot.appendingPathComponent("docs/release-notes/0.2.0.md")
+    )
+    return String(decoding: data, as: UTF8.self)
+  }
 }

@@ -875,3 +875,14 @@ one, and the available UI automation could not faithfully produce the physical
 30-text/30-code timing series or signed-process 100-cycle checkpoints. Those
 rows remain Blocked in the linked record; the 100-result service-boundary pass
 is recorded separately and is not substituted for them.
+
+## G43A Update-Offer Presentation Delta
+
+G43's public updater transaction succeeded, but its authenticated Markdown was
+shown literally in an unbounded alert. G43A owns only that presentation defect.
+The July 31 signed Debug check showed the complete v0.2 notes as styled
+headings, paragraphs, emphasis, and bullets inside a visibly scrollable
+fixed-size panel. The source, size, explanation, and Download and Later buttons
+remained visible while the notes scrolled; Escape dismissed the panel as Later.
+Embedded links remained inert by construction, and no public tag, release asset,
+appcast, or feed byte changed.
