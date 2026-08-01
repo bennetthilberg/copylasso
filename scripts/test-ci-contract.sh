@@ -156,16 +156,15 @@ if [[ "$v02_release_qualification_audit_invocations" != "1" ]]; then
 fi
 for required_patch_guard in \
     "approved_post_publication_patch_tree_pattern" \
-    "approved_post_publication_patch_commit='b93ed0cc3d1f9bcc3e40c0d5218032faa854276a'" \
+    "approved_post_publication_runtime_tree_pattern" \
     "g44_release_state_tree_pattern" \
     "expected_candidate_baseline_tree_digest='e6358aa654914c17146018f5bb5bfdd7eb3f52d79d88358bf2b16a814ba21c7b'" \
-    "expected_approved_post_publication_patch_tree_digest='39fd46e48989d414af15517f0b1521acae857a7acd41a475309a833d57bc82bc'" \
+    "expected_approved_post_publication_runtime_tree_digest='6aa226944fafb8a45887db345b70afa94c2a2d2bc49b348350b153ce50095b7f'" \
     "expected_g44_release_state_files_digest='2223f222a24e2c970d7123cc973c54eb1a91ead66373ef9da481e452c1c8e30e'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
-    '"$approved_post_publication_patch_commit^{tree}"' \
     '"$current_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest"' \
     '/usr/bin/grep -Ev "$g44_release_state_tree_pattern"' \
-    'The approved G43A post-publication patch differs from its reviewed tree digest.'; do
+    'The approved G43A runtime patch differs from its reviewed tree digest.'; do
     if ! /usr/bin/grep -Fq "$required_patch_guard" \
         "$v02_release_qualification_audit_script"; then
         fail "The v0.2 qualification audit must pin the exact approved G43A patch."
