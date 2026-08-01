@@ -106,8 +106,11 @@ offline state, disk exhaustion, interrupted extraction, and failed installation
 must leave the installed application untouched and remove staging. Startup
 recovery removes an abandoned transaction before a new check.
 
-The initial update panel shows version, release notes, exact declared size, and
-that CopyLasso will download, quit, install, and relaunch. The user explicitly
+The initial update panel shows version, authenticated source, exact declared
+size, and rendered release notes. The panel has a fixed footprint; long notes
+scroll independently while the metadata, consent explanation, and Download and
+Later buttons remain visible. Markdown headings, emphasis, paragraphs, and
+lists are presentation only, and embedded links are inert. The user explicitly
 chooses Download or Later. After verified extraction, a second explicit choice
 authorizes Install and Relaunch. Closing, Escape, Later, or Cancel preserves the
 current application; a deferred update may be shown again without downloading

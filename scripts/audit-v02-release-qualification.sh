@@ -14,6 +14,9 @@ readonly expected_success_sound_digest='e98be6b3eef44bffa5f5759ee83e99efd1ab3dfb
 readonly candidate_source_commit='43f1d0c676b08fb24b49fc628213fede90c4ed9d'
 readonly expected_candidate_input_tree_digest='baf122b35c5132f31e1df07d1ff0402713f9cabe7ef7b48355289bc29682f39e'
 readonly candidate_evidence_tree_pattern=$'\t(\\.github/workflows/prepare-publication\\.yml|docs/release-candidate-qualification\\.md|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/v0\\.2-publication-runbook\\.md|docs/v0\\.2-release-candidate\\.md|docs/v0\\.2-release-qualification\\.md|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/ci\\.sh|scripts/create-v02-publication-draft\\.sh|scripts/download-v02-candidate\\.sh|scripts/generate-release-appcast\\.sh|scripts/lib/release-package-verification\\.sh|scripts/lib/v02-publication-transaction\\.sh|scripts/lib/v02-publication-verification\\.sh|scripts/lib/verify-sparkle-signatures\\.swift|scripts/prepare-update-feed\\.sh|scripts/test-ci-contract\\.sh|scripts/test-release-package\\.sh|scripts/test-v02-publication\\.sh|scripts/verify-release-package\\.sh|scripts/verify-v02-candidate-package\\.sh)$'
+readonly approved_post_publication_patch_tree_pattern=$'\t(CHANGELOG\\.md|CopyLasso/App/CopyLassoApp\\.swift|CopyLasso/Models/SecureUpdateReleaseNotesPresentation\\.swift|CopyLasso/SharedUI/SecureUpdatePresentation\\.swift|CopyLassoTests/Update/SecureUpdateReleaseNotesPresentationTests\\.swift|CopyLassoUITests/CopyLassoUITests\\.swift|docs/architecture/overview\\.md|docs/manual-qa-and-performance\\.md|docs/secure-update-operations\\.md|docs/testing\\.md)$'
+readonly expected_candidate_baseline_tree_digest='d0e8c76e106bf47d68b598fafdcd4ab572033d45ac356796c6c61bfd6a7e4f16'
+readonly expected_approved_post_publication_patch_tree_digest='39fd46e48989d414af15517f0b1521acae857a7acd41a475309a833d57bc82bc'
 
 fail() {
     echo "$1" >&2
@@ -140,14 +143,46 @@ require_text CopyLasso/Services/SparkleUpdateService.swift 'import Sparkle'
 require_text Configuration/CopyLasso-Info.plist \
     '<string>https://updates.copylasso.com/appcast.xml</string>'
 
-actual_candidate_input_tree_digest="$(
+if git -C "$repository_root" cat-file -e "$candidate_source_commit^{tree}" 2>/dev/null; then
+    qualified_candidate_input_tree_digest="$(
+        git -C "$repository_root" ls-tree -r --full-tree "$candidate_source_commit" |
+            /usr/bin/grep -Ev "$candidate_evidence_tree_pattern" |
+            /usr/bin/shasum -a 256 |
+            /usr/bin/awk '{print $1}'
+    )"
+    [[ "$qualified_candidate_input_tree_digest" == "$expected_candidate_input_tree_digest" ]] || \
+        fail "The qualified candidate input tree no longer matches its reviewed digest."
+
+    candidate_baseline_tree_digest="$(
+        git -C "$repository_root" ls-tree -r --full-tree "$candidate_source_commit" |
+            /usr/bin/grep -Ev "$candidate_evidence_tree_pattern" |
+            /usr/bin/grep -Ev "$approved_post_publication_patch_tree_pattern" |
+            /usr/bin/shasum -a 256 |
+            /usr/bin/awk '{print $1}'
+    )"
+    [[ "$candidate_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest" ]] || \
+        fail "The frozen candidate baseline no longer matches its reviewed digest."
+fi
+
+current_baseline_tree_digest="$(
     git -C "$repository_root" ls-tree -r --full-tree HEAD |
         /usr/bin/grep -Ev "$candidate_evidence_tree_pattern" |
+        /usr/bin/grep -Ev "$approved_post_publication_patch_tree_pattern" |
         /usr/bin/shasum -a 256 |
         /usr/bin/awk '{print $1}'
 )"
-[[ "$actual_candidate_input_tree_digest" == "$expected_candidate_input_tree_digest" ]] || \
-    fail "A tracked candidate input differs from source commit $candidate_source_commit; only reviewed evidence and publication-control paths may change."
+[[ "$current_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest" ]] || \
+    fail "A tracked candidate input outside the approved post-publication patch differs from source commit $candidate_source_commit."
+
+approved_post_publication_patch_tree_digest="$(
+    git -C "$repository_root" ls-tree -r --full-tree HEAD |
+        /usr/bin/grep -E "$approved_post_publication_patch_tree_pattern" |
+        /usr/bin/shasum -a 256 |
+        /usr/bin/awk '{print $1}'
+)"
+[[ "$approved_post_publication_patch_tree_digest" == \
+    "$expected_approved_post_publication_patch_tree_digest" ]] || \
+    fail "The approved G43A post-publication patch differs from its reviewed tree digest."
 require_text CopyLassoTests/Settings/UserDefaultsSettingsStoreTests.swift \
     'testVersion011PreferencesRemainCompatibleWithVersion020Migration'
 require_text CopyLassoTests/Update/UpdateControllerTests.swift \

@@ -472,6 +472,16 @@ capture, rollback rejection, Developer ID/notarization/Gatekeeper readback, and
 network-denied core capture. A public endpoint, public update artifact, and
 public updater-enabled release remain explicitly outside G36.
 
+### G43A update-offer presentation regression
+
+The post-publication G43A regression uses the complete reviewed v0.2 notes in
+both pure-model and signed UI tests. Model coverage verifies semantic headings,
+paragraphs, bullets, emphasis, inert links, wrapped-line joining, and fixed
+layout bounds. The signed UI test verifies the native offer is bounded, its
+notes region scrolls, raw Markdown markers are absent, Download and Later stay
+accessible, and Escape chooses Later. The updater trust, download, installation,
+public appcast, tags, and release bytes are unchanged.
+
 `build-private-update-fixture.sh` builds separately identified Apple
 Development-signed `0.1.1 (2)` and `0.2.0 (3)` applications with a loopback-only
 policy compiled under `COPYLASSO_PRIVATE_UPDATE_FIXTURE`. Ordinary Debug,

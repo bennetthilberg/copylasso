@@ -28,22 +28,36 @@ final class SystemSecureUpdatePresenter: NSObject, SecureUpdatePresenting, NSWin
     reply: @escaping (SecureUpdateConsentChoice) -> Void
   ) {
     dismiss()
-    let alert = NSAlert()
-    alert.messageText = "CopyLasso \(offer.displayVersion) Is Available"
-    alert.informativeText =
-      "Authenticated source: \(offer.authenticatedSource)\n"
-      + "Download size: \(offer.formattedDownloadSize)\n\n"
-      + offer.releaseNotes
-      + "\n\nCopyLasso will download and verify the update. Installation and relaunch "
-      + "require a second confirmation."
-    alert.alertStyle = .informational
-    let downloadButton = alert.addButton(withTitle: "Download")
-    downloadButton.setAccessibilityIdentifier("copylasso.update.download")
-    let laterButton = alert.addButton(withTitle: "Later")
-    laterButton.keyEquivalent = "\u{1b}"
-    laterButton.setAccessibilityIdentifier("copylasso.update.later")
+    let view = SecureUpdateOfferView(
+      offer: offer,
+      download: {
+        NSApp.stopModal(withCode: .OK)
+      },
+      chooseLater: {
+        NSApp.stopModal(withCode: .cancel)
+      }
+    )
+    let hostingController = NSHostingController(rootView: view)
+    let panel = NSPanel(contentViewController: hostingController)
+    panel.title = "CopyLasso \(offer.displayVersion) Is Available"
+    panel.styleMask = [.titled]
+    panel.isReleasedWhenClosed = false
+    panel.level = .floating
+    panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+    panel.setAccessibilityIdentifier("copylasso.update.offer")
+    let contentSize = NSSize(
+      width: SecureUpdateOfferLayout.width,
+      height: SecureUpdateOfferLayout.height
+    )
+    panel.contentMinSize = contentSize
+    panel.contentMaxSize = contentSize
+    panel.setContentSize(contentSize)
+    panel.center()
     activateForUpdateUI()
-    reply(alert.runModal() == .alertFirstButtonReturn ? .proceed : .later)
+    panel.makeKeyAndOrderFront(nil)
+    let response = NSApp.runModal(for: panel)
+    panel.orderOut(nil)
+    reply(response == .OK ? .proceed : .later)
   }
 
   func showNoUpdate(acknowledgement: @escaping () -> Void) {
@@ -278,5 +292,97 @@ private struct SecureUpdateProgressView: View {
     }
     .padding(20)
     .frame(width: 420)
+  }
+}
+
+private struct SecureUpdateOfferView: View {
+  let offer: SecureUpdateOffer
+  let download: () -> Void
+  let chooseLater: () -> Void
+
+  private var releaseNotes: SecureUpdateReleaseNotesPresentation {
+    SecureUpdateReleaseNotesPresentation(markdown: offer.releaseNotes)
+  }
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 16) {
+      HStack(alignment: .top, spacing: 16) {
+        Image(nsImage: NSApp.applicationIconImage)
+          .resizable()
+          .frame(width: 64, height: 64)
+          .accessibilityHidden(true)
+        VStack(alignment: .leading, spacing: 6) {
+          Text("CopyLasso \(offer.displayVersion) Is Available")
+            .font(.title2.bold())
+            .accessibilityAddTraits(.isHeader)
+          Text("Authenticated source: \(offer.authenticatedSource)")
+            .fixedSize(horizontal: false, vertical: true)
+          Text("Download size: \(offer.formattedDownloadSize)")
+        }
+      }
+
+      Divider()
+
+      ScrollView {
+        LazyVStack(alignment: .leading, spacing: 12) {
+          ForEach(Array(releaseNotes.blocks.enumerated()), id: \.offset) { _, block in
+            SecureUpdateReleaseNotesBlockView(block: block)
+          }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.trailing, 8)
+      }
+      .frame(height: SecureUpdateOfferLayout.releaseNotesHeight)
+      .accessibilityLabel("Release Notes")
+      .accessibilityIdentifier("copylasso.update.release-notes")
+
+      Text(
+        "CopyLasso will download and verify the update. Installation and relaunch "
+          + "require a second confirmation."
+      )
+      .font(.callout)
+      .fixedSize(horizontal: false, vertical: true)
+
+      Divider()
+
+      HStack {
+        Spacer()
+        Button("Later", action: chooseLater)
+          .keyboardShortcut(.cancelAction)
+          .accessibilityIdentifier("copylasso.update.later")
+        Button("Download", action: download)
+          .keyboardShortcut(.defaultAction)
+          .accessibilityIdentifier("copylasso.update.download")
+      }
+    }
+    .padding(22)
+    .frame(
+      width: SecureUpdateOfferLayout.width,
+      height: SecureUpdateOfferLayout.height,
+      alignment: .top
+    )
+  }
+}
+
+private struct SecureUpdateReleaseNotesBlockView: View {
+  let block: SecureUpdateReleaseNotesPresentation.Block
+
+  var body: some View {
+    switch block.kind {
+    case .heading(let level):
+      Text(block.content)
+        .font(level == 1 ? .title3.bold() : .headline)
+        .accessibilityAddTraits(.isHeader)
+    case .paragraph:
+      Text(block.content)
+        .fixedSize(horizontal: false, vertical: true)
+    case .listItem:
+      HStack(alignment: .firstTextBaseline, spacing: 8) {
+        Text("•")
+          .accessibilityHidden(true)
+        Text(block.content)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+    }
   }
 }
