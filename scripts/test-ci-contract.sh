@@ -157,6 +157,8 @@ for required_patch_guard in \
     "approved_post_publication_patch_tree_pattern" \
     "expected_candidate_baseline_tree_digest='d0e8c76e106bf47d68b598fafdcd4ab572033d45ac356796c6c61bfd6a7e4f16'" \
     "expected_approved_post_publication_patch_tree_digest='39fd46e48989d414af15517f0b1521acae857a7acd41a475309a833d57bc82bc'" \
+    'cat-file -e "$candidate_source_commit^{tree}"' \
+    '"$current_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest"' \
     'The approved G43A post-publication patch differs from its reviewed tree digest.'; do
     if ! /usr/bin/grep -Fq "$required_patch_guard" \
         "$v02_release_qualification_audit_script"; then

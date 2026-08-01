@@ -143,22 +143,27 @@ require_text CopyLasso/Services/SparkleUpdateService.swift 'import Sparkle'
 require_text Configuration/CopyLasso-Info.plist \
     '<string>https://updates.copylasso.com/appcast.xml</string>'
 
-qualified_candidate_input_tree_digest="$(
-    git -C "$repository_root" ls-tree -r --full-tree "$candidate_source_commit" |
-        /usr/bin/grep -Ev "$candidate_evidence_tree_pattern" |
-        /usr/bin/shasum -a 256 |
-        /usr/bin/awk '{print $1}'
-)"
-[[ "$qualified_candidate_input_tree_digest" == "$expected_candidate_input_tree_digest" ]] || \
-    fail "The qualified candidate input tree no longer matches its reviewed digest."
+if git -C "$repository_root" cat-file -e "$candidate_source_commit^{tree}" 2>/dev/null; then
+    qualified_candidate_input_tree_digest="$(
+        git -C "$repository_root" ls-tree -r --full-tree "$candidate_source_commit" |
+            /usr/bin/grep -Ev "$candidate_evidence_tree_pattern" |
+            /usr/bin/shasum -a 256 |
+            /usr/bin/awk '{print $1}'
+    )"
+    [[ "$qualified_candidate_input_tree_digest" == "$expected_candidate_input_tree_digest" ]] || \
+        fail "The qualified candidate input tree no longer matches its reviewed digest."
 
-candidate_baseline_tree_digest="$(
-    git -C "$repository_root" ls-tree -r --full-tree "$candidate_source_commit" |
-        /usr/bin/grep -Ev "$candidate_evidence_tree_pattern" |
-        /usr/bin/grep -Ev "$approved_post_publication_patch_tree_pattern" |
-        /usr/bin/shasum -a 256 |
-        /usr/bin/awk '{print $1}'
-)"
+    candidate_baseline_tree_digest="$(
+        git -C "$repository_root" ls-tree -r --full-tree "$candidate_source_commit" |
+            /usr/bin/grep -Ev "$candidate_evidence_tree_pattern" |
+            /usr/bin/grep -Ev "$approved_post_publication_patch_tree_pattern" |
+            /usr/bin/shasum -a 256 |
+            /usr/bin/awk '{print $1}'
+    )"
+    [[ "$candidate_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest" ]] || \
+        fail "The frozen candidate baseline no longer matches its reviewed digest."
+fi
+
 current_baseline_tree_digest="$(
     git -C "$repository_root" ls-tree -r --full-tree HEAD |
         /usr/bin/grep -Ev "$candidate_evidence_tree_pattern" |
@@ -166,9 +171,7 @@ current_baseline_tree_digest="$(
         /usr/bin/shasum -a 256 |
         /usr/bin/awk '{print $1}'
 )"
-[[ "$candidate_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest" ]] || \
-    fail "The frozen candidate baseline no longer matches its reviewed digest."
-[[ "$current_baseline_tree_digest" == "$candidate_baseline_tree_digest" ]] || \
+[[ "$current_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest" ]] || \
     fail "A tracked candidate input outside the approved post-publication patch differs from source commit $candidate_source_commit."
 
 approved_post_publication_patch_tree_digest="$(
