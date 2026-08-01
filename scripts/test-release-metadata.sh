@@ -50,8 +50,8 @@ fi
 
 [[ -r "$repository_root/docs/release-notes/0.2.0.md" ]] || \
     fail "Reviewed 0.2.0 release notes are missing."
-/usr/bin/grep -Fq '## 0.2.0 - Unreleased' "$repository_root/CHANGELOG.md" || \
-    fail "The changelog must retain an undated v0.2 release draft."
+/usr/bin/grep -Fq '## 0.2.0 - 2026-07-29' "$repository_root/CHANGELOG.md" || \
+    fail "The changelog must date the public v0.2 release from its publication timestamp."
 /usr/bin/grep -Fq '## 0.1.1 - 2026-07-21' "$repository_root/CHANGELOG.md" || \
     fail "The changelog must date the published 0.1.1 hotfix entry."
 /usr/bin/grep -Fq 'User-controlled secure updates' \

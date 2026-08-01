@@ -14,6 +14,7 @@ readonly platform_qualification_test_script="$repository_root/scripts/test-platf
 readonly v02_contract_audit_script="$repository_root/scripts/audit-v02-contract.sh"
 readonly v02_release_qualification_audit_script="$repository_root/scripts/audit-v02-release-qualification.sh"
 readonly v02_publication_audit_script="$repository_root/scripts/audit-v02-publication.sh"
+readonly v02_release_state_audit_script="$repository_root/scripts/audit-v02-release-state.sh"
 readonly v02_publication_test_script="$repository_root/scripts/test-v02-publication.sh"
 readonly code_recognition_audit_script="$repository_root/scripts/audit-code-recognition.sh"
 readonly latex_feasibility_audit_script="$repository_root/scripts/audit-latex-feasibility.sh"
@@ -155,10 +156,15 @@ if [[ "$v02_release_qualification_audit_invocations" != "1" ]]; then
 fi
 for required_patch_guard in \
     "approved_post_publication_patch_tree_pattern" \
-    "expected_candidate_baseline_tree_digest='d0e8c76e106bf47d68b598fafdcd4ab572033d45ac356796c6c61bfd6a7e4f16'" \
+    "approved_post_publication_patch_commit='b93ed0cc3d1f9bcc3e40c0d5218032faa854276a'" \
+    "g44_release_state_tree_pattern" \
+    "expected_candidate_baseline_tree_digest='e6358aa654914c17146018f5bb5bfdd7eb3f52d79d88358bf2b16a814ba21c7b'" \
     "expected_approved_post_publication_patch_tree_digest='39fd46e48989d414af15517f0b1521acae857a7acd41a475309a833d57bc82bc'" \
+    "expected_g44_release_state_files_digest='2223f222a24e2c970d7123cc973c54eb1a91ead66373ef9da481e452c1c8e30e'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
+    '"$approved_post_publication_patch_commit^{tree}"' \
     '"$current_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest"' \
+    '/usr/bin/grep -Ev "$g44_release_state_tree_pattern"' \
     'The approved G43A post-publication patch differs from its reviewed tree digest.'; do
     if ! /usr/bin/grep -Fq "$required_patch_guard" \
         "$v02_release_qualification_audit_script"; then
@@ -183,6 +189,26 @@ v02_publication_audit_invocations="$({
 if [[ "$v02_publication_audit_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/audit-v02-publication.sh exactly once."
 fi
+
+v02_release_state_audit_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/audit-v02-release-state\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$v02_release_state_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-v02-release-state.sh exactly once."
+fi
+for required_release_state_guard in \
+    'expected_release_commit="43f1d0c676b08fb24b49fc628213fede90c4ed9d"' \
+    'expected_release_id="361797888"' \
+    'expected_dmg_sha256="697cb008cf294b32500e2ad84e5777a51fe8b88916856c5a8e9f1ec4eb74ba19"' \
+    'expected_appcast_sha256="a6be6c899e31e5913d5be315f209884100f709bd0e13d7490da8f07c9ed08ace"' \
+    'The Unreleased section must retain the post-v0.2 G43A fix.'; do
+    if ! /usr/bin/grep -Fq -- "$required_release_state_guard" \
+        "$v02_release_state_audit_script"; then
+        fail "The G44 audit must pin the immutable public release and post-release boundary."
+    fi
+done
 
 code_recognition_audit_invocations="$({
     /usr/bin/grep -Ec \

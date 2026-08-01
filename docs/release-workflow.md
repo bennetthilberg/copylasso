@@ -295,3 +295,7 @@ annotated signed tag, public-release transition, Cloudflare Pages feed
 deployment, external-DNS CNAME, public browser download, and updater smoke are
 manual G43 gates after the preparation PR is merged. G44 owns all
 post-publication documentation and issue-state changes.
+
+The immutable publication outcome and later G44 readback are recorded in
+[`v0.2-release-state.md`](v0.2-release-state.md). This closure record does not
+move either release tag, replace any asset, or alter the production feed.

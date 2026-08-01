@@ -31,9 +31,9 @@ fi
 
 for required_text in \
     '# CopyLasso v0.2 Product Contract' \
-    '**Status:** Approved scope for the planned v0.2 release' \
+    '**Status:** Released product contract' \
     '**Approved:** July 22, 2026' \
-    '**Implementation status:** Release-qualified in source as 0.2.0 (3); not publicly released.' \
+    '**Implementation status:** Released as 0.2.0 (3) on July 29, 2026.' \
     '[v0.1 product contract](v0.1-product-contract.md)' \
     'automatic update checks are enabled by default' \
     'disable automatic checks in Settings' \
@@ -79,8 +79,8 @@ for required_text in \
     '## Accessibility, Focus, and Failure Behavior' \
     'Keyboard-only and VoiceOver users can check, defer, confirm, cancel, and retry' \
     'No outcome relies on sound or color alone.' \
-    'publicly available as version and build `0.1.1 (2)`' \
-    'G41 freezes the qualified source at `0.2.0 (3)`' \
+    'publicly available as version and build `0.2.0 (3)`' \
+    '[v0.2 release-state record](v0.2-release-state.md)' \
     'G39 concluded no-go, so CopyLasso 0.2.0 contains no LaTeX recognition' \
     'G40 is omitted.' \
     'issue #36' \
@@ -124,19 +124,19 @@ if ! /usr/bin/jq -e '
 fi
 
 for documentation_contract in \
-    "$repository_root/README.md:Current source includes the user-controlled secure updater frozen for v0.2." \
-    "$repository_root/README.md:The public CopyLasso 0.1.1 download still updates manually." \
+    "$repository_root/README.md:CopyLasso 0.2.0 is the first updater-enabled public release:" \
+    "$repository_root/README.md:Users running 0.1.x must install 0.2.0" \
     "$repository_root/PRIVACY.md:Update requests send no screen pixels" \
-    "$repository_root/PRIVACY.md:The public CopyLasso 0.1.x line still updates manually." \
-    "$repository_root/docs/security-and-privacy-review.md:The public 0.1.1 artifact remains the current release and contains none of the v0.2 features."; do
+    "$repository_root/PRIVACY.md:manually install public CopyLasso 0.2.0 once" \
+    "$repository_root/docs/security-and-privacy-review.md:This review describes the public CopyLasso 0.2.0 boundary."; do
     documentation_file="${documentation_contract%%:*}"
     required_text="${documentation_contract#*:}"
     /usr/bin/grep -Fq "$required_text" "$documentation_file" || \
-        fail "G36 documentation does not distinguish shipping source from public 0.1.1: $required_text"
+        fail "Public v0.2 documentation does not retain the secure-update boundary: $required_text"
 done
 
 if /usr/bin/grep -R -nE \
-    'TODO|example\.com|Capture (Code|LaTeX) (is|are) (available now|shipping|included in 0\.1\.1)' \
+    'TODO|example\.com|Capture LaTeX (is|are) (available now|shipping)' \
     "$contract"; then
     fail "The v0.2 contract contains a placeholder or falsely shipped feature claim."
 fi

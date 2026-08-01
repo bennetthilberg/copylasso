@@ -89,6 +89,9 @@ echo "Testing v0.2 publication controls"
 echo "Auditing v0.2 publication controls"
 ./scripts/audit-v02-publication.sh
 
+echo "Auditing the closed v0.2 release state"
+./scripts/audit-v02-release-state.sh
+
 echo "Auditing on-screen code recognition"
 ./scripts/audit-code-recognition.sh
 

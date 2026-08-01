@@ -1,16 +1,16 @@
 # Secure Update Operations
 
 This runbook records the secure-update boundary implemented by G36 and the
-publication responsibilities left to later release goals. G35 created the local
-architecture proof; G36 links the reviewed updater and creates no public feed or
-release.
+public feed published by G43. G35 created the local architecture proof; G36
+linked the reviewed updater; G42 qualified the immutable candidate; and G43
+published the exact authenticated feed and release without rebuilding.
 
 ## Endpoint and Request Contract
 
 The compiled production appcast URL is
 `https://updates.copylasso.com/appcast.xml`; release DMGs remain immutable
-GitHub Release assets. DNS and public feed publication are later, separately
-approved work.
+GitHub Release assets. The feed-only endpoint contains no website, content API,
+analytics, or redirect service.
 
 The enclosure starts at the exact immutable `github.com` release URL recorded
 in the authenticated feed, and CopyLasso validates that initial URL before the
@@ -116,10 +116,10 @@ authorizes Install and Relaunch. Closing, Escape, Later, or Cancel preserves the
 current application; a deferred update may be shown again without downloading
 automatically.
 
-## 0.1.x Bootstrap and G36 Boundary
+## 0.1.x Bootstrap and Public 0.2.0
 
-CopyLasso 0.1.x contains no updater. Its users must download and install the
-first updater-enabled version from the public GitHub release page and verify it
+CopyLasso 0.1.x contains no updater. Its users must download and install public
+CopyLasso 0.2.0, the first updater-enabled release, from the GitHub release page and verify it
 with the existing checksum, Developer ID, notarization, and Gatekeeper flow.
 Only that installed version can begin automatic checks.
 
@@ -152,11 +152,12 @@ the marker's absence. The fixture initially serves a signature-invalid copy of
 the otherwise valid appcast, then swaps in the exact signed copy for the update.
 Its state and TCC identity cannot be mistaken for the production app.
 
-## G41 Qualification and G42 Handoff
+## Historical G41 Qualification and G42 Handoff
 
-G41 freezes updater-enabled source at `0.2.0 (3)` while public CopyLasso remains
-`0.1.1`. The first updater-enabled release must still be installed manually;
-there is no public v0.2 appcast or updater-enabled artifact during G41. The
+During G41, updater-enabled source froze at `0.2.0 (3)` while public CopyLasso
+remained `0.1.1`. The first updater-enabled release still required manual
+installation, and no public v0.2 appcast or updater-enabled artifact existed at
+that historical checkpoint. The
 exact-head qualification package may generate one authenticated appcast
 locally, verify its key match and feed/enclosure signatures, and prove tamper
 and wrong-key rejection. That record remains outside the repository and is
@@ -166,8 +167,8 @@ After G41 is separately merged, G42 may dispatch the protected workflow from
 that exact protected `main` commit. G42 derives `v0.2.0-rc.N`, places its
 candidate-specific appcast only in the restricted verification bundle, and
 tests the private staged updater path. It remains draft-only and exposes no
-publication path. Public feed publication and immutable release promotion are
-separate G43 decisions.
+publication path. Public feed publication and immutable release promotion were
+separately approved and completed in G43.
 
 ## G43 Production Feed
 
@@ -190,3 +191,9 @@ release pass public readback. Future feed updates use a new immutable Pages
 deployment and the same reviewed signing boundary. A hosting failure never
 authorizes unsigned metadata, a replacement release asset, or movement of an
 existing release tag.
+
+CopyLasso 0.2.0 is the first public updater-enabled release. Its published feed
+and immutable GitHub enclosure passed signature, length, URL, version-ordering,
+browser-download, install, and public updater-path readback. The exact public
+identifiers and digests are retained in the
+[v0.2 release-state record](v0.2-release-state.md).
