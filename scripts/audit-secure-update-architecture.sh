@@ -290,8 +290,8 @@ require_literal "$repository_root/docs/secure-update-operations.md" \
     '0.1.x contains no updater' \
     "Operations must explain the manual 0.1.x bootstrap."
 require_literal "$repository_root/README.md" \
-    'The public CopyLasso 0.1.1 download still updates manually.' \
-    "README must distinguish the current public artifact from the updater-enabled source."
+    'CopyLasso 0.2.0 is the first updater-enabled public release:' \
+    "README must describe the current public updater-enabled release."
 require_literal "$repository_root/CHANGELOG.md" \
     'A user-controlled secure update path, with optional daily checks' \
     "The unreleased changelog must record the G36 update capability."

@@ -4,9 +4,9 @@
 
 CopyLasso is a free and open-source macOS utility for copying visible text from anywhere on screen. Press `⇧⌘2`, drag around text, and receive recognized plain text on the clipboard. Recognition runs locally with Apple's Vision framework, and CopyLasso does not retain a screenshot or OCR history.
 
-CopyLasso 0.1.1 is the latest public release.
-Current source is release-qualified as CopyLasso 0.2.0 (3). It remains
-unpublished until the separate release-candidate and publication gates.
+CopyLasso 0.2.0 is the latest public release. It adds authenticated,
+user-controlled updates, an optional success sound, and local recognition of
+five QR and barcode formats through the existing Capture command.
 
 ## Requirements
 
@@ -16,50 +16,44 @@ unpublished until the separate release-candidate and publication gates.
 
 ## Install CopyLasso
 
-Download CopyLasso 0.1.1 from the [release page](https://github.com/bennetthilberg/copylasso/releases/tag/v0.1.1):
+Download CopyLasso 0.2.0 from the [release page](https://github.com/bennetthilberg/copylasso/releases/tag/v0.2.0):
 
-- [CopyLasso-0.1.1.dmg](https://github.com/bennetthilberg/copylasso/releases/download/v0.1.1/CopyLasso-0.1.1.dmg)
-- [CopyLasso-0.1.1.dmg.sha256](https://github.com/bennetthilberg/copylasso/releases/download/v0.1.1/CopyLasso-0.1.1.dmg.sha256)
+- [CopyLasso-0.2.0.dmg](https://github.com/bennetthilberg/copylasso/releases/download/v0.2.0/CopyLasso-0.2.0.dmg)
+- [CopyLasso-0.2.0.dmg.sha256](https://github.com/bennetthilberg/copylasso/releases/download/v0.2.0/CopyLasso-0.2.0.dmg.sha256)
 
 Place both files in the same folder, then verify the download before opening it:
 
 ```sh
-shasum -a 256 -c CopyLasso-0.1.1.dmg.sha256
+shasum -a 256 -c CopyLasso-0.2.0.dmg.sha256
 ```
 
-The result must report `CopyLasso-0.1.1.dmg: OK`. Then:
+The result must report `CopyLasso-0.2.0.dmg: OK`. Then:
 
-1. Open `CopyLasso-0.1.1.dmg` and drag CopyLasso into Applications.
+1. Open `CopyLasso-0.2.0.dmg` and drag CopyLasso into Applications.
 2. Open CopyLasso. It runs in the menu bar and does not add a Dock icon.
 3. Complete the short first-run setup and keep the suggested `⇧⌘2` shortcut or record another one.
 4. The first capture asks macOS for Screen Recording permission. Approve CopyLasso, then choose **Quit & Reopen** if macOS offers it.
 
 ## Use CopyLasso
 
-1. Press `⇧⌘2`, or choose **Capture Text** from the CopyLasso menu-bar menu.
+1. Press `⇧⌘2`, or choose **Capture** from the CopyLasso menu-bar menu.
 2. Drag around text on one display. Press `Esc` to cancel without changing the clipboard.
 3. CopyLasso captures only the selected region, recognizes English text locally, and writes the assembled plain text to the clipboard.
 4. A short, nonactivating HUD reports copied text, no text found, a busy request, or a recoverable failure.
 
 Open **Settings…** from the menu to change or clear the shortcut, enable Launch at Login, review privacy information, or reopen first-run setup when it is incomplete.
 
-Current source includes the brief, friendly configurable success sound frozen
-for v0.2. It is enabled by default and can be disabled with **Settings > Play
-Sound After Copying**. It plays only after recognized content reaches the
-clipboard; cancellation, no result, permission denial, recognition failure,
-and clipboard failure remain silent. The public CopyLasso 0.1.1 download
-retains its original silent feedback behavior.
+The brief, friendly success sound is enabled by default and can be disabled
+with **Settings > Play Sound After Copying**. It plays only after recognized
+content reaches the clipboard; cancellation, no result, permission denial,
+recognition failure, and clipboard failure remain silent.
 
-Current source also freezes unified on-screen code recognition for v0.2. The
-existing **Capture** action and shortcut recognize QR, Code 128, Data Matrix,
+The same **Capture** action and shortcut recognize QR, Code 128, Data Matrix,
 PDF417, and Aztec codes visible on screen. Text and code recognition run
 concurrently after one selection; an eligible code wins when both are present,
 while selections without a supported code fall back to ordinary OCR. CopyLasso
 copies recognized payloads as inert plain text and never opens a URL or
-otherwise acts on a payload. This is not part of the public CopyLasso 0.1.1
-download.
-
-Unified code recognition is present in current source but is not part of the public CopyLasso 0.1.1 download.
+otherwise acts on a payload.
 
 ## Permission and Recovery
 
@@ -83,13 +77,13 @@ See the [privacy policy](PRIVACY.md), [security and privacy review](docs/securit
 
 ## Known Limitations
 
-- Version 0.1 targets ordinary, approximately horizontal, single-column U.S. English text. Dense tables, handwriting, strongly rotated text, and complex multi-column layouts can be incomplete or reordered.
+- Version 0.2 targets ordinary, approximately horizontal, single-column U.S. English text. Dense tables, handwriting, strongly rotated text, and complex multi-column layouts can be incomplete or reordered.
 - A selection belongs to the display where the drag begins and clamps at that display's edge. Start another capture to select text on a different display.
 - Protected or DRM-restricted content can appear blank or unavailable to screen capture. CopyLasso follows macOS capture restrictions and does not bypass them.
 - Immediately reusing capture without moving the pointer can briefly leave the ordinary pointer visible. Moving the pointer or pressing the mouse button restores the crosshair; selection remains functional.
 - Locking the Mac during an active drag can leave selection pending after unlock. Quit and reopen CopyLasso before another pointer action; if the retained selection is allowed to complete, the clipboard may change.
 - In the rare event that macOS accepts clearing the pasteboard but rejects the subsequent text write, the previous clipboard contents have already been cleared. CopyLasso reports failure and does not read or reconstruct the prior contents.
-- Updates are manual in the public 0.1 release line. The first updater-enabled release must be installed manually before later authenticated update checks can begin.
+- CopyLasso 0.1.x contains no updater. Existing 0.1.x users must install 0.2.0 manually once; later releases can then arrive through authenticated update checks.
 
 ## Build from Source
 
@@ -103,10 +97,9 @@ Clone the repository, open `CopyLasso.xcodeproj`, and run the shared `CopyLasso`
 
 Architecture and test details are documented in [Architecture Overview](docs/architecture/overview.md), [Testing](docs/testing.md), and [Manual QA and Performance](docs/manual-qa-and-performance.md). The exact shipping KeyboardShortcuts and Sparkle dependencies and licenses are recorded in [Third-Party Notices](THIRD_PARTY_NOTICES.md); the updater trust boundary is recorded in [ADR-004](docs/architecture/ADR-004-secure-updates.md).
 
-## Secure Updates In Release-Qualified Source
+## Secure Updates
 
-The public CopyLasso 0.1.1 download still updates manually. Current source
-contains the updater frozen for CopyLasso 0.2.0:
+CopyLasso 0.2.0 is the first updater-enabled public release:
 
 - automatic checks default on and run at most once per 24 hours;
 - **Settings > Automatically Check for Updates** disables or reenables scheduled checks;
@@ -120,10 +113,8 @@ packages must use the version-matched immutable CopyLasso asset on GitHub
 Releases. The updater disables system profiling, cookies, external release-note
 downloads, automatic downloads, and automatic installation. Capture, OCR,
 clipboard output, Settings, onboarding, and Launch at Login continue to work
-when update networking is unavailable. No public v0.2 feed or updater-enabled
-release exists during G41.
-
-The public CopyLasso 0.1.x line still updates manually.
+when update networking is unavailable. Users running 0.1.x must install 0.2.0
+manually once because those older application binaries contain no updater.
 
 ## Contributing
 

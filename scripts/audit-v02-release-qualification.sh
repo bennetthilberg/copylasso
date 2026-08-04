@@ -15,8 +15,11 @@ readonly candidate_source_commit='43f1d0c676b08fb24b49fc628213fede90c4ed9d'
 readonly expected_candidate_input_tree_digest='baf122b35c5132f31e1df07d1ff0402713f9cabe7ef7b48355289bc29682f39e'
 readonly candidate_evidence_tree_pattern=$'\t(\\.github/workflows/prepare-publication\\.yml|docs/release-candidate-qualification\\.md|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/v0\\.2-publication-runbook\\.md|docs/v0\\.2-release-candidate\\.md|docs/v0\\.2-release-qualification\\.md|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/ci\\.sh|scripts/create-v02-publication-draft\\.sh|scripts/download-v02-candidate\\.sh|scripts/generate-release-appcast\\.sh|scripts/lib/release-package-verification\\.sh|scripts/lib/v02-publication-transaction\\.sh|scripts/lib/v02-publication-verification\\.sh|scripts/lib/verify-sparkle-signatures\\.swift|scripts/prepare-update-feed\\.sh|scripts/test-ci-contract\\.sh|scripts/test-release-package\\.sh|scripts/test-v02-publication\\.sh|scripts/verify-release-package\\.sh|scripts/verify-v02-candidate-package\\.sh)$'
 readonly approved_post_publication_patch_tree_pattern=$'\t(CHANGELOG\\.md|CopyLasso/App/CopyLassoApp\\.swift|CopyLasso/Models/SecureUpdateReleaseNotesPresentation\\.swift|CopyLasso/SharedUI/SecureUpdatePresentation\\.swift|CopyLassoTests/Update/SecureUpdateReleaseNotesPresentationTests\\.swift|CopyLassoUITests/CopyLassoUITests\\.swift|docs/architecture/overview\\.md|docs/manual-qa-and-performance\\.md|docs/secure-update-operations\\.md|docs/testing\\.md)$'
-readonly expected_candidate_baseline_tree_digest='d0e8c76e106bf47d68b598fafdcd4ab572033d45ac356796c6c61bfd6a7e4f16'
-readonly expected_approved_post_publication_patch_tree_digest='39fd46e48989d414af15517f0b1521acae857a7acd41a475309a833d57bc82bc'
+readonly approved_post_publication_runtime_tree_pattern=$'\t(CopyLasso/App/CopyLassoApp\\.swift|CopyLasso/Models/SecureUpdateReleaseNotesPresentation\\.swift|CopyLasso/SharedUI/SecureUpdatePresentation\\.swift|CopyLassoTests/Update/SecureUpdateReleaseNotesPresentationTests\\.swift|CopyLassoUITests/CopyLassoUITests\\.swift|docs/manual-qa-and-performance\\.md)$'
+readonly g44_release_state_tree_pattern=$'\t(CHANGELOG\\.md|CONTRIBUTING\\.md|PRIVACY\\.md|README\\.md|SECURITY\\.md|docs/architecture/overview\\.md|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/security-and-privacy-review\\.md|docs/testing\\.md|docs/v0\\.2-product-contract\\.md|docs/v0\\.2-release-state\\.md|scripts/audit-brand-release\\.sh|scripts/audit-code-recognition\\.sh|scripts/audit-secure-update-architecture\\.sh|scripts/audit-v02-contract\\.sh|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/audit-v02-release-state\\.sh|scripts/ci\\.sh|scripts/test-ci-contract\\.sh|scripts/test-release-metadata\\.sh)$'
+readonly expected_candidate_baseline_tree_digest='e6358aa654914c17146018f5bb5bfdd7eb3f52d79d88358bf2b16a814ba21c7b'
+readonly expected_approved_post_publication_runtime_tree_digest='6aa226944fafb8a45887db345b70afa94c2a2d2bc49b348350b153ce50095b7f'
+readonly expected_g44_release_state_files_digest='2223f222a24e2c970d7123cc973c54eb1a91ead66373ef9da481e452c1c8e30e'
 
 fail() {
     echo "$1" >&2
@@ -59,14 +62,14 @@ done
     '^COPYLASSO_RELEASE_BUILD[[:space:]]*=[[:space:]]*3[[:space:]]*$' \
     "$metadata" || fail "G41 must freeze CopyLasso at build 3."
 
-require_text CHANGELOG.md '## 0.2.0 - Unreleased'
-require_text README.md 'CopyLasso 0.1.1 is the latest public release.'
-require_text README.md 'Current source is release-qualified as CopyLasso 0.2.0 (3).'
-require_text README.md 'The first updater-enabled release must be installed manually'
+require_text CHANGELOG.md '## 0.2.0 - 2026-07-29'
+require_text README.md 'CopyLasso 0.2.0 is the latest public release.'
+require_text README.md 'CopyLasso 0.2.0 is the first updater-enabled public release:'
+require_text README.md 'Existing 0.1.x users must install 0.2.0 manually once'
 require_text PRIVACY.md 'Update requests send no screen pixels'
-require_text SECURITY.md 'No public v0.2 update feed or updater-enabled release exists yet.'
+require_text SECURITY.md 'CopyLasso 0.2.x is the currently supported public release line.'
 require_text docs/v0.2-product-contract.md \
-    '**Implementation status:** Release-qualified in source as 0.2.0 (3); not publicly released.'
+    '**Implementation status:** Released as 0.2.0 (3) on July 29, 2026.'
 require_text docs/v0.2-product-contract.md \
     'G39 concluded no-go, so CopyLasso 0.2.0 contains no LaTeX recognition'
 require_text docs/v0.2-release-qualification.md '# CopyLasso v0.2 Source Qualification'
@@ -157,6 +160,7 @@ if git -C "$repository_root" cat-file -e "$candidate_source_commit^{tree}" 2>/de
         git -C "$repository_root" ls-tree -r --full-tree "$candidate_source_commit" |
             /usr/bin/grep -Ev "$candidate_evidence_tree_pattern" |
             /usr/bin/grep -Ev "$approved_post_publication_patch_tree_pattern" |
+            /usr/bin/grep -Ev "$g44_release_state_tree_pattern" |
             /usr/bin/shasum -a 256 |
             /usr/bin/awk '{print $1}'
     )"
@@ -168,21 +172,57 @@ current_baseline_tree_digest="$(
     git -C "$repository_root" ls-tree -r --full-tree HEAD |
         /usr/bin/grep -Ev "$candidate_evidence_tree_pattern" |
         /usr/bin/grep -Ev "$approved_post_publication_patch_tree_pattern" |
+        /usr/bin/grep -Ev "$g44_release_state_tree_pattern" |
         /usr/bin/shasum -a 256 |
         /usr/bin/awk '{print $1}'
 )"
 [[ "$current_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest" ]] || \
     fail "A tracked candidate input outside the approved post-publication patch differs from source commit $candidate_source_commit."
 
-approved_post_publication_patch_tree_digest="$(
+approved_post_publication_runtime_tree_digest="$(
     git -C "$repository_root" ls-tree -r --full-tree HEAD |
-        /usr/bin/grep -E "$approved_post_publication_patch_tree_pattern" |
+        /usr/bin/grep -E "$approved_post_publication_runtime_tree_pattern" |
         /usr/bin/shasum -a 256 |
         /usr/bin/awk '{print $1}'
 )"
-[[ "$approved_post_publication_patch_tree_digest" == \
-    "$expected_approved_post_publication_patch_tree_digest" ]] || \
-    fail "The approved G43A post-publication patch differs from its reviewed tree digest."
+[[ "$approved_post_publication_runtime_tree_digest" == \
+    "$expected_approved_post_publication_runtime_tree_digest" ]] || \
+    fail "The approved G43A runtime patch differs from its reviewed tree digest."
+
+readonly g44_release_state_files=(
+    CHANGELOG.md
+    CONTRIBUTING.md
+    PRIVACY.md
+    README.md
+    SECURITY.md
+    docs/architecture/overview.md
+    docs/release-checklist.md
+    docs/release-workflow.md
+    docs/secure-update-operations.md
+    docs/security-and-privacy-review.md
+    docs/testing.md
+    docs/v0.2-product-contract.md
+    docs/v0.2-release-state.md
+    scripts/audit-brand-release.sh
+    scripts/audit-code-recognition.sh
+    scripts/audit-secure-update-architecture.sh
+    scripts/audit-v02-contract.sh
+    scripts/audit-v02-publication.sh
+    scripts/audit-v02-release-state.sh
+    scripts/ci.sh
+    scripts/test-release-metadata.sh
+)
+g44_release_state_files_digest="$(
+    for relative_path in "${g44_release_state_files[@]}"; do
+        [[ -f "$repository_root/$relative_path" ]] || \
+            fail "The approved G44 release-state file is missing: $relative_path"
+        file_digest="$(/usr/bin/shasum -a 256 "$repository_root/$relative_path" | \
+            /usr/bin/awk '{print $1}')"
+        /usr/bin/printf '%s\t%s\n' "$relative_path" "$file_digest"
+    done | /usr/bin/shasum -a 256 | /usr/bin/awk '{print $1}'
+)"
+[[ "$g44_release_state_files_digest" == "$expected_g44_release_state_files_digest" ]] || \
+    fail "The approved G44 release-state files differ from their reviewed digest."
 require_text CopyLassoTests/Settings/UserDefaultsSettingsStoreTests.swift \
     'testVersion011PreferencesRemainCompatibleWithVersion020Migration'
 require_text CopyLassoTests/Update/UpdateControllerTests.swift \

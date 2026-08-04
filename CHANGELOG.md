@@ -8,7 +8,7 @@ All notable changes to CopyLasso will be documented in this file.
 
 - Update offers now render authenticated release notes in a bounded, scrollable native panel instead of exposing Markdown syntax or expanding beyond the screen.
 
-## 0.2.0 - Unreleased
+## 0.2.0 - 2026-07-29
 
 ### Added
 

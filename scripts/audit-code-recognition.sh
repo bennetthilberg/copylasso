@@ -151,14 +151,14 @@ if ! /usr/bin/jq -e '
 fi
 
 for documentation_contract in \
-    "$repository_root/README.md:Unified code recognition is present in current source but is not part of the public CopyLasso 0.1.1 download." \
+    "$repository_root/README.md:The same **Capture** action and shortcut recognize QR, Code 128, Data Matrix," \
     "$repository_root/CHANGELOG.md:Unified on-screen recognition" \
     "$repository_root/PRIVACY.md:Code payloads are recognized locally" \
     "$repository_root/SECURITY.md:CopyLasso never opens or acts on a recognized code payload." \
     "$repository_root/docs/architecture/capture-workflow.md:## Concurrent Recognition and Precedence" \
     "$repository_root/docs/security-and-privacy-review.md:## G38 Code Recognition Review" \
     "$repository_root/docs/testing.md:## G38 On-Screen Code Recognition" \
-    "$repository_root/docs/v0.2-product-contract.md:unified on-screen code recognition are implemented in source but are not part of the public CopyLasso 0.1.1 download."; do
+    "$repository_root/docs/v0.2-product-contract.md:updater, configurable success sound, and unified on-screen code recognition all"; do
     documentation_file="${documentation_contract%%:*}"
     required_text="${documentation_contract#*:}"
     /usr/bin/grep -Fq "$required_text" "$documentation_file" || \
@@ -166,13 +166,9 @@ for documentation_contract in \
 done
 
 if /usr/bin/grep -R -nE \
-    '(Capture Code|code recognition) (is|are) (available now|shipping|included in 0\.1\.1)' \
-    "$repository_root/README.md" \
-    "$repository_root/CHANGELOG.md" \
-    "$repository_root/PRIVACY.md" \
-    "$repository_root/SECURITY.md" \
-    "$repository_root/docs"; then
-    fail "Public documentation must not claim that CopyLasso 0.1.1 includes Capture Code."
+    'Capture Code"|captureCodeShortcut|globalKeyboardShortcut\(\.captureCode\)' \
+    "$repository_root/CopyLasso"; then
+    fail "Public code recognition must remain unified under one Capture command."
 fi
 
 echo "CopyLasso on-screen code-recognition audit passed."

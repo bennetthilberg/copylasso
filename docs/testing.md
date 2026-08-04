@@ -352,8 +352,9 @@ separately in [Clean Installation Testing](clean-install-testing.md).
 [v0.2 product contract](v0.2-product-contract.md). Canonical CI invokes it
 exactly once, and `scripts/test-ci-contract.sh` enforces that invocation. The
 audit checks the approved update, sound, command, QR/barcode, LaTeX, privacy,
-accessibility, and version/build decisions while proving that source is frozen
-at `0.2.0 (3)` and public CopyLasso 0.1.1 remains clearly distinguished.
+accessibility, and version/build decisions while proving that the immutable
+release source is frozen at `0.2.0 (3)` and the public v0.2 release record stays
+distinct from historical qualification evidence.
 
 Run the focused gate with:
 
@@ -362,10 +363,25 @@ Run the focused gate with:
 ./scripts/test-ci-contract.sh
 ```
 
-This remains a documentation and scope gate. G41 adds a separate integration
+This remains a documentation and scope gate. G41 added a separate integration
 audit plus direct behavioral, built-product, signed manual, package, and
-minimum-system evidence. Neither audit qualifies a public feed, tag, release,
-or release candidate.
+minimum-system evidence. At that historical gate neither audit qualified a
+public feed, tag, release, or release candidate; G42 and G43 later completed
+those separate qualification and publication gates.
+
+## G44 v0.2 Release-State Closure
+
+`scripts/audit-v02-release-state.sh` binds current public documentation to the
+immutable v0.2.0 release commit, release ID, two public asset digests,
+authenticated appcast digest, dated changelog, retained post-release G43A
+`Unreleased` note, and narrowly closed shipped-feature issues. Canonical CI
+invokes it exactly once, enforced by `scripts/test-ci-contract.sh`.
+
+The detailed live evidence, including public source-archive equality, the one
+installed production Launch Services identity, and the residual local
+command-line signing subsystem anomaly, is recorded in
+[v0.2 Release State](v0.2-release-state.md). G44 changes no release tag, asset,
+feed byte, application binary, version, or build.
 
 ## G41 v0.2 Release Qualification
 
@@ -541,7 +557,7 @@ v0.1 publication evidence gaps. G33 defines a freshly recreated disposable
 local macOS user as the replacement for the abandoned VM-clone boundary, but
 the maintainer stopped after deleting the old account and before recreation.
 The account-isolation row therefore remains explicitly skipped while the
-current public release's maintainer-account reinstall, login-item, uninstall,
+then-current public release's maintainer-account reinstall, login-item, uninstall,
 and permission transitions are qualified without claiming additional OS
 coverage. The applicable
 lock-only failure and immediate-reuse stationary-crosshair nuance remain
