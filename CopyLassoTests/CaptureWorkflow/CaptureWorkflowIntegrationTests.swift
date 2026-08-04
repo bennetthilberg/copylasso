@@ -229,7 +229,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     XCTAssertEqual(context.coordinator.state, .idle)
   }
 
-  func testSupportedCodeWinsOverRecognizedTextThenPlaysSoundAndPresentsCodeFeedback()
+  func testRecognizedTextWinsOverSupportedCodeThenPlaysSoundAndPresentsTextFeedback()
     async throws
   {
     let observations = [
@@ -244,17 +244,17 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     )
     await context.scheduler.runNext()
 
-    XCTAssertEqual(context.clipboard.writtenTexts, ["LEFT\nRIGHT"])
+    XCTAssertEqual(context.clipboard.writtenTexts, ["assembled"])
     XCTAssertEqual(context.sound.playCallCount, 1)
     XCTAssertEqual(
       context.feedback.presentedFeedback,
-      [.codeSuccess(preview: "LEFT RIGHT")]
+      [.success(preview: "assembled")]
     )
     let barcodeRecognitionCount = await context.barcode.recognitionCallCount
     let textRecognitionCount = await context.ocr.recognitionCallCount
     XCTAssertEqual(barcodeRecognitionCount, 1)
     XCTAssertEqual(textRecognitionCount, 1)
-    XCTAssertEqual(context.textAssembler.inputs, [])
+    XCTAssertEqual(context.textAssembler.inputs.count, 1)
     XCTAssertEqual(context.coordinator.state, .idle)
   }
 
@@ -282,7 +282,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     XCTAssertEqual(context.sound.playCallCount, 0)
   }
 
-  func testMultilineCodeAmbiguityWinsOverTextAndPreservesClipboard() async throws {
+  func testRecognizedTextWinsOverMultilineCodeAmbiguity() async throws {
     let ambiguous = try makeContext(
       barcodeResult: .success([
         codeObservation(payload: "line one\nline two", x: 0.1),
@@ -291,10 +291,26 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     )
     _ = ambiguous.command.perform()
     await ambiguous.scheduler.runNext()
+    XCTAssertEqual(ambiguous.feedback.presentedFeedback, [.success(preview: "assembled")])
+    XCTAssertEqual(ambiguous.clipboard.writtenTexts, ["assembled"])
+    XCTAssertEqual(ambiguous.sound.playCallCount, 1)
+    XCTAssertEqual(ambiguous.textAssembler.inputs.count, 1)
+  }
+
+  func testMultilineCodeAmbiguityWithoutTextPreservesClipboard() async throws {
+    let ambiguous = try makeContext(
+      barcodeResult: .success([
+        codeObservation(payload: "line one\nline two", x: 0.1),
+        codeObservation(payload: "another", x: 0.6),
+      ]),
+      assembledText: ""
+    )
+    _ = ambiguous.command.perform()
+    await ambiguous.scheduler.runNext()
     XCTAssertEqual(ambiguous.feedback.presentedFeedback, [.ambiguousCodes])
     XCTAssertEqual(ambiguous.clipboard.writtenTexts, [])
     XCTAssertEqual(ambiguous.sound.playCallCount, 0)
-    XCTAssertEqual(ambiguous.textAssembler.inputs, [])
+    XCTAssertEqual(ambiguous.textAssembler.inputs.count, 1)
   }
 
   func testOneRecognizerMaySucceedWhenTheOtherFails()

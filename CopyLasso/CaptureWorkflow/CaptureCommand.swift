@@ -288,6 +288,13 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     }
 
     let recognitionFailed = textAttempt.isFailure || codeAttempt.isFailure
+    if case .success(let textObservations) = textAttempt {
+      let text = textAssembler.assemble(textObservations)
+      if !text.isEmpty {
+        return .text(text)
+      }
+    }
+
     if case .success(let codeObservations) = codeAttempt {
       switch codePayloadAssembler.assemble(codeObservations) {
       case .content(let payload):
@@ -296,13 +303,6 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
         return .ambiguousCodes
       case .noCode:
         break
-      }
-    }
-
-    if case .success(let textObservations) = textAttempt {
-      let text = textAssembler.assemble(textObservations)
-      if !text.isEmpty {
-        return .text(text)
       }
     }
 
