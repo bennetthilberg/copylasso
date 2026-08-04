@@ -59,7 +59,7 @@ final class CopyLassoUITests: XCTestCase {
     openMenu(in: app)
     let savedShortcutMenuWidth = menuItem("Capture", in: app).frame.width
     XCTAssertGreaterThan(savedShortcutMenuWidth, clearedShortcutMenuWidth)
-    retainScreenshot(named: "CopyLasso menu with saved Capture shortcut")
+    attachScreenshotOnFailure(named: "CopyLasso menu with saved Capture shortcut")
     app.typeKey(XCUIKeyboardKey.escape, modifierFlags: [])
 
     openMenu(in: app)
@@ -73,7 +73,7 @@ final class CopyLassoUITests: XCTestCase {
     openMenu(in: app)
     let customShortcutMenuWidth = menuItem("Capture", in: app).frame.width
     XCTAssertGreaterThan(customShortcutMenuWidth, clearedShortcutMenuWidth)
-    retainScreenshot(named: "CopyLasso menu with custom Capture shortcut")
+    attachScreenshotOnFailure(named: "CopyLasso menu with custom Capture shortcut")
   }
 
   @MainActor
@@ -105,7 +105,7 @@ final class CopyLassoUITests: XCTestCase {
       let feedbackHUD = app.descendants(matching: .any)["copylasso.feedback.hud"]
       XCTAssertTrue(feedbackHUD.waitForExistence(timeout: 5))
       assertAccessibleText(feedbackHUD, equals: expectedAccessibilityLabel)
-      retainScreenshot(named: "CopyLasso unified Capture \(result) feedback")
+      attachScreenshotOnFailure(named: "CopyLasso unified Capture \(result) feedback")
       app.terminate()
     }
   }
@@ -377,7 +377,7 @@ final class CopyLassoUITests: XCTestCase {
 
       let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
       attachment.name = "CopyLasso menu — \(appearance)"
-      attachment.lifetime = .keepAlways
+      attachment.lifetime = .deleteOnSuccess
       add(attachment)
 
       app.terminate()
@@ -450,7 +450,7 @@ final class CopyLassoUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["copylasso.onboarding.title"].waitForExistence(timeout: 5))
     XCTAssertTrue(statusItem(in: app).exists)
     XCTAssertFalse(app.dialogs["Screen Recording"].exists)
-    retainScreenshot(named: "CopyLasso first-run onboarding")
+    attachScreenshotOnFailure(named: "CopyLasso first-run onboarding")
   }
 
   @MainActor
@@ -565,7 +565,7 @@ final class CopyLassoUITests: XCTestCase {
         "Checks retrieve only signed update information. CopyLasso never sends screen, OCR, or clipboard content."
       ].exists
     )
-    retainScreenshot(named: "CopyLasso Settings")
+    attachScreenshotOnFailure(named: "CopyLasso Settings")
 
   }
 
@@ -761,7 +761,7 @@ final class CopyLassoUITests: XCTestCase {
     XCTAssertFalse(app.staticTexts["# CopyLasso 0.2.0"].exists)
     XCTAssertTrue(app.buttons["copylasso.update.download"].isEnabled)
     XCTAssertTrue(app.buttons["copylasso.update.later"].isEnabled)
-    retainScreenshot(named: "CopyLasso bounded update offer")
+    attachScreenshotOnFailure(named: "CopyLasso bounded update offer")
 
     app.typeKey(XCUIKeyboardKey.escape, modifierFlags: [])
     XCTAssertTrue(panel.waitForNonExistence(timeout: 5))
@@ -806,10 +806,10 @@ final class CopyLassoUITests: XCTestCase {
   }
 
   @MainActor
-  private func retainScreenshot(named name: String) {
+  private func attachScreenshotOnFailure(named name: String) {
     let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
     attachment.name = name
-    attachment.lifetime = .keepAlways
+    attachment.lifetime = .deleteOnSuccess
     add(attachment)
   }
 
