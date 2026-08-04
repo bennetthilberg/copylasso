@@ -193,15 +193,15 @@ expect_failure "read-only UDZO" assert_release_dmg_imageinfo \
 
 valid_diskutil="$temporary_directory/valid-diskutil.txt"
 cat > "$valid_diskutil" <<'TEXT'
-   Media Read-Only:           Yes
-   Volume Read-Only:          Yes (read-only mount flag set)
+   Read-Only Media:           Yes
+   Read-Only Volume:          Yes (read-only mount flag set)
 TEXT
 assert_release_read_only_mount "$valid_diskutil"
-sed 's/Media Read-Only:           Yes/Media Read-Only:           No/' \
+sed 's/Read-Only Media:           Yes/Read-Only Media:           No/' \
     "$valid_diskutil" > "$temporary_directory/writable-media.txt"
 expect_failure "media is not read-only" assert_release_read_only_mount \
     "$temporary_directory/writable-media.txt"
-sed 's/Volume Read-Only:          Yes/Volume Read-Only:          No/' \
+sed 's/Read-Only Volume:          Yes/Read-Only Volume:          No/' \
     "$valid_diskutil" > "$temporary_directory/writable-volume.txt"
 expect_failure "volume is not read-only" assert_release_read_only_mount \
     "$temporary_directory/writable-volume.txt"

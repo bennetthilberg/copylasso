@@ -183,9 +183,9 @@ assert_release_read_only_mount() {
 
     [[ -f "$disk_record_path" ]] || \
         release_package_fail "The mounted-volume record is missing."
-    /usr/bin/grep -Eq 'Media Read-Only:[[:space:]]+Yes' "$disk_record_path" || \
+    /usr/bin/grep -Eq 'Read-Only Media:[[:space:]]+Yes' "$disk_record_path" || \
         release_package_fail "The release disk-image media is not read-only."
-    /usr/bin/grep -Eq 'Volume Read-Only:[[:space:]]+Yes' "$disk_record_path" || \
+    /usr/bin/grep -Eq 'Read-Only Volume:[[:space:]]+Yes' "$disk_record_path" || \
         release_package_fail "The mounted release volume is not read-only."
 }
 
