@@ -36,9 +36,20 @@ if [[ "$(/usr/bin/grep -c 'CODE_SIGN_ENTITLEMENTS = CopyLasso/CopyLasso.entitlem
     exit 1
 fi
 
-if [[ "$(/usr/bin/grep -c 'ENABLE_HARDENED_RUNTIME = YES;' \
-    CopyLasso.xcodeproj/project.pbxproj)" != 2 ]]; then
-    echo "Debug and Release must both enable Hardened Runtime." >&2
+if ! /usr/bin/awk '
+    /Build configuration list for PBXNativeTarget "CopyLasso" \*\/ = \{/ { in_app_list = 1 }
+    in_app_list && /\/\* Debug \*\// { debug_id = $1 }
+    in_app_list && /\/\* Release \*\// { release_id = $1 }
+    in_app_list && /defaultConfigurationName = Release;/ { in_app_list = 0 }
+    debug_id != "" && $1 == debug_id { in_debug = 1 }
+    release_id != "" && $1 == release_id { in_release = 1 }
+    in_debug && /ENABLE_HARDENED_RUNTIME = YES;/ { debug_hardened = 1 }
+    in_release && /ENABLE_HARDENED_RUNTIME = YES;/ { release_hardened = 1 }
+    in_debug && /^[[:space:]]*};/ { in_debug = 0 }
+    in_release && /^[[:space:]]*};/ { in_release = 0 }
+    END { exit !(debug_hardened && release_hardened) }
+' CopyLasso.xcodeproj/project.pbxproj; then
+    echo "Debug and Release app configurations must both enable Hardened Runtime." >&2
     exit 1
 fi
 
