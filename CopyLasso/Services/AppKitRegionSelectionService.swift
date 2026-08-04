@@ -333,6 +333,9 @@ private final class SelectionOverlayController {
 
     switch event {
     case .mouseDown(let point):
+      for surface in surfaces where surface.displayID != displayID {
+        surface.cancelInputReadiness()
+      }
       let inputSurface = surfaces.first(where: { $0.displayID == displayID })
       inputSurface?.makeInputReady { [weak self] in
         self?.inputSurfaceBecameKey(displayID)
