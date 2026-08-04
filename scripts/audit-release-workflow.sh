@@ -107,6 +107,10 @@ contents_write_count="$(/usr/bin/grep -Ec '^[[:space:]]*contents: write[[:space:
     fail "Only the protected draft job may receive contents write permission."
 require_text "$workflow" 'permissions:'
 require_text "$workflow" 'contents: read'
+require_text "$workflow" 'if: ${{ github.ref == '"'"'refs/heads/main'"'"' }}'
+[[ "$(/usr/bin/grep -Fc 'if: ${{ github.ref == '"'"'refs/heads/main'"'"' }}' "$workflow")" == "2" ]] || \
+    fail "Both release jobs must enforce the trusted main-branch dispatch guard."
+
 
 require_text "$workflow" 'actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0'
 require_text "$workflow" 'ref: ${{ github.sha }}'
