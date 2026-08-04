@@ -170,6 +170,12 @@ fi
 release_identifier="$(/usr/bin/plutil -extract id raw -o - "$creation_record" 2>/dev/null || true)"
 [[ "$release_identifier" =~ ^[0-9]+$ ]] || \
     protected_release_fail "The protected draft release has no valid identifier."
+if [[ "$release_mode" == "candidate" ]]; then
+    # GitHub creates a missing tag_name at release creation time using
+    # target_commitish. Treat that tag as part of the candidate transaction so
+    # rollback removes an unqualified RC tag if later verification fails.
+    candidate_tag_created="true"
+fi
 
 if ! "$gh_binary" release upload "$tag" \
     "$run_directory/$COPYLASSO_G28_DMG" \

@@ -364,12 +364,16 @@ if [[ "$1" == "api" && "$*" == *"git/ref/tags/"* ]]; then
 fi
 if [[ "$1" == "api" && "$*" == *"--method POST"* && "$*" == *"git/refs"* ]]; then
     [[ "${FAKE_GH_MODE:-success}" != "tag-create-fail" ]] || exit 1
+    [[ ! -f "$FAKE_GH_TAG_STATE" ]] || exit 1
     : > "$FAKE_GH_TAG_STATE"
     [[ "${FAKE_GH_MODE:-success}" != "tag-create-uncertain" ]] || exit 1
     /bin/cat "$FAKE_GH_TAG_RECORD"
     exit 0
 fi
 if [[ "$1" == "api" && "$*" == *"--method POST"* && "$*" == *"/releases"* ]]; then
+    if [[ "$*" == *"tag_name=v0.2.0-rc."* ]]; then
+        : > "$FAKE_GH_TAG_STATE"
+    fi
     printf '{"id":123}\n'
     exit 0
 fi
@@ -439,7 +443,9 @@ assert_release_candidate_record \
     "$release_notes"
 [[ -f "$fake_gh_tag_state" ]] || fail "The verified RC transaction must create its tag."
 /usr/bin/grep -Fq -- '--method POST repos/owner/repository/git/refs' "$fake_gh_log" || \
-    fail "The verified RC transaction must create its tag through the Git ref API."
+    fail "The verified RC transaction must prove its tag through the Git ref API."
+/usr/bin/grep -Fq -- 'api repos/owner/repository/git/ref/tags/v0.2.0-rc.1' "$fake_gh_log" || \
+    fail "The verified RC transaction must accept GitHub's release-created exact tag."
 /usr/bin/grep -Fq -- \
     '--paginate --slurp repos/owner/repository/releases?per_page=100' \
     "$fake_gh_log" || fail "The verified RC transaction must inspect every existing release."
@@ -520,7 +526,7 @@ if /usr/bin/grep -Fq -- '--method POST' "$fake_gh_log"; then
     fail "A pre-existing tag must prevent every RC mutation."
 fi
 
-for failure_mode in upload-fail tag-create-fail tag-readback-fail; do
+for failure_mode in upload-fail tag-readback-fail; do
     : > "$fake_gh_log"
     /bin/rm -f "$fake_gh_tag_state"
     export FAKE_GH_MODE="$failure_mode"
@@ -533,11 +539,9 @@ for failure_mode in upload-fail tag-create-fail tag-readback-fail; do
         --readback "$temporary_directory/$failure_mode.json"
     /usr/bin/grep -Fq -- '--method DELETE repos/owner/repository/releases/123' \
         "$fake_gh_log" || fail "A failed RC transaction must delete its incomplete draft."
-    if [[ "$failure_mode" == "tag-readback-fail" ]]; then
-        /usr/bin/grep -Fq -- \
-            '--method DELETE repos/owner/repository/git/refs/tags/v0.2.0-rc.1' \
-            "$fake_gh_log" || fail "A failed RC tag readback must delete its newly created tag."
-    fi
+    /usr/bin/grep -Fq -- \
+        '--method DELETE repos/owner/repository/git/refs/tags/v0.2.0-rc.1' \
+        "$fake_gh_log" || fail "A failed RC transaction must delete its release-created tag."
     [[ ! -f "$fake_gh_tag_state" ]] || \
         fail "A failed RC transaction must not retain a tag created by that invocation."
 done
