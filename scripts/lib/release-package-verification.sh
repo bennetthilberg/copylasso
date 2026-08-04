@@ -212,9 +212,7 @@ assert_release_notary_records() {
         release_package_fail "The notarization submission and diagnostic log do not match."
     fi
     issues="$(/usr/bin/plutil -extract issues json -o - "$diagnostic_log_path" 2>/dev/null || true)"
-    if [[ "$issues" != "[]" ]] && \
-        ! /usr/bin/grep -Eq '"issues"[[:space:]]*:[[:space:]]*null([[:space:]]*[,}]|[[:space:]]*$)' \
-            "$diagnostic_log_path"; then
+    if [[ "$issues" != "[]" ]] && [[ "$issues" != "null" ]]; then
         release_package_fail "The accepted notarization diagnostic log contains issues."
     fi
 }

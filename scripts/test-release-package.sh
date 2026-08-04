@@ -244,6 +244,18 @@ JSON
 expect_failure "contains issues" assert_release_notary_records \
     "$valid_submission" "$temporary_directory/warning-log.json"
 
+nested_null_issues_log="$temporary_directory/nested-null-issues-log.json"
+cat > "$nested_null_issues_log" <<'JSON'
+{
+  "jobId": "00000000-0000-0000-0000-000000000000",
+  "status": "Accepted",
+  "issues": [{"severity":"warning"}],
+  "metadata": {"issues": null}
+}
+JSON
+expect_failure "contains issues" assert_release_notary_records \
+    "$valid_submission" "$nested_null_issues_log"
+
 valid_app_uuids="$temporary_directory/app-uuids.txt"
 valid_dsym_uuids="$temporary_directory/dsym-uuids.txt"
 cat > "$valid_app_uuids" <<'TEXT'
