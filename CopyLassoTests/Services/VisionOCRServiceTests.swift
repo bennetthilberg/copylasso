@@ -132,6 +132,59 @@ final class VisionOCRServiceTests: XCTestCase {
     )
   }
 
+  func testRecognitionAppliesConfiguredResourceLimits() async throws {
+    let observations = (0..<5).map { index in
+      NeutralTextObservation(
+        text: String(repeating: "x", count: 8) + "\(index)",
+        confidence: 0.9,
+        boundingBox: CGRect(x: 0, y: 0, width: 0.1, height: 0.1)
+      )
+    }
+    let configuration = VisionOCRConfiguration(
+      revision: VNRecognizeTextRequestRevision3,
+      recognitionLevel: .accurate,
+      recognitionLanguages: ["en-US"],
+      automaticallyDetectsLanguage: false,
+      usesLanguageCorrection: true,
+      minimumTextHeight: 0.02,
+      maximumObservationCount: 3,
+      maximumRecognizedTextLength: 20,
+      recognitionTimeout: .seconds(2)
+    )
+    let service = VisionOCRService(
+      configuration: configuration,
+      performer: PerformerProbe(observations: observations).perform
+    )
+
+    let recognized = try await service.recognizeText(in: makeBlankImage())
+
+    XCTAssertEqual(recognized.map(\.text), ["xxxxxxxx0", "xxxxxxxx1", "xx"])
+  }
+
+  func testRecognitionTimeoutCancelsPerformer() async throws {
+    let performer = HoldingPerformer()
+    let configuration = VisionOCRConfiguration(
+      revision: VNRecognizeTextRequestRevision3,
+      recognitionLevel: .accurate,
+      recognitionLanguages: ["en-US"],
+      automaticallyDetectsLanguage: false,
+      usesLanguageCorrection: true,
+      minimumTextHeight: 0.01,
+      maximumObservationCount: 500,
+      maximumRecognizedTextLength: 20_000,
+      recognitionTimeout: .milliseconds(20)
+    )
+    let service = VisionOCRService(configuration: configuration, performer: performer.perform)
+
+    do {
+      _ = try await service.recognizeText(in: makeBlankImage())
+      XCTFail("Expected timeout")
+    } catch {
+      XCTAssertEqual(error as? VisionOCRError, .timedOut)
+    }
+    XCTAssertTrue(performer.wasCancelled)
+  }
+
   func testUnexpectedEngineFailureMapsToTypedRecognitionFailure() async throws {
     let service = VisionOCRService { _, _, _ in throw TestError.injected }
 
@@ -401,9 +454,14 @@ private final class PerformerProbe: @unchecked Sendable {
 private final class HoldingPerformer: @unchecked Sendable {
   private let lock = NSLock()
   private var started = false
+  private var cancelled = false
 
   var hasStarted: Bool {
     lock.withLock { started }
+  }
+
+  var wasCancelled: Bool {
+    lock.withLock { cancelled }
   }
 
   func perform(
@@ -415,6 +473,7 @@ private final class HoldingPerformer: @unchecked Sendable {
     while !cancellation.isCancelled {
       Thread.sleep(forTimeInterval: 0.001)
     }
+    lock.withLock { cancelled = true }
     throw VisionOCRError.cancelled
   }
 }

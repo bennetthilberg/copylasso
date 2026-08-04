@@ -13,19 +13,28 @@ struct VisionOCRConfiguration: Equatable, Sendable {
   let recognitionLanguages: [String]
   let automaticallyDetectsLanguage: Bool
   let usesLanguageCorrection: Bool
+  let minimumTextHeight: Float
+  let maximumObservationCount: Int
+  let maximumRecognizedTextLength: Int
+  let recognitionTimeout: Duration
 
   static let englishAccurate = VisionOCRConfiguration(
     revision: VNRecognizeTextRequestRevision3,
     recognitionLevel: .accurate,
     recognitionLanguages: ["en-US"],
     automaticallyDetectsLanguage: false,
-    usesLanguageCorrection: true
+    usesLanguageCorrection: true,
+    minimumTextHeight: 0.01,
+    maximumObservationCount: 500,
+    maximumRecognizedTextLength: 20_000,
+    recognitionTimeout: .seconds(8)
   )
 }
 
 enum VisionOCRError: Error, Equatable, Sendable {
   case cancelled
   case recognitionFailed
+  case timedOut
 }
 
 protocol VisionRequestCancelling: AnyObject {
@@ -112,23 +121,40 @@ struct VisionOCRService: OCRService {
 
     do {
       return try await withTaskCancellationHandler {
-        try await Task.detached(priority: .userInitiated) {
-          guard !cancellation.isCancelled else {
-            throw VisionOCRError.cancelled
-          }
-          do {
-            let observations = try performer(image, configuration, cancellation)
+        try await withThrowingTaskGroup(of: [RecognizedTextObservation].self) { group in
+          let recognitionTask = Task.detached(priority: .userInitiated) {
             guard !cancellation.isCancelled else {
               throw VisionOCRError.cancelled
             }
-            return observations
-          } catch {
-            if cancellation.isCancelled {
-              throw VisionOCRError.cancelled
+            do {
+              let observations = try performer(image, configuration, cancellation)
+              guard !cancellation.isCancelled else {
+                throw VisionOCRError.cancelled
+              }
+              return Self.limitedObservations(observations, configuration: configuration)
+            } catch {
+              if cancellation.isCancelled {
+                throw VisionOCRError.cancelled
+              }
+              throw error
             }
-            throw error
           }
-        }.value
+
+          group.addTask {
+            defer { recognitionTask.cancel() }
+            return try await recognitionTask.value
+          }
+          group.addTask {
+            try await Task.sleep(for: configuration.recognitionTimeout)
+            cancellation.cancel()
+            recognitionTask.cancel()
+            throw VisionOCRError.timedOut
+          }
+
+          let observations = try await group.next() ?? []
+          group.cancelAll()
+          return observations
+        }
       } onCancel: {
         cancellation.cancel()
       }
@@ -155,7 +181,7 @@ struct VisionOCRService: OCRService {
     request.recognitionLanguages = configuration.recognitionLanguages
     request.automaticallyDetectsLanguage = configuration.automaticallyDetectsLanguage
     request.usesLanguageCorrection = configuration.usesLanguageCorrection
-    request.minimumTextHeight = 0
+    request.minimumTextHeight = configuration.minimumTextHeight
 
     guard cancellation.install(request) else {
       throw VisionOCRError.cancelled
@@ -175,7 +201,10 @@ struct VisionOCRService: OCRService {
     guard !cancellation.isCancelled else {
       throw VisionOCRError.cancelled
     }
-    return (request.results ?? []).compactMap { observation in
+    return limitedObservations(
+      request.results ?? [],
+      configuration: configuration
+    ) { observation in
       guard let candidate = observation.topCandidates(1).first else {
         return nil
       }
@@ -185,5 +214,41 @@ struct VisionOCRService: OCRService {
         boundingBox: observation.boundingBox
       )
     }
+  }
+
+  private static func limitedObservations(
+    _ observations: [RecognizedTextObservation],
+    configuration: VisionOCRConfiguration
+  ) -> [RecognizedTextObservation] {
+    limitedObservations(observations, configuration: configuration) { $0 }
+  }
+
+  private static func limitedObservations<Observation>(
+    _ observations: [Observation],
+    configuration: VisionOCRConfiguration,
+    transform: (Observation) -> RecognizedTextObservation?
+  ) -> [RecognizedTextObservation] {
+    var limited: [RecognizedTextObservation] = []
+    limited.reserveCapacity(min(observations.count, configuration.maximumObservationCount))
+    var remainingTextLength = configuration.maximumRecognizedTextLength
+
+    for observation in observations {
+      guard limited.count < configuration.maximumObservationCount, remainingTextLength > 0 else {
+        break
+      }
+      guard var recognized = transform(observation) else {
+        continue
+      }
+      if recognized.text.count > remainingTextLength {
+        recognized = RecognizedTextObservation(
+          text: String(recognized.text.prefix(remainingTextLength)),
+          confidence: recognized.confidence,
+          boundingBox: recognized.boundingBox
+        )
+      }
+      remainingTextLength -= recognized.text.count
+      limited.append(recognized)
+    }
+    return limited
   }
 }
