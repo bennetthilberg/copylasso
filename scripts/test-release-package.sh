@@ -273,6 +273,13 @@ local_artifact=/local/build/output
 TEXT
 expect_failure "must not contain local absolute paths" \
     assert_release_evidence_is_portable "$absolute_path_evidence"
+embedded_absolute_path_evidence="$temporary_directory/embedded-absolute-path-evidence.txt"
+cat > "$embedded_absolute_path_evidence" <<'TEXT'
+version=0.2.0
+build_log=output=/Users/alice/project
+TEXT
+expect_failure "must not contain local absolute paths" \
+    assert_release_evidence_is_portable "$embedded_absolute_path_evidence"
 
 assert_release_commit_matches \
     "payload" \
