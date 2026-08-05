@@ -276,6 +276,7 @@ for required_documentation_text in \
     'candidate tag is' \
     'created atomically before draft creation' \
     'ambiguous release-creation response retains' \
+    'cleanup failure is an explicit blocking state' \
     'G32' \
     'G42' \
     'COPYLASSO_SPARKLE_PRIVATE_KEY' \

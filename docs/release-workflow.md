@@ -149,6 +149,11 @@ the tag for manual inspection because another actor may already have attached a
 release to it. The helper never replaces, patches, moves, or force-updates a ref
 or release.
 
+Rollback deletes an incomplete draft before deleting its candidate tag. If
+draft deletion fails, the tag is retained so the surviving release never loses
+its ref. Any draft or tag cleanup failure is an explicit blocking state that
+requires manual readback and recovery before that candidate number is reused.
+
 The reviewed candidate body is
 [`release-notes/0.2.0.md`](release-notes/0.2.0.md). Follow
 [`v0.2-release-qualification.md`](v0.2-release-qualification.md) and the G42
