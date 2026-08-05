@@ -184,11 +184,14 @@ for required_patch_guard in \
     "expected_candidate_baseline_tree_digest='ecbcf39d0cac2b1525e46dc154123eb5418db3a9e790770a36a281b5160775bf'" \
     "expected_approved_post_publication_runtime_tree_digest='388191bdbca550efa34ca64d9f8ebba3f127457313e4f0739d4601919fa9de7d'" \
     "expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'" \
-    "expected_approved_post_candidate_patch_digest='11b76e75efe2fda418fbff37e57c32122414250f72fab2cebfa2060687371627'" \
+    "expected_approved_post_candidate_patch_digest='ba386053ada307cec22601cb78e1a78e4916fc2f9a4fbdfebf90fc6bd2f24482'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
     '"$current_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest"' \
     'approved_post_candidate_path "$approved_path"' \
+    'hash-object -- "$approved_path"' \
+    'expected_approved_post_candidate_patch_digest[^0-9a-f]*' \
+    '<self-normalized>' \
     'The approved post-candidate patch differs from its reviewed digest.' \
     '/usr/bin/grep -Ev "$approved_post_v02_security_patch_tree_pattern"' \
     '/usr/bin/grep -Ev "$g44_release_state_tree_pattern"' \
@@ -198,6 +201,15 @@ for required_patch_guard in \
         fail "The v0.2 qualification audit must pin the exact approved G43A patch."
     fi
 done
+
+if /usr/bin/grep -Fq \
+    ':(exclude)scripts/audit-v02-release-qualification.sh' \
+    "$v02_release_qualification_audit_script" || \
+    /usr/bin/grep -Fq \
+        ':(exclude)scripts/test-ci-contract.sh' \
+        "$v02_release_qualification_audit_script"; then
+    fail "The post-candidate digest must pin its own audit and contract scripts."
+fi
 
 v02_publication_test_invocations="$({
     /usr/bin/grep -Ec \
