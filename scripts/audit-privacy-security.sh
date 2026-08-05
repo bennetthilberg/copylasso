@@ -39,6 +39,7 @@ if [[ "$(/usr/bin/grep -c 'CODE_SIGN_ENTITLEMENTS = CopyLasso/CopyLasso.entitlem
 fi
 
 assert_copylasso_hardened_runtime CopyLasso.xcodeproj/project.pbxproj
+assert_ui_test_screenshots_are_failure_only CopyLassoUITests/CopyLassoUITests.swift
 
 readonly prohibited_network_pattern='URLSession|NSURLSession|URLRequest|NSURLRequest|import[[:space:]]+Network|NWConnection|NWListener|CFNetwork|CFSocket|GCDAsyncSocket|WebKit|WKWebView|socket\('
 if /usr/bin/grep -R -nE --include='*.swift' \

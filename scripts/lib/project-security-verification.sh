@@ -66,3 +66,58 @@ assert_copylasso_hardened_runtime() {
             "Debug and Release app configurations must both enable Hardened Runtime."
     fi
 }
+
+assert_ui_test_screenshots_are_failure_only() {
+    local ui_test_file="$1"
+
+    [[ -f "$ui_test_file" ]] || \
+        project_security_fail "The UI test source is missing."
+    if /usr/bin/grep -Fq '.lifetime = .keepAlways' "$ui_test_file" || \
+        ! /usr/bin/awk '
+            /XCTAttachment\(screenshot:/ {
+                if (pending) {
+                    invalid = 1
+                }
+                pending = 1
+                delete_on_success = 0
+                screenshot_count += 1
+                attachment = $0
+                if (attachment !~ /^[[:space:]]*(let|var)[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*=[[:space:]]*XCTAttachment\(screenshot:/) {
+                    invalid = 1
+                    next
+                }
+                sub(/^[[:space:]]*(let|var)[[:space:]]+/, "", attachment)
+                sub(/[[:space:]]*=.*$/, "", attachment)
+                next
+            }
+            pending && /\.lifetime[[:space:]]*=/ {
+                assignment = $0
+                gsub(/[[:space:]]/, "", assignment)
+                if (assignment == attachment ".lifetime=.deleteOnSuccess") {
+                    delete_on_success = 1
+                } else if (index(assignment, attachment ".lifetime=") == 1) {
+                    invalid = 1
+                    delete_on_success = 0
+                }
+                next
+            }
+            pending && /add\(/ {
+                addition = $0
+                gsub(/[[:space:]]/, "", addition)
+                if (!delete_on_success || \
+                    (addition != "add(" attachment ")" && \
+                     addition != "self.add(" attachment ")")) {
+                    invalid = 1
+                }
+                pending = 0
+                delete_on_success = 0
+                attachment = ""
+            }
+            END {
+                exit(invalid || pending || screenshot_count == 0)
+            }
+        ' "$ui_test_file"; then
+        project_security_fail \
+            "Desktop screenshots must be deleted after successful UI tests."
+    fi
+}

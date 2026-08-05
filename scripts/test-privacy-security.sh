@@ -102,4 +102,49 @@ expect_failure "exactly one CopyLasso application target" \
 expect_failure "exactly one CopyLasso application target" \
     assert_copylasso_hardened_runtime "$temporary_directory/wrong-product.json"
 
+cat > "$temporary_directory/valid-ui-tests.swift" <<'SWIFT'
+let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+attachment.name = "diagnostic"
+attachment.lifetime = .deleteOnSuccess
+add(attachment)
+SWIFT
+assert_ui_test_screenshots_are_failure_only "$temporary_directory/valid-ui-tests.swift"
+
+cat > "$temporary_directory/retained-ui-tests.swift" <<'SWIFT'
+let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+attachment.lifetime = .keepAlways
+add(attachment)
+SWIFT
+expect_failure "must be deleted after successful UI tests" \
+    assert_ui_test_screenshots_are_failure_only "$temporary_directory/retained-ui-tests.swift"
+
+cat > "$temporary_directory/overridden-ui-tests.swift" <<'SWIFT'
+let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+attachment.lifetime = .deleteOnSuccess
+attachment.lifetime = XCTAttachment.Lifetime.keepAlways
+add(attachment)
+SWIFT
+expect_failure "must be deleted after successful UI tests" \
+    assert_ui_test_screenshots_are_failure_only "$temporary_directory/overridden-ui-tests.swift"
+
+cat > "$temporary_directory/unbounded-ui-tests.swift" <<'SWIFT'
+let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+add(screenshot)
+let unrelated = XCTAttachment(string: "diagnostic")
+unrelated.lifetime = .deleteOnSuccess
+add(unrelated)
+SWIFT
+expect_failure "must be deleted after successful UI tests" \
+    assert_ui_test_screenshots_are_failure_only "$temporary_directory/unbounded-ui-tests.swift"
+
+cat > "$temporary_directory/unrelated-lifetime-ui-tests.swift" <<'SWIFT'
+let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+let unrelated = XCTAttachment(string: "diagnostic")
+unrelated.lifetime = .deleteOnSuccess
+add(screenshot)
+SWIFT
+expect_failure "must be deleted after successful UI tests" \
+    assert_ui_test_screenshots_are_failure_only \
+        "$temporary_directory/unrelated-lifetime-ui-tests.swift"
+
 echo "CopyLasso privacy and security contract tests passed."
