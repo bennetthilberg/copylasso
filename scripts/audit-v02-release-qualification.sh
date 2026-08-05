@@ -15,11 +15,12 @@ readonly candidate_source_commit='43f1d0c676b08fb24b49fc628213fede90c4ed9d'
 readonly expected_candidate_input_tree_digest='baf122b35c5132f31e1df07d1ff0402713f9cabe7ef7b48355289bc29682f39e'
 readonly candidate_evidence_tree_pattern=$'\t(\\.github/workflows/prepare-publication\\.yml|docs/release-candidate-qualification\\.md|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/v0\\.2-publication-runbook\\.md|docs/v0\\.2-release-candidate\\.md|docs/v0\\.2-release-qualification\\.md|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/ci\\.sh|scripts/create-v02-publication-draft\\.sh|scripts/download-v02-candidate\\.sh|scripts/generate-release-appcast\\.sh|scripts/lib/release-package-verification\\.sh|scripts/lib/v02-publication-transaction\\.sh|scripts/lib/v02-publication-verification\\.sh|scripts/lib/verify-sparkle-signatures\\.swift|scripts/prepare-update-feed\\.sh|scripts/test-ci-contract\\.sh|scripts/test-release-package\\.sh|scripts/test-v02-publication\\.sh|scripts/verify-release-package\\.sh|scripts/verify-v02-candidate-package\\.sh)$'
 readonly approved_post_publication_patch_tree_pattern=$'\t(CHANGELOG\\.md|CopyLasso/App/CopyLassoApp\\.swift|CopyLasso/Models/SecureUpdateReleaseNotesPresentation\\.swift|CopyLasso/SharedUI/SecureUpdatePresentation\\.swift|CopyLassoTests/Update/SecureUpdateReleaseNotesPresentationTests\\.swift|CopyLassoUITests/CopyLassoUITests\\.swift|docs/architecture/overview\\.md|docs/manual-qa-and-performance\\.md|docs/secure-update-operations\\.md|docs/testing\\.md)$'
-readonly approved_post_publication_runtime_tree_pattern=$'\t(CopyLasso/App/CopyLassoApp\\.swift|CopyLasso/Models/SecureUpdateReleaseNotesPresentation\\.swift|CopyLasso/SharedUI/SecureUpdatePresentation\\.swift|CopyLassoTests/Update/SecureUpdateReleaseNotesPresentationTests\\.swift|CopyLassoUITests/CopyLassoUITests\\.swift|docs/manual-qa-and-performance\\.md)$'
+readonly approved_post_publication_runtime_tree_pattern=$'\t(CopyLasso/App/CopyLassoApp\\.swift|CopyLasso/Models/SecureUpdateReleaseNotesPresentation\\.swift|CopyLasso/SharedUI/SecureUpdatePresentation\\.swift)$'
+readonly approved_post_v02_security_patch_tree_pattern=$'\t(\\.github/workflows/release\\.yml|CopyLasso/Services/VisionOCRService\\.swift|CopyLassoTests/Services/VisionOCRServiceTests\\.swift|CopyLassoUITests/CopyLassoUITests\\.swift|scripts/audit-privacy-security\\.sh|scripts/audit-release-workflow\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/ci\\.sh|scripts/create-draft-release\\.sh|scripts/lib/release-package-verification\\.sh|scripts/lib/release-workflow-verification\\.sh|scripts/test-release-package\\.sh|scripts/test-release-workflow\\.sh)$'
 readonly g44_release_state_tree_pattern=$'\t(CHANGELOG\\.md|CONTRIBUTING\\.md|PRIVACY\\.md|README\\.md|SECURITY\\.md|docs/architecture/overview\\.md|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/security-and-privacy-review\\.md|docs/testing\\.md|docs/v0\\.2-product-contract\\.md|docs/v0\\.2-release-state\\.md|scripts/audit-brand-release\\.sh|scripts/audit-code-recognition\\.sh|scripts/audit-secure-update-architecture\\.sh|scripts/audit-v02-contract\\.sh|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/audit-v02-release-state\\.sh|scripts/ci\\.sh|scripts/test-ci-contract\\.sh|scripts/test-release-metadata\\.sh)$'
-readonly expected_candidate_baseline_tree_digest='e6358aa654914c17146018f5bb5bfdd7eb3f52d79d88358bf2b16a814ba21c7b'
-readonly expected_approved_post_publication_runtime_tree_digest='6aa226944fafb8a45887db345b70afa94c2a2d2bc49b348350b153ce50095b7f'
-readonly expected_g44_release_state_files_digest='2223f222a24e2c970d7123cc973c54eb1a91ead66373ef9da481e452c1c8e30e'
+readonly expected_candidate_baseline_tree_digest='d7ffab8e04dee244d3dd0edb9f9b65402181f73f09a2255b4a2d3a153b833dfc'
+readonly expected_approved_post_publication_runtime_tree_digest='388191bdbca550efa34ca64d9f8ebba3f127457313e4f0739d4601919fa9de7d'
+readonly expected_g44_release_state_files_digest='2a2f33d546587b081b1571a5beabe1772125ccf3550eab67c96279455856acb9'
 
 fail() {
     echo "$1" >&2
@@ -160,6 +161,7 @@ if git -C "$repository_root" cat-file -e "$candidate_source_commit^{tree}" 2>/de
         git -C "$repository_root" ls-tree -r --full-tree "$candidate_source_commit" |
             /usr/bin/grep -Ev "$candidate_evidence_tree_pattern" |
             /usr/bin/grep -Ev "$approved_post_publication_patch_tree_pattern" |
+            /usr/bin/grep -Ev "$approved_post_v02_security_patch_tree_pattern" |
             /usr/bin/grep -Ev "$g44_release_state_tree_pattern" |
             /usr/bin/shasum -a 256 |
             /usr/bin/awk '{print $1}'
@@ -172,6 +174,7 @@ current_baseline_tree_digest="$(
     git -C "$repository_root" ls-tree -r --full-tree HEAD |
         /usr/bin/grep -Ev "$candidate_evidence_tree_pattern" |
         /usr/bin/grep -Ev "$approved_post_publication_patch_tree_pattern" |
+        /usr/bin/grep -Ev "$approved_post_v02_security_patch_tree_pattern" |
         /usr/bin/grep -Ev "$g44_release_state_tree_pattern" |
         /usr/bin/shasum -a 256 |
         /usr/bin/awk '{print $1}'
@@ -209,7 +212,6 @@ readonly g44_release_state_files=(
     scripts/audit-v02-contract.sh
     scripts/audit-v02-publication.sh
     scripts/audit-v02-release-state.sh
-    scripts/ci.sh
     scripts/test-release-metadata.sh
 )
 g44_release_state_files_digest="$(

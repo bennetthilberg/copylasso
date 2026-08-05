@@ -62,6 +62,9 @@ for readable in \
         fail "Protected-release contract file is missing: $(basename "$readable")"
 done
 
+# shellcheck source=scripts/lib/release-workflow-verification.sh
+source "$verification_library"
+
 /usr/bin/plutil -lint "$ci_export_options" >/dev/null
 [[ "$(/usr/bin/plutil -extract method raw -o - "$ci_export_options")" == "developer-id" ]] || \
     fail "The hosted release export method must be developer-id."
@@ -107,6 +110,8 @@ contents_write_count="$(/usr/bin/grep -Ec '^[[:space:]]*contents: write[[:space:
     fail "Only the protected draft job may receive contents write permission."
 require_text "$workflow" 'permissions:'
 require_text "$workflow" 'contents: read'
+assert_release_workflow_job_guard "$workflow" "quality-gate"
+assert_release_workflow_job_guard "$workflow" "protected-release"
 
 require_text "$workflow" 'actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0'
 require_text "$workflow" 'ref: ${{ github.sha }}'
