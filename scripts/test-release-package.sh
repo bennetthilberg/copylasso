@@ -334,6 +334,13 @@ source=file:///opt/copylasso/project
 TEXT
 expect_failure "must not contain local absolute paths" \
     assert_release_evidence_is_portable "$file_url_evidence"
+single_quoted_path_evidence="$temporary_directory/single-quoted-path-evidence.txt"
+cat > "$single_quoted_path_evidence" <<'TEXT'
+version=0.2.0
+build_log=output:'/private/tmp/copylasso.log'
+TEXT
+expect_failure "must not contain local absolute paths" \
+    assert_release_evidence_is_portable "$single_quoted_path_evidence"
 
 assert_release_commit_matches \
     "payload" \

@@ -259,7 +259,7 @@ assert_release_evidence_is_portable() {
     [[ -f "$evidence_record_path" ]] || \
         release_package_fail "The release evidence record is missing."
     if /usr/bin/grep -Eq \
-        '(^|[=[:space:]"])/|:/[^/]|[Ff][Ii][Ll][Ee]:/+' \
+        "(^|[=[:space:]\"'])/|:/[^/]|[Ff][Ii][Ll][Ee]:/+" \
         "$evidence_record_path"; then
         release_package_fail "The release evidence must not contain local absolute paths."
     fi
