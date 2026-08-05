@@ -393,10 +393,12 @@ if [[ "$1" == "api" && "$*" == *"/releases?per_page=100"* ]]; then
     exit 0
 fi
 if [[ "$1" == "api" && "$*" == *"--method DELETE"* && "$*" == *"git/refs/tags/"* ]]; then
+    [[ "${FAKE_GH_MODE:-success}" != "rollback-tag-delete-fail" ]] || exit 1
     /bin/rm -f "$FAKE_GH_TAG_STATE"
     exit 0
 fi
 if [[ "$1" == "api" && "$*" == *"--method DELETE"* ]]; then
+    [[ "${FAKE_GH_MODE:-success}" != "rollback-release-delete-fail" ]] || exit 1
     exit 0
 fi
 if [[ "$1" == "api" && "$*" == *"git/ref/tags/"* ]]; then
@@ -421,7 +423,9 @@ if [[ "$1" == "api" && "$*" == *"--method POST"* && "$*" == *"/releases"* ]]; th
     exit 0
 fi
 if [[ "$1" == "release" && "$2" == "upload" ]]; then
-    [[ "${FAKE_GH_MODE:-success}" != "upload-fail" ]]
+    case "${FAKE_GH_MODE:-success}" in
+        upload-fail | rollback-release-delete-fail | rollback-tag-delete-fail) exit 1 ;;
+    esac
     exit
 fi
 if [[ "$1" == "api" && "$*" == *"releases/123"* ]]; then
@@ -633,6 +637,37 @@ for failure_mode in upload-fail tag-readback-fail; do
     [[ ! -f "$fake_gh_tag_state" ]] || \
         fail "A failed RC transaction must not retain a tag created by that invocation."
 done
+
+: > "$fake_gh_log"
+/bin/rm -f "$fake_gh_tag_state"
+export FAKE_GH_MODE="rollback-release-delete-fail"
+expect_failure "Rollback could not delete the incomplete draft release" \
+    "$draft_creator" \
+    --repository owner/repository \
+    --commit 0123456789abcdef0123456789abcdef01234567 \
+    --candidate-number 1 \
+    --run-dir "$release_run" \
+    --readback "$temporary_directory/rollback-release-delete-fail.json"
+if /usr/bin/grep -Fq -- \
+    '--method DELETE repos/owner/repository/git/refs/tags/v0.2.0-rc.1' \
+    "$fake_gh_log"; then
+    fail "A retained incomplete release must prevent deletion of its candidate tag."
+fi
+[[ -f "$fake_gh_tag_state" ]] || \
+    fail "A failed draft cleanup must retain the candidate tag for manual recovery."
+
+: > "$fake_gh_log"
+/bin/rm -f "$fake_gh_tag_state"
+export FAKE_GH_MODE="rollback-tag-delete-fail"
+expect_failure "Rollback could not delete the candidate tag" \
+    "$draft_creator" \
+    --repository owner/repository \
+    --commit 0123456789abcdef0123456789abcdef01234567 \
+    --candidate-number 1 \
+    --run-dir "$release_run" \
+    --readback "$temporary_directory/rollback-tag-delete-fail.json"
+[[ -f "$fake_gh_tag_state" ]] || \
+    fail "A failed tag cleanup must leave the tag visible for manual recovery."
 
 unset GH_TOKEN COPYLASSO_GH_BIN FAKE_GH_LOG FAKE_GH_RECORD \
     FAKE_GH_TAG_RECORD FAKE_GH_TAG_STATE FAKE_GH_MODE

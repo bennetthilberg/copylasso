@@ -35,6 +35,18 @@ fail() {
     exit 1
 }
 
+checkout_count="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*uses:[[:space:]]+actions/checkout@' "$workflow" || true
+})"
+full_history_count="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*fetch-depth:[[:space:]]+0[[:space:]]*$' "$workflow" || true
+})"
+if [[ "$checkout_count" == "0" || "$full_history_count" != "$checkout_count" ]]; then
+    fail "Every canonical CI checkout must fetch full history for release qualification."
+fi
+
 for qualification_pin in \
     'approved_post_candidate_path' \
     'expected_approved_post_candidate_patch_digest' \
@@ -179,11 +191,12 @@ for required_patch_guard in \
     "approved_post_publication_runtime_tree_pattern" \
     "approved_post_v02_security_patch_tree_pattern" \
     "g44_release_state_tree_pattern" \
-    "expected_candidate_baseline_tree_digest='d7ffab8e04dee244d3dd0edb9f9b65402181f73f09a2255b4a2d3a153b833dfc'" \
+    "expected_candidate_baseline_tree_digest='ecbcf39d0cac2b1525e46dc154123eb5418db3a9e790770a36a281b5160775bf'" \
     "expected_approved_post_publication_runtime_tree_digest='388191bdbca550efa34ca64d9f8ebba3f127457313e4f0739d4601919fa9de7d'" \
     "expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'" \
-    "expected_approved_post_candidate_patch_digest='644a36f43eb18747541cadb77c69fb8f9a2e548c8ca692b9a3635ab794be7ade'" \
+    "expected_approved_post_candidate_patch_digest='b9d572d8a74d5a4c0d2f3f6edac8d612fc9a3a89af71dca9c4645ff9ba5e5023'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
+    'The qualified candidate commit is unavailable.' \
     '"$current_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest"' \
     'approved_post_candidate_path "$approved_path"' \
     'The approved post-candidate patch differs from its reviewed digest.' \

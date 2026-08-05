@@ -96,17 +96,30 @@ candidate_tag_created="false"
 draft_committed="false"
 
 rollback_draft() {
+    local release_cleanup_succeeded="true"
+
     if [[ -n "$release_identifier" && "$draft_committed" != "true" ]]; then
-        "$gh_binary" api \
+        if ! "$gh_binary" api \
             --method DELETE \
             "repos/$repository/releases/$release_identifier" \
-            >/dev/null 2>&1 || true
+            >/dev/null 2>&1; then
+            echo \
+                "Rollback could not delete the incomplete draft release; the candidate tag was retained for manual recovery." \
+                >&2
+            release_cleanup_succeeded="false"
+        fi
     fi
     if [[ "$candidate_tag_created" == "true" && "$draft_committed" != "true" ]]; then
-        "$gh_binary" api \
+        if [[ "$release_cleanup_succeeded" != "true" ]]; then
+            :
+        elif ! "$gh_binary" api \
             --method DELETE \
             "repos/$repository/git/refs/tags/$tag" \
-            >/dev/null 2>&1 || true
+            >/dev/null 2>&1; then
+            echo \
+                "Rollback could not delete the candidate tag; manual recovery is required before reusing that candidate number." \
+                >&2
+        fi
     fi
     /bin/rm -rf "$temporary_directory"
 }
