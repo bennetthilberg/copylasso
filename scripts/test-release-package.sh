@@ -320,6 +320,20 @@ build_log=output: /private/tmp/copylasso.log
 TEXT
 expect_failure "must not contain local absolute paths" \
     assert_release_evidence_is_portable "$spaced_absolute_path_evidence"
+colon_absolute_path_evidence="$temporary_directory/colon-absolute-path-evidence.txt"
+cat > "$colon_absolute_path_evidence" <<'TEXT'
+version=0.2.0
+build_log=output:/private/tmp/copylasso.log
+TEXT
+expect_failure "must not contain local absolute paths" \
+    assert_release_evidence_is_portable "$colon_absolute_path_evidence"
+file_url_evidence="$temporary_directory/file-url-evidence.txt"
+cat > "$file_url_evidence" <<'TEXT'
+version=0.2.0
+source=file:///opt/copylasso/project
+TEXT
+expect_failure "must not contain local absolute paths" \
+    assert_release_evidence_is_portable "$file_url_evidence"
 
 assert_release_commit_matches \
     "payload" \
