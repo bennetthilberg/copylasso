@@ -379,6 +379,34 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(outcome, .cancelled(.applicationTerminated))
   }
 
+  func testMouseDownCancelsStalePointerReadinessBeforeCrossDisplayHandoff()
+    async throws
+  {
+    let first = try makeDisplay(id: 1, origin: CGPoint(x: 50_000, y: 50_000))
+    let second = try makeDisplay(id: 2, origin: CGPoint(x: 50_100, y: 50_000))
+    let provider = StubSelectionDisplayProvider(results: [.success([first, second])])
+    let factory = RecordingSelectionOverlaySurfaceFactory(
+      automaticallyCompletesInputReadiness: false
+    )
+    let context = makeContext(provider: provider, factory: factory)
+
+    let task = Task { try await context.service.selectRegion() }
+    await Task.yield()
+
+    factory.surfaces[1].send(.mouseDown(CGPoint(x: 50_110, y: 50_010)))
+    factory.surfaces[0].completeInputReadiness()
+    factory.surfaces[1].completeInputReadiness()
+
+    XCTAssertEqual(factory.surfaces[0].cancelInputReadinessCallCount, 1)
+    XCTAssertEqual(factory.surfaces.map(\.refreshCursorRectsCallCount), [0, 1])
+    XCTAssertEqual(context.cursor.pushCallCount, 1)
+
+    factory.surfaces[1].send(.escape)
+    await context.scheduler.runNext()
+    let outcome = try await task.value
+    XCTAssertEqual(outcome, .cancelled(.escape))
+  }
+
   func testMouseDownKeyHandoffBeforeInitialReadinessStillInstallsCrosshairOnce()
     async throws
   {
