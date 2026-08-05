@@ -296,6 +296,7 @@ portable_evidence="$temporary_directory/portable-evidence.txt"
 cat > "$portable_evidence" <<'TEXT'
 version=0.2.0
 build=3
+source_url=https://github.com/bennetthilberg/copylasso
 TEXT
 assert_release_evidence_is_portable "$portable_evidence"
 absolute_path_evidence="$temporary_directory/absolute-path-evidence.txt"
@@ -312,6 +313,13 @@ build_log=output=/Users/alice/project
 TEXT
 expect_failure "must not contain local absolute paths" \
     assert_release_evidence_is_portable "$embedded_absolute_path_evidence"
+spaced_absolute_path_evidence="$temporary_directory/spaced-absolute-path-evidence.txt"
+cat > "$spaced_absolute_path_evidence" <<'TEXT'
+version=0.2.0
+build_log=output: /private/tmp/copylasso.log
+TEXT
+expect_failure "must not contain local absolute paths" \
+    assert_release_evidence_is_portable "$spaced_absolute_path_evidence"
 
 assert_release_commit_matches \
     "payload" \
