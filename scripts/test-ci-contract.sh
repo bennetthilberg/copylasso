@@ -4,6 +4,7 @@ set -euo pipefail
 
 readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly ci_script="$repository_root/scripts/ci.sh"
+readonly privacy_security_test_script="$repository_root/scripts/test-privacy-security.sh"
 readonly brand_audit_script="$repository_root/scripts/audit-brand-release.sh"
 readonly release_metadata_test_script="$repository_root/scripts/test-release-metadata.sh"
 readonly developer_id_audit_script="$repository_root/scripts/audit-developer-id-release.sh"
@@ -70,6 +71,15 @@ contract_invocations="$({
 })"
 if [[ "$contract_invocations" != "1" ]]; then
     fail "Canonical CI must run its repeatability contract exactly once."
+fi
+
+privacy_security_test_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/test-privacy-security\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$privacy_security_test_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/test-privacy-security.sh exactly once."
 fi
 
 brand_audit_invocations="$({
@@ -184,7 +194,7 @@ for required_patch_guard in \
     "expected_candidate_baseline_tree_digest='ecbcf39d0cac2b1525e46dc154123eb5418db3a9e790770a36a281b5160775bf'" \
     "expected_approved_post_publication_runtime_tree_digest='388191bdbca550efa34ca64d9f8ebba3f127457313e4f0739d4601919fa9de7d'" \
     "expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'" \
-    "expected_approved_post_candidate_patch_digest='e019c0ba95e76220632aa04efa6af8d335ff37a56e7c561b36c734e6e08646ea'" \
+    "expected_approved_post_candidate_patch_digest='010fd95c6cfc62aca42fc8e5dc6fb9059ff06af7b526a6fd88ff9a55b1f29687'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
     '"$current_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest"' \
@@ -344,6 +354,10 @@ fi
 
 if [[ ! -x "$release_metadata_test_script" ]]; then
     fail "Release metadata contract tests must be executable."
+fi
+
+if [[ ! -x "$privacy_security_test_script" ]]; then
+    fail "Privacy and security project-contract tests must be executable."
 fi
 
 if [[ ! -x "$release_package_audit_script" ]] || \

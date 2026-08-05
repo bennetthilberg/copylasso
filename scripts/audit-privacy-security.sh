@@ -4,6 +4,8 @@ set -euo pipefail
 
 readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly entitlements="$repository_root/CopyLasso/CopyLasso.entitlements"
+# shellcheck source=scripts/lib/project-security-verification.sh
+source "$repository_root/scripts/lib/project-security-verification.sh"
 
 cd "$repository_root"
 
@@ -36,11 +38,7 @@ if [[ "$(/usr/bin/grep -c 'CODE_SIGN_ENTITLEMENTS = CopyLasso/CopyLasso.entitlem
     exit 1
 fi
 
-if [[ "$(/usr/bin/grep -c 'ENABLE_HARDENED_RUNTIME = YES;' \
-    CopyLasso.xcodeproj/project.pbxproj)" != 2 ]]; then
-    echo "Debug and Release must both enable Hardened Runtime." >&2
-    exit 1
-fi
+assert_copylasso_hardened_runtime CopyLasso.xcodeproj/project.pbxproj
 
 readonly prohibited_network_pattern='URLSession|NSURLSession|URLRequest|NSURLRequest|import[[:space:]]+Network|NWConnection|NWListener|CFNetwork|CFSocket|GCDAsyncSocket|WebKit|WKWebView|socket\('
 if /usr/bin/grep -R -nE --include='*.swift' \
