@@ -54,7 +54,12 @@ assert_copylasso_hardened_runtime() {
             (([$configurations[].name] | sort) == ["Debug", "Release"]) and
             all(
                 $configurations[];
-                .buildSettings.ENABLE_HARDENED_RUNTIME == "YES"
+                .buildSettings.ENABLE_HARDENED_RUNTIME == "YES" and
+                    ([
+                        .buildSettings
+                        | keys[]
+                        | select(startswith("ENABLE_HARDENED_RUNTIME["))
+                    ] | length) == 0
             )
     ' <<< "$project_json" >/dev/null 2>&1; then
         project_security_fail \
