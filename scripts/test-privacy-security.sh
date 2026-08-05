@@ -118,6 +118,15 @@ SWIFT
 expect_failure "must be deleted after successful UI tests" \
     assert_ui_test_screenshots_are_failure_only "$temporary_directory/retained-ui-tests.swift"
 
+cat > "$temporary_directory/overridden-ui-tests.swift" <<'SWIFT'
+let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+attachment.lifetime = .deleteOnSuccess
+attachment.lifetime = XCTAttachment.Lifetime.keepAlways
+add(attachment)
+SWIFT
+expect_failure "must be deleted after successful UI tests" \
+    assert_ui_test_screenshots_are_failure_only "$temporary_directory/overridden-ui-tests.swift"
+
 cat > "$temporary_directory/unbounded-ui-tests.swift" <<'SWIFT'
 let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
 add(screenshot)

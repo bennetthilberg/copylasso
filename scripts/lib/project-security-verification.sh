@@ -90,11 +90,14 @@ assert_ui_test_screenshots_are_failure_only() {
                 sub(/[[:space:]]*=.*$/, "", attachment)
                 next
             }
-            pending && /\.lifetime[[:space:]]*=[[:space:]]*\.deleteOnSuccess/ {
+            pending && /\.lifetime[[:space:]]*=/ {
                 assignment = $0
                 gsub(/[[:space:]]/, "", assignment)
                 if (assignment == attachment ".lifetime=.deleteOnSuccess") {
                     delete_on_success = 1
+                } else if (index(assignment, attachment ".lifetime=") == 1) {
+                    invalid = 1
+                    delete_on_success = 0
                 }
                 next
             }
