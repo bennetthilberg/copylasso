@@ -68,6 +68,22 @@ expect_failure "only from protected main" \
 expect_failure "only from protected main" \
     assert_protected_release_ref "refs/tags/v0.2.0-rc.1"
 
+assert_release_workflow_trusted_dispatch "$workflow"
+
+/usr/bin/sed \
+    's/^  repository_dispatch:/  workflow_dispatch:/' \
+    "$workflow" > "$temporary_directory/branch-selectable-dispatch.yml"
+expect_failure "trusted default-branch repository dispatch event" \
+    assert_release_workflow_trusted_dispatch \
+    "$temporary_directory/branch-selectable-dispatch.yml"
+
+/usr/bin/sed \
+    's/\[copylasso_protected_release\]/[unreviewed_release_event]/' \
+    "$workflow" > "$temporary_directory/wrong-dispatch-type.yml"
+expect_failure "trusted default-branch repository dispatch event" \
+    assert_release_workflow_trusted_dispatch \
+    "$temporary_directory/wrong-dispatch-type.yml"
+
 readonly guarded_workflow="$temporary_directory/guarded-release.yml"
 /bin/cp "$workflow" "$guarded_workflow"
 assert_release_workflow_job_guard "$guarded_workflow" "quality-gate"
@@ -525,18 +541,20 @@ fi
 : > "$fake_gh_log"
 /bin/rm -f "$fake_gh_tag_state"
 export FAKE_GH_MODE="release-create-fail"
-expect_failure "draft release could not be created" \
+expect_failure "release creation outcome is ambiguous" \
     "$draft_creator" \
     --repository owner/repository \
     --commit 0123456789abcdef0123456789abcdef01234567 \
     --candidate-number 1 \
     --run-dir "$release_run" \
     --readback "$temporary_directory/release-create-fail.json"
-/usr/bin/grep -Fq -- \
+if /usr/bin/grep -Fq -- \
     '--method DELETE repos/owner/repository/git/refs/tags/v0.2.0-rc.1' \
-    "$fake_gh_log" || fail "A failed release creation must delete its owned tag."
-[[ ! -f "$fake_gh_tag_state" ]] || \
-    fail "A failed release creation must not retain its owned candidate tag."
+    "$fake_gh_log"; then
+    fail "An ambiguous release response must not delete a tag that a raced release may use."
+fi
+[[ -f "$fake_gh_tag_state" ]] || \
+    fail "An ambiguous release response must retain the candidate tag for inspection."
 
 : > "$fake_gh_log"
 /bin/rm -f "$fake_gh_tag_state"
