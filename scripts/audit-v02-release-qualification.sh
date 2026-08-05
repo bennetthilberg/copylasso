@@ -16,12 +16,12 @@ readonly expected_candidate_input_tree_digest='baf122b35c5132f31e1df07d1ff040271
 readonly candidate_evidence_tree_pattern=$'\t(\\.github/workflows/prepare-publication\\.yml|docs/release-candidate-qualification\\.md|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/v0\\.2-publication-runbook\\.md|docs/v0\\.2-release-candidate\\.md|docs/v0\\.2-release-qualification\\.md|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/ci\\.sh|scripts/create-v02-publication-draft\\.sh|scripts/download-v02-candidate\\.sh|scripts/generate-release-appcast\\.sh|scripts/lib/release-package-verification\\.sh|scripts/lib/v02-publication-transaction\\.sh|scripts/lib/v02-publication-verification\\.sh|scripts/lib/verify-sparkle-signatures\\.swift|scripts/prepare-update-feed\\.sh|scripts/test-ci-contract\\.sh|scripts/test-release-package\\.sh|scripts/test-v02-publication\\.sh|scripts/verify-release-package\\.sh|scripts/verify-v02-candidate-package\\.sh)$'
 readonly approved_post_publication_patch_tree_pattern=$'\t(CHANGELOG\\.md|CopyLasso/App/CopyLassoApp\\.swift|CopyLasso/Models/SecureUpdateReleaseNotesPresentation\\.swift|CopyLasso/SharedUI/SecureUpdatePresentation\\.swift|CopyLassoTests/Update/SecureUpdateReleaseNotesPresentationTests\\.swift|CopyLassoUITests/CopyLassoUITests\\.swift|docs/architecture/overview\\.md|docs/manual-qa-and-performance\\.md|docs/secure-update-operations\\.md|docs/testing\\.md)$'
 readonly approved_post_publication_runtime_tree_pattern=$'\t(CopyLasso/App/CopyLassoApp\\.swift|CopyLasso/Models/SecureUpdateReleaseNotesPresentation\\.swift|CopyLasso/SharedUI/SecureUpdatePresentation\\.swift)$'
-readonly approved_post_v02_security_patch_tree_pattern=$'\t(\\.github/workflows/release\\.yml|CopyLasso/Services/VisionOCRService\\.swift|CopyLassoTests/Services/VisionOCRServiceTests\\.swift|CopyLassoUITests/CopyLassoUITests\\.swift|scripts/audit-privacy-security\\.sh|scripts/audit-release-workflow\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/ci\\.sh|scripts/create-draft-release\\.sh|scripts/lib/release-package-verification\\.sh|scripts/lib/release-workflow-verification\\.sh|scripts/test-release-package\\.sh|scripts/test-release-workflow\\.sh)$'
+readonly approved_post_v02_security_patch_tree_pattern=$'\t(\\.github/workflows/ci\\.yml|\\.github/workflows/release\\.yml|CopyLasso/Services/VisionOCRService\\.swift|CopyLassoTests/Services/VisionOCRServiceTests\\.swift|CopyLassoUITests/CopyLassoUITests\\.swift|scripts/audit-privacy-security\\.sh|scripts/audit-release-workflow\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/ci\\.sh|scripts/create-draft-release\\.sh|scripts/lib/release-package-verification\\.sh|scripts/lib/release-workflow-verification\\.sh|scripts/test-release-package\\.sh|scripts/test-release-workflow\\.sh)$'
 readonly g44_release_state_tree_pattern=$'\t(CHANGELOG\\.md|CONTRIBUTING\\.md|PRIVACY\\.md|README\\.md|SECURITY\\.md|docs/architecture/overview\\.md|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/security-and-privacy-review\\.md|docs/testing\\.md|docs/v0\\.2-product-contract\\.md|docs/v0\\.2-release-state\\.md|scripts/audit-brand-release\\.sh|scripts/audit-code-recognition\\.sh|scripts/audit-secure-update-architecture\\.sh|scripts/audit-v02-contract\\.sh|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/audit-v02-release-state\\.sh|scripts/ci\\.sh|scripts/test-ci-contract\\.sh|scripts/test-release-metadata\\.sh)$'
-readonly expected_candidate_baseline_tree_digest='d7ffab8e04dee244d3dd0edb9f9b65402181f73f09a2255b4a2d3a153b833dfc'
+readonly expected_candidate_baseline_tree_digest='ecbcf39d0cac2b1525e46dc154123eb5418db3a9e790770a36a281b5160775bf'
 readonly expected_approved_post_publication_runtime_tree_digest='388191bdbca550efa34ca64d9f8ebba3f127457313e4f0739d4601919fa9de7d'
 readonly expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'
-readonly expected_approved_post_candidate_patch_digest='19d862803b654bf53fa663faa492232cf5f0ed3e12577430ce71c347f846f713'
+readonly expected_approved_post_candidate_patch_digest='000d06c7578f4e37903976d4991745d41b7d6fcb4904769a2a10af81a6a5ae14'
 
 fail() {
     echo "$1" >&2
@@ -162,51 +162,52 @@ require_text CopyLasso/Services/SparkleUpdateService.swift 'import Sparkle'
 require_text Configuration/CopyLasso-Info.plist \
     '<string>https://updates.copylasso.com/appcast.xml</string>'
 
-if git -C "$repository_root" cat-file -e "$candidate_source_commit^{tree}" 2>/dev/null; then
-    while IFS= read -r approved_path; do
-        approved_post_candidate_path "$approved_path" || \
-            fail "An unapproved path differs from the qualified v0.2 candidate: $approved_path"
-    done < <(git -C "$repository_root" diff --name-only \
-        "$candidate_source_commit")
+git -C "$repository_root" cat-file -e "$candidate_source_commit^{tree}" 2>/dev/null || \
+    fail "The qualified candidate commit is unavailable. Fetch full history before qualification."
 
-    approved_post_candidate_patch_digest="$(
-        git -C "$repository_root" diff \
-            --binary \
-            --full-index \
-            --no-ext-diff \
-            --no-textconv \
-            "$candidate_source_commit" \
-            -- . \
-            ':(exclude)scripts/audit-v02-release-qualification.sh' \
-            ':(exclude)scripts/test-ci-contract.sh' | \
-            /usr/bin/shasum -a 256 | \
-            /usr/bin/awk '{print $1}'
-    )"
-    [[ "$approved_post_candidate_patch_digest" == \
-        "$expected_approved_post_candidate_patch_digest" ]] || \
-        fail "The approved post-candidate patch differs from its reviewed digest."
+while IFS= read -r approved_path; do
+    approved_post_candidate_path "$approved_path" || \
+        fail "An unapproved path differs from the qualified v0.2 candidate: $approved_path"
+done < <(git -C "$repository_root" diff --name-only \
+    "$candidate_source_commit")
 
-    qualified_candidate_input_tree_digest="$(
-        git -C "$repository_root" ls-tree -r --full-tree "$candidate_source_commit" |
-            /usr/bin/grep -Ev "$candidate_evidence_tree_pattern" |
-            /usr/bin/shasum -a 256 |
-            /usr/bin/awk '{print $1}'
-    )"
-    [[ "$qualified_candidate_input_tree_digest" == "$expected_candidate_input_tree_digest" ]] || \
-        fail "The qualified candidate input tree no longer matches its reviewed digest."
+approved_post_candidate_patch_digest="$(
+    git -C "$repository_root" diff \
+        --binary \
+        --full-index \
+        --no-ext-diff \
+        --no-textconv \
+        "$candidate_source_commit" \
+        -- . \
+        ':(exclude)scripts/audit-v02-release-qualification.sh' \
+        ':(exclude)scripts/test-ci-contract.sh' | \
+        /usr/bin/shasum -a 256 | \
+        /usr/bin/awk '{print $1}'
+)"
+[[ "$approved_post_candidate_patch_digest" == \
+    "$expected_approved_post_candidate_patch_digest" ]] || \
+    fail "The approved post-candidate patch differs from its reviewed digest."
 
-    candidate_baseline_tree_digest="$(
-        git -C "$repository_root" ls-tree -r --full-tree "$candidate_source_commit" |
-            /usr/bin/grep -Ev "$candidate_evidence_tree_pattern" |
-            /usr/bin/grep -Ev "$approved_post_publication_patch_tree_pattern" |
-            /usr/bin/grep -Ev "$approved_post_v02_security_patch_tree_pattern" |
-            /usr/bin/grep -Ev "$g44_release_state_tree_pattern" |
-            /usr/bin/shasum -a 256 |
-            /usr/bin/awk '{print $1}'
-    )"
-    [[ "$candidate_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest" ]] || \
-        fail "The frozen candidate baseline no longer matches its reviewed digest."
-fi
+qualified_candidate_input_tree_digest="$(
+    git -C "$repository_root" ls-tree -r --full-tree "$candidate_source_commit" |
+        /usr/bin/grep -Ev "$candidate_evidence_tree_pattern" |
+        /usr/bin/shasum -a 256 |
+        /usr/bin/awk '{print $1}'
+)"
+[[ "$qualified_candidate_input_tree_digest" == "$expected_candidate_input_tree_digest" ]] || \
+    fail "The qualified candidate input tree no longer matches its reviewed digest."
+
+candidate_baseline_tree_digest="$(
+    git -C "$repository_root" ls-tree -r --full-tree "$candidate_source_commit" |
+        /usr/bin/grep -Ev "$candidate_evidence_tree_pattern" |
+        /usr/bin/grep -Ev "$approved_post_publication_patch_tree_pattern" |
+        /usr/bin/grep -Ev "$approved_post_v02_security_patch_tree_pattern" |
+        /usr/bin/grep -Ev "$g44_release_state_tree_pattern" |
+        /usr/bin/shasum -a 256 |
+        /usr/bin/awk '{print $1}'
+)"
+[[ "$candidate_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest" ]] || \
+    fail "The frozen candidate baseline no longer matches its reviewed digest."
 
 current_baseline_tree_digest="$(
     git -C "$repository_root" ls-tree -r --full-tree HEAD |
