@@ -273,7 +273,10 @@ for required_documentation_text in \
     'v0.2.0-rc.N' \
     'candidate_number' \
     'asset digests' \
-    'tag is created last' \
+    'candidate tag is' \
+    'created atomically before draft creation' \
+    'ambiguous release-creation response retains' \
+    'cleanup failure is an explicit blocking state' \
     'G32' \
     'G42' \
     'COPYLASSO_SPARKLE_PRIVATE_KEY' \

@@ -142,8 +142,17 @@ the canonical audit enforces that boundary.
 Leaving `candidate_number` blank selects a private G42 rehearsal. A positive
 canonical integer selects the G42 candidate path. Values with a sign, leading
 zero, decimal, whitespace, or tag text are rejected before they influence a tag
-or path. No arbitrary tag, ref, or mode input exists. The tag is created last,
-and the helper never replaces, patches, moves, or force-updates a ref or release.
+or path. No arbitrary tag, ref, or mode input exists. The candidate tag is
+created atomically before draft creation and is rollback-eligible only after
+that exact ref creation succeeds. An ambiguous release-creation response retains
+the tag for manual inspection because another actor may already have attached a
+release to it. The helper never replaces, patches, moves, or force-updates a ref
+or release.
+
+Rollback deletes an incomplete draft before deleting its candidate tag. If
+draft deletion fails, the tag is retained so the surviving release never loses
+its ref. Any draft or tag cleanup failure is an explicit blocking state that
+requires manual readback and recovery before that candidate number is reused.
 
 The reviewed candidate body is
 [`release-notes/0.2.0.md`](release-notes/0.2.0.md). Follow

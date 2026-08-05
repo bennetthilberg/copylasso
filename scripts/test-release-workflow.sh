@@ -393,10 +393,12 @@ if [[ "$1" == "api" && "$*" == *"/releases?per_page=100"* ]]; then
     exit 0
 fi
 if [[ "$1" == "api" && "$*" == *"--method DELETE"* && "$*" == *"git/refs/tags/"* ]]; then
+    [[ "${FAKE_GH_MODE:-success}" != "rollback-tag-delete-fail" ]] || exit 1
     /bin/rm -f "$FAKE_GH_TAG_STATE"
     exit 0
 fi
 if [[ "$1" == "api" && "$*" == *"--method DELETE"* ]]; then
+    [[ "${FAKE_GH_MODE:-success}" != "rollback-release-delete-fail" ]] || exit 1
     exit 0
 fi
 if [[ "$1" == "api" && "$*" == *"git/ref/tags/"* ]]; then
@@ -409,17 +411,25 @@ if [[ "$1" == "api" && "$*" == *"git/ref/tags/"* ]]; then
 fi
 if [[ "$1" == "api" && "$*" == *"--method POST"* && "$*" == *"git/refs"* ]]; then
     [[ "${FAKE_GH_MODE:-success}" != "tag-create-fail" ]] || exit 1
+    [[ ! -f "$FAKE_GH_TAG_STATE" ]] || exit 1
     : > "$FAKE_GH_TAG_STATE"
     [[ "${FAKE_GH_MODE:-success}" != "tag-create-uncertain" ]] || exit 1
     /bin/cat "$FAKE_GH_TAG_RECORD"
     exit 0
 fi
 if [[ "$1" == "api" && "$*" == *"--method POST"* && "$*" == *"/releases"* ]]; then
+    [[ "${FAKE_GH_MODE:-success}" != "release-create-fail" ]] || exit 1
+    if [[ "${FAKE_GH_MODE:-success}" == "release-create-malformed" ]]; then
+        printf '{"id":\n'
+        exit 0
+    fi
     printf '{"id":123}\n'
     exit 0
 fi
 if [[ "$1" == "release" && "$2" == "upload" ]]; then
-    [[ "${FAKE_GH_MODE:-success}" != "upload-fail" ]]
+    case "${FAKE_GH_MODE:-success}" in
+        upload-fail | rollback-release-delete-fail | rollback-tag-delete-fail) exit 1 ;;
+    esac
     exit
 fi
 if [[ "$1" == "api" && "$*" == *"releases/123"* ]]; then
@@ -485,6 +495,16 @@ assert_release_candidate_record \
 [[ -f "$fake_gh_tag_state" ]] || fail "The verified RC transaction must create its tag."
 /usr/bin/grep -Fq -- '--method POST repos/owner/repository/git/refs' "$fake_gh_log" || \
     fail "The verified RC transaction must create its tag through the Git ref API."
+/usr/bin/grep -Fq -- 'api repos/owner/repository/git/ref/tags/v0.2.0-rc.1' "$fake_gh_log" || \
+    fail "The verified RC transaction must read back its owned exact tag."
+tag_create_line="$(/usr/bin/grep -n -- '--method POST repos/owner/repository/git/refs' \
+    "$fake_gh_log" | /usr/bin/head -n 1 | /usr/bin/cut -d: -f1)"
+release_create_line="$(/usr/bin/grep -n -- '--method POST repos/owner/repository/releases' \
+    "$fake_gh_log" | /usr/bin/head -n 1 | /usr/bin/cut -d: -f1)"
+if [[ -z "$tag_create_line" || -z "$release_create_line" ]] || \
+    ((tag_create_line >= release_create_line)); then
+    fail "The RC transaction must prove tag ownership before creating its draft release."
+fi
 /usr/bin/grep -Fq -- \
     '--paginate --slurp repos/owner/repository/releases?per_page=100' \
     "$fake_gh_log" || fail "The verified RC transaction must inspect every existing release."
@@ -495,17 +515,70 @@ fi
 : > "$fake_gh_log"
 /bin/rm -f "$fake_gh_tag_state"
 export FAKE_GH_MODE="tag-create-uncertain"
-"$draft_creator" \
+expect_failure "tag creation outcome is ambiguous" \
+    "$draft_creator" \
     --repository owner/repository \
     --commit 0123456789abcdef0123456789abcdef01234567 \
     --candidate-number 1 \
     --run-dir "$release_run" \
     --readback "$temporary_directory/uncertain-tag-readback.json"
 [[ -f "$fake_gh_tag_state" ]] || \
-    fail "An ambiguously created exact tag must be retained after successful readback."
+    fail "An ambiguously created exact tag must be retained for manual inspection."
 if /usr/bin/grep -Fq -- '--method DELETE' "$fake_gh_log"; then
-    fail "An ambiguously created exact tag must complete without rollback."
+    fail "An ambiguously created tag must never be deleted without proof of ownership."
 fi
+if /usr/bin/grep -Fq -- '--method POST repos/owner/repository/releases' "$fake_gh_log"; then
+    fail "An ambiguous tag outcome must prevent draft-release creation."
+fi
+
+: > "$fake_gh_log"
+/bin/rm -f "$fake_gh_tag_state"
+export FAKE_GH_MODE="tag-create-fail"
+expect_failure "could not create its immutable tag" \
+    "$draft_creator" \
+    --repository owner/repository \
+    --commit 0123456789abcdef0123456789abcdef01234567 \
+    --candidate-number 1 \
+    --run-dir "$release_run" \
+    --readback "$temporary_directory/tag-create-fail.json"
+if /usr/bin/grep -Eq -- '--method (DELETE|POST) repos/owner/repository/releases' \
+    "$fake_gh_log"; then
+    fail "A failed tag creation must not mutate release state."
+fi
+
+: > "$fake_gh_log"
+/bin/rm -f "$fake_gh_tag_state"
+export FAKE_GH_MODE="release-create-fail"
+expect_failure "release creation outcome is ambiguous" \
+    "$draft_creator" \
+    --repository owner/repository \
+    --commit 0123456789abcdef0123456789abcdef01234567 \
+    --candidate-number 1 \
+    --run-dir "$release_run" \
+    --readback "$temporary_directory/release-create-fail.json"
+if /usr/bin/grep -Fq -- \
+    '--method DELETE repos/owner/repository/git/refs/tags/v0.2.0-rc.1' \
+    "$fake_gh_log"; then
+    fail "An ambiguous release response must not delete a tag that a raced release may use."
+fi
+[[ -f "$fake_gh_tag_state" ]] || \
+    fail "An ambiguous release response must retain the candidate tag for inspection."
+
+: > "$fake_gh_log"
+/bin/rm -f "$fake_gh_tag_state"
+export FAKE_GH_MODE="release-create-malformed"
+expect_failure "creation response has no valid identifier" \
+    "$draft_creator" \
+    --repository owner/repository \
+    --commit 0123456789abcdef0123456789abcdef01234567 \
+    --candidate-number 1 \
+    --run-dir "$release_run" \
+    --readback "$temporary_directory/release-create-malformed.json"
+if /usr/bin/grep -Fq -- '--method DELETE' "$fake_gh_log"; then
+    fail "A malformed successful release response must retain the tag and possible draft."
+fi
+[[ -f "$fake_gh_tag_state" ]] || \
+    fail "A malformed successful release response must retain the candidate tag."
 
 : > "$fake_gh_log"
 /bin/rm -f "$fake_gh_tag_state"
@@ -565,7 +638,7 @@ if /usr/bin/grep -Fq -- '--method POST' "$fake_gh_log"; then
     fail "A pre-existing tag must prevent every RC mutation."
 fi
 
-for failure_mode in upload-fail tag-create-fail tag-readback-fail; do
+for failure_mode in upload-fail tag-readback-fail; do
     : > "$fake_gh_log"
     /bin/rm -f "$fake_gh_tag_state"
     export FAKE_GH_MODE="$failure_mode"
@@ -578,14 +651,43 @@ for failure_mode in upload-fail tag-create-fail tag-readback-fail; do
         --readback "$temporary_directory/$failure_mode.json"
     /usr/bin/grep -Fq -- '--method DELETE repos/owner/repository/releases/123' \
         "$fake_gh_log" || fail "A failed RC transaction must delete its incomplete draft."
-    if [[ "$failure_mode" == "tag-readback-fail" ]]; then
-        /usr/bin/grep -Fq -- \
-            '--method DELETE repos/owner/repository/git/refs/tags/v0.2.0-rc.1' \
-            "$fake_gh_log" || fail "A failed RC tag readback must delete its newly created tag."
-    fi
+    /usr/bin/grep -Fq -- \
+        '--method DELETE repos/owner/repository/git/refs/tags/v0.2.0-rc.1' \
+        "$fake_gh_log" || fail "A failed RC transaction must delete its owned tag."
     [[ ! -f "$fake_gh_tag_state" ]] || \
         fail "A failed RC transaction must not retain a tag created by that invocation."
 done
+
+: > "$fake_gh_log"
+/bin/rm -f "$fake_gh_tag_state"
+export FAKE_GH_MODE="rollback-release-delete-fail"
+expect_failure "Rollback could not delete the incomplete draft release" \
+    "$draft_creator" \
+    --repository owner/repository \
+    --commit 0123456789abcdef0123456789abcdef01234567 \
+    --candidate-number 1 \
+    --run-dir "$release_run" \
+    --readback "$temporary_directory/rollback-release-delete-fail.json"
+if /usr/bin/grep -Fq -- \
+    '--method DELETE repos/owner/repository/git/refs/tags/v0.2.0-rc.1' \
+    "$fake_gh_log"; then
+    fail "A retained incomplete release must prevent deletion of its candidate tag."
+fi
+[[ -f "$fake_gh_tag_state" ]] || \
+    fail "A failed draft cleanup must retain the candidate tag for manual recovery."
+
+: > "$fake_gh_log"
+/bin/rm -f "$fake_gh_tag_state"
+export FAKE_GH_MODE="rollback-tag-delete-fail"
+expect_failure "Rollback could not delete the candidate tag" \
+    "$draft_creator" \
+    --repository owner/repository \
+    --commit 0123456789abcdef0123456789abcdef01234567 \
+    --candidate-number 1 \
+    --run-dir "$release_run" \
+    --readback "$temporary_directory/rollback-tag-delete-fail.json"
+[[ -f "$fake_gh_tag_state" ]] || \
+    fail "A failed tag cleanup must leave the tag visible for manual recovery."
 
 unset GH_TOKEN COPYLASSO_GH_BIN FAKE_GH_LOG FAKE_GH_RECORD \
     FAKE_GH_TAG_RECORD FAKE_GH_TAG_STATE FAKE_GH_MODE

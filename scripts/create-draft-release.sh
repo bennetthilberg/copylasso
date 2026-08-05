@@ -96,17 +96,30 @@ candidate_tag_created="false"
 draft_committed="false"
 
 rollback_draft() {
-    if [[ "$candidate_tag_created" == "true" && "$draft_committed" != "true" ]]; then
-        "$gh_binary" api \
-            --method DELETE \
-            "repos/$repository/git/refs/tags/$tag" \
-            >/dev/null 2>&1 || true
-    fi
+    local release_cleanup_succeeded="true"
+
     if [[ -n "$release_identifier" && "$draft_committed" != "true" ]]; then
-        "$gh_binary" api \
+        if ! "$gh_binary" api \
             --method DELETE \
             "repos/$repository/releases/$release_identifier" \
-            >/dev/null 2>&1 || true
+            >/dev/null 2>&1; then
+            echo \
+                "Rollback could not delete the incomplete draft release; the candidate tag was retained for manual recovery." \
+                >&2
+            release_cleanup_succeeded="false"
+        fi
+    fi
+    if [[ "$candidate_tag_created" == "true" && "$draft_committed" != "true" ]]; then
+        if [[ "$release_cleanup_succeeded" != "true" ]]; then
+            :
+        elif ! "$gh_binary" api \
+            --method DELETE \
+            "repos/$repository/git/refs/tags/$tag" \
+            >/dev/null 2>&1; then
+            echo \
+                "Rollback could not delete the candidate tag; manual recovery is required before reusing that candidate number." \
+                >&2
+        fi
     fi
     /bin/rm -rf "$temporary_directory"
 }
@@ -154,6 +167,26 @@ else
 fi
 readonly release_name
 
+if [[ "$release_mode" == "candidate" ]]; then
+    if "$gh_binary" api \
+        --method POST \
+        "repos/$repository/git/refs" \
+        -f "ref=refs/tags/$tag" \
+        -f "sha=$commit" \
+        > "$candidate_tag_record"; then
+        candidate_tag_created="true"
+        assert_release_candidate_tag_record "$candidate_tag_record" "$commit" "$tag"
+    else
+        if "$gh_binary" api \
+            "repos/$repository/git/ref/tags/$tag" > "$candidate_tag_record"; then
+            protected_release_fail \
+                "The release-candidate tag creation outcome is ambiguous; the existing tag was retained for manual inspection."
+        fi
+        protected_release_fail \
+            "The release-candidate transaction could not create its immutable tag."
+    fi
+fi
+
 if ! "$gh_binary" api \
     --method POST \
     "repos/$repository/releases" \
@@ -165,11 +198,22 @@ if ! "$gh_binary" api \
     -f make_latest=false \
     -F "body=@$notes" \
     > "$creation_record"; then
+    if [[ "$release_mode" == "candidate" ]]; then
+        candidate_tag_created="false"
+        protected_release_fail \
+            "The release-candidate release creation outcome is ambiguous; its tag was retained for manual inspection."
+    fi
     protected_release_fail "The protected draft release could not be created."
 fi
 release_identifier="$(/usr/bin/plutil -extract id raw -o - "$creation_record" 2>/dev/null || true)"
-[[ "$release_identifier" =~ ^[0-9]+$ ]] || \
+if [[ ! "$release_identifier" =~ ^[0-9]+$ ]]; then
+    if [[ "$release_mode" == "candidate" ]]; then
+        candidate_tag_created="false"
+        protected_release_fail \
+            "The release-candidate creation response has no valid identifier; its tag was retained for manual inspection."
+    fi
     protected_release_fail "The protected draft release has no valid identifier."
+fi
 
 if ! "$gh_binary" release upload "$tag" \
     "$run_directory/$COPYLASSO_G28_DMG" \
@@ -193,20 +237,6 @@ if [[ "$release_mode" == "candidate" ]]; then
         "$candidate_number" \
         "$run_directory" \
         "$reviewed_candidate_notes"
-    if ! "$gh_binary" api \
-        --method POST \
-        "repos/$repository/git/refs" \
-        -f "ref=refs/tags/$tag" \
-        -f "sha=$commit" \
-        >/dev/null; then
-        if ! "$gh_binary" api \
-            "repos/$repository/git/ref/tags/$tag" > "$candidate_tag_record"; then
-            protected_release_fail \
-                "The release-candidate transaction could not create its immutable tag."
-        fi
-        assert_release_candidate_tag_record "$candidate_tag_record" "$commit" "$tag"
-    fi
-    candidate_tag_created="true"
     if ! "$gh_binary" api \
         "repos/$repository/git/ref/tags/$tag" > "$candidate_tag_record"; then
         protected_release_fail "The release-candidate transaction could not read back its tag."
