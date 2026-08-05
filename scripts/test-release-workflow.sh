@@ -68,6 +68,22 @@ expect_failure "only from protected main" \
 expect_failure "only from protected main" \
     assert_protected_release_ref "refs/tags/v0.2.0-rc.1"
 
+assert_release_workflow_trusted_dispatch "$workflow"
+
+/usr/bin/sed \
+    's/^  repository_dispatch:/  workflow_dispatch:/' \
+    "$workflow" > "$temporary_directory/branch-selectable-dispatch.yml"
+expect_failure "trusted default-branch repository dispatch event" \
+    assert_release_workflow_trusted_dispatch \
+    "$temporary_directory/branch-selectable-dispatch.yml"
+
+/usr/bin/sed \
+    's/\[copylasso_protected_release\]/[unreviewed_release_event]/' \
+    "$workflow" > "$temporary_directory/wrong-dispatch-type.yml"
+expect_failure "trusted default-branch repository dispatch event" \
+    assert_release_workflow_trusted_dispatch \
+    "$temporary_directory/wrong-dispatch-type.yml"
+
 readonly guarded_workflow="$temporary_directory/guarded-release.yml"
 /bin/cp "$workflow" "$guarded_workflow"
 assert_release_workflow_job_guard "$guarded_workflow" "quality-gate"

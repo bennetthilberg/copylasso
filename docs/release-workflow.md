@@ -1,6 +1,6 @@
 # Protected Release Workflow
 
-The manually dispatched workflow builds one signed, notarized, and verified
+The maintainer-dispatched workflow builds one signed, notarized, and verified
 CopyLasso release from the exact protected `main` commit. It creates a private
 draft prerelease and never publishes it. G41 updates this source-only trust
 boundary for G42 and version `0.2.0`; it does not dispatch the workflow. A final
@@ -10,11 +10,12 @@ have been independently read back.
 
 ## Trust Boundary
 
-The workflow file must exist on the default branch before GitHub accepts its `workflow_dispatch`
-event. Run it only by choosing `main` in the Actions interface or by dispatching the workflow with
-`--ref main`.
-The workflow itself rejects every ref except `refs/heads/main`, requires the checked-out `HEAD` to
-equal the dispatched full commit, and requires that commit to equal `origin/main`.
+The workflow accepts only the `copylasso_protected_release` `repository_dispatch`
+event. GitHub runs that event from the repository's default branch, so the
+caller cannot select an unreviewed branch copy of the privileged workflow. The
+workflow also rejects every ref except `refs/heads/main`, requires the checked-out
+`HEAD` to equal the dispatched full commit, and requires that commit to equal
+`origin/main`.
 
 The ordinary pull-request workflow has no release trigger and receives no release credential. The
 protected workflow runs the complete reusable arm64, x86_64, and minimum-macOS gate before it asks
@@ -84,7 +85,8 @@ contract remains separate.
 Only after the G41 source pull request is reviewed, green, and separately
 merged, and G42 is explicitly approved:
 
-1. Open **Actions > Protected Release Candidate > Run workflow** and select `main`.
+1. Dispatch `copylasso_protected_release` through GitHub's repository dispatch API without a
+   `candidate_number` payload field.
 2. Confirm the run's commit is the intended protected `main` commit.
 3. Wait for the complete reusable CI gate.
 4. Approve the `release` environment when GitHub requests deployment review.
@@ -116,8 +118,9 @@ altering either historical record.
 G42 has two ordered phases.
 
 1. Merge the reviewed G41 source-enablement pull request to protected `main`.
-   Because `workflow_dispatch` uses the workflow on the default branch, no
-   rehearsal or candidate can be created from the unmerged G41 branch.
+   Because `repository_dispatch` runs the workflow from the default branch, no
+   rehearsal or candidate can be created from the unmerged G41 branch or an
+   attacker-selected branch copy of the workflow.
 2. In a separately approved post-merge protected run, supply only a validated
    positive `candidate_number`. The workflow derives `v0.2.0-rc.N`, refuses an
    existing tag or release, and builds the exact protected `main` commit through
@@ -154,9 +157,9 @@ The completed G32 maintenance handoff is historical evidence for public
 `0.1.1`. It had two ordered phases.
 
 1. Land a reviewed source-enablement pull request that adds a distinct RC mode to the protected
-   workflow, draft helper, static audit, and regression tests. Because `workflow_dispatch` uses the
-   workflow on the default branch, this phase requires a separately approved merge to protected
-   `main` before candidate creation can begin.
+   workflow, draft helper, static audit, and regression tests. The historical G32 operator selected
+   `main`, and the source verifier rejected every other ref. G45 later replaced that branch-selectable
+   trigger with a default-branch-only repository dispatch boundary.
 2. In the post-merge protected run, supply only a validated positive `candidate_number`; derive
    `v0.1.1-rc.N` inside the workflow, refuse an existing tag or release, and build the exact merged
    `main` commit through the complete quality gate and `release` environment. The job must sign,
