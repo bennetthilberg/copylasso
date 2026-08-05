@@ -81,19 +81,22 @@ for prohibited_key in teamID provisioningProfiles installerSigningCertificate; d
     fi
 done
 
-require_text "$workflow" 'workflow_dispatch:'
-require_text "$workflow" 'candidate_number:'
-require_text "$workflow" 'COPYLASSO_CANDIDATE_NUMBER: ${{ inputs.candidate_number }}'
+require_text "$workflow" 'repository_dispatch:'
+require_text "$workflow" 'types: [copylasso_protected_release]'
+require_text "$workflow" \
+    'COPYLASSO_CANDIDATE_NUMBER: ${{ github.event.client_payload.candidate_number }}'
 require_text "$workflow" 'assert_release_candidate_number "$COPYLASSO_CANDIDATE_NUMBER"'
 require_text "$workflow" 'release_candidate_tag "$COPYLASSO_CANDIDATE_NUMBER"'
 require_text "$workflow" 'release_tag="v${COPYLASSO_G28_VERSION}-g42.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"'
-if [[ "$(/usr/bin/grep -Fc '${{ inputs.' "$workflow")" != "1" ]]; then
-    fail "candidate_number must be the protected workflow's sole dispatch input."
+if [[ "$(/usr/bin/grep -Fc '${{ github.event.client_payload.' "$workflow")" != "1" ]]; then
+    fail "candidate_number must be the protected workflow's sole dispatch payload field."
 fi
-if /usr/bin/grep -Eq '\$\{\{[[:space:]]*inputs\.(tag|ref|mode)' "$workflow"; then
-    fail "The protected workflow must not accept an arbitrary tag, ref, or mode input."
+if /usr/bin/grep -Eq \
+    '\$\{\{[[:space:]]*github\.event\.client_payload\.(tag|ref|mode)' \
+    "$workflow"; then
+    fail "The protected workflow must not accept an arbitrary tag, ref, or mode payload."
 fi
-for prohibited_trigger in pull_request: pull_request_target: push: repository_dispatch: workflow_run:; do
+for prohibited_trigger in pull_request: pull_request_target: push: workflow_dispatch: workflow_run:; do
     if /usr/bin/grep -Eq "^[[:space:]]*${prohibited_trigger}[[:space:]]*$" "$workflow"; then
         fail "The protected release workflow has a prohibited trigger: $prohibited_trigger"
     fi
@@ -110,6 +113,7 @@ contents_write_count="$(/usr/bin/grep -Ec '^[[:space:]]*contents: write[[:space:
     fail "Only the protected draft job may receive contents write permission."
 require_text "$workflow" 'permissions:'
 require_text "$workflow" 'contents: read'
+assert_release_workflow_trusted_dispatch "$workflow"
 assert_release_workflow_job_guard "$workflow" "quality-gate"
 assert_release_workflow_job_guard "$workflow" "protected-release"
 
@@ -260,7 +264,7 @@ for required_documentation_text in \
     'self-review allowed' \
     'Team API key' \
     'password-protected PKCS#12' \
-    'workflow_dispatch' \
+    'repository_dispatch' \
     'refs/heads/main' \
     'pull-request workflow has no release trigger' \
     'credential cleanup' \
