@@ -18,12 +18,14 @@ concurrency:
 jobs:
   quality-gate:
     name: Complete release quality gate
+    if: ${{ github.ref == 'refs/heads/main' }}
     permissions:
       contents: read
     uses: ./.github/workflows/ci.yml
 
   protected-release:
     name: Build protected draft release
+    if: ${{ github.ref == 'refs/heads/main' }}
     needs: quality-gate
     runs-on: macos-26
     timeout-minutes: 90

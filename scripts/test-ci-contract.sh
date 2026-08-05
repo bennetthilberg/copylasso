@@ -157,12 +157,14 @@ fi
 for required_patch_guard in \
     "approved_post_publication_patch_tree_pattern" \
     "approved_post_publication_runtime_tree_pattern" \
+    "approved_post_v02_security_patch_tree_pattern" \
     "g44_release_state_tree_pattern" \
-    "expected_candidate_baseline_tree_digest='e6358aa654914c17146018f5bb5bfdd7eb3f52d79d88358bf2b16a814ba21c7b'" \
-    "expected_approved_post_publication_runtime_tree_digest='6aa226944fafb8a45887db345b70afa94c2a2d2bc49b348350b153ce50095b7f'" \
-    "expected_g44_release_state_files_digest='2223f222a24e2c970d7123cc973c54eb1a91ead66373ef9da481e452c1c8e30e'" \
+    "expected_candidate_baseline_tree_digest='d7ffab8e04dee244d3dd0edb9f9b65402181f73f09a2255b4a2d3a153b833dfc'" \
+    "expected_approved_post_publication_runtime_tree_digest='388191bdbca550efa34ca64d9f8ebba3f127457313e4f0739d4601919fa9de7d'" \
+    "expected_g44_release_state_files_digest='2a2f33d546587b081b1571a5beabe1772125ccf3550eab67c96279455856acb9'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     '"$current_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest"' \
+    '/usr/bin/grep -Ev "$approved_post_v02_security_patch_tree_pattern"' \
     '/usr/bin/grep -Ev "$g44_release_state_tree_pattern"' \
     'The approved G43A runtime patch differs from its reviewed tree digest.'; do
     if ! /usr/bin/grep -Fq "$required_patch_guard" \
