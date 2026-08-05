@@ -21,7 +21,7 @@ readonly g44_release_state_tree_pattern=$'\t(CHANGELOG\\.md|CONTRIBUTING\\.md|PR
 readonly expected_candidate_baseline_tree_digest='ecbcf39d0cac2b1525e46dc154123eb5418db3a9e790770a36a281b5160775bf'
 readonly expected_approved_post_publication_runtime_tree_digest='388191bdbca550efa34ca64d9f8ebba3f127457313e4f0739d4601919fa9de7d'
 readonly expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'
-readonly expected_approved_post_candidate_patch_digest='d8b06fde4fc91268b7d7a5bf1b524f5063d37d4c1f28efcea597dc78308e9088'
+readonly expected_approved_post_candidate_patch_digest='9238b21930c031d55da2bdbff0718125cf05c877b1207bed564d7a87841a680b'
 
 fail() {
     echo "$1" >&2
@@ -172,15 +172,37 @@ done < <(git -C "$repository_root" diff --name-only \
     "$candidate_source_commit")
 
 approved_post_candidate_patch_digest="$(
-    git -C "$repository_root" diff \
-        --binary \
-        --full-index \
-        --no-ext-diff \
-        --no-textconv \
-        "$candidate_source_commit" \
-        -- . \
-        ':(exclude)scripts/audit-v02-release-qualification.sh' \
-        ':(exclude)scripts/test-ci-contract.sh' | \
+    while IFS= read -r approved_path; do
+        if [[ ! -e "$repository_root/$approved_path" && \
+            ! -L "$repository_root/$approved_path" ]]; then
+            printf 'deleted\t%s\n' "$approved_path"
+            continue
+        fi
+        approved_mode="$(
+            git -C "$repository_root" ls-files -s -- "$approved_path" | \
+                /usr/bin/awk 'NR == 1 {print $1}'
+        )"
+        if [[ "$approved_path" == \
+            "scripts/audit-v02-release-qualification.sh" || \
+            "$approved_path" == "scripts/test-ci-contract.sh" ]]; then
+            approved_digest="$(
+                /usr/bin/sed -E \
+                    's/(expected_approved_post_candidate_patch_digest[^0-9a-f]*)[0-9a-f]{64}/\1<self-normalized>/g' \
+                    "$repository_root/$approved_path" | \
+                    /usr/bin/shasum -a 256 | \
+                    /usr/bin/awk '{print $1}'
+            )"
+        else
+            approved_digest="$(
+                git -C "$repository_root" hash-object -- "$approved_path"
+            )"
+        fi
+        printf '%s\t%s\t%s\n' \
+            "$approved_mode" "$approved_digest" "$approved_path"
+    done < <(
+        git -C "$repository_root" diff --name-only "$candidate_source_commit" | \
+            LC_ALL=C /usr/bin/sort
+    ) | \
         /usr/bin/shasum -a 256 | \
         /usr/bin/awk '{print $1}'
 )"
