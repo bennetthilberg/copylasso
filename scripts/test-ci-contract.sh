@@ -182,7 +182,7 @@ for required_patch_guard in \
     "expected_candidate_baseline_tree_digest='d7ffab8e04dee244d3dd0edb9f9b65402181f73f09a2255b4a2d3a153b833dfc'" \
     "expected_approved_post_publication_runtime_tree_digest='388191bdbca550efa34ca64d9f8ebba3f127457313e4f0739d4601919fa9de7d'" \
     "expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'" \
-    "expected_approved_post_candidate_patch_digest='73d0f5c39d90862e6b0bbfd57ff265846d1babcb93abb3106cc7c046a1e5ac13'" \
+    "expected_approved_post_candidate_patch_digest='858fd28757556091094f8d968b1b23e0494cd21bbe5e880287062ef9febf5e2d'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     '"$current_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest"' \
     'approved_post_candidate_path "$approved_path"' \
