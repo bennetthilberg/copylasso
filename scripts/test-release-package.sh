@@ -296,6 +296,7 @@ portable_evidence="$temporary_directory/portable-evidence.txt"
 cat > "$portable_evidence" <<'TEXT'
 version=0.2.0
 build=3
+source_url=https://github.com/bennetthilberg/copylasso
 TEXT
 assert_release_evidence_is_portable "$portable_evidence"
 absolute_path_evidence="$temporary_directory/absolute-path-evidence.txt"
@@ -305,6 +306,55 @@ local_artifact=/local/build/output
 TEXT
 expect_failure "must not contain local absolute paths" \
     assert_release_evidence_is_portable "$absolute_path_evidence"
+embedded_absolute_path_evidence="$temporary_directory/embedded-absolute-path-evidence.txt"
+cat > "$embedded_absolute_path_evidence" <<'TEXT'
+version=0.2.0
+build_log=output=/opt/copylasso/project
+TEXT
+expect_failure "must not contain local absolute paths" \
+    assert_release_evidence_is_portable "$embedded_absolute_path_evidence"
+spaced_absolute_path_evidence="$temporary_directory/spaced-absolute-path-evidence.txt"
+cat > "$spaced_absolute_path_evidence" <<'TEXT'
+version=0.2.0
+build_log=output: /private/tmp/copylasso.log
+TEXT
+expect_failure "must not contain local absolute paths" \
+    assert_release_evidence_is_portable "$spaced_absolute_path_evidence"
+colon_absolute_path_evidence="$temporary_directory/colon-absolute-path-evidence.txt"
+cat > "$colon_absolute_path_evidence" <<'TEXT'
+version=0.2.0
+build_log=output:/private/tmp/copylasso.log
+TEXT
+expect_failure "must not contain local absolute paths" \
+    assert_release_evidence_is_portable "$colon_absolute_path_evidence"
+file_url_evidence="$temporary_directory/file-url-evidence.txt"
+cat > "$file_url_evidence" <<'TEXT'
+version=0.2.0
+source=file:///opt/copylasso/project
+TEXT
+expect_failure "must not contain local absolute paths" \
+    assert_release_evidence_is_portable "$file_url_evidence"
+single_quoted_path_evidence="$temporary_directory/single-quoted-path-evidence.txt"
+cat > "$single_quoted_path_evidence" <<'TEXT'
+version=0.2.0
+build_log=output:'/private/tmp/copylasso.log'
+TEXT
+expect_failure "must not contain local absolute paths" \
+    assert_release_evidence_is_portable "$single_quoted_path_evidence"
+list_delimited_path_evidence="$temporary_directory/list-delimited-path-evidence.txt"
+cat > "$list_delimited_path_evidence" <<'TEXT'
+version=0.2.0
+build_logs=ci.log,/private/tmp/copylasso.log
+TEXT
+expect_failure "must not contain local absolute paths" \
+    assert_release_evidence_is_portable "$list_delimited_path_evidence"
+bracket_delimited_path_evidence="$temporary_directory/bracket-delimited-path-evidence.txt"
+cat > "$bracket_delimited_path_evidence" <<'TEXT'
+version=0.2.0
+outputs=[/private/tmp/CopyLasso.app]
+TEXT
+expect_failure "must not contain local absolute paths" \
+    assert_release_evidence_is_portable "$bracket_delimited_path_evidence"
 
 assert_release_commit_matches \
     "payload" \
