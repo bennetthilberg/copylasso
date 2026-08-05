@@ -1,12 +1,8 @@
 name: Protected Release Candidate
 
 on:
-  workflow_dispatch:
-    inputs:
-      candidate_number:
-        description: Positive release-candidate number; leave blank only for a private G42 rehearsal
-        required: false
-        type: string
+  repository_dispatch:
+    types: [copylasso_protected_release]
 
 permissions:
   contents: read
@@ -18,12 +14,14 @@ concurrency:
 jobs:
   quality-gate:
     name: Complete release quality gate
+    if: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'copylasso_protected_release' && github.ref == 'refs/heads/main' }}
     permissions:
       contents: read
     uses: ./.github/workflows/ci.yml
 
   protected-release:
     name: Build protected draft release
+    if: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'copylasso_protected_release' && github.ref == 'refs/heads/main' }}
     needs: quality-gate
     runs-on: macos-26
     timeout-minutes: 90
@@ -33,7 +31,8 @@ jobs:
       contents: write
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
-      COPYLASSO_CANDIDATE_NUMBER: ${{ inputs.candidate_number }}
+      # Omit candidate_number only for a private G42 rehearsal.
+      COPYLASSO_CANDIDATE_NUMBER: ${{ github.event.client_payload.candidate_number }}
     steps:
       - name: Check out exact protected commit
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0

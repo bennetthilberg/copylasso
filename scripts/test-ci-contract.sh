@@ -34,6 +34,28 @@ fail() {
     exit 1
 }
 
+checkout_count="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*uses:[[:space:]]+actions/checkout@' "$workflow" || true
+})"
+full_history_count="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*fetch-depth:[[:space:]]+0[[:space:]]*$' "$workflow" || true
+})"
+if [[ "$checkout_count" == "0" || "$full_history_count" != "$checkout_count" ]]; then
+    fail "Every canonical CI checkout must fetch full history for release qualification."
+fi
+
+for qualification_pin in \
+    'approved_post_candidate_path' \
+    'expected_approved_post_candidate_patch_digest' \
+    'approved_post_candidate_patch_digest'; do
+    if ! /usr/bin/grep -Fq "$qualification_pin" \
+        "$v02_release_qualification_audit_script"; then
+        fail "The v0.2 qualification audit is missing post-candidate patch pinning: $qualification_pin"
+    fi
+done
+
 repeatability_invocations="$({
     /usr/bin/grep -Ec '^[[:space:]]*\./scripts/test-repeatability\.sh[[:space:]]*$' \
         "$ci_script" || true
@@ -157,12 +179,21 @@ fi
 for required_patch_guard in \
     "approved_post_publication_patch_tree_pattern" \
     "approved_post_publication_runtime_tree_pattern" \
+    "approved_post_v02_security_patch_tree_pattern" \
     "g44_release_state_tree_pattern" \
-    "expected_candidate_baseline_tree_digest='e6358aa654914c17146018f5bb5bfdd7eb3f52d79d88358bf2b16a814ba21c7b'" \
-    "expected_approved_post_publication_runtime_tree_digest='6aa226944fafb8a45887db345b70afa94c2a2d2bc49b348350b153ce50095b7f'" \
-    "expected_g44_release_state_files_digest='2223f222a24e2c970d7123cc973c54eb1a91ead66373ef9da481e452c1c8e30e'" \
+    "expected_candidate_baseline_tree_digest='ecbcf39d0cac2b1525e46dc154123eb5418db3a9e790770a36a281b5160775bf'" \
+    "expected_approved_post_publication_runtime_tree_digest='388191bdbca550efa34ca64d9f8ebba3f127457313e4f0739d4601919fa9de7d'" \
+    "expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'" \
+    "expected_approved_post_candidate_patch_digest='6a7930d0b4b5205e81ad4c61e444dd13238a07e4d91dcfde26b66cefd50e60c6'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
+    'The qualified candidate commit is unavailable.' \
     '"$current_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest"' \
+    'approved_post_candidate_path "$approved_path"' \
+    'hash-object -- "$approved_path"' \
+    'expected_approved_post_candidate_patch_digest[^0-9a-f]*' \
+    '<self-normalized>' \
+    'The approved post-candidate patch differs from its reviewed digest.' \
+    '/usr/bin/grep -Ev "$approved_post_v02_security_patch_tree_pattern"' \
     '/usr/bin/grep -Ev "$g44_release_state_tree_pattern"' \
     'The approved G43A runtime patch differs from its reviewed tree digest.'; do
     if ! /usr/bin/grep -Fq "$required_patch_guard" \
@@ -170,6 +201,15 @@ for required_patch_guard in \
         fail "The v0.2 qualification audit must pin the exact approved G43A patch."
     fi
 done
+
+if /usr/bin/grep -Fq \
+    ':(exclude)scripts/audit-v02-release-qualification.sh' \
+    "$v02_release_qualification_audit_script" || \
+    /usr/bin/grep -Fq \
+        ':(exclude)scripts/test-ci-contract.sh' \
+        "$v02_release_qualification_audit_script"; then
+    fail "The post-candidate digest must pin its own audit and contract scripts."
+fi
 
 v02_publication_test_invocations="$({
     /usr/bin/grep -Ec \

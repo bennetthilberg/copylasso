@@ -32,6 +32,115 @@ assert_protected_release_ref() {
         protected_release_fail "Protected releases may be dispatched only from protected main."
 }
 
+release_workflow_job_if_values() {
+    local workflow_file="$1"
+    local target_job="$2"
+
+    /usr/bin/awk -v target_job="$target_job" '
+        /^jobs:[[:space:]]*$/ {
+            in_jobs = 1
+            current_job = ""
+            next
+        }
+        in_jobs && /^[^[:space:]#]/ {
+            in_jobs = 0
+            current_job = ""
+        }
+        in_jobs && /^  [A-Za-z0-9_-]+:[[:space:]]*(#.*)?$/ {
+            current_job = $0
+            sub(/^  /, "", current_job)
+            sub(/:.*/, "", current_job)
+            next
+        }
+        in_jobs && current_job == target_job && /^    if:[[:space:]]*/ {
+            value = $0
+            sub(/^    if:[[:space:]]*/, "", value)
+            sub(/[[:space:]]*$/, "", value)
+            print value
+        }
+    ' "$workflow_file"
+}
+
+release_workflow_trigger_names() {
+    local workflow_file="$1"
+
+    /usr/bin/awk '
+        /^on:[[:space:]]*$/ {
+            in_triggers = 1
+            next
+        }
+        in_triggers && /^[^[:space:]#]/ {
+            in_triggers = 0
+        }
+        in_triggers && /^  [A-Za-z0-9_-]+:[[:space:]]*/ {
+            trigger = $0
+            sub(/^  /, "", trigger)
+            sub(/:.*/, "", trigger)
+            print trigger
+        }
+    ' "$workflow_file"
+}
+
+release_workflow_repository_dispatch_types() {
+    local workflow_file="$1"
+
+    /usr/bin/awk '
+        /^on:[[:space:]]*$/ {
+            in_triggers = 1
+            next
+        }
+        in_triggers && /^[^[:space:]#]/ {
+            in_triggers = 0
+            in_repository_dispatch = 0
+        }
+        in_triggers && /^  [A-Za-z0-9_-]+:[[:space:]]*/ {
+            trigger = $0
+            sub(/^  /, "", trigger)
+            sub(/:.*/, "", trigger)
+            in_repository_dispatch = trigger == "repository_dispatch"
+            next
+        }
+        in_repository_dispatch && /^    types:[[:space:]]*/ {
+            value = $0
+            sub(/^    types:[[:space:]]*/, "", value)
+            sub(/[[:space:]]*$/, "", value)
+            print value
+        }
+    ' "$workflow_file"
+}
+
+assert_release_workflow_trusted_dispatch() {
+    local workflow_file="$1"
+    local trigger_names
+    local dispatch_types
+
+    [[ -f "$workflow_file" ]] || \
+        protected_release_fail "The protected release workflow is missing."
+    trigger_names="$(release_workflow_trigger_names "$workflow_file")"
+    dispatch_types="$(release_workflow_repository_dispatch_types "$workflow_file")"
+    [[ "$trigger_names" == "repository_dispatch" && \
+        "$dispatch_types" == "[copylasso_protected_release]" ]] || \
+        protected_release_fail \
+            "The protected release workflow must use only the trusted default-branch repository dispatch event."
+}
+
+assert_release_workflow_job_guard() {
+    local workflow_file="$1"
+    local target_job="$2"
+    local expected_guard="\${{ github.event_name == 'repository_dispatch' && github.event.action == 'copylasso_protected_release' && github.ref == 'refs/heads/main' }}"
+    local actual_guards
+    local guard_count
+
+    [[ -f "$workflow_file" ]] || \
+        protected_release_fail "The protected release workflow is missing."
+    actual_guards="$(release_workflow_job_if_values "$workflow_file" "$target_job")"
+    guard_count="$(printf '%s\n' "$actual_guards" | \
+        /usr/bin/awk 'NF { count += 1 } END { print count + 0 }')"
+    [[ "$guard_count" == "1" && "$actual_guards" == "$expected_guard" ]] || \
+        protected_release_fail \
+            "Release job $target_job must run only for refs/heads/main."
+}
+
 assert_release_source_state() {
     local g28_repository="$1"
     local g28_git_ref="$2"
