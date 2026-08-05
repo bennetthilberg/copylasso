@@ -61,3 +61,39 @@ assert_copylasso_hardened_runtime() {
             "Debug and Release app configurations must both enable Hardened Runtime."
     fi
 }
+
+assert_ui_test_screenshots_are_failure_only() {
+    local ui_test_file="$1"
+
+    [[ -f "$ui_test_file" ]] || \
+        project_security_fail "The UI test source is missing."
+    if /usr/bin/grep -Fq '.lifetime = .keepAlways' "$ui_test_file" || \
+        ! /usr/bin/awk '
+            /XCTAttachment\(screenshot:/ {
+                if (pending) {
+                    invalid = 1
+                }
+                pending = 1
+                delete_on_success = 0
+                screenshot_count += 1
+                next
+            }
+            pending && /\.lifetime[[:space:]]*=[[:space:]]*\.deleteOnSuccess/ {
+                delete_on_success = 1
+                next
+            }
+            pending && /add\(/ {
+                if (!delete_on_success) {
+                    invalid = 1
+                }
+                pending = 0
+                delete_on_success = 0
+            }
+            END {
+                exit(invalid || pending || screenshot_count == 0)
+            }
+        ' "$ui_test_file"; then
+        project_security_fail \
+            "Desktop screenshots must be deleted after successful UI tests."
+    fi
+}
