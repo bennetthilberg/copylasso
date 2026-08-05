@@ -34,6 +34,16 @@ fail() {
     exit 1
 }
 
+for qualification_pin in \
+    'approved_post_candidate_path' \
+    'expected_approved_post_candidate_patch_digest' \
+    'approved_post_candidate_patch_digest'; do
+    if ! /usr/bin/grep -Fq "$qualification_pin" \
+        "$v02_release_qualification_audit_script"; then
+        fail "The v0.2 qualification audit is missing post-candidate patch pinning: $qualification_pin"
+    fi
+done
+
 repeatability_invocations="$({
     /usr/bin/grep -Ec '^[[:space:]]*\./scripts/test-repeatability\.sh[[:space:]]*$' \
         "$ci_script" || true
@@ -161,9 +171,12 @@ for required_patch_guard in \
     "g44_release_state_tree_pattern" \
     "expected_candidate_baseline_tree_digest='d7ffab8e04dee244d3dd0edb9f9b65402181f73f09a2255b4a2d3a153b833dfc'" \
     "expected_approved_post_publication_runtime_tree_digest='388191bdbca550efa34ca64d9f8ebba3f127457313e4f0739d4601919fa9de7d'" \
-    "expected_g44_release_state_files_digest='2a2f33d546587b081b1571a5beabe1772125ccf3550eab67c96279455856acb9'" \
+    "expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'" \
+    "expected_approved_post_candidate_patch_digest='c992b7a313a540069c272c30d2bc49952692dcabd1e67fd3730bd363e2deb4c8'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     '"$current_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest"' \
+    'approved_post_candidate_path "$approved_path"' \
+    'The approved post-candidate patch differs from its reviewed digest.' \
     '/usr/bin/grep -Ev "$approved_post_v02_security_patch_tree_pattern"' \
     '/usr/bin/grep -Ev "$g44_release_state_tree_pattern"' \
     'The approved G43A runtime patch differs from its reviewed tree digest.'; do

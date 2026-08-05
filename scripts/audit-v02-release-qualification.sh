@@ -20,7 +20,8 @@ readonly approved_post_v02_security_patch_tree_pattern=$'\t(\\.github/workflows/
 readonly g44_release_state_tree_pattern=$'\t(CHANGELOG\\.md|CONTRIBUTING\\.md|PRIVACY\\.md|README\\.md|SECURITY\\.md|docs/architecture/overview\\.md|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/security-and-privacy-review\\.md|docs/testing\\.md|docs/v0\\.2-product-contract\\.md|docs/v0\\.2-release-state\\.md|scripts/audit-brand-release\\.sh|scripts/audit-code-recognition\\.sh|scripts/audit-secure-update-architecture\\.sh|scripts/audit-v02-contract\\.sh|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/audit-v02-release-state\\.sh|scripts/ci\\.sh|scripts/test-ci-contract\\.sh|scripts/test-release-metadata\\.sh)$'
 readonly expected_candidate_baseline_tree_digest='d7ffab8e04dee244d3dd0edb9f9b65402181f73f09a2255b4a2d3a153b833dfc'
 readonly expected_approved_post_publication_runtime_tree_digest='388191bdbca550efa34ca64d9f8ebba3f127457313e4f0739d4601919fa9de7d'
-readonly expected_g44_release_state_files_digest='2a2f33d546587b081b1571a5beabe1772125ccf3550eab67c96279455856acb9'
+readonly expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'
+readonly expected_approved_post_candidate_patch_digest='c992b7a313a540069c272c30d2bc49952692dcabd1e67fd3730bd363e2deb4c8'
 
 fail() {
     echo "$1" >&2
@@ -37,6 +38,20 @@ require_text() {
 
     /usr/bin/grep -Fq -- "$required_text" "$repository_root/$relative_path" || \
         fail "$relative_path is missing required v0.2 qualification text: $required_text"
+}
+
+approved_post_candidate_path() {
+    local relative_path="$1"
+    local tree_line=$'\t'"$relative_path"
+
+    printf '%s\n' "$tree_line" | \
+        /usr/bin/grep -Eq "$candidate_evidence_tree_pattern" || \
+        printf '%s\n' "$tree_line" | \
+            /usr/bin/grep -Eq "$approved_post_publication_patch_tree_pattern" || \
+        printf '%s\n' "$tree_line" | \
+            /usr/bin/grep -Eq "$approved_post_v02_security_patch_tree_pattern" || \
+        printf '%s\n' "$tree_line" | \
+            /usr/bin/grep -Eq "$g44_release_state_tree_pattern"
 }
 
 for required_file in \
@@ -148,6 +163,29 @@ require_text Configuration/CopyLasso-Info.plist \
     '<string>https://updates.copylasso.com/appcast.xml</string>'
 
 if git -C "$repository_root" cat-file -e "$candidate_source_commit^{tree}" 2>/dev/null; then
+    while IFS= read -r approved_path; do
+        approved_post_candidate_path "$approved_path" || \
+            fail "An unapproved path differs from the qualified v0.2 candidate: $approved_path"
+    done < <(git -C "$repository_root" diff --name-only \
+        "$candidate_source_commit")
+
+    approved_post_candidate_patch_digest="$(
+        git -C "$repository_root" diff \
+            --binary \
+            --full-index \
+            --no-ext-diff \
+            --no-textconv \
+            "$candidate_source_commit" \
+            -- . \
+            ':(exclude)scripts/audit-v02-release-qualification.sh' \
+            ':(exclude)scripts/test-ci-contract.sh' | \
+            /usr/bin/shasum -a 256 | \
+            /usr/bin/awk '{print $1}'
+    )"
+    [[ "$approved_post_candidate_patch_digest" == \
+        "$expected_approved_post_candidate_patch_digest" ]] || \
+        fail "The approved post-candidate patch differs from its reviewed digest."
+
     qualified_candidate_input_tree_digest="$(
         git -C "$repository_root" ls-tree -r --full-tree "$candidate_source_commit" |
             /usr/bin/grep -Ev "$candidate_evidence_tree_pattern" |
@@ -200,7 +238,6 @@ readonly g44_release_state_files=(
     SECURITY.md
     docs/architecture/overview.md
     docs/release-checklist.md
-    docs/release-workflow.md
     docs/secure-update-operations.md
     docs/security-and-privacy-review.md
     docs/testing.md
@@ -291,7 +328,7 @@ for prohibited_pattern in \
 done
 
 require_text .github/workflows/release.yml \
-    'leave blank only for a private G42 rehearsal'
+    'Omit candidate_number only for a private G42 rehearsal.'
 require_text .github/workflows/release.yml 'release_goal=G42'
 require_text .github/workflows/release.yml 'release_subdirectory=g42'
 require_text .github/workflows/release.yml \
