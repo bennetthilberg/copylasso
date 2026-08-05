@@ -121,4 +121,14 @@ SWIFT
 expect_failure "must be deleted after successful UI tests" \
     assert_ui_test_screenshots_are_failure_only "$temporary_directory/unbounded-ui-tests.swift"
 
+cat > "$temporary_directory/unrelated-lifetime-ui-tests.swift" <<'SWIFT'
+let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+let unrelated = XCTAttachment(string: "diagnostic")
+unrelated.lifetime = .deleteOnSuccess
+add(screenshot)
+SWIFT
+expect_failure "must be deleted after successful UI tests" \
+    assert_ui_test_screenshots_are_failure_only \
+        "$temporary_directory/unrelated-lifetime-ui-tests.swift"
+
 echo "CopyLasso privacy and security contract tests passed."

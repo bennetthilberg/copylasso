@@ -76,18 +76,34 @@ assert_ui_test_screenshots_are_failure_only() {
                 pending = 1
                 delete_on_success = 0
                 screenshot_count += 1
+                attachment = $0
+                if (attachment !~ /^[[:space:]]*(let|var)[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*=[[:space:]]*XCTAttachment\(screenshot:/) {
+                    invalid = 1
+                    next
+                }
+                sub(/^[[:space:]]*(let|var)[[:space:]]+/, "", attachment)
+                sub(/[[:space:]]*=.*$/, "", attachment)
                 next
             }
             pending && /\.lifetime[[:space:]]*=[[:space:]]*\.deleteOnSuccess/ {
-                delete_on_success = 1
+                assignment = $0
+                gsub(/[[:space:]]/, "", assignment)
+                if (assignment == attachment ".lifetime=.deleteOnSuccess") {
+                    delete_on_success = 1
+                }
                 next
             }
             pending && /add\(/ {
-                if (!delete_on_success) {
+                addition = $0
+                gsub(/[[:space:]]/, "", addition)
+                if (!delete_on_success || \
+                    (addition != "add(" attachment ")" && \
+                     addition != "self.add(" attachment ")")) {
                     invalid = 1
                 }
                 pending = 0
                 delete_on_success = 0
+                attachment = ""
             }
             END {
                 exit(invalid || pending || screenshot_count == 0)
