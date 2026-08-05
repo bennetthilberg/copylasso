@@ -185,6 +185,11 @@ if ! "$gh_binary" api \
     -f make_latest=false \
     -F "body=@$notes" \
     > "$creation_record"; then
+    if [[ "$release_mode" == "candidate" ]]; then
+        candidate_tag_created="false"
+        protected_release_fail \
+            "The release-candidate release creation outcome is ambiguous; its tag was retained for manual inspection."
+    fi
     protected_release_fail "The protected draft release could not be created."
 fi
 release_identifier="$(/usr/bin/plutil -extract id raw -o - "$creation_record" 2>/dev/null || true)"
