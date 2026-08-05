@@ -419,6 +419,10 @@ if [[ "$1" == "api" && "$*" == *"--method POST"* && "$*" == *"git/refs"* ]]; the
 fi
 if [[ "$1" == "api" && "$*" == *"--method POST"* && "$*" == *"/releases"* ]]; then
     [[ "${FAKE_GH_MODE:-success}" != "release-create-fail" ]] || exit 1
+    if [[ "${FAKE_GH_MODE:-success}" == "release-create-malformed" ]]; then
+        printf '{"id":\n'
+        exit 0
+    fi
     printf '{"id":123}\n'
     exit 0
 fi
@@ -559,6 +563,22 @@ if /usr/bin/grep -Fq -- \
 fi
 [[ -f "$fake_gh_tag_state" ]] || \
     fail "An ambiguous release response must retain the candidate tag for inspection."
+
+: > "$fake_gh_log"
+/bin/rm -f "$fake_gh_tag_state"
+export FAKE_GH_MODE="release-create-malformed"
+expect_failure "creation response has no valid identifier" \
+    "$draft_creator" \
+    --repository owner/repository \
+    --commit 0123456789abcdef0123456789abcdef01234567 \
+    --candidate-number 1 \
+    --run-dir "$release_run" \
+    --readback "$temporary_directory/release-create-malformed.json"
+if /usr/bin/grep -Fq -- '--method DELETE' "$fake_gh_log"; then
+    fail "A malformed successful release response must retain the tag and possible draft."
+fi
+[[ -f "$fake_gh_tag_state" ]] || \
+    fail "A malformed successful release response must retain the candidate tag."
 
 : > "$fake_gh_log"
 /bin/rm -f "$fake_gh_tag_state"

@@ -206,8 +206,14 @@ if ! "$gh_binary" api \
     protected_release_fail "The protected draft release could not be created."
 fi
 release_identifier="$(/usr/bin/plutil -extract id raw -o - "$creation_record" 2>/dev/null || true)"
-[[ "$release_identifier" =~ ^[0-9]+$ ]] || \
+if [[ ! "$release_identifier" =~ ^[0-9]+$ ]]; then
+    if [[ "$release_mode" == "candidate" ]]; then
+        candidate_tag_created="false"
+        protected_release_fail \
+            "The release-candidate creation response has no valid identifier; its tag was retained for manual inspection."
+    fi
     protected_release_fail "The protected draft release has no valid identifier."
+fi
 
 if ! "$gh_binary" release upload "$tag" \
     "$run_directory/$COPYLASSO_G28_DMG" \
