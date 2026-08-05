@@ -196,7 +196,6 @@ assert_release_notary_records() {
     local log_status
     local observed_submission_identifier
     local log_identifier
-    local issues
 
     [[ -f "$submission_record_path" && -f "$diagnostic_log_path" ]] || \
         release_package_fail "The notarization submission record or diagnostic log is missing."
@@ -211,10 +210,14 @@ assert_release_notary_records() {
         [[ "$observed_submission_identifier" != "$log_identifier" ]]; then
         release_package_fail "The notarization submission and diagnostic log do not match."
     fi
-    issues="$(/usr/bin/plutil -extract issues json -o - "$diagnostic_log_path" 2>/dev/null || true)"
-    if [[ "$issues" != "[]" ]] && \
-        ! /usr/bin/grep -Eq '"issues"[[:space:]]*:[[:space:]]*null([[:space:]]*[,}]|[[:space:]]*$)' \
-            "$diagnostic_log_path"; then
+    if ! /usr/bin/jq -e '
+        type == "object" and
+        has("issues") and
+        (
+            .issues == null or
+            ((.issues | type) == "array" and (.issues | length) == 0)
+        )
+    ' "$diagnostic_log_path" >/dev/null 2>&1; then
         release_package_fail "The accepted notarization diagnostic log contains issues."
     fi
 }
@@ -255,7 +258,7 @@ assert_release_evidence_is_portable() {
 
     [[ -f "$evidence_record_path" ]] || \
         release_package_fail "The release evidence record is missing."
-    if /usr/bin/grep -Eq '^[^=]+=/.*$' "$evidence_record_path"; then
+    if /usr/bin/grep -Eq '(^|[=[:space:]"])/' "$evidence_record_path"; then
         release_package_fail "The release evidence must not contain local absolute paths."
     fi
 }

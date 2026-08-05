@@ -244,6 +244,38 @@ JSON
 expect_failure "contains issues" assert_release_notary_records \
     "$valid_submission" "$temporary_directory/warning-log.json"
 
+nested_null_issues_log="$temporary_directory/nested-null-issues-log.json"
+cat > "$nested_null_issues_log" <<'JSON'
+{
+  "jobId": "00000000-0000-0000-0000-000000000000",
+  "status": "Accepted",
+  "issues": [{"severity":"warning"}],
+  "metadata": {"issues": null}
+}
+JSON
+expect_failure "contains issues" assert_release_notary_records \
+    "$valid_submission" "$nested_null_issues_log"
+
+cat > "$temporary_directory/missing-top-level-issues.json" <<'JSON'
+{
+  "jobId": "00000000-0000-0000-0000-000000000000",
+  "status": "Accepted",
+  "metadata": {"issues": null}
+}
+JSON
+expect_failure "contains issues" assert_release_notary_records \
+    "$valid_submission" "$temporary_directory/missing-top-level-issues.json"
+
+cat > "$temporary_directory/scalar-issues.json" <<'JSON'
+{
+  "jobId": "00000000-0000-0000-0000-000000000000",
+  "status": "Accepted",
+  "issues": "none"
+}
+JSON
+expect_failure "contains issues" assert_release_notary_records \
+    "$valid_submission" "$temporary_directory/scalar-issues.json"
+
 valid_app_uuids="$temporary_directory/app-uuids.txt"
 valid_dsym_uuids="$temporary_directory/dsym-uuids.txt"
 cat > "$valid_app_uuids" <<'TEXT'
@@ -264,6 +296,7 @@ portable_evidence="$temporary_directory/portable-evidence.txt"
 cat > "$portable_evidence" <<'TEXT'
 version=0.2.0
 build=3
+source_url=https://github.com/bennetthilberg/copylasso
 TEXT
 assert_release_evidence_is_portable "$portable_evidence"
 absolute_path_evidence="$temporary_directory/absolute-path-evidence.txt"
@@ -273,6 +306,20 @@ local_artifact=/local/build/output
 TEXT
 expect_failure "must not contain local absolute paths" \
     assert_release_evidence_is_portable "$absolute_path_evidence"
+embedded_absolute_path_evidence="$temporary_directory/embedded-absolute-path-evidence.txt"
+cat > "$embedded_absolute_path_evidence" <<'TEXT'
+version=0.2.0
+build_log=output=/opt/copylasso/project
+TEXT
+expect_failure "must not contain local absolute paths" \
+    assert_release_evidence_is_portable "$embedded_absolute_path_evidence"
+spaced_absolute_path_evidence="$temporary_directory/spaced-absolute-path-evidence.txt"
+cat > "$spaced_absolute_path_evidence" <<'TEXT'
+version=0.2.0
+build_log=output: /private/tmp/copylasso.log
+TEXT
+expect_failure "must not contain local absolute paths" \
+    assert_release_evidence_is_portable "$spaced_absolute_path_evidence"
 
 assert_release_commit_matches \
     "payload" \

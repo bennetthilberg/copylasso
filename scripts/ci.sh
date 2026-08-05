@@ -50,6 +50,9 @@ xcrun swift-format lint --recursive --strict \
 echo "Auditing privacy, security, entitlements, and dependencies"
 ./scripts/audit-privacy-security.sh
 
+echo "Testing privacy and security project contracts"
+./scripts/test-privacy-security.sh
+
 echo "Testing release metadata"
 ./scripts/test-release-metadata.sh
 
@@ -492,6 +495,7 @@ assert_setting "$derived_data/debug-build-settings.txt" SWIFT_STRICT_CONCURRENCY
 assert_setting "$derived_data/debug-build-settings.txt" SWIFT_TREAT_WARNINGS_AS_ERRORS YES
 assert_setting "$derived_data/debug-build-settings.txt" GCC_TREAT_WARNINGS_AS_ERRORS YES
 assert_setting "$derived_data/debug-build-settings.txt" ENABLE_APP_SANDBOX YES
+assert_setting "$derived_data/debug-build-settings.txt" ENABLE_HARDENED_RUNTIME YES
 assert_setting "$derived_data/debug-build-settings.txt" CODE_SIGN_ENTITLEMENTS CopyLasso/CopyLasso.entitlements
 assert_setting "$derived_data/debug-build-settings.txt" PRODUCT_BUNDLE_IDENTIFIER io.github.bennetthilberg.copylasso.debug
 assert_setting "$derived_data/debug-build-settings.txt" INFOPLIST_FILE Configuration/CopyLasso-Info.plist
