@@ -96,16 +96,16 @@ candidate_tag_created="false"
 draft_committed="false"
 
 rollback_draft() {
-    if [[ "$candidate_tag_created" == "true" && "$draft_committed" != "true" ]]; then
-        "$gh_binary" api \
-            --method DELETE \
-            "repos/$repository/git/refs/tags/$tag" \
-            >/dev/null 2>&1 || true
-    fi
     if [[ -n "$release_identifier" && "$draft_committed" != "true" ]]; then
         "$gh_binary" api \
             --method DELETE \
             "repos/$repository/releases/$release_identifier" \
+            >/dev/null 2>&1 || true
+    fi
+    if [[ "$candidate_tag_created" == "true" && "$draft_committed" != "true" ]]; then
+        "$gh_binary" api \
+            --method DELETE \
+            "repos/$repository/git/refs/tags/$tag" \
             >/dev/null 2>&1 || true
     fi
     /bin/rm -rf "$temporary_directory"
@@ -154,6 +154,26 @@ else
 fi
 readonly release_name
 
+if [[ "$release_mode" == "candidate" ]]; then
+    if "$gh_binary" api \
+        --method POST \
+        "repos/$repository/git/refs" \
+        -f "ref=refs/tags/$tag" \
+        -f "sha=$commit" \
+        > "$candidate_tag_record"; then
+        candidate_tag_created="true"
+        assert_release_candidate_tag_record "$candidate_tag_record" "$commit" "$tag"
+    else
+        if "$gh_binary" api \
+            "repos/$repository/git/ref/tags/$tag" > "$candidate_tag_record"; then
+            protected_release_fail \
+                "The release-candidate tag creation outcome is ambiguous; the existing tag was retained for manual inspection."
+        fi
+        protected_release_fail \
+            "The release-candidate transaction could not create its immutable tag."
+    fi
+fi
+
 if ! "$gh_binary" api \
     --method POST \
     "repos/$repository/releases" \
@@ -193,20 +213,6 @@ if [[ "$release_mode" == "candidate" ]]; then
         "$candidate_number" \
         "$run_directory" \
         "$reviewed_candidate_notes"
-    if ! "$gh_binary" api \
-        --method POST \
-        "repos/$repository/git/refs" \
-        -f "ref=refs/tags/$tag" \
-        -f "sha=$commit" \
-        >/dev/null; then
-        if ! "$gh_binary" api \
-            "repos/$repository/git/ref/tags/$tag" > "$candidate_tag_record"; then
-            protected_release_fail \
-                "The release-candidate transaction could not create its immutable tag."
-        fi
-        assert_release_candidate_tag_record "$candidate_tag_record" "$commit" "$tag"
-    fi
-    candidate_tag_created="true"
     if ! "$gh_binary" api \
         "repos/$repository/git/ref/tags/$tag" > "$candidate_tag_record"; then
         protected_release_fail "The release-candidate transaction could not read back its tag."
