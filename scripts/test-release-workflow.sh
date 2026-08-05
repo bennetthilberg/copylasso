@@ -67,6 +67,35 @@ expect_failure "only from protected main" \
     assert_protected_release_ref "refs/heads/feature"
 expect_failure "only from protected main" \
     assert_protected_release_ref "refs/tags/v0.2.0-rc.1"
+
+readonly guarded_workflow="$temporary_directory/guarded-release.yml"
+/bin/cp "$workflow" "$guarded_workflow"
+assert_release_workflow_job_guard "$guarded_workflow" "quality-gate"
+assert_release_workflow_job_guard "$guarded_workflow" "protected-release"
+
+/usr/bin/awk '
+    !removed && /^    if:.*refs\/heads\/main/ { removed = 1; next }
+    { print }
+' "$workflow" > "$temporary_directory/missing-quality-guard.yml"
+printf '%s\n' \
+    'decoy:' \
+    '    if: ${{ github.ref == '\''refs/heads/main'\'' }}' \
+    >> "$temporary_directory/missing-quality-guard.yml"
+expect_failure "quality-gate must run only for refs/heads/main" \
+    assert_release_workflow_job_guard \
+    "$temporary_directory/missing-quality-guard.yml" \
+    "quality-gate"
+
+/usr/bin/awk '
+    /^  protected-release:/ { protected_job = 1 }
+    protected_job && /^    if:.*refs\/heads\/main/ { next }
+    { print }
+' "$workflow" > "$temporary_directory/missing-protected-guard.yml"
+expect_failure "protected-release must run only for refs/heads/main" \
+    assert_release_workflow_job_guard \
+    "$temporary_directory/missing-protected-guard.yml" \
+    "protected-release"
+
 assert_full_release_commit "0123456789abcdef0123456789abcdef01234567"
 expect_failure "full lowercase Git object identifier" \
     assert_full_release_commit "0123456789abcdef"
