@@ -80,6 +80,13 @@ assert_copylasso_hardened_runtime "$valid_project"
 expect_failure "Debug and Release app configurations" \
     assert_copylasso_hardened_runtime "$temporary_directory/debug-disabled.json"
 
+/usr/bin/jq \
+    '.objects.APP_DEBUG.buildSettings["ENABLE_HARDENED_RUNTIME[sdk=macosx*]"] = "NO"' \
+    "$valid_project" > "$temporary_directory/debug-conditional-override.json"
+expect_failure "Debug and Release app configurations" \
+    assert_copylasso_hardened_runtime \
+        "$temporary_directory/debug-conditional-override.json"
+
 /usr/bin/jq 'del(.objects.APP_RELEASE)' \
     "$valid_project" > "$temporary_directory/release-missing.json"
 expect_failure "Debug and Release app configurations" \
