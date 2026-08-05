@@ -61,10 +61,73 @@ release_workflow_job_if_values() {
     ' "$workflow_file"
 }
 
+release_workflow_trigger_names() {
+    local workflow_file="$1"
+
+    /usr/bin/awk '
+        /^on:[[:space:]]*$/ {
+            in_triggers = 1
+            next
+        }
+        in_triggers && /^[^[:space:]#]/ {
+            in_triggers = 0
+        }
+        in_triggers && /^  [A-Za-z0-9_-]+:[[:space:]]*/ {
+            trigger = $0
+            sub(/^  /, "", trigger)
+            sub(/:.*/, "", trigger)
+            print trigger
+        }
+    ' "$workflow_file"
+}
+
+release_workflow_repository_dispatch_types() {
+    local workflow_file="$1"
+
+    /usr/bin/awk '
+        /^on:[[:space:]]*$/ {
+            in_triggers = 1
+            next
+        }
+        in_triggers && /^[^[:space:]#]/ {
+            in_triggers = 0
+            in_repository_dispatch = 0
+        }
+        in_triggers && /^  [A-Za-z0-9_-]+:[[:space:]]*/ {
+            trigger = $0
+            sub(/^  /, "", trigger)
+            sub(/:.*/, "", trigger)
+            in_repository_dispatch = trigger == "repository_dispatch"
+            next
+        }
+        in_repository_dispatch && /^    types:[[:space:]]*/ {
+            value = $0
+            sub(/^    types:[[:space:]]*/, "", value)
+            sub(/[[:space:]]*$/, "", value)
+            print value
+        }
+    ' "$workflow_file"
+}
+
+assert_release_workflow_trusted_dispatch() {
+    local workflow_file="$1"
+    local trigger_names
+    local dispatch_types
+
+    [[ -f "$workflow_file" ]] || \
+        protected_release_fail "The protected release workflow is missing."
+    trigger_names="$(release_workflow_trigger_names "$workflow_file")"
+    dispatch_types="$(release_workflow_repository_dispatch_types "$workflow_file")"
+    [[ "$trigger_names" == "repository_dispatch" && \
+        "$dispatch_types" == "[copylasso_protected_release]" ]] || \
+        protected_release_fail \
+            "The protected release workflow must use only the trusted default-branch repository dispatch event."
+}
+
 assert_release_workflow_job_guard() {
     local workflow_file="$1"
     local target_job="$2"
-    local expected_guard="\${{ github.ref == 'refs/heads/main' }}"
+    local expected_guard="\${{ github.event_name == 'repository_dispatch' && github.event.action == 'copylasso_protected_release' && github.ref == 'refs/heads/main' }}"
     local actual_guards
     local guard_count
 
