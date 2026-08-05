@@ -50,6 +50,9 @@ xcrun swift-format lint --recursive --strict \
 echo "Auditing privacy, security, entitlements, and dependencies"
 ./scripts/audit-privacy-security.sh
 
+echo "Testing privacy and security project contracts"
+./scripts/test-privacy-security.sh
+
 echo "Testing release metadata"
 ./scripts/test-release-metadata.sh
 

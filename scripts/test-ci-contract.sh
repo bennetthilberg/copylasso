@@ -4,6 +4,7 @@ set -euo pipefail
 
 readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly ci_script="$repository_root/scripts/ci.sh"
+readonly privacy_security_test_script="$repository_root/scripts/test-privacy-security.sh"
 readonly brand_audit_script="$repository_root/scripts/audit-brand-release.sh"
 readonly release_metadata_test_script="$repository_root/scripts/test-release-metadata.sh"
 readonly developer_id_audit_script="$repository_root/scripts/audit-developer-id-release.sh"
@@ -48,6 +49,15 @@ contract_invocations="$({
 })"
 if [[ "$contract_invocations" != "1" ]]; then
     fail "Canonical CI must run its repeatability contract exactly once."
+fi
+
+privacy_security_test_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/test-privacy-security\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$privacy_security_test_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/test-privacy-security.sh exactly once."
 fi
 
 brand_audit_invocations="$({
@@ -306,6 +316,10 @@ fi
 
 if [[ ! -x "$release_metadata_test_script" ]]; then
     fail "Release metadata contract tests must be executable."
+fi
+
+if [[ ! -x "$privacy_security_test_script" ]]; then
+    fail "Privacy and security project-contract tests must be executable."
 fi
 
 if [[ ! -x "$release_package_audit_script" ]] || \
