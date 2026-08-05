@@ -309,7 +309,7 @@ expect_failure "must not contain local absolute paths" \
 embedded_absolute_path_evidence="$temporary_directory/embedded-absolute-path-evidence.txt"
 cat > "$embedded_absolute_path_evidence" <<'TEXT'
 version=0.2.0
-build_log=output=/Users/alice/project
+build_log=output=/opt/copylasso/project
 TEXT
 expect_failure "must not contain local absolute paths" \
     assert_release_evidence_is_portable "$embedded_absolute_path_evidence"
