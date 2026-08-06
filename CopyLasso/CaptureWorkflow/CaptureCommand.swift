@@ -13,8 +13,9 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
 
   private let coordinator: CaptureCoordinator
   private let permissionService: any ScreenCapturePermissionService
-  private let selectionService: any RegionSelectionService
-  private let screenCaptureService: any ScreenCaptureService
+  private let selectionService: (any RegionSelectionService)?
+  private let screenCaptureService: (any ScreenCaptureService)?
+  private let interactiveCaptureService: (any InteractiveCaptureService)?
   private let ocrService: any OCRService
   private let textAssembler: any TextAssembling
   private let barcodeService: any BarcodeRecognitionService
@@ -26,6 +27,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
   private let scheduleWork: WorkScheduler?
   private var activeTask: Task<Void, Never>?
   private var requestedCancellationReason: CaptureCancellationReason?
+  private var selectionTransitionPrepared = false
 
   var isEnabled: Bool {
     coordinator.state == .idle || coordinator.state == .completing
@@ -50,6 +52,37 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     self.permissionService = permissionService
     self.selectionService = selectionService
     self.screenCaptureService = screenCaptureService
+    interactiveCaptureService = nil
+    self.ocrService = ocrService
+    self.textAssembler = textAssembler
+    self.barcodeService = barcodeService
+    self.codePayloadAssembler = codePayloadAssembler
+    self.clipboardService = clipboardService
+    self.successSoundPlayer = successSoundPlayer
+    self.feedbackService = feedbackService
+    self.recoveryPresenter = recoveryPresenter
+    self.scheduleWork = scheduleWork
+  }
+
+  init(
+    coordinator: CaptureCoordinator,
+    permissionService: any ScreenCapturePermissionService,
+    interactiveCaptureService: any InteractiveCaptureService,
+    ocrService: any OCRService,
+    textAssembler: any TextAssembling,
+    barcodeService: any BarcodeRecognitionService,
+    codePayloadAssembler: any CodePayloadAssembling = CodePayloadAssembler(),
+    clipboardService: any ClipboardService,
+    successSoundPlayer: any SuccessSoundPlaying = NoopSuccessSoundPlayer(),
+    feedbackService: any FeedbackService,
+    recoveryPresenter: any PermissionRecoveryPresenting,
+    scheduleWork: WorkScheduler? = nil
+  ) {
+    self.coordinator = coordinator
+    self.permissionService = permissionService
+    selectionService = nil
+    screenCaptureService = nil
+    self.interactiveCaptureService = interactiveCaptureService
     self.ocrService = ocrService
     self.textAssembler = textAssembler
     self.barcodeService = barcodeService
@@ -63,19 +96,51 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
 
   @discardableResult
   func perform() -> CaptureTransitionResult {
+    requestCapture(preflightForImmediateSelection: false)
+  }
+
+  @discardableResult
+  func performFromGlobalShortcut() -> CaptureTransitionResult {
+    requestCapture(preflightForImmediateSelection: true)
+  }
+
+  private func requestCapture(
+    preflightForImmediateSelection: Bool
+  ) -> CaptureTransitionResult {
     let result = coordinator.handle(.requestCapture)
     guard case .transitioned = result else {
       return result
     }
+    let beganFromIdle: Bool
+    if case .transitioned(from: .idle, to: .requestingPermission) = result {
+      beganFromIdle = true
+      feedbackService.dismiss()
+    } else {
+      beganFromIdle = false
+    }
+
+    let initialObservation: ScreenCaptureAuthorizationObservation?
+    if preflightForImmediateSelection {
+      let observation = permissionService.currentObservation()
+      initialObservation = observation
+      if observation == .granted {
+        prepareForCaptureTransition()
+        selectionTransitionPrepared = true
+        if !beganFromIdle {
+          feedbackService.dismiss()
+        }
+      }
+    } else {
+      initialObservation = nil
+    }
 
     let work: Work = { [weak self] in
-      await self?.runScheduledOperation()
+      await self?.runScheduledOperation(initialObservation: initialObservation)
     }
     if let scheduleWork {
       scheduleWork(work)
     } else {
       activeTask = Task { @MainActor in
-        await Task.yield()
         await work()
       }
     }
@@ -95,8 +160,16 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     switch coordinator.state {
     case .requestingPermission, .selecting, .capturing, .recognizing, .completing:
       requestedCancellationReason = reason
+      if selectionTransitionPrepared {
+        cancelPreparedCaptureTransition()
+        selectionTransitionPrepared = false
+      }
       if coordinator.state == .selecting {
-        selectionService.cancelSelection()
+        if let interactiveCaptureService {
+          interactiveCaptureService.cancelCapture()
+        } else {
+          selectionService?.cancelSelection()
+        }
       }
       activeTask?.cancel()
       return true
@@ -105,8 +178,14 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     }
   }
 
-  private func runScheduledOperation() async {
+  private func runScheduledOperation(
+    initialObservation: ScreenCaptureAuthorizationObservation?
+  ) async {
     defer {
+      if selectionTransitionPrepared {
+        cancelPreparedCaptureTransition()
+        selectionTransitionPrepared = false
+      }
       activeTask = nil
       requestedCancellationReason = nil
     }
@@ -114,10 +193,12 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
       resetTerminalState()
       return
     }
-    await runPermissionFlowIfStillRequested()
+    await runPermissionFlowIfStillRequested(initialObservation: initialObservation)
   }
 
-  private func runPermissionFlowIfStillRequested() async {
+  private func runPermissionFlowIfStillRequested(
+    initialObservation: ScreenCaptureAuthorizationObservation?
+  ) async {
     guard coordinator.state == .requestingPermission else {
       return
     }
@@ -126,7 +207,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
       return
     }
 
-    let observation = permissionService.currentObservation()
+    let observation = initialObservation ?? permissionService.currentObservation()
     switch observation {
     case .granted:
       await proceedToSelectionUnlessCancelled()
@@ -155,10 +236,23 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     guard case .transitioned = coordinator.handle(.permissionGranted) else {
       return
     }
-    selectionService.prepareForSelectionTransition()
+    if !selectionTransitionPrepared {
+      prepareForCaptureTransition()
+      selectionTransitionPrepared = true
+    }
     feedbackService.dismiss()
 
+    if let interactiveCaptureService {
+      await proceedToInteractiveCapture(using: interactiveCaptureService)
+      resetTerminalState()
+      return
+    }
+
     do {
+      selectionTransitionPrepared = false
+      guard let selectionService else {
+        throw CaptureOperationInterruption.failure(.internal)
+      }
       let outcome = try await selectionService.selectRegion()
       switch outcome {
       case .selected(let selection):
@@ -179,6 +273,43 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     resetTerminalState()
   }
 
+  private func proceedToInteractiveCapture(
+    using service: any InteractiveCaptureService
+  ) async {
+    do {
+      selectionTransitionPrepared = false
+      let outcome = try await service.capture()
+      switch outcome {
+      case .captured(let image):
+        guard !transitionToRequestedCancellationIfNeeded() else { return }
+        await completeInteractiveCapture(image)
+      case .cancelled(let reason):
+        if permissionService.currentObservation() == .granted {
+          _ = coordinator.handle(
+            .cancel(requestedCancellationReason ?? reason.captureCancellationReason)
+          )
+        } else {
+          recoveryPresenter.present(permissionService.recordCaptureDenial())
+          _ = coordinator.handle(.fail(.capture))
+        }
+      }
+    } catch let error as InteractiveCaptureError {
+      if transitionToRequestedCancellationIfNeeded() {
+        return
+      }
+      if error == .permissionDenied {
+        recoveryPresenter.present(permissionService.recordCaptureDenial())
+        _ = coordinator.handle(.fail(.capture))
+      } else {
+        presentTerminalFailure(.capture)
+      }
+    } catch {
+      if !transitionToRequestedCancellationIfNeeded() {
+        presentTerminalFailure(.capture)
+      }
+    }
+  }
+
   private func completeSelection(_ selection: SelectionResult) async {
     guard case .transitioned = coordinator.handle(.selectionCompleted) else {
       return
@@ -194,10 +325,33 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     }
   }
 
+  private func completeInteractiveCapture(_ image: CGImage) async {
+    guard case .transitioned = coordinator.handle(.selectionCompleted) else {
+      return
+    }
+    permissionService.recordCaptureSuccess()
+
+    do {
+      try throwIfCancellationRequested()
+      guard case .transitioned = coordinator.handle(.captureCompleted) else {
+        throw CaptureOperationInterruption.failure(.internal)
+      }
+      let feedback = try await recognizeAndWrite(image)
+      presentCompletionFeedback(feedback)
+    } catch let interruption as CaptureOperationInterruption {
+      handle(interruption)
+    } catch {
+      presentTerminalFailure(.internal)
+    }
+  }
+
   private func runPrivateOperation(_ selection: SelectionResult) async throws -> CaptureFeedback {
     try throwIfCancellationRequested()
     let image: CGImage
     do {
+      guard let screenCaptureService else {
+        throw CaptureOperationInterruption.failure(.internal)
+      }
       image = try await screenCaptureService.capture(selection)
       permissionService.recordCaptureSuccess()
     } catch {
@@ -216,6 +370,10 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
       throw CaptureOperationInterruption.failure(.internal)
     }
 
+    return try await recognizeAndWrite(image)
+  }
+
+  private func recognizeAndWrite(_ image: CGImage) async throws -> CaptureFeedback {
     async let textAttempt = recognizeText(in: image)
     async let codeAttempt = recognizeCodes(in: image)
     let attempts = await (textAttempt, codeAttempt)
@@ -252,6 +410,22 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     successSoundPlayer.play()
     let preview = FeedbackPreview(text: content).text
     return successFeedback(preview)
+  }
+
+  private func prepareForCaptureTransition() {
+    if let interactiveCaptureService {
+      interactiveCaptureService.prepareForCaptureTransition()
+    } else {
+      selectionService?.prepareForSelectionTransition()
+    }
+  }
+
+  private func cancelPreparedCaptureTransition() {
+    if let interactiveCaptureService {
+      interactiveCaptureService.cancelCapture()
+    } else {
+      selectionService?.cancelSelection()
+    }
   }
 
   private func recognizeText(

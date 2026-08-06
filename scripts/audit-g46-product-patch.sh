@@ -57,19 +57,82 @@ require_text CHANGELOG.md \
     'Update offers now render authenticated release notes in a bounded, scrollable native panel'
 require_text README.md \
     'the app shows the authenticated version, rendered release notes, and exact download size before any download;'
+require_text README.md \
+    'Current unreleased source replaces that handoff with macOS'
+require_text PRIVACY.md \
+    'Apple'\''s fixed interactive region selector directly and receives its one PNG'
+require_text docs/architecture/capture-workflow.md \
+    'Native interactive selection and bounded in-memory capture'
+require_text docs/architecture/overview.md \
+    'Fixed system interactive capture G46'
+require_text docs/security-and-privacy-review.md \
+    '| Selector subprocess misuse |'
+require_text docs/testing.md \
+    '## G46 Production Interactive Capture'
 
-if /usr/bin/grep -R -nE \
-    'CGDisplayHideCursor|CGDisplayShowCursor|CGAssociateMouseAndMouseCursorPosition|CGWarpMouseCursorPosition|setHiddenUntilMouseMoves|NSCursor\(image:|addSubview.+cursor' \
-    "$repository_root/CopyLasso"; then
-    fail 'G46 must use the public system crosshair and cursor rectangles without hiding, warping, or drawing a surrogate cursor.'
-fi
-require_text CopyLasso/Services/AppKitRegionSelectionService.swift \
-    'static let cursorStabilizationDelays: [Duration] = ['
-for cursor_stabilization_delay in 16 50 100 160; do
-    require_text CopyLasso/Services/AppKitRegionSelectionService.swift \
-        ".milliseconds($cursor_stabilization_delay)"
+readonly application='CopyLasso/App/CopyLassoApp.swift'
+readonly global_shortcut_controller='CopyLasso/App/GlobalShortcutController.swift'
+readonly capture_command='CopyLasso/CaptureWorkflow/CaptureCommand.swift'
+readonly interactive_capture_contract='CopyLasso/Services/InteractiveCaptureService.swift'
+readonly system_capture='CopyLasso/Services/SystemInteractiveCaptureService.swift'
+
+for system_capture_contract in \
+    'URL(fileURLWithPath: "/usr/sbin/screencapture")' \
+    'arguments: ["-i", "-s", "-x", "-t", "png", "/dev/stdout"]' \
+    'maximumOutputBytes: 128 * 1_024 * 1_024' \
+    'maximumPixelCount: 100_000_000' \
+    'process.standardInput = FileHandle.nullDevice' \
+    'process.standardOutput = outputPipe' \
+    'process.standardError = FileHandle.nullDevice' \
+    'try process.run()' \
+    'SystemInteractiveCaptureProcessError.outputTooLarge' \
+    'CGImageSourceCreateWithData' \
+    'data.starts(with: pngSignature)' \
+    'CGImageSourceGetCount(source) == 1' \
+    'prepared.session.cancel()'; do
+    require_text "$system_capture" "$system_capture_contract"
 done
-require_text CopyLasso/Services/AppKitRegionSelectionService.swift \
-    'func setCrosshair()'
+
+for workflow_contract in \
+    'interactiveCaptureService.prepareForCaptureTransition()' \
+    'let outcome = try await service.capture()' \
+    'permissionService.recordCaptureSuccess()' \
+    'interactiveCaptureService.cancelCapture()'; do
+    require_text "$capture_command" "$workflow_contract"
+done
+
+require_text "$interactive_capture_contract" 'protocol InteractiveCaptureService: AnyObject'
+require_text "$application" 'interactiveCaptureService = SystemInteractiveCaptureService()'
+require_text "$application" 'selectionService = nil'
+require_text "$application" 'screenCaptureService = nil'
+require_text "$application" 'runtimeOptions.usesLegacyCaptureWorkflow'
+require_text "$application" 'interactiveCaptureService: interactiveCaptureService'
+
+require_text "$global_shortcut_controller" 'guard event == .keyDown else {'
+require_text "$global_shortcut_controller" 'captureCommand.performFromGlobalShortcut()'
+
+system_selector_files="$({ /usr/bin/grep -R -lF '/usr/sbin/screencapture' \
+    "$repository_root/CopyLasso" || true; })"
+[[ "$system_selector_files" == "$repository_root/$system_capture" ]] || \
+    fail 'The fixed system selector executable must remain confined to its narrow service.'
+
+process_files="$({ /usr/bin/grep -R -lE '\bProcess\(\)' \
+    "$repository_root/CopyLasso" || true; })"
+[[ "$process_files" == "$repository_root/$system_capture" ]] || \
+    fail 'Capture subprocess creation must remain confined to its narrow service.'
+
+if /usr/bin/grep -nE \
+    '(/bin/(sh|bash|zsh)|-c["'\'' ]|NSTask|temporaryDirectory|Data.*write\(to:|NSPasteboard|print\(|debugPrint\(|NSLog\(|os_log|Logger\()' \
+    "$repository_root/$system_capture"; then
+    fail 'The system selector must not use a shell, files, pasteboard output, or logging.'
+fi
+
+if /usr/bin/grep -nE \
+    'NSApp\.activate|makeKeyAndOrderFront|makeKey\(|orderFrontRegardless|CGEventTapCreate|CGEvent\.tapCreate|CGWarpMouseCursorPosition|CGDisplay(Hide|Show)Cursor|CGS[A-Z]|SLS[A-Z]' \
+    "$repository_root/$system_capture" \
+    "$repository_root/$capture_command" \
+    "$repository_root/$global_shortcut_controller"; then
+    fail 'The production system-selector path must preserve focus and avoid private or synthetic-input APIs.'
+fi
 
 echo 'CopyLasso G46 product patch audit passed.'

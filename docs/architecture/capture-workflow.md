@@ -1,14 +1,13 @@
 # Capture Workflow
 
-G18 connects the menu and global shortcut to one production operation without placing private content in observable application state. G38 extends that same operation with concurrent local text and code recognition while retaining one Capture command, shortcut, permission, selection, screen capture, output, lifecycle, and busy-state boundary.
+G18 connects the menu and global shortcut to one production operation without placing private content in observable application state. G38 extends that same operation with concurrent local text and code recognition, and G46 replaces the separate production selection/crop handoff with one bounded system interactive-capture boundary. The single Capture command, shortcut, permission, output, lifecycle, and busy-state policy remain unchanged.
 
 ## State And Service Flow
 
 ```mermaid
 flowchart LR
   Request["Menu or shortcut"] --> Permission["Permission"]
-  Permission --> Selection["Selection"]
-  Selection --> Capture["In-memory capture"]
+  Permission --> Capture["Native interactive selection and bounded in-memory capture"]
   Capture --> OCR["Local text OCR"]
   Capture --> Barcode["Local code recognition"]
   OCR --> Assembly["Pure text assembly"]
@@ -32,7 +31,7 @@ flowchart LR
 
 ## Private Data Lifetime
 
-After selection, one private async function owns the selected geometry, captured `CGImage`, neutral text and code observations, and the winning full assembled string. The geometry carries the initiating display point size and scale; the capture adapter compares them with a fresh ScreenCaptureKit display snapshot before requesting pixels. The function returns only:
+After selection, one private async function owns the bounded system-produced PNG bytes, decoded `CGImage`, neutral text and code observations, and the winning full assembled string. The encoded bytes are validated and released immediately after one image is decoded. The function returns only:
 
 - a unified no-result or code-ambiguity value; or
 - a text/code-specific success with a whitespace-normalized preview bounded to 80 extended grapheme clusters after the full string has been written.
@@ -43,15 +42,15 @@ Returning from that function ends the image, observations, and unbounded text or
 
 - Success, no-text-or-code, and code-ambiguity enter `completing` only while presenting feedback, then return immediately to idle while the feedback panel owns its independent dismissal timer. A new idle capture may therefore dismiss visible feedback and begin selection without waiting for that timer.
 - Only a successful nonempty clipboard write requests one success sound. Every cancellation, no-result, ambiguity, and failure before or during the clipboard write is silent. Playback never receives private content and never blocks completion.
-- Escape, too-small selection, display change, application termination, and recognition cancellation are non-error cancellation outcomes. They never write the clipboard or show generic failure feedback.
+- Escape, empty system output, application termination, and recognition cancellation are non-error cancellation outcomes. They never write the clipboard or show generic failure feedback. Invalid, oversized, signaled, or unexpected process output is a capture-stage failure and remains equally clipboard preserving.
 - Ordinary selection, capture, recognition, clipboard, and feedback errors are classified only by stage. Raw platform errors and content never enter observable state or user copy.
-- A real capture-time Screen Recording denial uses the specific permission-recovery panel rather than stacking a generic failure HUD.
-- Selection records and restores another frontmost application only when it actually activates CopyLasso for the system crosshair. If Settings or About was already active, overlay cleanup proceeds directly to capture, OCR, sound, and the nonactivating HUD instead of waiting for a later application-resign event.
+- A real capture-time Screen Recording denial uses the specific permission-recovery panel rather than stacking a generic failure HUD. Empty output is rechecked against current authorization so denial is not mistaken for Escape.
+- The global shortcut starts Apple's fixed interactive selector synchronously after granted preflight. macOS owns the native cursor and selection surface; CopyLasso neither activates itself nor changes another application's focus.
 - Terminal cancellation or failure is explicitly reset only after the operation has unwound.
-- Sleep, screen sleep, and lock/session resign request `.systemInterrupted`; application termination requests `.applicationTerminated`. The root-owned task propagates cancellation through capture, OCR, and feedback, while selection receives an explicit synchronous cleanup request. Wake/unlock never retries automatically.
+- Sleep, screen sleep, and lock/session resign request `.systemInterrupted`; application termination requests `.applicationTerminated`. The root-owned task terminates the active selector process and propagates cancellation through OCR and feedback. Wake/unlock never retries automatically.
 
 The clipboard adapter is intentionally write-only. Cancellation and every failure before the pasteboard call preserve prior clipboard contents. A rare AppKit failure after the pasteboard has been cleared cannot restore prior contents without a prohibited read; that documented platform tradeoff remains unchanged.
 
 ## Verification Boundary
 
-The canonical suite injects every service, exercises all branch classes, performs 25 consecutive successful operations, 20 alternating success/cancel cycles, and 100 alternating text/code results, rejects overlapping Capture work, proves the menu and shortcut route through the same command, proves both recognizers start concurrently and code wins over simultaneous text, and cancels pending selection, capture, recognition, sound, and feedback work. Real Vision tests cover all five symbologies, rotations, degradation, damage, compositions, and duplicates with deterministic project fixtures. The signed manual matrix remains necessary for arbitrary app pixels, full-screen Spaces, real paste targets, physical displays, sleep/wake, lock/unlock, and actual audio-output behavior.
+The canonical suite injects every service, exercises all branch classes, pins the exact system executable and argument list, bounds live anonymous-pipe output, rejects malformed and oversized PNG data, suppresses stale completion, performs 25 consecutive successful operations, 20 alternating success/cancel cycles, and 100 alternating text/code results, rejects overlapping Capture work, proves the menu and shortcut route through the same command, proves both recognizers start concurrently and code wins over simultaneous text, and cancels pending capture, recognition, sound, and feedback work. Real Vision tests cover all five symbologies, rotations, degradation, damage, compositions, and duplicates with deterministic project fixtures. The signed manual matrix remains necessary for the native crosshair, arbitrary app pixels, focus preservation, full-screen Spaces, real paste targets, physical displays, sleep/wake, lock/unlock, the one-time macOS direct-access confirmation, and actual audio-output behavior.

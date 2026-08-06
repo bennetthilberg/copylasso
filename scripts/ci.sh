@@ -211,10 +211,12 @@ readonly selection_service='CopyLasso/Services/AppKitRegionSelectionService.swif
 selection_api_files="$({ /usr/bin/grep -R -lE \
     'CGDisplayBounds|didChangeScreenParametersNotification|NSCursor\.crosshair|RegionSelectionPanel' CopyLasso || true; })"
 if [[ "$selection_api_files" != "$selection_service" ]] || \
-    ! /usr/bin/grep -q 'styleMask: \[.borderless, .nonactivatingPanel\]' "$selection_service" || \
+    ! /usr/bin/grep -q \
+      'static let selectionStyleMask: NSWindow.StyleMask = .borderless' \
+      "$selection_service" || \
     ! /usr/bin/grep -q 'panel.level = .screenSaver' "$selection_service" || \
     ! /usr/bin/grep -q 'panel.collectionBehavior = \[.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle\]' "$selection_service"; then
-    echo "Production display and selection-overlay APIs must remain confined to the AppKit selection service." >&2
+    echo "Debug display and selection-overlay APIs must remain confined to the AppKit fixture service." >&2
     exit 1
 fi
 

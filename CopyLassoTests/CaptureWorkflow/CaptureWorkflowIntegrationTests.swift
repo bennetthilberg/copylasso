@@ -216,7 +216,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     await context.scheduler.runNext()
 
     await Task.yield()
-    events.emit(.keyUp)
+    events.emit(.keyDown)
     await context.scheduler.waitUntilScheduledCount(2)
     await context.scheduler.runNext()
 
@@ -418,7 +418,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     )
     await context.scheduler.runNext()
 
-    events.emit(.keyUp)
+    events.emit(.keyDown)
     await context.scheduler.waitUntilScheduledCount(2)
     await context.scheduler.runNext()
 

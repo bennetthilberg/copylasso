@@ -34,6 +34,11 @@ The result must report `CopyLasso-0.2.0.dmg: OK`. Then:
 3. Complete the short first-run setup and keep the suggested `⇧⌘2` shortcut or record another one.
 4. The first capture asks macOS for Screen Recording permission. Approve CopyLasso, then choose **Quit & Reopen** if macOS offers it.
 
+Current unreleased source also uses macOS's native interactive region selector.
+On systems that show the additional direct-screen-access confirmation, choose
+**Allow**; it applies to the same user-initiated capture and does not grant a
+second permission category.
+
 ## Use CopyLasso
 
 1. Press `⇧⌘2`, or choose **Capture** from the CopyLasso menu-bar menu.
@@ -80,7 +85,7 @@ See the [privacy policy](PRIVACY.md), [security and privacy review](docs/securit
 - Version 0.2 targets ordinary, approximately horizontal, single-column U.S. English text. Dense tables, handwriting, strongly rotated text, and complex multi-column layouts can be incomplete or reordered.
 - A selection belongs to the display where the drag begins and clamps at that display's edge. Start another capture to select text on a different display.
 - Protected or DRM-restricted content can appear blank or unavailable to screen capture. CopyLasso follows macOS capture restrictions and does not bypass them.
-- Immediately reusing capture without moving the pointer can briefly leave the ordinary pointer visible. Moving the pointer or pressing the mouse button restores the crosshair; selection remains functional.
+- Public 0.2.0 can briefly leave the ordinary pointer visible during immediate stationary-pointer reuse. Current unreleased source replaces that handoff with macOS's native interactive selector; the fix is not yet in the public download.
 - Locking the Mac during an active drag can leave selection pending after unlock. Quit and reopen CopyLasso before another pointer action; if the retained selection is allowed to complete, the clipboard may change.
 - In the rare event that macOS accepts clearing the pasteboard but rejects the subsequent text write, the previous clipboard contents have already been cleared. CopyLasso reports failure and does not read or reconstruct the prior contents.
 - CopyLasso 0.1.x contains no updater. Existing 0.1.x users must install 0.2.0 manually once; later releases can then arrive through authenticated update checks.

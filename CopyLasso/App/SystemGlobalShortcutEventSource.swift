@@ -25,9 +25,8 @@ final class SystemGlobalShortcutEventSource: GlobalShortcutEventSourcing {
   private let observedApplication: AnyObject?
   private let isApplicationActive: ApplicationActiveProvider
   private let shortcutProvider: ShortcutProvider
-  private var continuation: AsyncStream<GlobalShortcutEvent>.Continuation?
+  private var eventHandler: ((GlobalShortcutEvent) -> Void)?
   private var notificationObservers: [NSObjectProtocol] = []
-  private var streamGeneration = 0
   private var isRecorderActive = false
   private var hasRegistrationState = false
   private var registeredShortcut: KeyboardShortcuts.Shortcut?
@@ -52,25 +51,18 @@ final class SystemGlobalShortcutEventSource: GlobalShortcutEventSourcing {
     self.shortcutProvider = shortcutProvider
   }
 
-  func events() -> AsyncStream<GlobalShortcutEvent> {
+  func start(_ eventHandler: @escaping (GlobalShortcutEvent) -> Void) {
     stopListening()
-    streamGeneration += 1
-    let generation = streamGeneration
-
-    return AsyncStream { continuation in
-      self.continuation = continuation
-      registrar.eventHandler = { event in
-        continuation.yield(event)
-      }
-      observeShortcutChanges()
-      updateHotKeyRegistration()
-
-      continuation.onTermination = { [weak self] _ in
-        Task { @MainActor [weak self] in
-          self?.stopListening(ifGenerationMatches: generation)
-        }
-      }
+    self.eventHandler = eventHandler
+    registrar.eventHandler = { [weak self] event in
+      self?.eventHandler?(event)
     }
+    observeShortcutChanges()
+    updateHotKeyRegistration()
+  }
+
+  func stop() {
+    stopListening()
   }
 
   private func observeShortcutChanges() {
@@ -137,12 +129,8 @@ final class SystemGlobalShortcutEventSource: GlobalShortcutEventSourcing {
     hasRegistrationState = true
   }
 
-  private func stopListening(ifGenerationMatches generation: Int? = nil) {
-    if let generation, generation != streamGeneration {
-      return
-    }
-
-    let wasListening = continuation != nil || !notificationObservers.isEmpty
+  private func stopListening() {
+    let wasListening = eventHandler != nil || !notificationObservers.isEmpty
     for observer in notificationObservers {
       notificationCenter.removeObserver(observer)
     }
@@ -151,7 +139,7 @@ final class SystemGlobalShortcutEventSource: GlobalShortcutEventSourcing {
       registrar.register(nil)
     }
     registrar.eventHandler = nil
-    continuation = nil
+    eventHandler = nil
     isRecorderActive = false
     hasRegistrationState = false
     registeredShortcut = nil

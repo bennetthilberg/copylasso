@@ -1,6 +1,7 @@
 # CopyLasso Privacy
 
 **Status:** Approved privacy contract for public CopyLasso 0.2.0.
+Current unreleased-source capture differences are identified below.
 
 CopyLasso is a local-first macOS utility. It captures only the screen region you
 select, recognizes visible text or supported codes on this Mac, and writes the
@@ -8,8 +9,10 @@ result to the clipboard.
 
 ## Capture and recognition
 
-- Screen capture uses Apple ScreenCaptureKit. OCR uses Apple Vision. Code payloads are recognized locally
-  with Vision and are limited to QR, Code 128,
+- Public 0.2.0 uses Apple ScreenCaptureKit. Current unreleased source invokes
+  Apple's fixed interactive region selector directly and receives its one PNG
+  through a bounded anonymous pipe. OCR uses Apple Vision locally.
+  Code payloads are recognized locally with Vision in five formats: QR, Code 128,
   Data Matrix, PDF417, and Aztec.
 - Captured images, recognition observations, complete results, and the bounded
   HUD preview remain in memory only as long as their active operation needs
@@ -26,10 +29,12 @@ pixels, recognized text, code payloads, clipboard text, or HUD previews.
 ## Permission and clipboard
 
 CopyLasso asks for macOS Screen Recording access only after a user starts a
-capture. Temporary transparent selection panels retain only display geometry
-for the active selection and are removed before capture proceeds. The selected
-image is not encoded or written to a file, cursor and audio capture are
-disabled, and the image is released after local recognition or cancellation.
+capture. Current source starts only `/usr/sbin/screencapture` with fixed
+project-owned arguments: there is no shell or user-controlled command. macOS
+may show its direct-screen-access confirmation for this native selector. The
+PNG output is limited to 128 MiB and 100 million pixels, validated, decoded
+once in memory, and never written to a file or the screenshot clipboard. The
+encoded bytes and image are released after local recognition or cancellation.
 The core workflow needs no Accessibility, Input Monitoring, microphone, or
 notification permission.
 
@@ -63,14 +68,11 @@ clipboard output, Settings, onboarding, sound, and Launch at Login do not use
 the network. Automatic checks default on, run no more often than every 24
 hours, and can be disabled; **Check for Updates** starts a manual check.
 
-Sparkle retrieves the fixed signed feed at
-`https://updates.copylasso.com/appcast.xml`. Accepted packages must be the
-version-matched CopyLasso DMG on GitHub Releases. CopyLasso disables system
-profiling, cookies, custom headers, query parameters, external release-note
-downloads, automatic downloads, and automatic installation. Authenticated
-inline release notes are kept only for the active update transaction. The feed
-and package are cryptographically authenticated, and download and installation
-each require an explicit user decision.
+Sparkle retrieves one fixed signed feed at
+`https://updates.copylasso.com/appcast.xml` and accepts only the matching
+CopyLasso DMG on GitHub Releases. System profiling, cookies, external notes,
+automatic download, and automatic installation are disabled. Authenticated
+notes are transient; download and installation each require a user decision.
 
 The feed host and GitHub can observe ordinary connection metadata such as IP
 address and request time. Sparkle's user agent identifies the CopyLasso and
@@ -84,7 +86,6 @@ CopyLasso 0.1.x has no updater or code recognition. Existing users must
 manually install public CopyLasso 0.2.0 once before authenticated update checks
 can begin.
 
-The release-blocking guarantees remain defined by the public
-[product contract](docs/v0.1-product-contract.md). Implementation boundaries,
-entitlements, dependencies, and misuse cases are documented in the
-[security and privacy review](docs/security-and-privacy-review.md).
+See the public [product contract](docs/v0.1-product-contract.md) and
+[security review](docs/security-and-privacy-review.md) for the enforced
+boundaries, entitlements, dependencies, and misuse cases.
