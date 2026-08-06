@@ -16,6 +16,7 @@ readonly v02_contract_audit_script="$repository_root/scripts/audit-v02-contract.
 readonly v02_release_qualification_audit_script="$repository_root/scripts/audit-v02-release-qualification.sh"
 readonly v02_publication_audit_script="$repository_root/scripts/audit-v02-publication.sh"
 readonly v02_release_state_audit_script="$repository_root/scripts/audit-v02-release-state.sh"
+readonly g46_product_patch_audit_script="$repository_root/scripts/audit-g46-product-patch.sh"
 readonly v02_publication_test_script="$repository_root/scripts/test-v02-publication.sh"
 readonly code_recognition_audit_script="$repository_root/scripts/audit-code-recognition.sh"
 readonly latex_feasibility_audit_script="$repository_root/scripts/audit-latex-feasibility.sh"
@@ -190,11 +191,12 @@ for required_patch_guard in \
     "approved_post_publication_patch_tree_pattern" \
     "approved_post_publication_runtime_tree_pattern" \
     "approved_post_v02_security_patch_tree_pattern" \
+    "g46_product_patch_tree_pattern" \
     "g44_release_state_tree_pattern" \
-    "expected_candidate_baseline_tree_digest='ecbcf39d0cac2b1525e46dc154123eb5418db3a9e790770a36a281b5160775bf'" \
+    "expected_candidate_baseline_tree_digest='da23f5f7b3d481b3caf3c4cb4c71d0f99fc07da8ebf5f408ebe92edb3637fa8d'" \
     "expected_approved_post_publication_runtime_tree_digest='388191bdbca550efa34ca64d9f8ebba3f127457313e4f0739d4601919fa9de7d'" \
-    "expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'" \
-    "expected_approved_post_candidate_patch_digest='4d5783226ec5b1a48c8d7490a4196f46cc9c407d4b27661dcf55de67029bb9fc'" \
+    "expected_g44_release_state_files_digest='fa0743837eca6e96fc47d54cb96e78c0392f7b1fc52bbcb2e18a2192aafa980a'" \
+    "expected_approved_post_candidate_patch_digest='d870edb0420a02886dcbfcb974d40e79d649267a66947aefe1f2a392435d4b63'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
     '"$current_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest"' \
@@ -204,6 +206,7 @@ for required_patch_guard in \
     '<self-normalized>' \
     'The approved post-candidate patch differs from its reviewed digest.' \
     '/usr/bin/grep -Ev "$approved_post_v02_security_patch_tree_pattern"' \
+    '/usr/bin/grep -Ev "$g46_product_patch_tree_pattern"' \
     '/usr/bin/grep -Ev "$g44_release_state_tree_pattern"' \
     'The approved G43A runtime patch differs from its reviewed tree digest.'; do
     if ! /usr/bin/grep -Fq "$required_patch_guard" \
@@ -247,6 +250,27 @@ v02_release_state_audit_invocations="$({
 if [[ "$v02_release_state_audit_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/audit-v02-release-state.sh exactly once."
 fi
+
+g46_product_patch_audit_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/audit-g46-product-patch\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$g46_product_patch_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-g46-product-patch.sh exactly once."
+fi
+for required_g46_guard in \
+    'Check for Updates(\.\.\.|…)' \
+    '700 words maximum' \
+    'rendered release notes' \
+    'static let cursorStabilizationDelays: [Duration] = [' \
+    'for cursor_stabilization_delay in 16 50 100 160' \
+    'func setCrosshair()'; do
+    if ! /usr/bin/grep -Fq -- "$required_g46_guard" \
+        "$g46_product_patch_audit_script"; then
+        fail "The G46 audit is missing its product-patch guard: $required_g46_guard"
+    fi
+done
 for required_release_state_guard in \
     'expected_release_commit="43f1d0c676b08fb24b49fc628213fede90c4ed9d"' \
     'expected_release_id="361797888"' \

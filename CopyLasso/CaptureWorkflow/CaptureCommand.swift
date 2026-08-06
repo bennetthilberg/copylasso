@@ -68,7 +68,6 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
       return result
     }
 
-    feedbackService.dismiss()
     let work: Work = { [weak self] in
       await self?.runScheduledOperation()
     }
@@ -156,6 +155,8 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     guard case .transitioned = coordinator.handle(.permissionGranted) else {
       return
     }
+    selectionService.prepareForSelectionTransition()
+    feedbackService.dismiss()
 
     do {
       let outcome = try await selectionService.selectRegion()
@@ -361,6 +362,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
   }
 
   private func finishPermissionFailure(_ observation: ScreenCaptureAuthorizationObservation) {
+    feedbackService.dismiss()
     _ = coordinator.handle(.fail(.permission))
     recoveryPresenter.present(observation)
     resetTerminalState()

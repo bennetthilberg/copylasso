@@ -18,7 +18,7 @@ struct MenuBarMenuView: View {
 
     Divider()
 
-    Button("Check for Updates…") {
+    Button("Check for Updates") {
       updateController.checkForUpdates()
     }
     .disabled(!updateController.canCheckForUpdates)

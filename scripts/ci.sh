@@ -95,6 +95,9 @@ echo "Auditing v0.2 publication controls"
 echo "Auditing the closed v0.2 release state"
 ./scripts/audit-v02-release-state.sh
 
+echo "Auditing the G46 product patch"
+./scripts/audit-g46-product-patch.sh
+
 echo "Auditing on-screen code recognition"
 ./scripts/audit-code-recognition.sh
 

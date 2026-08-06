@@ -115,6 +115,10 @@ final class MenuBarShellTests: XCTestCase {
     XCTAssertTrue(iconSource.load() === expectedIcon)
     XCTAssertEqual(loadCount, 1)
   }
+
+  func testAboutLayoutKeepsAnIntentionalIconToTitleGap() {
+    XCTAssertEqual(AboutLayout.iconTitleSpacing, 18)
+  }
 }
 
 @MainActor

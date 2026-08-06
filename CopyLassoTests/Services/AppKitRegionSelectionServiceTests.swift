@@ -50,7 +50,9 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(outcome, .cancelled(.escape))
   }
 
-  func testSelectionActivatesBeforeShowingSurfacesAndRestoresBeforeCompletion() async throws {
+  func testSelectionShowsCursorOwnedSurfacesBeforeActivatingAndClaimsAfterKey()
+    async throws
+  {
     let display = try makeDisplay()
     let startupEvents = RecordingSelectionStartupEvents()
     let provider = StubSelectionDisplayProvider(results: [.success([display])])
@@ -60,6 +62,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     let activation = RecordingSelectionApplicationActivationManager(
       startupEvents: startupEvents
     )
+    let cursorScheduler = ManualSelectionCursorStabilizationScheduler()
     let scheduler = ManualSelectionCompletionScheduler()
     let service = AppKitRegionSelectionService(
       displayProvider: provider,
@@ -67,14 +70,28 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
       lifecycleObserver: lifecycle,
       cursorManager: cursor,
       activationManager: activation,
-      scheduleCursorInstallation: { work in work() },
+      scheduleCursorInstallation: cursorScheduler.schedule,
       scheduleCompletion: scheduler.schedule
     )
 
     let task = Task { try await service.selectRegion() }
     await Task.yield()
 
-    XCTAssertEqual(startupEvents.events.first, .applicationActivationRequested)
+    XCTAssertEqual(
+      startupEvents.events,
+      [
+        .surfaceShown(display.displayID),
+        .applicationActivationRequested,
+        .surfaceInputReady(display.displayID),
+        .surfaceBecameKey(display.displayID),
+        .surfaceCursorRectsRefreshed(display.displayID),
+        .crosshairPushed,
+      ]
+    )
+    XCTAssertEqual(cursorScheduler.pendingCount, 4)
+
+    await cursorScheduler.runNext()
+    XCTAssertEqual(startupEvents.events.last, .crosshairSet)
     XCTAssertEqual(activation.activateCallCount, 1)
     XCTAssertEqual(activation.restoreCallCount, 0)
 
@@ -104,7 +121,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
       lifecycleObserver: RecordingSelectionOverlayLifecycleObserver(),
       cursorManager: RecordingSelectionCursorManager(),
       activationManager: activation,
-      scheduleCursorInstallation: { work in work() },
+      scheduleCursorInstallation: { _, work in work() },
       scheduleCompletion: scheduler.schedule
     )
 
@@ -123,7 +140,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(outcome, .cancelled(.escape))
   }
 
-  func testSelectionWaitsForApplicationActivationBeforeShowingSurfacesOrCrosshair()
+  func testSelectionShowsCursorOwnedSurfacesBeforeApplicationActivationCompletes()
     async throws
   {
     let display = try makeDisplay()
@@ -141,7 +158,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
       lifecycleObserver: lifecycle,
       cursorManager: cursor,
       activationManager: activation,
-      scheduleCursorInstallation: { work in work() },
+      scheduleCursorInstallation: { _, work in work() },
       scheduleCompletion: scheduler.schedule
     )
 
@@ -149,14 +166,13 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     await Task.yield()
 
     XCTAssertEqual(activation.activateCallCount, 1)
-    XCTAssertEqual(factory.requestedDisplayIDs, [])
-    XCTAssertTrue(factory.surfaces.isEmpty)
+    XCTAssertEqual(factory.requestedDisplayIDs, [display.displayID])
+    XCTAssertTrue(factory.surfaces[0].isVisible)
+    XCTAssertEqual(factory.surfaces[0].makeInputReadyCallCount, 0)
     XCTAssertEqual(cursor.pushCallCount, 0)
 
     activation.completeActivation()
 
-    XCTAssertEqual(factory.requestedDisplayIDs, [display.displayID])
-    XCTAssertTrue(factory.surfaces[0].isVisible)
     XCTAssertEqual(factory.surfaces[0].refreshCursorRectsCallCount, 1)
     XCTAssertEqual(factory.surfaces[0].makeInputReadyCallCount, 1)
     XCTAssertEqual(cursor.pushCallCount, 1)
@@ -173,14 +189,15 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     let activation = RecordingSelectionApplicationActivationManager(
       automaticallyCompletesActivation: false
     )
+    let cursor = RecordingSelectionCursorManager()
     let scheduler = ManualSelectionCompletionScheduler()
     let service = AppKitRegionSelectionService(
       displayProvider: StubSelectionDisplayProvider(results: [.success([display])]),
       surfaceFactory: factory,
       lifecycleObserver: RecordingSelectionOverlayLifecycleObserver(),
-      cursorManager: RecordingSelectionCursorManager(),
+      cursorManager: cursor,
       activationManager: activation,
-      scheduleCursorInstallation: { work in work() },
+      scheduleCursorInstallation: { _, work in work() },
       scheduleCompletion: scheduler.schedule
     )
 
@@ -188,7 +205,12 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     await Task.yield()
     activation.failActivation()
 
-    XCTAssertTrue(factory.surfaces.isEmpty)
+    XCTAssertEqual(factory.surfaces.count, 1)
+    XCTAssertFalse(factory.surfaces[0].isVisible)
+    XCTAssertEqual(cursor.hideCallCount, 1)
+    XCTAssertEqual(cursor.revealCallCount, 1)
+    XCTAssertEqual(cursor.pushCallCount, 0)
+    XCTAssertEqual(cursor.popCallCount, 0)
     XCTAssertEqual(activation.restoreCallCount, 1)
     XCTAssertEqual(scheduler.pendingCount, 1)
     await scheduler.runNext()
@@ -217,7 +239,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
       lifecycleObserver: lifecycle,
       cursorManager: cursor,
       activationManager: activation,
-      scheduleCursorInstallation: { work in work() },
+      scheduleCursorInstallation: { _, work in work() },
       scheduleCompletion: scheduler.schedule
     )
 
@@ -228,17 +250,20 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(activation.restoreCallCount, 1)
     activation.completeActivation()
 
-    XCTAssertEqual(factory.requestedDisplayIDs, [])
+    XCTAssertEqual(factory.requestedDisplayIDs, [display.displayID])
+    XCTAssertFalse(factory.surfaces[0].isVisible)
+    XCTAssertEqual(factory.surfaces[0].makeInputReadyCallCount, 0)
+    XCTAssertEqual(cursor.hideCallCount, 1)
+    XCTAssertEqual(cursor.revealCallCount, 1)
     XCTAssertEqual(cursor.pushCallCount, 0)
+    XCTAssertEqual(cursor.popCallCount, 0)
 
     await scheduler.runNext()
     let outcome = try await task.value
     XCTAssertEqual(outcome, .cancelled(.applicationTerminated))
   }
 
-  func testSelectionWaitsForPointerSurfaceToBecomeKeyBeforeInstallingCrosshair()
-    async throws
-  {
+  func testSelectionClaimsCrosshairOnlyAfterPointerSurfaceBecomesKey() async throws {
     let first = try makeDisplay(id: 1, origin: CGPoint(x: 50_000, y: 50_000))
     let second = try makeDisplay(id: 2, origin: CGPoint(x: 50_100, y: 50_000))
     let provider = StubSelectionDisplayProvider(results: [.success([first, second])])
@@ -254,6 +279,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(factory.surfaces.map(\.makeInputReadyCallCount), [1, 0])
     XCTAssertEqual(factory.surfaces.map(\.refreshCursorRectsCallCount), [0, 0])
     XCTAssertEqual(context.cursor.pushCallCount, 0)
+    XCTAssertEqual(context.cursor.revealCallCount, 0)
 
     factory.surfaces[0].completeInputReadiness()
     factory.surfaces[0].completeInputReadiness()
@@ -267,7 +293,9 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(outcome, .cancelled(.escape))
   }
 
-  func testCrosshairWaitsOneScheduledTurnAfterRefreshingActiveCursorRects() async throws {
+  func testCrosshairClaimsAtKeyWindowThenReassertsAcrossBoundedWindow()
+    async throws
+  {
     let first = try makeDisplay(id: 1, origin: CGPoint(x: 50_000, y: 50_000))
     let second = try makeDisplay(id: 2, origin: CGPoint(x: 50_100, y: 50_000))
     let provider = StubSelectionDisplayProvider(results: [.success([first, second])])
@@ -277,7 +305,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     let lifecycle = RecordingSelectionOverlayLifecycleObserver()
     let cursor = RecordingSelectionCursorManager()
     let activation = RecordingSelectionApplicationActivationManager()
-    let cursorScheduler = ManualSelectionCompletionScheduler()
+    let cursorScheduler = ManualSelectionCursorStabilizationScheduler()
     let completionScheduler = ManualSelectionCompletionScheduler()
     let service = AppKitRegionSelectionService(
       displayProvider: provider,
@@ -295,14 +323,36 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertTrue(factory.surfaces.allSatisfy(\.isVisible))
     XCTAssertEqual(factory.surfaces.map(\.refreshCursorRectsCallCount), [0, 0])
     XCTAssertEqual(cursor.pushCallCount, 0)
+    XCTAssertEqual(cursor.setCallCount, 0)
 
     factory.surfaces[0].completeInputReadiness()
     XCTAssertEqual(factory.surfaces.map(\.refreshCursorRectsCallCount), [1, 0])
-    XCTAssertEqual(cursorScheduler.pendingCount, 1)
-    XCTAssertEqual(cursor.pushCallCount, 0)
+    XCTAssertEqual(
+      cursorScheduler.scheduledDelays,
+      [.milliseconds(16), .milliseconds(50), .milliseconds(100), .milliseconds(160)]
+    )
+    XCTAssertEqual(cursorScheduler.pendingCount, 4)
+    XCTAssertEqual(cursor.pushCallCount, 1)
+    XCTAssertEqual(cursor.setCallCount, 0)
+    XCTAssertEqual(cursor.revealCallCount, 0)
 
     await cursorScheduler.runNext()
     XCTAssertEqual(cursor.pushCallCount, 1)
+    XCTAssertEqual(cursor.setCallCount, 1)
+    XCTAssertEqual(cursor.revealCallCount, 0)
+    XCTAssertEqual(cursorScheduler.pendingCount, 3)
+    await cursorScheduler.runNext()
+    XCTAssertEqual(cursor.setCallCount, 2)
+    XCTAssertEqual(cursor.revealCallCount, 0)
+    XCTAssertEqual(cursorScheduler.pendingCount, 2)
+    await cursorScheduler.runNext()
+    XCTAssertEqual(cursor.setCallCount, 3)
+    XCTAssertEqual(cursor.revealCallCount, 0)
+    XCTAssertEqual(cursorScheduler.pendingCount, 1)
+    await cursorScheduler.runNext()
+    XCTAssertEqual(cursor.setCallCount, 4)
+    XCTAssertEqual(cursor.revealCallCount, 1)
+    XCTAssertEqual(cursorScheduler.pendingCount, 0)
 
     factory.surfaces[0].send(.escape)
 
@@ -314,7 +364,118 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(outcome, .cancelled(.escape))
   }
 
-  func testCancellationAfterCursorRefreshSuppressesLateCrosshairInstallation() async throws {
+  func testCursorHandoffHidesTheOutgoingArrowUntilTheCrosshairIsStable()
+    async throws
+  {
+    let display = try makeDisplay()
+    let factory = RecordingSelectionOverlaySurfaceFactory()
+    let cursor = RecordingSelectionCursorManager()
+    let cursorScheduler = ManualSelectionCursorStabilizationScheduler()
+    let completionScheduler = ManualSelectionCompletionScheduler()
+    let service = AppKitRegionSelectionService(
+      displayProvider: StubSelectionDisplayProvider(results: [.success([display])]),
+      surfaceFactory: factory,
+      lifecycleObserver: RecordingSelectionOverlayLifecycleObserver(),
+      cursorManager: cursor,
+      activationManager: RecordingSelectionApplicationActivationManager(),
+      scheduleCursorInstallation: cursorScheduler.schedule,
+      scheduleCompletion: completionScheduler.schedule
+    )
+
+    let task = Task { try await service.selectRegion() }
+    await Task.yield()
+
+    XCTAssertEqual(cursor.hideCallCount, 1)
+    XCTAssertEqual(cursor.revealCallCount, 0)
+    XCTAssertEqual(cursor.pushCallCount, 1)
+
+    await cursorScheduler.runNext()
+    XCTAssertEqual(cursor.pushCallCount, 1)
+    XCTAssertEqual(cursor.setCallCount, 1)
+    XCTAssertEqual(cursor.revealCallCount, 0)
+
+    await cursorScheduler.runNext()
+    XCTAssertEqual(cursor.setCallCount, 2)
+    XCTAssertEqual(cursor.revealCallCount, 0)
+
+    await cursorScheduler.runNext()
+    XCTAssertEqual(cursor.setCallCount, 3)
+    XCTAssertEqual(cursor.revealCallCount, 0)
+
+    await cursorScheduler.runNext()
+    XCTAssertEqual(cursor.setCallCount, 4)
+    XCTAssertEqual(cursor.revealCallCount, 1)
+
+    factory.surfaces[0].send(.escape)
+    XCTAssertEqual(cursor.popCallCount, 1)
+    XCTAssertEqual(cursor.revealCallCount, 1)
+
+    await completionScheduler.runNext()
+    let outcome = try await task.value
+    XCTAssertEqual(outcome, .cancelled(.escape))
+  }
+
+  func testPreparedCursorHandoffIsAdoptedWithoutHidingTwice() async throws {
+    let display = try makeDisplay()
+    let factory = RecordingSelectionOverlaySurfaceFactory()
+    let cursor = RecordingSelectionCursorManager()
+    let cursorScheduler = ManualSelectionCursorStabilizationScheduler()
+    let completionScheduler = ManualSelectionCompletionScheduler()
+    let service = AppKitRegionSelectionService(
+      displayProvider: StubSelectionDisplayProvider(results: [.success([display])]),
+      surfaceFactory: factory,
+      lifecycleObserver: RecordingSelectionOverlayLifecycleObserver(),
+      cursorManager: cursor,
+      activationManager: RecordingSelectionApplicationActivationManager(),
+      scheduleCursorInstallation: cursorScheduler.schedule,
+      scheduleCompletion: completionScheduler.schedule
+    )
+
+    service.prepareForSelectionTransition()
+    service.prepareForSelectionTransition()
+    XCTAssertEqual(cursor.hideCallCount, 1)
+
+    let task = Task { try await service.selectRegion() }
+    await Task.yield()
+
+    XCTAssertEqual(cursor.hideCallCount, 1)
+    await cursorScheduler.runNext()
+    await cursorScheduler.runNext()
+    await cursorScheduler.runNext()
+    XCTAssertEqual(cursor.revealCallCount, 0)
+    await cursorScheduler.runNext()
+    XCTAssertEqual(cursor.revealCallCount, 1)
+
+    factory.surfaces[0].send(.escape)
+    await completionScheduler.runNext()
+    let outcome = try await task.value
+    XCTAssertEqual(outcome, .cancelled(.escape))
+    XCTAssertEqual(cursor.revealCallCount, 1)
+  }
+
+  func testPreparedCursorIsRevealedWhenDisplayValidationFails() async {
+    let cursor = RecordingSelectionCursorManager()
+    let service = AppKitRegionSelectionService(
+      displayProvider: StubSelectionDisplayProvider(results: [.success([])]),
+      surfaceFactory: RecordingSelectionOverlaySurfaceFactory(),
+      lifecycleObserver: RecordingSelectionOverlayLifecycleObserver(),
+      cursorManager: cursor,
+      activationManager: RecordingSelectionApplicationActivationManager()
+    )
+
+    service.prepareForSelectionTransition()
+
+    do {
+      _ = try await service.selectRegion()
+      XCTFail("Expected empty display validation to fail")
+    } catch {
+      XCTAssertEqual(error as? AppKitRegionSelectionError, .noDisplays)
+    }
+    XCTAssertEqual(cursor.hideCallCount, 1)
+    XCTAssertEqual(cursor.revealCallCount, 1)
+  }
+
+  func testCancellationAfterCursorRefreshSuppressesLateCrosshairReassertion() async throws {
     let first = try makeDisplay(id: 1, origin: CGPoint(x: 50_000, y: 50_000))
     let second = try makeDisplay(id: 2, origin: CGPoint(x: 50_100, y: 50_000))
     let provider = StubSelectionDisplayProvider(results: [.success([first, second])])
@@ -324,7 +485,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     let lifecycle = RecordingSelectionOverlayLifecycleObserver()
     let cursor = RecordingSelectionCursorManager()
     let activation = RecordingSelectionApplicationActivationManager()
-    let cursorScheduler = ManualSelectionCompletionScheduler()
+    let cursorScheduler = ManualSelectionCursorStabilizationScheduler()
     let completionScheduler = ManualSelectionCompletionScheduler()
     let service = AppKitRegionSelectionService(
       displayProvider: provider,
@@ -341,12 +502,14 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
 
     factory.surfaces[0].completeInputReadiness()
     XCTAssertEqual(factory.surfaces.map(\.refreshCursorRectsCallCount), [1, 0])
-    XCTAssertEqual(cursorScheduler.pendingCount, 1)
+    XCTAssertEqual(cursorScheduler.pendingCount, 4)
+    XCTAssertEqual(cursor.pushCallCount, 1)
+    XCTAssertEqual(cursor.revealCallCount, 0)
 
     service.cancelSelection()
     await cursorScheduler.runNext()
-    XCTAssertEqual(cursor.pushCallCount, 0)
-    XCTAssertEqual(cursor.popCallCount, 0)
+    XCTAssertEqual(cursor.setCallCount, 0)
+    XCTAssertEqual(cursor.popCallCount, 1)
 
     await completionScheduler.runNext()
     let outcome = try await task.value
@@ -372,6 +535,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(factory.surfaces[0].cancelInputReadinessCallCount, 1)
     XCTAssertEqual(factory.surfaces[0].refreshCursorRectsCallCount, 0)
     XCTAssertEqual(context.cursor.pushCallCount, 0)
+    XCTAssertEqual(context.cursor.revealCallCount, 1)
     XCTAssertEqual(context.cursor.popCallCount, 0)
 
     await context.scheduler.runNext()
@@ -394,6 +558,8 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     await Task.yield()
 
     factory.surfaces[1].send(.mouseDown(CGPoint(x: 50_110, y: 50_010)))
+
+    XCTAssertEqual(factory.surfaces[0].cancelInputReadinessCallCount, 1)
     factory.surfaces[1].completeInputReadiness()
     factory.surfaces[0].completeInputReadiness()
 
@@ -419,6 +585,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     let activation = RecordingSelectionApplicationActivationManager(
       startupEvents: startupEvents
     )
+    let cursorScheduler = ManualSelectionCursorStabilizationScheduler()
     let scheduler = ManualSelectionCompletionScheduler()
     let service = AppKitRegionSelectionService(
       displayProvider: provider,
@@ -426,7 +593,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
       lifecycleObserver: lifecycle,
       cursorManager: cursor,
       activationManager: activation,
-      scheduleCursorInstallation: { work in work() },
+      scheduleCursorInstallation: cursorScheduler.schedule,
       scheduleCompletion: scheduler.schedule
     )
 
@@ -436,15 +603,16 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(
       startupEvents.events,
       [
-        .applicationActivationRequested,
         .surfaceShown(1),
         .surfaceShown(2),
+        .applicationActivationRequested,
         .surfaceInputReady(1),
         .surfaceBecameKey(1),
         .surfaceCursorRectsRefreshed(1),
         .crosshairPushed,
       ]
     )
+    XCTAssertEqual(cursorScheduler.pendingCount, 4)
     XCTAssertTrue(factory.surfaces.allSatisfy(\.isVisible))
 
     factory.surfaces[0].send(.escape)
@@ -572,6 +740,29 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(activeSpaceWindow.events, ["hide", "restore"])
     XCTAssertEqual(inactiveSpaceWindow.events, ["hide", "restore"])
     XCTAssertTrue(hiddenWindow.events.isEmpty)
+  }
+
+  func testSystemWindowProviderExcludesSelectionOverlayPanels() {
+    let ordinaryWindow = NSWindow(
+      contentRect: CGRect(x: 0, y: 0, width: 100, height: 100),
+      styleMask: .borderless,
+      backing: .buffered,
+      defer: false
+    )
+    let selectionOverlay = RegionSelectionPanel(
+      contentRect: CGRect(x: 0, y: 0, width: 100, height: 100),
+      styleMask: [.borderless, .nonactivatingPanel],
+      backing: .buffered,
+      defer: false
+    )
+    let provider = SystemSelectionApplicationWindowProvider {
+      [ordinaryWindow, selectionOverlay]
+    }
+
+    let windows = provider.allApplicationWindows()
+
+    XCTAssertEqual(windows.count, 1)
+    XCTAssertTrue((windows[0] as? NSWindow) === ordinaryWindow)
   }
 
   func testSystemActivationManagerFailsOnceWhenActivationNotificationNeverArrives() {
@@ -716,6 +907,25 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     panel.becomeKey()
 
     XCTAssertEqual(readyCallCount, 1)
+  }
+
+  func testRegionSelectionPanelUsesKeyPointerSurfaceContract() {
+    XCTAssertEqual(RegionSelectionPanel.selectionStyleMask, .borderless)
+    let panel = RegionSelectionPanel(
+      contentRect: CGRect(x: 0, y: 0, width: 100, height: 100),
+      styleMask: .borderless,
+      backing: .buffered,
+      defer: false
+    )
+    let view = RegionSelectionView(
+      frame: panel.contentView?.bounds ?? .zero,
+      style: SystemAccessibilityAppearanceProvider().currentAppearance.selectionOverlayStyle
+    )
+    panel.contentView = view
+
+    XCTAssertFalse(panel.styleMask.contains(.nonactivatingPanel))
+    XCTAssertTrue(panel.canBecomeKey)
+    XCTAssertTrue(view.acceptsFirstResponder)
   }
 
   func testRegionSelectionPanelCanCancelPendingKeyReadiness() {
@@ -1180,7 +1390,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
       lifecycleObserver: lifecycle,
       cursorManager: cursor,
       activationManager: activation,
-      scheduleCursorInstallation: { work in work() },
+      scheduleCursorInstallation: { _, work in work() },
       scheduleCompletion: scheduler.schedule
     )
 
@@ -1189,8 +1399,11 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     lifecycle.sendSystemInterruption()
     activation.completeActivation()
 
-    XCTAssertEqual(factory.requestedDisplayIDs, [])
+    XCTAssertEqual(factory.requestedDisplayIDs, [display.displayID])
+    XCTAssertFalse(factory.surfaces[0].isVisible)
+    XCTAssertEqual(factory.surfaces[0].makeInputReadyCallCount, 0)
     XCTAssertEqual(cursor.pushCallCount, 0)
+    XCTAssertEqual(cursor.popCallCount, 0)
     XCTAssertEqual(activation.restoreCallCount, 1)
     XCTAssertEqual(lifecycle.stopCallCount, 1)
 
@@ -1199,7 +1412,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(outcome, .cancelled(.systemInterrupted))
   }
 
-  func testSystemInterruptionAfterCursorRefreshSuppressesLateCrosshairInstallation()
+  func testSystemInterruptionAfterCursorRefreshSuppressesLateCrosshairReassertion()
     async throws
   {
     let display = try makeDisplay()
@@ -1210,7 +1423,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     let lifecycle = RecordingSelectionOverlayLifecycleObserver()
     let cursor = RecordingSelectionCursorManager()
     let activation = RecordingSelectionApplicationActivationManager()
-    let cursorScheduler = ManualSelectionCompletionScheduler()
+    let cursorScheduler = ManualSelectionCursorStabilizationScheduler()
     let completionScheduler = ManualSelectionCompletionScheduler()
     let service = AppKitRegionSelectionService(
       displayProvider: provider,
@@ -1225,13 +1438,16 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     let task = Task { try await service.selectRegion() }
     await Task.yield()
     factory.surfaces[0].completeInputReadiness()
-    XCTAssertEqual(cursorScheduler.pendingCount, 1)
+    XCTAssertEqual(cursorScheduler.pendingCount, 4)
+    XCTAssertEqual(cursor.pushCallCount, 1)
+    XCTAssertEqual(cursor.revealCallCount, 0)
 
     lifecycle.sendSystemInterruption()
     await cursorScheduler.runNext()
 
-    XCTAssertEqual(cursor.pushCallCount, 0)
-    XCTAssertEqual(cursor.popCallCount, 0)
+    XCTAssertEqual(cursor.setCallCount, 0)
+    XCTAssertEqual(cursor.popCallCount, 1)
+    XCTAssertEqual(cursor.revealCallCount, 1)
     XCTAssertFalse(factory.surfaces[0].isVisible)
 
     await completionScheduler.runNext()
@@ -1327,8 +1543,8 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
     XCTAssertEqual(context.lifecycle.stopCallCount, 1)
     XCTAssertEqual(context.cursor.pushCallCount, 0)
     XCTAssertEqual(context.cursor.popCallCount, 0)
-    XCTAssertEqual(context.activation.activateCallCount, 1)
-    XCTAssertEqual(context.activation.restoreCallCount, 1)
+    XCTAssertEqual(context.activation.activateCallCount, 0)
+    XCTAssertEqual(context.activation.restoreCallCount, 0)
   }
 
   func testNoDisplaysAndDuplicateDisplayIdentifiersAreRejected() async throws {
@@ -1501,7 +1717,7 @@ final class AppKitRegionSelectionServiceTests: XCTestCase {
       lifecycleObserver: lifecycle,
       cursorManager: cursor,
       activationManager: activation,
-      scheduleCursorInstallation: { work in work() },
+      scheduleCursorInstallation: { _, work in work() },
       scheduleCompletion: scheduler.schedule
     )
     return Context(
@@ -1711,7 +1927,10 @@ private final class RecordingSelectionOverlayLifecycleObserver: SelectionOverlay
 
 @MainActor
 private final class RecordingSelectionCursorManager: SelectionCursorManaging {
+  private(set) var hideCallCount = 0
+  private(set) var revealCallCount = 0
   private(set) var pushCallCount = 0
+  private(set) var setCallCount = 0
   private(set) var popCallCount = 0
   private let startupEvents: RecordingSelectionStartupEvents?
 
@@ -1719,9 +1938,22 @@ private final class RecordingSelectionCursorManager: SelectionCursorManaging {
     self.startupEvents = startupEvents
   }
 
+  func hideUntilCrosshairIsStable() {
+    hideCallCount += 1
+  }
+
+  func revealStableCrosshair() {
+    revealCallCount += 1
+  }
+
   func pushCrosshair() {
     pushCallCount += 1
     startupEvents?.events.append(.crosshairPushed)
+  }
+
+  func setCrosshair() {
+    setCallCount += 1
+    startupEvents?.events.append(.crosshairSet)
   }
 
   func popCrosshair() {
@@ -1873,6 +2105,7 @@ private final class RecordingSelectionStartupEvents {
     case surfaceCursorRectsRefreshed(CGDirectDisplayID)
     case surfaceDragRendered(CGDirectDisplayID)
     case crosshairPushed
+    case crosshairSet
     case previousApplicationRestored
   }
 
@@ -1898,5 +2131,31 @@ private final class ManualSelectionCompletionScheduler {
     }
     await Task.yield()
     pending.removeFirst()()
+  }
+}
+
+@MainActor
+private final class ManualSelectionCursorStabilizationScheduler {
+  typealias Work = @MainActor @Sendable () -> Void
+  private var pending: [(delay: Duration, work: Work)] = []
+
+  var pendingCount: Int {
+    pending.count
+  }
+
+  var scheduledDelays: [Duration] {
+    pending.map(\.delay)
+  }
+
+  func schedule(after delay: Duration, _ work: @escaping Work) {
+    pending.append((delay, work))
+  }
+
+  func runNext() async {
+    guard !pending.isEmpty else {
+      return XCTFail("Expected deferred cursor stabilization")
+    }
+    await Task.yield()
+    pending.removeFirst().work()
   }
 }

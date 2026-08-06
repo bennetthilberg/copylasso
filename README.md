@@ -103,8 +103,8 @@ CopyLasso 0.2.0 is the first updater-enabled public release:
 
 - automatic checks default on and run at most once per 24 hours;
 - **Settings > Automatically Check for Updates** disables or reenables scheduled checks;
-- **Check for Updates…** in Settings or the menu checks immediately;
-- the app shows authenticated version, plain-text release notes, and exact download size before any download;
+- **Check for Updates** in Settings or the menu checks immediately;
+- the app shows the authenticated version, rendered release notes, and exact download size before any download;
 - **Download** begins retrieval, and a separate **Install and Relaunch** confirmation is required after verification; and
 - **Later**, **Cancel**, closing the panel, an offline connection, or verification failure leaves the installed app unchanged.
 
