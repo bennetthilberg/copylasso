@@ -195,8 +195,8 @@ for required_patch_guard in \
     "g44_release_state_tree_pattern" \
     "expected_candidate_baseline_tree_digest='5550ab4569fe6917d1b0d4390d6c881afbe42055ec6717b4ff9ec00dac2916bf'" \
     "expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'" \
-    "expected_g44_release_state_files_digest='febc6fc0af8dd7188fc846688ad006b9f162bbdc2c6e81f581803b4a749f295c'" \
-    "expected_approved_post_candidate_patch_digest='51a9a4b61cd9fe423ab5d699239a617e09895a90586039f75a223b968d507f9e'" \
+    "expected_g44_release_state_files_digest='bb85dfdebc35e1612b4b68838dfe29f048dff474aa8b54b2fb5d673db64dcfdb'" \
+    "expected_approved_post_candidate_patch_digest='503b93359850954568393e8ff96f746a0a1565452e25fad66cdf82ede78f9444'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
     '"$current_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest"' \
@@ -267,8 +267,9 @@ for required_g46_guard in \
     'arguments: ["-i", "-s", "-x", "-t", "png", "/dev/null"]' \
     'process.standardOutput = FileHandle.nullDevice' \
     'NSEvent.addGlobalMonitorForEvents(' \
-    'matching: [.leftMouseDown, .leftMouseUp]' \
-    'event.cgEvent?.location' \
+    'matching: [.leftMouseDown, .leftMouseDragged, .leftMouseUp]' \
+    'controlModifierActive = cgEvent.flags.contains(.maskControl)' \
+    'spaceModifierActive: spaceModifierProvider()' \
     'expectedDisplayBounds' \
     'SystemInteractiveSelectionTracker' \
     'screenCaptureService.capture(selection)' \

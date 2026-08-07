@@ -21,8 +21,8 @@ readonly g46_product_patch_tree_pattern=$'\t(CHANGELOG\\.md|CopyLasso/App/CopyLa
 readonly g44_release_state_tree_pattern=$'\t(CHANGELOG\\.md|CONTRIBUTING\\.md|PRIVACY\\.md|README\\.md|SECURITY\\.md|docs/architecture/overview\\.md|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/security-and-privacy-review\\.md|docs/testing\\.md|docs/v0\\.2-product-contract\\.md|docs/v0\\.2-release-state\\.md|scripts/audit-brand-release\\.sh|scripts/audit-code-recognition\\.sh|scripts/audit-secure-update-architecture\\.sh|scripts/audit-v02-contract\\.sh|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/audit-v02-release-state\\.sh|scripts/ci\\.sh|scripts/test-ci-contract\\.sh|scripts/test-release-metadata\\.sh)$'
 readonly expected_candidate_baseline_tree_digest='5550ab4569fe6917d1b0d4390d6c881afbe42055ec6717b4ff9ec00dac2916bf'
 readonly expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'
-readonly expected_g44_release_state_files_digest='febc6fc0af8dd7188fc846688ad006b9f162bbdc2c6e81f581803b4a749f295c'
-readonly expected_approved_post_candidate_patch_digest='51a9a4b61cd9fe423ab5d699239a617e09895a90586039f75a223b968d507f9e'
+readonly expected_g44_release_state_files_digest='bb85dfdebc35e1612b4b68838dfe29f048dff474aa8b54b2fb5d673db64dcfdb'
+readonly expected_approved_post_candidate_patch_digest='503b93359850954568393e8ff96f746a0a1565452e25fad66cdf82ede78f9444'
 
 fail() {
     echo "$1" >&2

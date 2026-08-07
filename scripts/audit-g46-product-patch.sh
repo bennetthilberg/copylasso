@@ -87,9 +87,12 @@ for system_capture_contract in \
     'process.standardError = FileHandle.nullDevice' \
     'try process.run()' \
     'CGEventSource.flagsState(.combinedSessionState).contains(.maskControl)' \
+    'CGEventSource.keyState(.combinedSessionState, key: 49)' \
     'NSEvent.addGlobalMonitorForEvents(' \
-    'matching: [.leftMouseDown, .leftMouseUp]' \
-    'event.cgEvent?.location' \
+    'matching: [.leftMouseDown, .leftMouseDragged, .leftMouseUp]' \
+    'let location = cgEvent.location' \
+    'controlModifierActive = cgEvent.flags.contains(.maskControl)' \
+    'spaceModifierActive: spaceModifierProvider()' \
     'SystemInteractivePointerTransition' \
     'SystemInteractiveSelectionTracker' \
     'selectionResultFromCoreGraphics(' \
@@ -99,6 +102,12 @@ for system_capture_contract in \
     'prepared.session.cancel()'; do
     require_text "$system_capture" "$system_capture_contract"
 done
+
+if /usr/bin/grep -nE \
+    'CGEventTap|\.keyDown|\.keyUp|\.flagsChanged' \
+    "$repository_root/$system_capture"; then
+    fail 'Selection tracking must not add an intercepting or keyboard event monitor.'
+fi
 
 for screen_capture_contract in \
     'let expectedDisplayBounds: CGRect' \

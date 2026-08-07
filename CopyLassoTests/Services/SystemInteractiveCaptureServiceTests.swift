@@ -342,6 +342,7 @@ final class SystemInteractiveCaptureServiceTests: XCTestCase {
     let monitor = StubSystemInteractivePointerTransitionMonitor(
       transitions: [
         .pressed(at: CGPoint(x: 20, y: 30)),
+        .dragged(at: CGPoint(x: 220, y: 180)),
         .released(at: CGPoint(x: 420, y: 330)),
       ]
     )
@@ -359,6 +360,73 @@ final class SystemInteractiveCaptureServiceTests: XCTestCase {
       CGRect(x: 20, y: 30, width: 400, height: 300)
     )
     XCTAssertEqual(monitor.stopCallCount, 1)
+  }
+
+  func testLiveProcessSessionUsesTheLastCompletedDragAfterAConfirmationClick() async throws {
+    let monitor = StubSystemInteractivePointerTransitionMonitor(
+      transitions: [
+        .pressed(at: CGPoint(x: 600, y: 500)),
+        .released(at: CGPoint(x: 600, y: 500)),
+        .pressed(at: CGPoint(x: 50, y: 60)),
+        .dragged(at: CGPoint(x: 450, y: 360)),
+        .released(at: CGPoint(x: 450, y: 360)),
+      ]
+    )
+    let session = try makeLiveLauncher(
+      pointerTransitionMonitorProvider: { monitor }
+    ).start(.exitingFixture)
+
+    let result = try await session.result()
+
+    guard case .selected(let selection) = result.selectionOutcome else {
+      return XCTFail("Expected the real drag after the confirmation click")
+    }
+    XCTAssertEqual(
+      selection.coreGraphicsGlobalRect,
+      CGRect(x: 50, y: 60, width: 400, height: 300)
+    )
+  }
+
+  func testControlOnExactMouseUpFailsClosedEvenAfterControlWasReleased() async throws {
+    let monitor = StubSystemInteractivePointerTransitionMonitor(
+      transitions: [
+        .pressed(at: CGPoint(x: 50, y: 60)),
+        .dragged(at: CGPoint(x: 450, y: 360)),
+        .released(
+          at: CGPoint(x: 450, y: 360),
+          controlModifierActive: true
+        ),
+      ]
+    )
+    let session = try makeLiveLauncher(
+      controlModifierProvider: { false },
+      pointerTransitionMonitorProvider: { monitor }
+    ).start(.exitingFixture)
+
+    let result = try await session.result()
+
+    XCTAssertTrue(result.wasCancelledForControlModifier)
+    XCTAssertNil(result.selectionOutcome)
+  }
+
+  func testSpaceAdjustedDragInterruptsWithoutProducingSelectionGeometry() async throws {
+    let monitor = StubSystemInteractivePointerTransitionMonitor(
+      transitions: [
+        .pressed(at: CGPoint(x: 50, y: 60)),
+        .dragged(
+          at: CGPoint(x: 450, y: 360),
+          spaceModifierActive: true
+        ),
+        .released(at: CGPoint(x: 650, y: 460)),
+      ]
+    )
+    let session = try makeLiveLauncher(
+      pointerTransitionMonitorProvider: { monitor }
+    ).start(.exitingFixture)
+
+    let result = try await session.result()
+
+    XCTAssertEqual(result.selectionOutcome, .cancelled(.systemInterrupted))
   }
 
   private func makeService(

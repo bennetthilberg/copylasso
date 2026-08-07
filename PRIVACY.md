@@ -7,9 +7,8 @@ supported codes locally, and writes the result to the clipboard.
 
 ## Capture and recognition
 
-- Public 0.2.0 uses Apple ScreenCaptureKit. Current source invokes Apple's fixed
-  interactive region selector for the native crosshair and drag, derives only
-  the selected rectangle from mouse event coordinates, then captures that rectangle in
+- Public 0.2.0 uses ScreenCaptureKit. Current source uses Apple's region
+  selector, derives only the rectangle from mouse events, then captures that rectangle in
   memory with ScreenCaptureKit. OCR uses Apple Vision locally.
   Code payloads are recognized locally with Vision in five formats: QR, Code 128,
   Data Matrix, PDF417, and Aztec.
@@ -37,11 +36,10 @@ and the image is released after recognition or cancellation.
 The core workflow needs no Accessibility, Input Monitoring, microphone, or
 notification permission.
 
-If Control is held before or during selection, CopyLasso cancels the attempt
-because macOS would otherwise redirect the screenshot to the clipboard. While
-the selector is active, an observe-only monitor retains only left-button-down
-and left-button-up coordinates, and CopyLasso checks that content-free modifier
-state. It neither intercepts nor synthesizes input.
+Control during selection cancels because macOS could redirect the screenshot
+to the clipboard. An observe-only monitor retains down, drag, and up coordinates
+plus Control and Space state. It ignores clicks without a drag and cancels
+Space-adjusted rectangles. CopyLasso neither intercepts nor synthesizes input.
 
 Successful capture replaces the general pasteboard with one plain-text value.
 CopyLasso never reads or snapshots the previous clipboard. Cancellation,
@@ -58,10 +56,9 @@ after 2.5 seconds; cancellation presents no HUD.
 
 ## Stored settings
 
-CopyLasso stores only ordinary preferences for onboarding, the Capture
-shortcut, permission-request history, Launch at Login presentation, sound, and
-update controls. Update state contains the schedule and preference, a deferred
-build, and the highest authenticated build used to reject replay or downgrade.
+CopyLasso stores preferences for onboarding, the shortcut, permission-request
+history, Launch at Login, sound, and updates. Update state contains its schedule,
+preference, deferred build, and highest authenticated build.
 It stores no appcast bodies, release notes, captured content, or clipboard
 content. Launch at Login state comes from macOS. Fixed lifecycle diagnostics
 contain no content, application name, geometry, or user value.
@@ -79,9 +76,8 @@ CopyLasso DMG on GitHub Releases. System profiling, cookies, external notes,
 automatic download, and automatic installation are disabled. Authenticated
 notes are transient; download and installation each require a user decision.
 
-The feed host and GitHub can observe ordinary connection metadata such as IP
-address and request time. Sparkle's user agent identifies the CopyLasso and
-Sparkle versions. Update requests send no screen pixels, selected rectangle,
+The feed host and GitHub can observe IP address and request time. Sparkle's user
+agent identifies the CopyLasso and Sparkle versions. Update requests send no screen pixels, selected rectangle,
 recognized text, code payload, clipboard data, HUD preview, frontmost-app name,
 hardware profile, stable user or device identifier, analytics, or telemetry.
 Links in Settings open in the default browser rather than being fetched by

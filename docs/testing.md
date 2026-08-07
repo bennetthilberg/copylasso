@@ -76,15 +76,17 @@ including the `/dev/null` image destination, reject overlapping sessions, and
 prove that the subprocess cannot return screenshot bytes to CopyLasso. Pure
 tests cover event-coordinate selection tracking, queued fast drags,
 initiating-display clamping, coordinate conversion, stray mouse-up events, tiny
-drags, cancellation, and stale completion. Service tests prove only a completed
-rectangle reaches the existing in-memory ScreenCaptureKit adapter, complete
-display bounds are revalidated, and permission and capture failures remain
-correctly classified.
+drags, confirmation clicks without a drag, final-candidate replacement,
+Space-adjustment rejection, cancellation, and stale completion. Service tests
+prove only a completed rectangle reaches the existing in-memory ScreenCaptureKit
+adapter, complete display bounds are revalidated, and permission and capture
+failures remain correctly classified.
 
-Tests also reject Control before process launch, cancel a live selector when
-Control appears with clean process termination, prove the launcher is
-immediately reusable, distinguish Escape from failure, and prove every such
-path leaves CopyLasso's write-only clipboard service and success sound untouched.
+Tests also reject Control before process launch, retain Control from the exact
+mouse-up event even if the later polled state is clear, cancel a live selector
+when Control or a Space-adjusted drag appears, prove the launcher is immediately
+reusable, distinguish Escape from failure, and prove every such path leaves
+CopyLasso's write-only clipboard service and success sound untouched.
 Workflow tests cover menu and same-turn shortcut starts, permission loss,
 capture failure, OCR/code continuation, clipboard preservation, sound ordering,
 HUD feedback, and immediate reuse.
@@ -101,6 +103,12 @@ Repeat once from the menu while holding Control and once by pressing Control
 during an active drag. Both attempts must stop without a CopyLasso clipboard
 write, success sound, or success HUD; a following ordinary capture must remain
 immediately reusable.
+
+If macOS presents its direct-access confirmation, click **Allow**, then make a
+normal drag. The confirmation click must not consume the selection and the real
+drag must complete normally. In a separate attempt, begin a drag and hold Space
+while moving the rectangle. CopyLasso must cancel without OCR, clipboard write,
+sound, or HUD; the following direct drag must work normally.
 
 The G13 and G14 matrices below remain historical and Debug-fixture coverage for
 the prior AppKit geometry and ScreenCaptureKit crop boundaries. They do not
