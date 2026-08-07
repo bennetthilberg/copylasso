@@ -58,6 +58,25 @@ final class InteractiveCaptureWorkflowTests: XCTestCase {
     XCTAssertEqual(context.permission.authoritativeObservationCallCount, 1)
   }
 
+  func testPrelaunchSystemInterruptionSkipsPermissionRecoveryProbe() async throws {
+    let capture = StubInteractiveCaptureService(
+      result: .success(.cancelled(.systemInterrupted))
+    )
+    let context = makeContext(capture: capture)
+    context.permission.authoritativeResult = .notGrantedAfterPreviouslyGranted
+
+    _ = context.command.performFromGlobalShortcut()
+    await context.scheduler.runNext()
+
+    XCTAssertTrue(context.clipboard.writtenTexts.isEmpty)
+    XCTAssertEqual(context.sound.playCallCount, 0)
+    XCTAssertTrue(context.feedback.presentedFeedback.isEmpty)
+    XCTAssertEqual(context.permission.authoritativeObservationCallCount, 0)
+    XCTAssertEqual(context.permission.recordCaptureDenialCallCount, 0)
+    XCTAssertTrue(context.recovery.presentedObservations.isEmpty)
+    XCTAssertEqual(context.coordinator.state, .idle)
+  }
+
   func testEmptySelectionOutputBecomesPermissionRecoveryWhenAccessChanged() async throws {
     let capture = StubInteractiveCaptureService(result: .success(.cancelled(.escape)))
     let context = makeContext(capture: capture)

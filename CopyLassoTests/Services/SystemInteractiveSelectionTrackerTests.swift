@@ -188,6 +188,81 @@ final class SystemInteractiveSelectionTrackerTests: XCTestCase {
     XCTAssertEqual(outcome, .cancelled(.displayChanged))
   }
 
+  func testGeometryAdjustmentDuringDragCancelsInsteadOfCapturingDifferentPixels() throws {
+    for adjustment in [
+      SystemInteractiveGeometryAdjustments.shift,
+      .option,
+      .space,
+    ] {
+      let display = try makeDisplay()
+      var tracker = SystemInteractiveSelectionTracker(
+        displays: [display],
+        initialPointerState: SystemInteractivePointerState(
+          location: CGPoint(x: 100, y: 100),
+          isLeftButtonPressed: false
+        )
+      )
+
+      XCTAssertNil(
+        tracker.observe(
+          SystemInteractivePointerState(
+            location: CGPoint(x: 100, y: 100),
+            isLeftButtonPressed: true
+          )
+        )
+      )
+      XCTAssertNil(
+        tracker.observe(
+          SystemInteractivePointerState(
+            location: CGPoint(x: 250, y: 200),
+            isLeftButtonPressed: true,
+            geometryAdjustments: adjustment
+          )
+        )
+      )
+      XCTAssertEqual(
+        tracker.observe(
+          SystemInteractivePointerState(
+            location: CGPoint(x: 400, y: 300),
+            isLeftButtonPressed: false
+          )
+        ),
+        .cancelled(.systemInterrupted),
+        "adjustment: \(adjustment)"
+      )
+    }
+  }
+
+  func testGeometryAdjustmentOnMouseUpAlsoCancels() throws {
+    let display = try makeDisplay()
+    var tracker = SystemInteractiveSelectionTracker(
+      displays: [display],
+      initialPointerState: SystemInteractivePointerState(
+        location: CGPoint(x: 100, y: 100),
+        isLeftButtonPressed: false
+      )
+    )
+
+    XCTAssertNil(
+      tracker.observe(
+        SystemInteractivePointerState(
+          location: CGPoint(x: 100, y: 100),
+          isLeftButtonPressed: true
+        )
+      )
+    )
+    XCTAssertEqual(
+      tracker.observe(
+        SystemInteractivePointerState(
+          location: CGPoint(x: 400, y: 300),
+          isLeftButtonPressed: false,
+          geometryAdjustments: .space
+        )
+      ),
+      .cancelled(.systemInterrupted)
+    )
+  }
+
   private func makeDisplay() throws -> DisplayGeometry {
     try DisplayGeometry(
       displayID: 7,

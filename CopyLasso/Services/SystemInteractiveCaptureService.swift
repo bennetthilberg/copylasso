@@ -19,6 +19,25 @@ enum SystemInteractiveCaptureProcessTerminationReason: Equatable, Sendable {
 struct SystemInteractivePointerState: Equatable, Sendable {
   let location: CGPoint
   let isLeftButtonPressed: Bool
+  let geometryAdjustments: SystemInteractiveGeometryAdjustments
+
+  init(
+    location: CGPoint,
+    isLeftButtonPressed: Bool,
+    geometryAdjustments: SystemInteractiveGeometryAdjustments = []
+  ) {
+    self.location = location
+    self.isLeftButtonPressed = isLeftButtonPressed
+    self.geometryAdjustments = geometryAdjustments
+  }
+}
+
+struct SystemInteractiveGeometryAdjustments: OptionSet, Equatable, Sendable {
+  let rawValue: UInt8
+
+  static let shift = SystemInteractiveGeometryAdjustments(rawValue: 1 << 0)
+  static let option = SystemInteractiveGeometryAdjustments(rawValue: 1 << 1)
+  static let space = SystemInteractiveGeometryAdjustments(rawValue: 1 << 2)
 }
 
 struct SystemInteractiveCaptureProcessResult: Equatable, Sendable {
@@ -50,7 +69,11 @@ struct SystemInteractiveSelectionTracker {
   private enum Phase {
     case waitingForRelease
     case waitingForPress
-    case dragging(display: DisplayGeometry, start: CGPoint)
+    case dragging(
+      display: DisplayGeometry,
+      start: CGPoint,
+      geometryWasAdjusted: Bool
+    )
   }
 
   private let displays: [DisplayGeometry]
@@ -86,12 +109,27 @@ struct SystemInteractiveSelectionTracker {
       else {
         return nil
       }
-      phase = .dragging(display: display, start: pointerState.location)
+      phase = .dragging(
+        display: display,
+        start: pointerState.location,
+        geometryWasAdjusted: !pointerState.geometryAdjustments.isEmpty
+      )
       return nil
 
-    case .dragging(let display, let start):
-      guard !pointerState.isLeftButtonPressed else { return nil }
+    case .dragging(let display, let start, let geometryWasAdjusted):
+      let adjusted = geometryWasAdjusted || !pointerState.geometryAdjustments.isEmpty
+      guard !pointerState.isLeftButtonPressed else {
+        phase = .dragging(
+          display: display,
+          start: start,
+          geometryWasAdjusted: adjusted
+        )
+        return nil
+      }
       phase = .waitingForPress
+      guard !adjusted else {
+        return .cancelled(.systemInterrupted)
+      }
       let endedOnDifferentDisplay =
         !display.contains(coreGraphicsPoint: pointerState.location)
         && displays.contains(where: {
@@ -146,12 +184,24 @@ final class SystemInteractiveCaptureProcessLauncher: SystemInteractiveCapturePro
       CGEventSource.flagsState(.combinedSessionState).contains(.maskControl)
     },
     pointerStateProvider: @escaping PointerStateProvider = {
-      SystemInteractivePointerState(
+      let flags = CGEventSource.flagsState(.combinedSessionState)
+      var geometryAdjustments: SystemInteractiveGeometryAdjustments = []
+      if flags.contains(.maskShift) {
+        geometryAdjustments.insert(.shift)
+      }
+      if flags.contains(.maskAlternate) {
+        geometryAdjustments.insert(.option)
+      }
+      if CGEventSource.keyState(.combinedSessionState, key: 49) {
+        geometryAdjustments.insert(.space)
+      }
+      return SystemInteractivePointerState(
         location: CGEvent(source: nil)?.location ?? .zero,
         isLeftButtonPressed: CGEventSource.buttonState(
           .combinedSessionState,
           button: .left
-        )
+        ),
+        geometryAdjustments: geometryAdjustments
       )
     },
     displayProvider: @escaping DisplayProvider = {

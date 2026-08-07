@@ -21,8 +21,8 @@ readonly g46_product_patch_tree_pattern=$'\t(CHANGELOG\\.md|CopyLasso/App/CopyLa
 readonly g44_release_state_tree_pattern=$'\t(CHANGELOG\\.md|CONTRIBUTING\\.md|PRIVACY\\.md|README\\.md|SECURITY\\.md|docs/architecture/overview\\.md|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/security-and-privacy-review\\.md|docs/testing\\.md|docs/v0\\.2-product-contract\\.md|docs/v0\\.2-release-state\\.md|scripts/audit-brand-release\\.sh|scripts/audit-code-recognition\\.sh|scripts/audit-secure-update-architecture\\.sh|scripts/audit-v02-contract\\.sh|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/audit-v02-release-state\\.sh|scripts/ci\\.sh|scripts/test-ci-contract\\.sh|scripts/test-release-metadata\\.sh)$'
 readonly expected_candidate_baseline_tree_digest='2c49860084c74bc4ac5956bdd8eef8afd2e8c064710dc97f816900fcc1e891a6'
 readonly expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'
-readonly expected_g44_release_state_files_digest='ca6ebe968b5622fa109cb4b7ea53c00cef945d5d93233f316a1ab470c4480962'
-readonly expected_approved_post_candidate_patch_digest='0a1ae002d7fb3d542104a6245f618227f68ad08e341409048f3598c42732ac37'
+readonly expected_g44_release_state_files_digest='4a92e25018fd1cd1242164c1f8e8f78afe8facd3ad9e28327d7d6194b3ea699c'
+readonly expected_approved_post_candidate_patch_digest='17b4a5be6baf2e88d6d1bd38902e7509a0e5ce14bda39f39a989e87547afde45'
 
 fail() {
     echo "$1" >&2
@@ -190,7 +190,8 @@ approved_post_candidate_patch_digest="$(
             "$approved_path" == "scripts/test-ci-contract.sh" ]]; then
             approved_digest="$(
                 /usr/bin/sed -E \
-                    's/(expected_approved_post_candidate_patch_digest[^0-9a-f]*)[0-9a-f]{64}/\1<self-normalized>/g' \
+                    -e 's/(expected_approved_post_candidate_patch_digest[^0-9a-f]*)[0-9a-f]{64}/\1<self-normalized>/g' \
+                    -e 's/(expected_g44_release_state_files_digest[^0-9a-f]*)[0-9a-f]{64}/\1<self-normalized>/g' \
                     "$repository_root/$approved_path" | \
                     /usr/bin/shasum -a 256 | \
                     /usr/bin/awk '{print $1}'

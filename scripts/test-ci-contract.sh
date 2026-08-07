@@ -195,14 +195,15 @@ for required_patch_guard in \
     "g44_release_state_tree_pattern" \
     "expected_candidate_baseline_tree_digest='2c49860084c74bc4ac5956bdd8eef8afd2e8c064710dc97f816900fcc1e891a6'" \
     "expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'" \
-    "expected_g44_release_state_files_digest='ca6ebe968b5622fa109cb4b7ea53c00cef945d5d93233f316a1ab470c4480962'" \
-    "expected_approved_post_candidate_patch_digest='0a1ae002d7fb3d542104a6245f618227f68ad08e341409048f3598c42732ac37'" \
+    "expected_g44_release_state_files_digest='4a92e25018fd1cd1242164c1f8e8f78afe8facd3ad9e28327d7d6194b3ea699c'" \
+    "expected_approved_post_candidate_patch_digest='17b4a5be6baf2e88d6d1bd38902e7509a0e5ce14bda39f39a989e87547afde45'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
     '"$current_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest"' \
     'approved_post_candidate_path "$approved_path"' \
     'hash-object -- "$approved_path"' \
     'expected_approved_post_candidate_patch_digest[^0-9a-f]*' \
+    'expected_g44_release_state_files_digest[^0-9a-f]*' \
     '<self-normalized>' \
     'The approved post-candidate patch differs from its reviewed digest.' \
     '/usr/bin/grep -Ev "$approved_post_v02_security_patch_tree_pattern"' \

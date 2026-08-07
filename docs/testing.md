@@ -76,8 +76,9 @@ including the `/dev/null` image destination, reject overlapping sessions, and
 prove that the subprocess cannot return screenshot bytes to CopyLasso. Pure
 tests cover pointer-state selection tracking, a button already held at startup,
 initiating-display clamping, coordinate conversion, tiny drags, confirmation
-clicks followed by a real drag, final-candidate replacement, cross-display
-release rejection, cancellation, and stale completion. Service tests
+clicks followed by a real drag, Shift/Option/Space-adjustment rejection,
+final-candidate replacement, cross-display release rejection, cancellation,
+and stale completion. Service tests
 prove only a completed rectangle reaches the existing in-memory ScreenCaptureKit
 adapter, complete display bounds are revalidated, and permission and capture
 failures remain correctly classified. Empty native-selector output performs an

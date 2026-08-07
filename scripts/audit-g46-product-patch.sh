@@ -89,6 +89,9 @@ for system_capture_contract in \
     'process.standardError = FileHandle.nullDevice' \
     'try process.run()' \
     'CGEventSource.flagsState(.combinedSessionState).contains(.maskControl)' \
+    'flags.contains(.maskShift)' \
+    'flags.contains(.maskAlternate)' \
+    'CGEventSource.keyState(.combinedSessionState, key: 49)' \
     'CGEvent(source: nil)?.location' \
     'CGEventSource.buttonState(' \
     'Thread.sleep(forTimeInterval: 0.001)' \
@@ -118,6 +121,9 @@ require_text \
     'CopyLassoTests/Services/SystemInteractiveSelectionTrackerTests.swift' \
     'testTinyConfirmationClickDoesNotPreventALaterRealSelection'
 require_text \
+    'CopyLassoTests/Services/SystemInteractiveSelectionTrackerTests.swift' \
+    'testGeometryAdjustmentDuringDragCancelsInsteadOfCapturingDifferentPixels'
+require_text \
     'CopyLassoTests/Services/SystemInteractiveCaptureServiceTests.swift' \
     'testLiveProcessSessionUsesRealDragAfterTinyConfirmationClick'
 require_text \
@@ -126,6 +132,9 @@ require_text \
 require_text \
     'CopyLassoTests/CaptureWorkflow/InteractiveCaptureWorkflowTests.swift' \
     'testInteractivePixelsAreReleasedBeforeFeedbackPresentation'
+require_text \
+    'CopyLassoTests/CaptureWorkflow/InteractiveCaptureWorkflowTests.swift' \
+    'testPrelaunchSystemInterruptionSkipsPermissionRecoveryProbe'
 
 if /usr/bin/grep -nE \
     'CGEventTap|NSEvent\.add(Global|Local)MonitorForEvents|\.keyDown|\.keyUp|\.flagsChanged' \

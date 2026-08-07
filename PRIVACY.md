@@ -37,10 +37,11 @@ notification access.
 
 Control during selection cancels because macOS could redirect the screenshot
 to the clipboard. While the selector is active, CopyLasso samples only pointer
-position and left-button state to derive the completed rectangle. It installs
-no event monitor, ignores a tiny confirmation click when a later real drag
-follows, and cancels a release on a different display rather than cropping it.
-CopyLasso neither intercepts nor synthesizes input.
+position, left-button state, and whether Shift, Option, or Space is adjusting
+the native rectangle. It installs no event monitor, ignores a tiny confirmation
+click when a later real drag follows, rejects modifier-adjusted rectangles, and
+cancels a release on a different display rather than cropping it. CopyLasso
+neither intercepts nor synthesizes input.
 
 Successful capture replaces the general pasteboard with one plain-text value.
 CopyLasso never reads or snapshots the previous clipboard. Cancellation,
@@ -79,8 +80,8 @@ notes are transient; download and installation each require a user decision.
 
 The feed host and GitHub can observe IP address, request time, and a user agent
 containing CopyLasso and Sparkle versions. Update requests send no screen pixels,
-recognized content, clipboard data, app name, hardware profile, stable identifier,
-analytics, or telemetry.
+recognized content, clipboard data, frontmost-application identity, hardware
+profile, stable identifier, analytics, or telemetry.
 Links in Settings open in the default browser rather than being fetched by
 CopyLasso.
 

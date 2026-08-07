@@ -305,6 +305,10 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
         guard !transitionToRequestedCancellationIfNeeded() else {
           return .finished
         }
+        if reason == .systemInterrupted {
+          _ = coordinator.handle(.cancel(reason.captureCancellationReason))
+          return .finished
+        }
         let observation = await permissionService.authoritativeObservation()
         guard !transitionToRequestedCancellationIfNeeded() else {
           return .finished
