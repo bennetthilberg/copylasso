@@ -115,7 +115,10 @@ final class SystemInteractiveCaptureServiceTests: XCTestCase {
   func testUnavailableDisplaysRejectLaunchWithoutStartingAProcess() {
     let launcher = SystemInteractiveCaptureProcessLauncher(
       controlModifierProvider: { false },
-      pointerStateProvider: { .releasedFixture },
+      pointerTransitionMonitorProvider: {
+        XCTFail("A display failure must precede event monitoring")
+        return StubSystemInteractivePointerTransitionMonitor()
+      },
       displayProvider: { [] }
     )
 
@@ -335,6 +338,29 @@ final class SystemInteractiveCaptureServiceTests: XCTestCase {
     XCTAssertFalse(result.wasCancelledForControlModifier)
   }
 
+  func testLiveProcessSessionRetainsFastMouseTransitionsAfterTheChildExits() async throws {
+    let monitor = StubSystemInteractivePointerTransitionMonitor(
+      transitions: [
+        .pressed(at: CGPoint(x: 20, y: 30)),
+        .released(at: CGPoint(x: 420, y: 330)),
+      ]
+    )
+    let session = try makeLiveLauncher(
+      pointerTransitionMonitorProvider: { monitor }
+    ).start(.exitingFixture)
+
+    let result = try await session.result()
+
+    guard case .selected(let selection) = result.selectionOutcome else {
+      return XCTFail("Expected timestamped transitions to survive process exit")
+    }
+    XCTAssertEqual(
+      selection.coreGraphicsGlobalRect,
+      CGRect(x: 20, y: 30, width: 400, height: 300)
+    )
+    XCTAssertEqual(monitor.stopCallCount, 1)
+  }
+
   private func makeService(
     result: SystemInteractiveCaptureProcessResult,
     screenCaptureService: any ScreenCaptureService = StubScreenCaptureService(
@@ -362,11 +388,15 @@ final class SystemInteractiveCaptureServiceTests: XCTestCase {
   }
 
   private func makeLiveLauncher(
-    controlModifierProvider: @escaping @Sendable () -> Bool = { false }
+    controlModifierProvider: @escaping @Sendable () -> Bool = { false },
+    pointerTransitionMonitorProvider:
+      @escaping SystemInteractiveCaptureProcessLauncher.PointerTransitionMonitorProvider = {
+        StubSystemInteractivePointerTransitionMonitor()
+      }
   ) -> SystemInteractiveCaptureProcessLauncher {
     SystemInteractiveCaptureProcessLauncher(
       controlModifierProvider: controlModifierProvider,
-      pointerStateProvider: { .releasedFixture },
+      pointerTransitionMonitorProvider: pointerTransitionMonitorProvider,
       displayProvider: { [try self.makeDisplay()] }
     )
   }
@@ -446,6 +476,36 @@ private final class LockedControlModifierState: @unchecked Sendable {
   var isPressed: Bool {
     get { lock.withLock { storedIsPressed } }
     set { lock.withLock { storedIsPressed = newValue } }
+  }
+}
+
+private final class StubSystemInteractivePointerTransitionMonitor:
+  SystemInteractivePointerTransitionMonitoring,
+  @unchecked Sendable
+{
+  private let lock = NSLock()
+  private var storedTransitions: [SystemInteractivePointerTransition]
+  private var storedStopCallCount = 0
+
+  init(transitions: [SystemInteractivePointerTransition] = []) {
+    storedTransitions = transitions
+  }
+
+  var stopCallCount: Int {
+    lock.withLock { storedStopCallCount }
+  }
+
+  func drainTransitions() -> [SystemInteractivePointerTransition] {
+    lock.withLock {
+      let transitions = storedTransitions
+      storedTransitions.removeAll()
+      return transitions
+    }
+  }
+
+  @MainActor
+  func stop() {
+    lock.withLock { storedStopCallCount += 1 }
   }
 }
 
@@ -535,13 +595,6 @@ extension SystemInteractiveCaptureConfiguration {
   fileprivate static let exitingFixture = SystemInteractiveCaptureConfiguration(
     executableURL: URL(fileURLWithPath: "/usr/bin/true"),
     arguments: []
-  )
-}
-
-extension SystemInteractivePointerState {
-  fileprivate static let releasedFixture = SystemInteractivePointerState(
-    location: CGPoint(x: 100, y: 100),
-    isLeftButtonPressed: false
   )
 }
 

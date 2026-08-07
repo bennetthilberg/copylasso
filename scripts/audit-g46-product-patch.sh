@@ -77,6 +77,7 @@ readonly global_shortcut_controller='CopyLasso/App/GlobalShortcutController.swif
 readonly capture_command='CopyLasso/CaptureWorkflow/CaptureCommand.swift'
 readonly interactive_capture_contract='CopyLasso/Services/InteractiveCaptureService.swift'
 readonly system_capture='CopyLasso/Services/SystemInteractiveCaptureService.swift'
+readonly screen_capture='CopyLasso/Services/SystemScreenCaptureService.swift'
 
 for system_capture_contract in \
     'URL(fileURLWithPath: "/usr/sbin/screencapture")' \
@@ -86,8 +87,10 @@ for system_capture_contract in \
     'process.standardError = FileHandle.nullDevice' \
     'try process.run()' \
     'CGEventSource.flagsState(.combinedSessionState).contains(.maskControl)' \
-    'CGEvent(source: nil)?.location' \
-    'CGEventSource.buttonState(' \
+    'NSEvent.addGlobalMonitorForEvents(' \
+    'matching: [.leftMouseDown, .leftMouseUp]' \
+    'event.cgEvent?.location' \
+    'SystemInteractivePointerTransition' \
     'SystemInteractiveSelectionTracker' \
     'selectionResultFromCoreGraphics(' \
     'wasCancelledForControlModifier' \
@@ -95,6 +98,13 @@ for system_capture_contract in \
     'screenCaptureService.capture(selection)' \
     'prepared.session.cancel()'; do
     require_text "$system_capture" "$system_capture_contract"
+done
+
+for screen_capture_contract in \
+    'let expectedDisplayBounds: CGRect' \
+    'bounds: display.frame' \
+    'rectsMatch(display.bounds, request.expectedDisplayBounds)'; do
+    require_text "$screen_capture" "$screen_capture_contract"
 done
 
 for workflow_contract in \
@@ -137,7 +147,7 @@ if /usr/bin/grep -nF 'SIGKILL' "$repository_root/$system_capture"; then
 fi
 
 if /usr/bin/grep -nE \
-    'NSApp\.activate|makeKeyAndOrderFront|makeKey\(|orderFrontRegardless|CGEventTapCreate|CGEvent\.tapCreate|CGRequest(Listen|Post)EventAccess|CGWarpMouseCursorPosition|CGDisplay(Hide|Show)Cursor|CGS[A-Z]|SLS[A-Z]' \
+    'NSApp\.activate|makeKeyAndOrderFront|makeKey\(|orderFrontRegardless|addLocalMonitorForEvents|CGEventTapCreate|CGEvent\.tapCreate|CGRequest(Listen|Post)EventAccess|CGWarpMouseCursorPosition|CGDisplay(Hide|Show)Cursor|CGS[A-Z]|SLS[A-Z]' \
     "$repository_root/$system_capture" \
     "$repository_root/$capture_command" \
     "$repository_root/$global_shortcut_controller"; then

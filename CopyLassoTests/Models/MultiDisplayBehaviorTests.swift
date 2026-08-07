@@ -46,7 +46,8 @@ final class MultiDisplayBehaviorTests: XCTestCase {
           against: ScreenCaptureDisplaySnapshot(
             displayID: fixture.displayID,
             pointSize: fixture.appKitFrame.size,
-            pointPixelScale: fixture.scale
+            pointPixelScale: fixture.scale,
+            bounds: fixture.coreGraphicsBounds
           )
         ),
         fixture.name
@@ -92,7 +93,8 @@ final class MultiDisplayBehaviorTests: XCTestCase {
         ScreenCaptureDisplaySnapshot(
           displayID: fixture.displayID + 100,
           pointSize: fixture.appKitFrame.size,
-          pointPixelScale: fixture.scale
+          pointPixelScale: fixture.scale,
+          bounds: fixture.coreGraphicsBounds
         ),
         ScreenCaptureDisplaySnapshot(
           displayID: fixture.displayID,
@@ -100,12 +102,14 @@ final class MultiDisplayBehaviorTests: XCTestCase {
             width: fixture.appKitFrame.width - 1,
             height: fixture.appKitFrame.height
           ),
-          pointPixelScale: fixture.scale
+          pointPixelScale: fixture.scale,
+          bounds: fixture.coreGraphicsBounds
         ),
         ScreenCaptureDisplaySnapshot(
           displayID: fixture.displayID,
           pointSize: fixture.appKitFrame.size,
-          pointPixelScale: fixture.scale + 0.5
+          pointPixelScale: fixture.scale + 0.5,
+          bounds: fixture.coreGraphicsBounds
         ),
       ]
 

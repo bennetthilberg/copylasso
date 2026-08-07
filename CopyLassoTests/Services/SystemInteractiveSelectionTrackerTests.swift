@@ -7,26 +7,16 @@ final class SystemInteractiveSelectionTrackerTests: XCTestCase {
   func testReleasedDragProducesDisplayClampedSelectionGeometry() throws {
     let display = try makeDisplay()
     var tracker = SystemInteractiveSelectionTracker(
-      displays: [display],
-      initialPointerState: SystemInteractivePointerState(
-        location: CGPoint(x: 120, y: 140),
-        isLeftButtonPressed: false
-      )
+      displays: [display]
     )
 
     XCTAssertNil(
       tracker.observe(
-        SystemInteractivePointerState(
-          location: CGPoint(x: 120, y: 140),
-          isLeftButtonPressed: true
-        )
+        .pressed(at: CGPoint(x: 120, y: 140))
       )
     )
     let outcome = tracker.observe(
-      SystemInteractivePointerState(
-        location: CGPoint(x: 2_500, y: 360),
-        isLeftButtonPressed: false
-      )
+      .released(at: CGPoint(x: 2_500, y: 360))
     )
 
     guard case .selected(let selection) = outcome else {
@@ -38,37 +28,24 @@ final class SystemInteractiveSelectionTrackerTests: XCTestCase {
     XCTAssertEqual(selection.backingPixelRect, CGRect(x: 120, y: 140, width: 1_800, height: 220))
   }
 
-  func testPreexistingMenuMouseDownMustReleaseBeforeSelectionCanBegin() throws {
+  func testStrayReleaseBeforePressDoesNotStartSelection() throws {
     let display = try makeDisplay()
     var tracker = SystemInteractiveSelectionTracker(
-      displays: [display],
-      initialPointerState: SystemInteractivePointerState(
-        location: CGPoint(x: 40, y: 40),
-        isLeftButtonPressed: true
-      )
+      displays: [display]
     )
 
     XCTAssertNil(
       tracker.observe(
-        SystemInteractivePointerState(
-          location: CGPoint(x: 40, y: 40),
-          isLeftButtonPressed: false
-        )
+        .released(at: CGPoint(x: 40, y: 40))
       )
     )
     XCTAssertNil(
       tracker.observe(
-        SystemInteractivePointerState(
-          location: CGPoint(x: 200, y: 200),
-          isLeftButtonPressed: true
-        )
+        .pressed(at: CGPoint(x: 200, y: 200))
       )
     )
     let outcome = tracker.observe(
-      SystemInteractivePointerState(
-        location: CGPoint(x: 320, y: 280),
-        isLeftButtonPressed: false
-      )
+      .released(at: CGPoint(x: 320, y: 280))
     )
 
     guard case .selected(let selection) = outcome else {
@@ -80,27 +57,36 @@ final class SystemInteractiveSelectionTrackerTests: XCTestCase {
   func testTinyDragReturnsTooSmallWithoutPixels() throws {
     let display = try makeDisplay()
     var tracker = SystemInteractiveSelectionTracker(
-      displays: [display],
-      initialPointerState: SystemInteractivePointerState(
-        location: CGPoint(x: 100, y: 100),
-        isLeftButtonPressed: false
-      )
+      displays: [display]
     )
 
     _ = tracker.observe(
-      SystemInteractivePointerState(
-        location: CGPoint(x: 100, y: 100),
-        isLeftButtonPressed: true
-      )
+      .pressed(at: CGPoint(x: 100, y: 100))
     )
     let outcome = tracker.observe(
-      SystemInteractivePointerState(
-        location: CGPoint(x: 102, y: 102),
-        isLeftButtonPressed: false
-      )
+      .released(at: CGPoint(x: 102, y: 102))
     )
 
     XCTAssertEqual(outcome, .cancelled(.tooSmall))
+  }
+
+  func testQueuedFastDragUsesTheMouseEventCoordinatesWithoutLaterPointerSampling() throws {
+    let display = try makeDisplay()
+    var tracker = SystemInteractiveSelectionTracker(displays: [display])
+
+    let transitions: [SystemInteractivePointerTransition] = [
+      .pressed(at: CGPoint(x: 24, y: 36)),
+      .released(at: CGPoint(x: 824, y: 636)),
+    ]
+    let outcome = transitions.compactMap { tracker.observe($0) }.last
+
+    guard case .selected(let selection) = outcome else {
+      return XCTFail("Expected the complete fast drag")
+    }
+    XCTAssertEqual(
+      selection.coreGraphicsGlobalRect,
+      CGRect(x: 24, y: 36, width: 800, height: 600)
+    )
   }
 
   private func makeDisplay() throws -> DisplayGeometry {

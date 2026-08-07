@@ -74,11 +74,12 @@ Normal builds synchronously start Apple's fixed interactive selector after a
 granted shortcut preflight. Direct tests pin the executable and arguments,
 including the `/dev/null` image destination, reject overlapping sessions, and
 prove that the subprocess cannot return screenshot bytes to CopyLasso. Pure
-tests cover pointer-state selection tracking, initiating-display clamping,
-coordinate conversion, menu-button release, tiny drags, cancellation, and stale
-completion. Service tests prove only a completed rectangle reaches the existing
-in-memory ScreenCaptureKit adapter and that its permission and capture failures
-remain correctly classified.
+tests cover event-coordinate selection tracking, queued fast drags,
+initiating-display clamping, coordinate conversion, stray mouse-up events, tiny
+drags, cancellation, and stale completion. Service tests prove only a completed
+rectangle reaches the existing in-memory ScreenCaptureKit adapter, complete
+display bounds are revalidated, and permission and capture failures remain
+correctly classified.
 
 Tests also reject Control before process launch, cancel a live selector when
 Control appears with clean process termination, prove the launcher is

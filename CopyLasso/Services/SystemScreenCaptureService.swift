@@ -21,6 +21,7 @@ enum ScreenCaptureError: Error, Equatable, Sendable {
 struct ScreenCaptureRequest: Equatable, Sendable {
   let displayID: CGDirectDisplayID
   let expectedDisplayPointSize: CGSize
+  let expectedDisplayBounds: CGRect
   let sourceRect: CGRect
   let backingPixelRect: CGRect
   let pixelWidth: Int
@@ -28,6 +29,32 @@ struct ScreenCaptureRequest: Equatable, Sendable {
   let backingScale: CGFloat
   let showsCursor: Bool
   let capturesAudio: Bool
+
+  init(
+    displayID: CGDirectDisplayID,
+    expectedDisplayPointSize: CGSize,
+    expectedDisplayBounds: CGRect? = nil,
+    sourceRect: CGRect,
+    backingPixelRect: CGRect,
+    pixelWidth: Int,
+    pixelHeight: Int,
+    backingScale: CGFloat,
+    showsCursor: Bool,
+    capturesAudio: Bool
+  ) {
+    self.displayID = displayID
+    self.expectedDisplayPointSize = expectedDisplayPointSize
+    self.expectedDisplayBounds =
+      expectedDisplayBounds
+      ?? CGRect(origin: .zero, size: expectedDisplayPointSize)
+    self.sourceRect = sourceRect
+    self.backingPixelRect = backingPixelRect
+    self.pixelWidth = pixelWidth
+    self.pixelHeight = pixelHeight
+    self.backingScale = backingScale
+    self.showsCursor = showsCursor
+    self.capturesAudio = capturesAudio
+  }
 }
 
 enum ScreenCaptureRequestPlanner {
@@ -36,10 +63,25 @@ enum ScreenCaptureRequestPlanner {
     let pixelRect = selection.backingPixelRect
     let scale = selection.backingScale
     let displayBounds = CGRect(origin: .zero, size: selection.displayPointSize)
+    let expectedDisplayBounds = CGRect(
+      origin: CGPoint(
+        x: selection.coreGraphicsGlobalRect.minX - pointRect.minX,
+        y: selection.coreGraphicsGlobalRect.minY - pointRect.minY
+      ),
+      size: selection.displayPointSize
+    )
 
-    guard isValid(rect: displayBounds), isValid(rect: pointRect), isValid(rect: pixelRect),
+    guard isValid(rect: displayBounds), isValid(rect: expectedDisplayBounds),
+      isValid(rect: pointRect), isValid(rect: pixelRect),
       displayBounds.contains(pointRect), scale.isFinite, scale > 0,
-      pixelRect.minX >= 0, pixelRect.minY >= 0
+      pixelRect.minX >= 0, pixelRect.minY >= 0,
+      rectsMatch(
+        selection.coreGraphicsGlobalRect,
+        pointRect.offsetBy(
+          dx: expectedDisplayBounds.minX,
+          dy: expectedDisplayBounds.minY
+        )
+      )
     else {
       throw ScreenCaptureError.invalidSelection
     }
@@ -71,6 +113,7 @@ enum ScreenCaptureRequestPlanner {
     return ScreenCaptureRequest(
       displayID: selection.displayID,
       expectedDisplayPointSize: selection.displayPointSize,
+      expectedDisplayBounds: expectedDisplayBounds,
       sourceRect: sourceRect,
       backingPixelRect: pixelRect,
       pixelWidth: pixelWidth,
@@ -94,12 +137,32 @@ enum ScreenCaptureRequestPlanner {
       && rect.width.isFinite && rect.height.isFinite
       && rect.width > 0 && rect.height > 0
   }
+
+  private static func rectsMatch(_ first: CGRect, _ second: CGRect) -> Bool {
+    abs(first.minX - second.minX) < 0.01
+      && abs(first.minY - second.minY) < 0.01
+      && abs(first.width - second.width) < 0.01
+      && abs(first.height - second.height) < 0.01
+  }
 }
 
 struct ScreenCaptureDisplaySnapshot: Equatable, Sendable {
   let displayID: CGDirectDisplayID
   let pointSize: CGSize
   let pointPixelScale: CGFloat
+  let bounds: CGRect
+
+  init(
+    displayID: CGDirectDisplayID,
+    pointSize: CGSize,
+    pointPixelScale: CGFloat,
+    bounds: CGRect? = nil
+  ) {
+    self.displayID = displayID
+    self.pointSize = pointSize
+    self.pointPixelScale = pointPixelScale
+    self.bounds = bounds ?? CGRect(origin: .zero, size: pointSize)
+  }
 }
 
 enum ScreenCaptureRequestValidator {
@@ -108,7 +171,9 @@ enum ScreenCaptureRequestValidator {
     against display: ScreenCaptureDisplaySnapshot
   ) throws {
     guard request.backingScale.isFinite, request.backingScale > 0,
-      isValid(rect: request.sourceRect), isValid(rect: request.backingPixelRect)
+      isValid(rect: request.expectedDisplayBounds),
+      isValid(rect: request.sourceRect), isValid(rect: request.backingPixelRect),
+      isValid(rect: display.bounds)
     else {
       throw ScreenCaptureError.displayConfigurationChanged
     }
@@ -118,6 +183,7 @@ enum ScreenCaptureRequestValidator {
       size.width.isFinite, size.height.isFinite,
       size.width > 0, size.height > 0,
       sizesMatch(size, request.expectedDisplayPointSize),
+      rectsMatch(display.bounds, request.expectedDisplayBounds),
       display.pointPixelScale.isFinite,
       abs(display.pointPixelScale - request.backingScale) < 0.01,
       request.pixelWidth > 0, request.pixelHeight > 0,
@@ -133,6 +199,12 @@ enum ScreenCaptureRequestValidator {
 
   private static func sizesMatch(_ first: CGSize, _ second: CGSize) -> Bool {
     abs(first.width - second.width) < 0.01 && abs(first.height - second.height) < 0.01
+  }
+
+  private static func rectsMatch(_ first: CGRect, _ second: CGRect) -> Bool {
+    abs(first.minX - second.minX) < 0.01
+      && abs(first.minY - second.minY) < 0.01
+      && sizesMatch(first.size, second.size)
   }
 
   private static func isValid(rect: CGRect) -> Bool {
@@ -170,7 +242,8 @@ struct ScreenCaptureKitClient: Sendable {
     let snapshot = ScreenCaptureDisplaySnapshot(
       displayID: display.displayID,
       pointSize: CGSize(width: display.width, height: display.height),
-      pointPixelScale: CGFloat(contentInfo.pointPixelScale)
+      pointPixelScale: CGFloat(contentInfo.pointPixelScale),
+      bounds: display.frame
     )
     try ScreenCaptureRequestValidator.validate(request, against: snapshot)
 

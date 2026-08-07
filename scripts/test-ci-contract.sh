@@ -193,10 +193,10 @@ for required_patch_guard in \
     "approved_post_v02_security_patch_tree_pattern" \
     "g46_product_patch_tree_pattern" \
     "g44_release_state_tree_pattern" \
-    "expected_candidate_baseline_tree_digest='987a36d51995b2d86a4a68dbdbbaa90e342db32db4012b7f9f93bf31d43008e8'" \
+    "expected_candidate_baseline_tree_digest='5550ab4569fe6917d1b0d4390d6c881afbe42055ec6717b4ff9ec00dac2916bf'" \
     "expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'" \
-    "expected_g44_release_state_files_digest='dfd83e9062c8d8ae9237f5bc20c0949b3238ab0b60c44744b5ce4e0e406a0571'" \
-    "expected_approved_post_candidate_patch_digest='3d42d1f1eeeb831249b35a59b33fbef125daeb99ce6859f8f7ecb21547443278'" \
+    "expected_g44_release_state_files_digest='febc6fc0af8dd7188fc846688ad006b9f162bbdc2c6e81f581803b4a749f295c'" \
+    "expected_approved_post_candidate_patch_digest='51a9a4b61cd9fe423ab5d699239a617e09895a90586039f75a223b968d507f9e'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
     '"$current_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest"' \
@@ -266,7 +266,10 @@ for required_g46_guard in \
     '/usr/sbin/screencapture' \
     'arguments: ["-i", "-s", "-x", "-t", "png", "/dev/null"]' \
     'process.standardOutput = FileHandle.nullDevice' \
-    'CGEventSource.buttonState(' \
+    'NSEvent.addGlobalMonitorForEvents(' \
+    'matching: [.leftMouseDown, .leftMouseUp]' \
+    'event.cgEvent?.location' \
+    'expectedDisplayBounds' \
     'SystemInteractiveSelectionTracker' \
     'screenCaptureService.capture(selection)' \
     'interactiveCaptureService.prepareForCaptureTransition()' \

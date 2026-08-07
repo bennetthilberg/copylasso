@@ -9,15 +9,15 @@ supported codes locally, and writes the result to the clipboard.
 
 - Public 0.2.0 uses Apple ScreenCaptureKit. Current source invokes Apple's fixed
   interactive region selector for the native crosshair and drag, derives only
-  the selected rectangle from pointer state, then captures that rectangle in
+  the selected rectangle from mouse event coordinates, then captures that rectangle in
   memory with ScreenCaptureKit. OCR uses Apple Vision locally.
   Code payloads are recognized locally with Vision in five formats: QR, Code 128,
   Data Matrix, PDF417, and Aztec.
 - Captured images, recognition observations, complete results, and the bounded
   HUD preview remain in memory only as long as their active operation needs
   them. CopyLasso does not save or upload them.
-- Code payloads are copied as inert plain text. CopyLasso never opens, executes,
-  validates as a URL, or otherwise acts on their contents.
+- Code payloads are inert plain text. CopyLasso never opens, executes, or
+  interprets them.
 - Core capture and recognition work offline. CopyLasso does not bypass macOS
   protected-content restrictions.
 
@@ -38,9 +38,10 @@ The core workflow needs no Accessibility, Input Monitoring, microphone, or
 notification permission.
 
 If Control is held before or during selection, CopyLasso cancels the attempt
-because macOS would otherwise redirect the screenshot to the clipboard. It
-checks only pointer position, left-button state, and that content-free modifier
-state while the selector is active.
+because macOS would otherwise redirect the screenshot to the clipboard. While
+the selector is active, an observe-only monitor retains only left-button-down
+and left-button-up coordinates, and CopyLasso checks that content-free modifier
+state. It neither intercepts nor synthesizes input.
 
 Successful capture replaces the general pasteboard with one plain-text value.
 CopyLasso never reads or snapshots the previous clipboard. Cancellation,
@@ -51,9 +52,9 @@ but writing fails can leave the clipboard empty. This is the privacy-first
 tradeoff that avoids reading and temporarily retaining arbitrary prior data.
 
 Success sound playback receives no captured pixels, recognized content, or clipboard text.
-It occurs only after a successful clipboard write and can be disabled. HUD
-feedback is nonactivating, bounded to 80 preview characters, and cleared after
-2.5 seconds; cancellation presents no HUD.
+It occurs only after a successful clipboard write and can be disabled.
+HUD feedback is nonactivating, bounded to 80 preview characters, and cleared
+after 2.5 seconds; cancellation presents no HUD.
 
 ## Stored settings
 

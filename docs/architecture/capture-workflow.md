@@ -1,6 +1,6 @@
 # Capture Workflow
 
-G18 connects the menu and global shortcut to one production operation without placing private content in observable application state. G38 extends that same operation with concurrent local text and code recognition, and G46 replaces the separate production selection/crop handoff with one bounded system interactive-capture boundary. The single Capture command, shortcut, permission, output, lifecycle, and busy-state policy remain unchanged.
+G18 connects the menu and global shortcut to one production operation without placing private content in observable application state. G38 extends that same operation with concurrent local text and code recognition, and G46 pairs macOS's native interactive selector with the existing bounded ScreenCaptureKit capture boundary. The single Capture command, shortcut, permission, output, lifecycle, and busy-state policy remain unchanged.
 
 ## State And Service Flow
 
@@ -31,7 +31,7 @@ flowchart LR
 
 ## Private Data Lifetime
 
-After selection, one private async function owns the bounded system-produced PNG bytes, decoded `CGImage`, neutral text and code observations, and the winning full assembled string. The encoded bytes are validated and released immediately after one image is decoded. The function returns only:
+After selection, one private async function owns the ScreenCaptureKit `CGImage`, neutral text and code observations, and the winning full assembled string. No encoded screenshot bytes enter CopyLasso. The function returns only:
 
 - a unified no-result or code-ambiguity value; or
 - a text/code-specific success with a whitespace-normalized preview bounded to 80 extended grapheme clusters after the full string has been written.
@@ -46,7 +46,7 @@ Returning from that function ends the image, observations, and unbounded text or
 - Ordinary selection, capture, recognition, clipboard, and feedback errors are classified only by stage. Raw platform errors and content never enter observable state or user copy.
 - A real capture-time Screen Recording denial uses the specific permission-recovery panel rather than stacking a generic failure HUD. Empty output is rechecked against current authorization so denial is not mistaken for Escape.
 - The global shortcut starts Apple's fixed interactive selector synchronously after granted preflight. macOS owns the native cursor and selection surface; CopyLasso neither activates itself nor changes another application's focus.
-- While that selector runs with its image destination fixed to `/dev/null`, CopyLasso passively samples only the global pointer position and left-button state to derive the completed rectangle. The rectangle is clamped to its initiating display and passed to the existing ScreenCaptureKit adapter, which returns the selected pixels in memory. No subprocess image bytes, screenshot file, or screenshot-pasteboard value enter CopyLasso.
+- While that selector runs with its image destination fixed to `/dev/null`, CopyLasso uses an observe-only global mouse monitor to retain the exact left-button-down and left-button-up event coordinates. The rectangle is clamped to its initiating display and passed to the existing ScreenCaptureKit adapter, which revalidates the complete display bounds before returning selected pixels in memory. No subprocess image bytes, screenshot file, event interception, or screenshot-pasteboard value enter CopyLasso.
 - Control is rejected before selector launch and monitored through the same selection-scoped, content-free state guard. If it appears, the child is stopped immediately so macOS cannot redirect the capture to its screenshot clipboard. The guard requires no Accessibility or Input Monitoring permission and ends with the selector session.
 - Terminal cancellation or failure is explicitly reset only after the operation has unwound.
 - Sleep, screen sleep, and lock/session resign request `.systemInterrupted`; application termination requests `.applicationTerminated`. The root-owned task terminates the active selector process and propagates cancellation through OCR and feedback. Wake/unlock never retries automatically.
@@ -55,4 +55,4 @@ The clipboard adapter is intentionally write-only. Cancellation and every failur
 
 ## Verification Boundary
 
-The canonical suite injects every service, exercises all branch classes, pins the exact system executable and argument list, bounds live anonymous-pipe output, rejects malformed and oversized PNG data, suppresses stale completion, performs 25 consecutive successful operations, 20 alternating success/cancel cycles, and 100 alternating text/code results, rejects overlapping Capture work, proves the menu and shortcut route through the same command, proves both recognizers start concurrently and code wins over simultaneous text, and cancels pending capture, recognition, sound, and feedback work. Real Vision tests cover all five symbologies, rotations, degradation, damage, compositions, and duplicates with deterministic project fixtures. The signed manual matrix remains necessary for the native crosshair, arbitrary app pixels, focus preservation, full-screen Spaces, real paste targets, physical displays, sleep/wake, lock/unlock, the one-time macOS direct-access confirmation, and actual audio-output behavior.
+The canonical suite injects every service, exercises all branch classes, pins the exact system executable and argument list, proves the selector returns no screenshot data, retains timestamped fast-drag transitions, revalidates display bounds, suppresses stale completion, performs 25 consecutive successful operations, 20 alternating success/cancel cycles, and 100 alternating text/code results, rejects overlapping Capture work, proves the menu and shortcut route through the same command, proves both recognizers start concurrently and code wins over simultaneous text, and cancels pending capture, recognition, sound, and feedback work. Real Vision tests cover all five symbologies, rotations, degradation, damage, compositions, and duplicates with deterministic project fixtures. The signed manual matrix remains necessary for the native crosshair, arbitrary app pixels, focus preservation, full-screen Spaces, real paste targets, physical displays, sleep/wake, lock/unlock, the one-time macOS direct-access confirmation, and actual audio-output behavior.
