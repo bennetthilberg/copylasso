@@ -87,13 +87,10 @@ for system_capture_contract in \
     'process.standardError = FileHandle.nullDevice' \
     'try process.run()' \
     'CGEventSource.flagsState(.combinedSessionState).contains(.maskControl)' \
-    'CGEventSource.keyState(.combinedSessionState, key: 49)' \
-    'NSEvent.addGlobalMonitorForEvents(' \
-    'matching: [.leftMouseDown, .leftMouseDragged, .leftMouseUp]' \
-    'let location = cgEvent.location' \
-    'controlModifierActive = cgEvent.flags.contains(.maskControl)' \
-    'spaceModifierActive: spaceModifierProvider()' \
-    'SystemInteractivePointerTransition' \
+    'CGEvent(source: nil)?.location' \
+    'CGEventSource.buttonState(' \
+    'Thread.sleep(forTimeInterval: 0.001)' \
+    'SystemInteractivePointerState' \
     'SystemInteractiveSelectionTracker' \
     'let endedOnDifferentDisplay =' \
     'selectionResultFromCoreGraphics(' \
@@ -106,12 +103,18 @@ done
 
 require_text \
     'CopyLassoTests/Services/SystemInteractiveSelectionTrackerTests.swift' \
-    'testCrossDisplayReleaseFailsClosedInsteadOfCroppingTheVisibleRectangle'
+    'testCrossDisplayReleaseFailsClosedInsteadOfClamping'
+require_text \
+    'CopyLassoTests/Services/SystemInteractiveSelectionTrackerTests.swift' \
+    'testTinyConfirmationClickDoesNotPreventALaterRealSelection'
+require_text \
+    'CopyLassoTests/Services/SystemInteractiveCaptureServiceTests.swift' \
+    'testLiveProcessSessionUsesRealDragAfterTinyConfirmationClick'
 
 if /usr/bin/grep -nE \
-    'CGEventTap|\.keyDown|\.keyUp|\.flagsChanged' \
+    'CGEventTap|NSEvent\.add(Global|Local)MonitorForEvents|\.keyDown|\.keyUp|\.flagsChanged' \
     "$repository_root/$system_capture"; then
-    fail 'Selection tracking must not add an intercepting or keyboard event monitor.'
+    fail 'Selection tracking must not add an event monitor or event tap.'
 fi
 
 for screen_capture_contract in \

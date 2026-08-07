@@ -37,9 +37,10 @@ The core workflow needs no Accessibility, Input Monitoring, microphone, or
 notification permission.
 
 Control during selection cancels because macOS could redirect the screenshot
-to the clipboard. An observe-only monitor retains down, drag, and up coordinates
-plus Control and Space state. It ignores clicks without a drag and cancels
-Space-adjusted or cross-display rectangles that it cannot reproduce faithfully.
+to the clipboard. While the selector is active, CopyLasso samples only pointer
+position and left-button state to derive the completed rectangle. It installs
+no event monitor, ignores a tiny confirmation click when a later real drag
+follows, and cancels a release on a different display rather than cropping it.
 CopyLasso neither intercepts nor synthesizes input.
 
 Successful capture replaces the general pasteboard with one plain-text value.

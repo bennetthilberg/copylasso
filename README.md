@@ -87,7 +87,7 @@ See the [privacy policy](PRIVACY.md), [security and privacy review](docs/securit
 - Public 0.2.0 keeps a selection on the display where the drag begins. Current unreleased source cancels if the native selector is released on a different display rather than cropping a cross-display rectangle; start another capture on the intended display.
 - Protected or DRM-restricted content can appear blank or unavailable to screen capture. CopyLasso follows macOS capture restrictions and does not bypass them.
 - Public 0.2.0 can briefly leave the ordinary pointer visible during immediate stationary-pointer reuse. Current unreleased source replaces that handoff with macOS's native interactive selector; the fix is not yet in the public download.
-- Current unreleased source accepts a direct region drag in the native selector. Holding Space to reposition an in-progress rectangle cancels that attempt so CopyLasso cannot capture geometry different from what macOS displayed.
+- Current unreleased source expects a direct region drag in the native selector. Modifier-adjusted native selection geometry is not supported.
 - Locking the Mac during an active drag can leave selection pending after unlock. Quit and reopen CopyLasso before another pointer action; if the retained selection is allowed to complete, the clipboard may change.
 - In the rare event that macOS accepts clearing the pasteboard but rejects the subsequent text write, the previous clipboard contents have already been cleared. CopyLasso reports failure and does not read or reconstruct the prior contents.
 - CopyLasso 0.1.x contains no updater. Existing 0.1.x users must install 0.2.0 manually once; later releases can then arrive through authenticated update checks.

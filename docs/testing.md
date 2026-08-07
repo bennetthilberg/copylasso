@@ -74,17 +74,16 @@ Normal builds synchronously start Apple's fixed interactive selector after a
 granted shortcut preflight. Direct tests pin the executable and arguments,
 including the `/dev/null` image destination, reject overlapping sessions, and
 prove that the subprocess cannot return screenshot bytes to CopyLasso. Pure
-tests cover event-coordinate selection tracking, queued fast drags,
-initiating-display clamping, coordinate conversion, stray mouse-up events, tiny
-drags, confirmation clicks without a drag, final-candidate replacement,
-Space-adjustment rejection, cross-display release rejection, cancellation, and stale completion. Service tests
+tests cover pointer-state selection tracking, a button already held at startup,
+initiating-display clamping, coordinate conversion, tiny drags, confirmation
+clicks followed by a real drag, final-candidate replacement, cross-display
+release rejection, cancellation, and stale completion. Service tests
 prove only a completed rectangle reaches the existing in-memory ScreenCaptureKit
 adapter, complete display bounds are revalidated, and permission and capture
 failures remain correctly classified.
 
-Tests also reject Control before process launch, retain Control from the exact
-mouse-up event even if the later polled state is clear, cancel a live selector
-when Control or a Space-adjusted drag appears, prove the launcher is immediately
+Tests also reject Control before process launch, cancel a live selector when
+polled Control appears, prove the launcher is immediately
 reusable, distinguish Escape from failure, and prove every such path leaves
 CopyLasso's write-only clipboard service and success sound untouched.
 Workflow tests cover menu and same-turn shortcut starts, permission loss,
@@ -106,9 +105,8 @@ immediately reusable.
 
 If macOS presents its direct-access confirmation, click **Allow**, then make a
 normal drag. The confirmation click must not consume the selection and the real
-drag must complete normally. In a separate attempt, begin a drag and hold Space
-while moving the rectangle. CopyLasso must cancel without OCR, clipboard write,
-sound, or HUD; the following direct drag must work normally.
+drag must complete normally. Use a direct drag without native modifier-based
+rectangle adjustment.
 
 With two displays connected, begin a native selection on one display and release
 on the other. CopyLasso must cancel without cropping, OCR, clipboard write,

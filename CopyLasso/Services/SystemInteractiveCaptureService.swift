@@ -1,4 +1,3 @@
-import AppKit
 import CoreGraphics
 import Foundation
 
@@ -17,141 +16,9 @@ enum SystemInteractiveCaptureProcessTerminationReason: Equatable, Sendable {
   case uncaughtSignal
 }
 
-struct SystemInteractivePointerTransition: Equatable, Sendable {
-  enum Kind: Equatable, Sendable {
-    case pressed
-    case dragged
-    case released
-  }
-
-  let kind: Kind
+struct SystemInteractivePointerState: Equatable, Sendable {
   let location: CGPoint
-  let controlModifierActive: Bool
-  let spaceModifierActive: Bool
-
-  static func pressed(
-    at location: CGPoint,
-    controlModifierActive: Bool = false
-  ) -> Self {
-    Self(
-      kind: .pressed,
-      location: location,
-      controlModifierActive: controlModifierActive,
-      spaceModifierActive: false
-    )
-  }
-
-  static func dragged(
-    at location: CGPoint,
-    controlModifierActive: Bool = false,
-    spaceModifierActive: Bool = false
-  ) -> Self {
-    Self(
-      kind: .dragged,
-      location: location,
-      controlModifierActive: controlModifierActive,
-      spaceModifierActive: spaceModifierActive
-    )
-  }
-
-  static func released(
-    at location: CGPoint,
-    controlModifierActive: Bool = false
-  ) -> Self {
-    Self(
-      kind: .released,
-      location: location,
-      controlModifierActive: controlModifierActive,
-      spaceModifierActive: false
-    )
-  }
-}
-
-protocol SystemInteractivePointerTransitionMonitoring: AnyObject, Sendable {
-  func drainTransitions() -> [SystemInteractivePointerTransition]
-  @MainActor func stop()
-}
-
-private final class SystemInteractivePointerTransitionBuffer: @unchecked Sendable {
-  private let lock = NSLock()
-  private var transitions: [SystemInteractivePointerTransition] = []
-
-  func append(_ transition: SystemInteractivePointerTransition) {
-    lock.withLock { transitions.append(transition) }
-  }
-
-  func drain() -> [SystemInteractivePointerTransition] {
-    lock.withLock {
-      let drained = transitions
-      transitions.removeAll(keepingCapacity: true)
-      return drained
-    }
-  }
-}
-
-@MainActor
-private final class SystemInteractivePointerTransitionMonitor:
-  SystemInteractivePointerTransitionMonitoring,
-  @unchecked Sendable
-{
-  private let buffer: SystemInteractivePointerTransitionBuffer
-  private var eventMonitor: Any?
-
-  init(
-    spaceModifierProvider: @escaping @Sendable () -> Bool = {
-      CGEventSource.keyState(.combinedSessionState, key: 49)
-    }
-  ) throws {
-    let buffer = SystemInteractivePointerTransitionBuffer()
-    let eventMonitor = NSEvent.addGlobalMonitorForEvents(
-      matching: [.leftMouseDown, .leftMouseDragged, .leftMouseUp],
-      handler: { event in
-        guard let cgEvent = event.cgEvent else { return }
-        let location = cgEvent.location
-        let controlModifierActive = cgEvent.flags.contains(.maskControl)
-        switch event.type {
-        case .leftMouseDown:
-          buffer.append(
-            .pressed(
-              at: location,
-              controlModifierActive: controlModifierActive
-            )
-          )
-        case .leftMouseDragged:
-          buffer.append(
-            .dragged(
-              at: location,
-              controlModifierActive: controlModifierActive,
-              spaceModifierActive: spaceModifierProvider()
-            )
-          )
-        case .leftMouseUp:
-          buffer.append(
-            .released(
-              at: location,
-              controlModifierActive: controlModifierActive
-            )
-          )
-        default:
-          break
-        }
-      })
-    guard let eventMonitor else {
-      throw SystemInteractiveCaptureProcessError.launchFailed
-    }
-    self.buffer = buffer
-    self.eventMonitor = eventMonitor
-  }
-
-  nonisolated func drainTransitions() -> [SystemInteractivePointerTransition] {
-    buffer.drain()
-  }
-
-  func stop() {
-    guard let eventMonitor else { return }
-    NSEvent.removeMonitor(eventMonitor)
-    self.eventMonitor = nil
-  }
+  let isLeftButtonPressed: Bool
 }
 
 struct SystemInteractiveCaptureProcessResult: Equatable, Sendable {
@@ -181,57 +48,55 @@ enum SystemInteractiveCaptureProcessError: Error, Equatable, Sendable {
 
 struct SystemInteractiveSelectionTracker {
   private enum Phase {
+    case waitingForRelease
     case waitingForPress
-    case dragging(display: DisplayGeometry, start: CGPoint, didDrag: Bool)
-    case rejected(SelectionOutcome)
+    case dragging(display: DisplayGeometry, start: CGPoint)
   }
 
   private let displays: [DisplayGeometry]
   private var phase: Phase
 
-  init(displays: [DisplayGeometry]) {
+  init(
+    displays: [DisplayGeometry],
+    initialPointerState: SystemInteractivePointerState
+  ) {
     self.displays = displays
-    phase = .waitingForPress
+    phase =
+      initialPointerState.isLeftButtonPressed
+      ? .waitingForRelease
+      : .waitingForPress
   }
 
   mutating func observe(
-    _ transition: SystemInteractivePointerTransition
+    _ pointerState: SystemInteractivePointerState
   ) -> SelectionOutcome? {
     switch phase {
+    case .waitingForRelease:
+      if !pointerState.isLeftButtonPressed {
+        phase = .waitingForPress
+      }
+      return nil
+
     case .waitingForPress:
-      guard transition.kind == .pressed else { return nil }
+      guard pointerState.isLeftButtonPressed else { return nil }
       guard
         let display = displays.first(where: {
-          $0.contains(coreGraphicsPoint: transition.location)
+          $0.contains(coreGraphicsPoint: pointerState.location)
         })
       else {
         return nil
       }
-      phase = .dragging(
-        display: display,
-        start: transition.location,
-        didDrag: false
-      )
+      phase = .dragging(display: display, start: pointerState.location)
       return nil
 
-    case .dragging(let display, let start, let didDrag):
-      if transition.kind == .dragged {
-        if transition.spaceModifierActive {
-          let outcome = SelectionOutcome.cancelled(.systemInterrupted)
-          phase = .rejected(outcome)
-          return outcome
-        }
-        phase = .dragging(display: display, start: start, didDrag: true)
-        return nil
-      }
-      guard transition.kind == .released else { return nil }
+    case .dragging(let display, let start):
+      guard !pointerState.isLeftButtonPressed else { return nil }
       phase = .waitingForPress
-      guard didDrag else { return nil }
       let endedOnDifferentDisplay =
-        !display.contains(coreGraphicsPoint: transition.location)
+        !display.contains(coreGraphicsPoint: pointerState.location)
         && displays.contains(where: {
           $0.displayID != display.displayID
-            && $0.contains(coreGraphicsPoint: transition.location)
+            && $0.contains(coreGraphicsPoint: pointerState.location)
         })
       guard !endedOnDifferentDisplay else {
         return .cancelled(.displayChanged)
@@ -240,7 +105,7 @@ struct SystemInteractiveSelectionTracker {
       do {
         if let selection = try display.selectionResultFromCoreGraphics(
           from: start,
-          to: transition.location
+          to: pointerState.location
         ) {
           outcome = .selected(selection)
         } else {
@@ -249,9 +114,6 @@ struct SystemInteractiveSelectionTracker {
       } catch {
         outcome = .cancelled(.displayChanged)
       }
-      return outcome
-
-    case .rejected(let outcome):
       return outcome
     }
   }
@@ -272,27 +134,32 @@ protocol SystemInteractiveCaptureProcessLaunching: AnyObject {
 @MainActor
 final class SystemInteractiveCaptureProcessLauncher: SystemInteractiveCaptureProcessLaunching {
   typealias ControlModifierProvider = @Sendable () -> Bool
-  typealias PointerTransitionMonitorProvider =
-    @MainActor () throws -> any SystemInteractivePointerTransitionMonitoring
+  typealias PointerStateProvider = @Sendable () -> SystemInteractivePointerState
   typealias DisplayProvider = @MainActor () throws -> [DisplayGeometry]
 
   private let controlModifierProvider: ControlModifierProvider
-  private let pointerTransitionMonitorProvider: PointerTransitionMonitorProvider
+  private let pointerStateProvider: PointerStateProvider
   private let displayProvider: DisplayProvider
 
   init(
     controlModifierProvider: @escaping ControlModifierProvider = {
       CGEventSource.flagsState(.combinedSessionState).contains(.maskControl)
     },
-    pointerTransitionMonitorProvider: @escaping PointerTransitionMonitorProvider = {
-      try SystemInteractivePointerTransitionMonitor()
+    pointerStateProvider: @escaping PointerStateProvider = {
+      SystemInteractivePointerState(
+        location: CGEvent(source: nil)?.location ?? .zero,
+        isLeftButtonPressed: CGEventSource.buttonState(
+          .combinedSessionState,
+          button: .left
+        )
+      )
     },
     displayProvider: @escaping DisplayProvider = {
       try SystemSelectionDisplayProvider().currentDisplays()
     }
   ) {
     self.controlModifierProvider = controlModifierProvider
-    self.pointerTransitionMonitorProvider = pointerTransitionMonitorProvider
+    self.pointerStateProvider = pointerStateProvider
     self.displayProvider = displayProvider
   }
 
@@ -312,12 +179,6 @@ final class SystemInteractiveCaptureProcessLauncher: SystemInteractiveCapturePro
     guard !displays.isEmpty else {
       throw SystemInteractiveCaptureProcessError.displayUnavailable
     }
-    let pointerTransitionMonitor: any SystemInteractivePointerTransitionMonitoring
-    do {
-      pointerTransitionMonitor = try pointerTransitionMonitorProvider()
-    } catch {
-      throw SystemInteractiveCaptureProcessError.launchFailed
-    }
 
     let process = Process()
     process.executableURL = configuration.executableURL
@@ -329,14 +190,14 @@ final class SystemInteractiveCaptureProcessLauncher: SystemInteractiveCapturePro
     do {
       try process.run()
     } catch {
-      pointerTransitionMonitor.stop()
       throw SystemInteractiveCaptureProcessError.launchFailed
     }
 
     return LiveSystemInteractiveCaptureProcessSession(
       process: process,
       displays: displays,
-      pointerTransitionMonitor: pointerTransitionMonitor,
+      initialPointerState: pointerStateProvider(),
+      pointerStateProvider: pointerStateProvider,
       controlModifierProvider: controlModifierProvider
     )
   }
@@ -352,18 +213,20 @@ private final class LiveSystemInteractiveCaptureProcessSession:
   init(
     process: Process,
     displays: [DisplayGeometry],
-    pointerTransitionMonitor: any SystemInteractivePointerTransitionMonitoring,
+    initialPointerState: SystemInteractivePointerState,
+    pointerStateProvider: @escaping @Sendable () -> SystemInteractivePointerState,
     controlModifierProvider: @escaping @Sendable () -> Bool
   ) {
     let resources = ProcessResources(
       process: process,
       displays: displays,
-      pointerTransitionMonitor: pointerTransitionMonitor,
+      initialPointerState: initialPointerState,
+      pointerStateProvider: pointerStateProvider,
       controlModifierProvider: controlModifierProvider
     )
     self.resources = resources
     resultTask = Task.detached(priority: .userInitiated) {
-      await resources.collectResult()
+      resources.collectResult()
     }
   }
 
@@ -385,7 +248,8 @@ private final class LiveSystemInteractiveCaptureProcessSession:
 private final class ProcessResources: @unchecked Sendable {
   private let process: Process
   private let displays: [DisplayGeometry]
-  private let pointerTransitionMonitor: any SystemInteractivePointerTransitionMonitoring
+  private let initialPointerState: SystemInteractivePointerState
+  private let pointerStateProvider: @Sendable () -> SystemInteractivePointerState
   private let controlModifierProvider: @Sendable () -> Bool
   private let lock = NSLock()
   private var wasCancelled = false
@@ -394,38 +258,40 @@ private final class ProcessResources: @unchecked Sendable {
   init(
     process: Process,
     displays: [DisplayGeometry],
-    pointerTransitionMonitor: any SystemInteractivePointerTransitionMonitoring,
+    initialPointerState: SystemInteractivePointerState,
+    pointerStateProvider: @escaping @Sendable () -> SystemInteractivePointerState,
     controlModifierProvider: @escaping @Sendable () -> Bool
   ) {
     self.process = process
     self.displays = displays
-    self.pointerTransitionMonitor = pointerTransitionMonitor
+    self.initialPointerState = initialPointerState
+    self.pointerStateProvider = pointerStateProvider
     self.controlModifierProvider = controlModifierProvider
   }
 
-  func collectResult() async -> SystemInteractiveCaptureProcessResult {
-    var tracker = SystemInteractiveSelectionTracker(displays: displays)
+  func collectResult() -> SystemInteractiveCaptureProcessResult {
+    var tracker = SystemInteractiveSelectionTracker(
+      displays: displays,
+      initialPointerState: initialPointerState
+    )
     var selectionOutcome: SelectionOutcome?
 
     while process.isRunning {
       if controlModifierProvider() {
         cancelForControlModifier()
-      } else if let latestOutcome = trackPendingTransitions(using: &tracker) {
+      } else if let latestOutcome = tracker.observe(pointerStateProvider()) {
         selectionOutcome = latestOutcome
       }
-      try? await Task.sleep(for: .milliseconds(1))
+      Thread.sleep(forTimeInterval: 0.001)
     }
 
-    process.waitUntilExit()
-    await pointerTransitionMonitor.stop()
-    if controlModifierProvider() {
-      cancelForControlModifier()
-    } else if !lock.withLock({ wasCancelledForControlModifier }),
-      let latestOutcome = trackPendingTransitions(using: &tracker)
+    if !lock.withLock({ wasCancelledForControlModifier }),
+      let latestOutcome = tracker.observe(pointerStateProvider())
     {
       selectionOutcome = latestOutcome
     }
 
+    process.waitUntilExit()
     let reason: SystemInteractiveCaptureProcessTerminationReason =
       process.terminationReason == .exit ? .exit : .uncaughtSignal
     let cancelledForControl = lock.withLock { wasCancelledForControlModifier }
@@ -437,43 +303,12 @@ private final class ProcessResources: @unchecked Sendable {
     )
   }
 
-  private func trackPendingTransitions(
-    using tracker: inout SystemInteractiveSelectionTracker
-  ) -> SelectionOutcome? {
-    var latestOutcome: SelectionOutcome?
-    for transition in pointerTransitionMonitor.drainTransitions() {
-      if transition.controlModifierActive {
-        cancelForControlModifier()
-        return nil
-      }
-      if let outcome = tracker.observe(transition) {
-        latestOutcome = outcome
-        if outcome == .cancelled(.systemInterrupted) {
-          cancelForUnsupportedAdjustment()
-        }
-      }
-    }
-    return latestOutcome
-  }
-
-  private func cancelForUnsupportedAdjustment() {
-    lock.withLock {
-      guard !wasCancelled else { return }
-      wasCancelled = true
-      if process.isRunning {
-        process.interrupt()
-      }
-    }
-  }
-
   func cancelForControlModifier() {
     lock.withLock {
-      guard !wasCancelled else { return }
+      guard !wasCancelled, process.isRunning else { return }
       wasCancelled = true
       wasCancelledForControlModifier = true
-      if process.isRunning {
-        process.interrupt()
-      }
+      process.interrupt()
     }
   }
 
