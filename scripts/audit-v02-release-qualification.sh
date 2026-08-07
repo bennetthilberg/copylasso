@@ -22,7 +22,7 @@ readonly g44_release_state_tree_pattern=$'\t(CHANGELOG\\.md|CONTRIBUTING\\.md|PR
 readonly expected_candidate_baseline_tree_digest='987a36d51995b2d86a4a68dbdbbaa90e342db32db4012b7f9f93bf31d43008e8'
 readonly expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'
 readonly expected_g44_release_state_files_digest='dfd83e9062c8d8ae9237f5bc20c0949b3238ab0b60c44744b5ce4e0e406a0571'
-readonly expected_approved_post_candidate_patch_digest='aeb12450cb7b6d20552724b5ee616de0f2b9132ae7631392cf492d38309aa994'
+readonly expected_approved_post_candidate_patch_digest='3d42d1f1eeeb831249b35a59b33fbef125daeb99ce6859f8f7ecb21547443278'
 
 fail() {
     echo "$1" >&2
