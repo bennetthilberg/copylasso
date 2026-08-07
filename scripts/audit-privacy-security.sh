@@ -63,13 +63,12 @@ fi
 readonly interactive_capture_service='CopyLasso/Services/SystemInteractiveCaptureService.swift'
 file_handle_files="$({ /usr/bin/grep -R -lF 'FileHandle' CopyLasso || true; })"
 if [[ "$file_handle_files" != "$interactive_capture_service" ]] || \
-    ! /usr/bin/grep -Fq 'let outputPipe = Pipe()' "$interactive_capture_service" || \
-    ! /usr/bin/grep -Fq 'process.standardOutput = outputPipe' "$interactive_capture_service" || \
     ! /usr/bin/grep -Fq 'process.standardInput = FileHandle.nullDevice' "$interactive_capture_service" || \
+    ! /usr/bin/grep -Fq 'process.standardOutput = FileHandle.nullDevice' "$interactive_capture_service" || \
     ! /usr/bin/grep -Fq 'process.standardError = FileHandle.nullDevice' "$interactive_capture_service" || \
-    /usr/bin/grep -nE 'FileHandle\.(standard(Output|Input)|forWritingAtPath)|write\(' \
+    /usr/bin/grep -nE 'Pipe\(|FileHandle\.(standard(Output|Input)|forWritingAtPath)|write\(' \
         "$interactive_capture_service"; then
-    echo "File handles must remain confined to bounded in-memory system-selector output." >&2
+    echo "System-selector standard streams must remain content-free null devices." >&2
     exit 1
 fi
 

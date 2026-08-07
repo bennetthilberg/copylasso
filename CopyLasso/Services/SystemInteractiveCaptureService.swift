@@ -1,19 +1,13 @@
 import CoreGraphics
 import Foundation
-import ImageIO
-import UniformTypeIdentifiers
 
 struct SystemInteractiveCaptureConfiguration: Equatable, Sendable {
   let executableURL: URL
   let arguments: [String]
-  let maximumOutputBytes: Int
-  let maximumPixelCount: Int
 
   static let copyLasso = SystemInteractiveCaptureConfiguration(
     executableURL: URL(fileURLWithPath: "/usr/sbin/screencapture"),
-    arguments: ["-i", "-s", "-x", "-t", "png", "/dev/stdout"],
-    maximumOutputBytes: 128 * 1_024 * 1_024,
-    maximumPixelCount: 100_000_000
+    arguments: ["-i", "-s", "-x", "-t", "png", "/dev/null"]
   )
 }
 
@@ -22,16 +16,102 @@ enum SystemInteractiveCaptureProcessTerminationReason: Equatable, Sendable {
   case uncaughtSignal
 }
 
+struct SystemInteractivePointerState: Equatable, Sendable {
+  let location: CGPoint
+  let isLeftButtonPressed: Bool
+}
+
 struct SystemInteractiveCaptureProcessResult: Equatable, Sendable {
   let terminationStatus: Int32
   let terminationReason: SystemInteractiveCaptureProcessTerminationReason
-  let output: Data
+  let selectionOutcome: SelectionOutcome?
+  let wasCancelledForControlModifier: Bool
+
+  init(
+    terminationStatus: Int32,
+    terminationReason: SystemInteractiveCaptureProcessTerminationReason,
+    selectionOutcome: SelectionOutcome? = nil,
+    wasCancelledForControlModifier: Bool = false
+  ) {
+    self.terminationStatus = terminationStatus
+    self.terminationReason = terminationReason
+    self.selectionOutcome = selectionOutcome
+    self.wasCancelledForControlModifier = wasCancelledForControlModifier
+  }
 }
 
 enum SystemInteractiveCaptureProcessError: Error, Equatable, Sendable {
-  case outputTooLarge
+  case controlModifierActive
+  case displayUnavailable
   case launchFailed
-  case readFailed
+}
+
+struct SystemInteractiveSelectionTracker {
+  private enum Phase {
+    case waitingForRelease
+    case waitingForPress
+    case dragging(display: DisplayGeometry, start: CGPoint)
+    case finished(SelectionOutcome)
+  }
+
+  private let displays: [DisplayGeometry]
+  private var phase: Phase
+
+  init(
+    displays: [DisplayGeometry],
+    initialPointerState: SystemInteractivePointerState
+  ) {
+    self.displays = displays
+    phase =
+      initialPointerState.isLeftButtonPressed
+      ? .waitingForRelease
+      : .waitingForPress
+  }
+
+  mutating func observe(
+    _ pointerState: SystemInteractivePointerState
+  ) -> SelectionOutcome? {
+    switch phase {
+    case .waitingForRelease:
+      if !pointerState.isLeftButtonPressed {
+        phase = .waitingForPress
+      }
+      return nil
+
+    case .waitingForPress:
+      guard pointerState.isLeftButtonPressed else { return nil }
+      guard
+        let display = displays.first(where: {
+          $0.contains(coreGraphicsPoint: pointerState.location)
+        })
+      else {
+        return nil
+      }
+      phase = .dragging(display: display, start: pointerState.location)
+      return nil
+
+    case .dragging(let display, let start):
+      guard !pointerState.isLeftButtonPressed else { return nil }
+      let outcome: SelectionOutcome
+      do {
+        if let selection = try display.selectionResultFromCoreGraphics(
+          from: start,
+          to: pointerState.location
+        ) {
+          outcome = .selected(selection)
+        } else {
+          outcome = .cancelled(.tooSmall)
+        }
+      } catch {
+        outcome = .cancelled(.displayChanged)
+      }
+      phase = .finished(outcome)
+      return outcome
+
+    case .finished(let outcome):
+      return outcome
+    }
+  }
 }
 
 protocol SystemInteractiveCaptureProcessSession: AnyObject, Sendable {
@@ -48,34 +128,72 @@ protocol SystemInteractiveCaptureProcessLaunching: AnyObject {
 
 @MainActor
 final class SystemInteractiveCaptureProcessLauncher: SystemInteractiveCaptureProcessLaunching {
+  typealias ControlModifierProvider = @Sendable () -> Bool
+  typealias PointerStateProvider = @Sendable () -> SystemInteractivePointerState
+  typealias DisplayProvider = @MainActor () throws -> [DisplayGeometry]
+
+  private let controlModifierProvider: ControlModifierProvider
+  private let pointerStateProvider: PointerStateProvider
+  private let displayProvider: DisplayProvider
+
+  init(
+    controlModifierProvider: @escaping ControlModifierProvider = {
+      CGEventSource.flagsState(.combinedSessionState).contains(.maskControl)
+    },
+    pointerStateProvider: @escaping PointerStateProvider = {
+      SystemInteractivePointerState(
+        location: CGEvent(source: nil)?.location ?? .zero,
+        isLeftButtonPressed: CGEventSource.buttonState(
+          .combinedSessionState,
+          button: .left
+        )
+      )
+    },
+    displayProvider: @escaping DisplayProvider = {
+      try SystemSelectionDisplayProvider().currentDisplays()
+    }
+  ) {
+    self.controlModifierProvider = controlModifierProvider
+    self.pointerStateProvider = pointerStateProvider
+    self.displayProvider = displayProvider
+  }
+
   func start(
     _ configuration: SystemInteractiveCaptureConfiguration
   ) throws -> any SystemInteractiveCaptureProcessSession {
-    guard configuration.maximumOutputBytes > 0 else {
-      throw SystemInteractiveCaptureProcessError.launchFailed
+    guard !controlModifierProvider() else {
+      throw SystemInteractiveCaptureProcessError.controlModifierActive
+    }
+
+    let displays: [DisplayGeometry]
+    do {
+      displays = try displayProvider()
+    } catch {
+      throw SystemInteractiveCaptureProcessError.displayUnavailable
+    }
+    guard !displays.isEmpty else {
+      throw SystemInteractiveCaptureProcessError.displayUnavailable
     }
 
     let process = Process()
-    let outputPipe = Pipe()
     process.executableURL = configuration.executableURL
     process.arguments = configuration.arguments
     process.standardInput = FileHandle.nullDevice
-    process.standardOutput = outputPipe
+    process.standardOutput = FileHandle.nullDevice
     process.standardError = FileHandle.nullDevice
 
     do {
       try process.run()
     } catch {
-      try? outputPipe.fileHandleForReading.close()
-      try? outputPipe.fileHandleForWriting.close()
       throw SystemInteractiveCaptureProcessError.launchFailed
     }
 
-    try? outputPipe.fileHandleForWriting.close()
     return LiveSystemInteractiveCaptureProcessSession(
       process: process,
-      outputHandle: outputPipe.fileHandleForReading,
-      maximumOutputBytes: configuration.maximumOutputBytes
+      displays: displays,
+      initialPointerState: pointerStateProvider(),
+      pointerStateProvider: pointerStateProvider,
+      controlModifierProvider: controlModifierProvider
     )
   }
 }
@@ -85,23 +203,31 @@ private final class LiveSystemInteractiveCaptureProcessSession:
   @unchecked Sendable
 {
   private let resources: ProcessResources
-  private let resultTask: Task<SystemInteractiveCaptureProcessResult, Error>
+  private let resultTask: Task<SystemInteractiveCaptureProcessResult, Never>
 
-  init(process: Process, outputHandle: FileHandle, maximumOutputBytes: Int) {
+  init(
+    process: Process,
+    displays: [DisplayGeometry],
+    initialPointerState: SystemInteractivePointerState,
+    pointerStateProvider: @escaping @Sendable () -> SystemInteractivePointerState,
+    controlModifierProvider: @escaping @Sendable () -> Bool
+  ) {
     let resources = ProcessResources(
       process: process,
-      outputHandle: outputHandle,
-      maximumOutputBytes: maximumOutputBytes
+      displays: displays,
+      initialPointerState: initialPointerState,
+      pointerStateProvider: pointerStateProvider,
+      controlModifierProvider: controlModifierProvider
     )
     self.resources = resources
     resultTask = Task.detached(priority: .userInitiated) {
-      try resources.collectResult()
+      resources.collectResult()
     }
   }
 
   func result() async throws -> SystemInteractiveCaptureProcessResult {
-    try await withTaskCancellationHandler {
-      let result = try await resultTask.value
+    return try await withTaskCancellationHandler {
+      let result = await resultTask.value
       try Task.checkCancellation()
       return result
     } onCancel: { [resources] in
@@ -116,45 +242,71 @@ private final class LiveSystemInteractiveCaptureProcessSession:
 
 private final class ProcessResources: @unchecked Sendable {
   private let process: Process
-  private let outputHandle: FileHandle
-  private let maximumOutputBytes: Int
+  private let displays: [DisplayGeometry]
+  private let initialPointerState: SystemInteractivePointerState
+  private let pointerStateProvider: @Sendable () -> SystemInteractivePointerState
+  private let controlModifierProvider: @Sendable () -> Bool
   private let lock = NSLock()
   private var wasCancelled = false
+  private var wasCancelledForControlModifier = false
 
-  init(process: Process, outputHandle: FileHandle, maximumOutputBytes: Int) {
+  init(
+    process: Process,
+    displays: [DisplayGeometry],
+    initialPointerState: SystemInteractivePointerState,
+    pointerStateProvider: @escaping @Sendable () -> SystemInteractivePointerState,
+    controlModifierProvider: @escaping @Sendable () -> Bool
+  ) {
     self.process = process
-    self.outputHandle = outputHandle
-    self.maximumOutputBytes = maximumOutputBytes
+    self.displays = displays
+    self.initialPointerState = initialPointerState
+    self.pointerStateProvider = pointerStateProvider
+    self.controlModifierProvider = controlModifierProvider
   }
 
-  func collectResult() throws -> SystemInteractiveCaptureProcessResult {
-    var output = Data()
-    defer {
-      try? outputHandle.close()
-    }
-    do {
-      while let chunk = try outputHandle.read(upToCount: 64 * 1_024), !chunk.isEmpty {
-        guard chunk.count <= maximumOutputBytes - output.count else {
-          throw SystemInteractiveCaptureProcessError.outputTooLarge
+  func collectResult() -> SystemInteractiveCaptureProcessResult {
+    var tracker = SystemInteractiveSelectionTracker(
+      displays: displays,
+      initialPointerState: initialPointerState
+    )
+    var selectionOutcome: SelectionOutcome?
+
+    while process.isRunning {
+      if selectionOutcome == nil {
+        if controlModifierProvider() {
+          cancelForControlModifier()
+        } else {
+          selectionOutcome = tracker.observe(pointerStateProvider())
         }
-        output.append(chunk)
       }
-    } catch let error as SystemInteractiveCaptureProcessError {
-      cancelAndWaitForExit()
-      throw error
-    } catch {
-      cancelAndWaitForExit()
-      throw SystemInteractiveCaptureProcessError.readFailed
+      Thread.sleep(forTimeInterval: 0.001)
+    }
+
+    if selectionOutcome == nil,
+      !lock.withLock({ wasCancelledForControlModifier })
+    {
+      selectionOutcome = tracker.observe(pointerStateProvider())
     }
 
     process.waitUntilExit()
     let reason: SystemInteractiveCaptureProcessTerminationReason =
       process.terminationReason == .exit ? .exit : .uncaughtSignal
+    let cancelledForControl = lock.withLock { wasCancelledForControlModifier }
     return SystemInteractiveCaptureProcessResult(
       terminationStatus: process.terminationStatus,
       terminationReason: reason,
-      output: output
+      selectionOutcome: cancelledForControl ? nil : selectionOutcome,
+      wasCancelledForControlModifier: cancelledForControl
     )
+  }
+
+  func cancelForControlModifier() {
+    lock.withLock {
+      guard !wasCancelled, process.isRunning else { return }
+      wasCancelled = true
+      wasCancelledForControlModifier = true
+      process.interrupt()
+    }
   }
 
   func cancel() {
@@ -165,52 +317,6 @@ private final class ProcessResources: @unchecked Sendable {
         process.terminate()
       }
     }
-  }
-
-  private func cancelAndWaitForExit() {
-    cancel()
-    process.waitUntilExit()
-  }
-}
-
-protocol SystemInteractiveCaptureImageDecoding: Sendable {
-  func decode(_ data: Data, maximumPixelCount: Int) async throws -> CGImage
-}
-
-actor SystemInteractiveCaptureImageDecoder: SystemInteractiveCaptureImageDecoding {
-  func decode(_ data: Data, maximumPixelCount: Int) throws -> CGImage {
-    let pngSignature = Data([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
-    guard maximumPixelCount > 0, data.starts(with: pngSignature) else {
-      throw InteractiveCaptureError.invalidImage
-    }
-    guard
-      let source = CGImageSourceCreateWithData(data as CFData, nil),
-      CGImageSourceGetCount(source) == 1,
-      CGImageSourceGetType(source) as String? == UTType.png.identifier,
-      let properties = CGImageSourceCopyPropertiesAtIndex(
-        source,
-        0,
-        [kCGImageSourceShouldCache: false] as CFDictionary
-      ) as? [CFString: Any],
-      let width = (properties[kCGImagePropertyPixelWidth] as? NSNumber)?.intValue,
-      let height = (properties[kCGImagePropertyPixelHeight] as? NSNumber)?.intValue,
-      width > 0,
-      height > 0,
-      width <= maximumPixelCount / height,
-      let image = CGImageSourceCreateImageAtIndex(
-        source,
-        0,
-        [
-          kCGImageSourceShouldCache: true,
-          kCGImageSourceShouldCacheImmediately: true,
-        ] as CFDictionary
-      ),
-      image.width == width,
-      image.height == height
-    else {
-      throw InteractiveCaptureError.invalidImage
-    }
-    return image
   }
 }
 
@@ -223,21 +329,21 @@ final class SystemInteractiveCaptureService: InteractiveCaptureService {
 
   private enum Preparation {
     case capture(PreparedCapture)
+    case cancellation(SelectionCancellationReason)
     case failure(InteractiveCaptureError)
   }
 
   private let launcher: any SystemInteractiveCaptureProcessLaunching
-  private let decoder: any SystemInteractiveCaptureImageDecoding
+  private let screenCaptureService: any ScreenCaptureService
   private var preparation: Preparation?
 
   init(
     launcher: any SystemInteractiveCaptureProcessLaunching =
       SystemInteractiveCaptureProcessLauncher(),
-    decoder: any SystemInteractiveCaptureImageDecoding =
-      SystemInteractiveCaptureImageDecoder()
+    screenCaptureService: any ScreenCaptureService = SystemScreenCaptureService()
   ) {
     self.launcher = launcher
-    self.decoder = decoder
+    self.screenCaptureService = screenCaptureService
   }
 
   func prepareForCaptureTransition() {
@@ -249,6 +355,8 @@ final class SystemInteractiveCaptureService: InteractiveCaptureService {
           session: try launcher.start(.copyLasso)
         )
       )
+    } catch SystemInteractiveCaptureProcessError.controlModifierActive {
+      preparation = .cancellation(.systemInterrupted)
     } catch {
       preparation = .failure(.captureFailed)
     }
@@ -263,6 +371,9 @@ final class SystemInteractiveCaptureService: InteractiveCaptureService {
     }
 
     switch preparation {
+    case .cancellation(let reason):
+      self.preparation = nil
+      return .cancelled(reason)
     case .failure(let error):
       self.preparation = nil
       throw error
@@ -283,26 +394,18 @@ final class SystemInteractiveCaptureService: InteractiveCaptureService {
       }
       self.preparation = nil
 
-      if result.output.isEmpty,
-        result.terminationReason == .exit,
+      if result.wasCancelledForControlModifier {
+        return .cancelled(.systemInterrupted)
+      }
+      if let selectionOutcome = result.selectionOutcome {
+        return try await complete(selectionOutcome)
+      }
+      if result.terminationReason == .exit,
         result.terminationStatus == 0 || result.terminationStatus == 1
       {
         return .cancelled(.escape)
       }
-      guard result.terminationReason == .exit, result.terminationStatus == 0 else {
-        throw InteractiveCaptureError.processFailed(status: result.terminationStatus)
-      }
-
-      do {
-        return .captured(
-          try await decoder.decode(
-            result.output,
-            maximumPixelCount: SystemInteractiveCaptureConfiguration.copyLasso.maximumPixelCount
-          )
-        )
-      } catch {
-        throw InteractiveCaptureError.invalidImage
-      }
+      throw InteractiveCaptureError.processFailed(status: result.terminationStatus)
     }
   }
 
@@ -311,6 +414,23 @@ final class SystemInteractiveCaptureService: InteractiveCaptureService {
       prepared.session.cancel()
     }
     preparation = nil
+  }
+
+  private func complete(
+    _ selectionOutcome: SelectionOutcome
+  ) async throws -> InteractiveCaptureOutcome {
+    switch selectionOutcome {
+    case .cancelled(let reason):
+      return .cancelled(reason)
+    case .selected(let selection):
+      do {
+        return .captured(try await screenCaptureService.capture(selection))
+      } catch ScreenCaptureError.permissionDenied {
+        throw InteractiveCaptureError.permissionDenied
+      } catch {
+        throw InteractiveCaptureError.captureFailed
+      }
+    }
   }
 
   private func matchesCurrentPreparation(_ id: UUID) -> Bool {

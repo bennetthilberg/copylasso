@@ -57,7 +57,7 @@ An inspected development container contained preference/window metadata, one 240
 - Screen Recording: requested only after a user Capture command. Current source may also show macOS's direct-screen-access confirmation for its native interactive selector; this is the same TCC category, not another entitlement.
 - Accessibility and Input Monitoring: not required by the shortcut, menu, selection, OCR, or output path.
 - Microphone and system-audio capture: not requested. The native selector receives no audio option, and the output-only success sound uses `NSSound` without requesting a privacy permission.
-- Files and folders: no user-selected or temporary-file entitlement; the fixed selector writes only to its inherited anonymous stdout pipe, and captured pixels and code payloads never use a file intermediate.
+- Files and folders: no user-selected or temporary-file entitlement; the fixed selector's unused image destination is `/dev/null`, and ScreenCaptureKit returns the selected pixels directly in memory.
 
 Settings links ask macOS to open the user's default browser. CopyLasso itself does not fetch those URLs. The shipping updater is isolated from core capture and has one fixed feed URL. Automatic checks default on at a 24-hour interval but can be disabled; manual checks remain available. Download and install never occur automatically. The user sees authenticated version, inline plain-text notes, and exact size before download, then explicitly confirms download and later install/relaunch.
 
@@ -82,9 +82,11 @@ downloader-service name, or unrelated capability.
 
 | Boundary or misuse case | Mitigation and limitation |
 | --- | --- |
-| Broad Screen Recording consent | CopyLasso starts the system selector only after a user command, accepts only the region the user completes, and keeps its bounded output in memory. macOS consent still authorizes the process at the OS boundary. |
-| Selector subprocess misuse | Production invokes only `/usr/sbin/screencapture` with one fixed argument list, without a shell or caller-controlled value. Stdout is capped before one PNG is validated and decoded; stderr, files, and screenshot-clipboard output are disabled. |
-| Display changes during selection | macOS owns the current interactive selection surface. Cancellation or an empty, invalid, oversized, signaled, or stale result cannot reach recognition or the clipboard. Debug geometry fixtures retain the previous explicit display-snapshot checks. |
+| Broad Screen Recording consent | CopyLasso starts the system selector only after a user command, derives only the completed rectangle, and asks ScreenCaptureKit for only those pixels. macOS consent still authorizes the process at the OS boundary. |
+| Selector subprocess misuse | Production invokes only `/usr/sbin/screencapture` with one fixed argument list, without a shell or caller-controlled value. Its standard streams and `/dev/null` image destination yield no screenshot data to CopyLasso; the actual selected pixels arrive only through the bounded ScreenCaptureKit service. |
+| Passive selection tracking | While the native selector is active, CopyLasso samples only pointer position, left-button state, and the Control modifier through public Core Graphics state APIs. It creates no event tap, synthesizes no input, requests no Accessibility or Input Monitoring access, and discards that state when the selection ends. |
+| Control-modified native selection | macOS can redirect the native selector to its screenshot clipboard when Control is held. CopyLasso rejects Control before launch, checks it while selection is active, and interrupts the child cleanly if Control appears. It never reads or snapshots the pasteboard. |
+| Display changes during selection | The derived rectangle is clamped to the display where the drag began, then the existing ScreenCaptureKit request validator requires that display identity, dimensions, scale, source bounds, and pixel dimensions still match before pixels can reach recognition. |
 | Protected or DRM content | CopyLasso follows macOS capture restrictions and does not bypass protected pixels. Blank protected output may yield no text. |
 | Misleading or hostile visible text | OCR output is untrusted plain text. CopyLasso copies it but never executes it, interprets markup, follows a link, or invokes a shell. Users must review text before using it as a command or credential. |
 | Malicious or action-shaped code payload | Code output is untrusted inert plain text. CopyLasso never opens a URL, launches an application, joins a network, creates a contact or calendar item, invokes a shell, or otherwise interprets or acts on it. |

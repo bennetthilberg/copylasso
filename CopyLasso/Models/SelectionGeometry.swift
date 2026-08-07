@@ -87,6 +87,59 @@ struct DisplayGeometry: Equatable, Sendable {
     )
   }
 
+  func selectionResultFromCoreGraphics(
+    from start: CGPoint,
+    to end: CGPoint,
+    minimumSize: CGFloat = 4
+  ) throws -> SelectionResult? {
+    guard Self.isFinite(point: start), Self.isFinite(point: end) else {
+      throw DisplayGeometryError.invalidPoint
+    }
+
+    let clampedStart = clamped(coreGraphicsPoint: start)
+    let clampedEnd = clamped(coreGraphicsPoint: end)
+    let coreGraphicsGlobalRect = Self.normalizedRect(
+      from: clampedStart,
+      to: clampedEnd
+    )
+    guard
+      coreGraphicsGlobalRect.width >= minimumSize,
+      coreGraphicsGlobalRect.height >= minimumSize
+    else {
+      return nil
+    }
+
+    let coreGraphicsDisplayLocalRect = coreGraphicsGlobalRect.offsetBy(
+      dx: -coreGraphicsBounds.minX,
+      dy: -coreGraphicsBounds.minY
+    )
+    let displayLocalRect = CGRect(
+      x: coreGraphicsDisplayLocalRect.minX,
+      y: coreGraphicsBounds.height - coreGraphicsDisplayLocalRect.maxY,
+      width: coreGraphicsDisplayLocalRect.width,
+      height: coreGraphicsDisplayLocalRect.height
+    )
+    let appKitGlobalRect = displayLocalRect.offsetBy(
+      dx: appKitFrame.minX,
+      dy: appKitFrame.minY
+    )
+    let backingPixelRect = Self.outwardRoundedPixelRect(
+      coreGraphicsDisplayLocalRect,
+      scale: backingScale
+    )
+
+    return SelectionResult(
+      displayID: displayID,
+      displayPointSize: appKitFrame.size,
+      appKitGlobalRect: appKitGlobalRect,
+      displayLocalRect: displayLocalRect,
+      coreGraphicsGlobalRect: coreGraphicsGlobalRect,
+      coreGraphicsDisplayLocalRect: coreGraphicsDisplayLocalRect,
+      backingPixelRect: backingPixelRect,
+      backingScale: backingScale
+    )
+  }
+
   func clamped(point: CGPoint) -> CGPoint {
     CGPoint(
       x: min(max(point.x, appKitFrame.minX), appKitFrame.maxX),
@@ -97,6 +150,18 @@ struct DisplayGeometry: Equatable, Sendable {
   func contains(point: CGPoint) -> Bool {
     point.x >= appKitFrame.minX && point.x <= appKitFrame.maxX
       && point.y >= appKitFrame.minY && point.y <= appKitFrame.maxY
+  }
+
+  func contains(coreGraphicsPoint point: CGPoint) -> Bool {
+    point.x >= coreGraphicsBounds.minX && point.x <= coreGraphicsBounds.maxX
+      && point.y >= coreGraphicsBounds.minY && point.y <= coreGraphicsBounds.maxY
+  }
+
+  private func clamped(coreGraphicsPoint point: CGPoint) -> CGPoint {
+    CGPoint(
+      x: min(max(point.x, coreGraphicsBounds.minX), coreGraphicsBounds.maxX),
+      y: min(max(point.y, coreGraphicsBounds.minY), coreGraphicsBounds.maxY)
+    )
   }
 
   private static func isValid(frame: CGRect) -> Bool {

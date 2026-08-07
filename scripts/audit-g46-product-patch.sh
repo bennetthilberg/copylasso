@@ -60,7 +60,9 @@ require_text README.md \
 require_text README.md \
     'Current unreleased source replaces that handoff with macOS'
 require_text PRIVACY.md \
-    'Apple'\''s fixed interactive region selector directly and receives its one PNG'
+    'derives only'
+require_text PRIVACY.md \
+    'then captures that rectangle in'
 require_text docs/architecture/capture-workflow.md \
     'Native interactive selection and bounded in-memory capture'
 require_text docs/architecture/overview.md \
@@ -78,17 +80,19 @@ readonly system_capture='CopyLasso/Services/SystemInteractiveCaptureService.swif
 
 for system_capture_contract in \
     'URL(fileURLWithPath: "/usr/sbin/screencapture")' \
-    'arguments: ["-i", "-s", "-x", "-t", "png", "/dev/stdout"]' \
-    'maximumOutputBytes: 128 * 1_024 * 1_024' \
-    'maximumPixelCount: 100_000_000' \
+    'arguments: ["-i", "-s", "-x", "-t", "png", "/dev/null"]' \
     'process.standardInput = FileHandle.nullDevice' \
-    'process.standardOutput = outputPipe' \
+    'process.standardOutput = FileHandle.nullDevice' \
     'process.standardError = FileHandle.nullDevice' \
     'try process.run()' \
-    'SystemInteractiveCaptureProcessError.outputTooLarge' \
-    'CGImageSourceCreateWithData' \
-    'data.starts(with: pngSignature)' \
-    'CGImageSourceGetCount(source) == 1' \
+    'CGEventSource.flagsState(.combinedSessionState).contains(.maskControl)' \
+    'CGEvent(source: nil)?.location' \
+    'CGEventSource.buttonState(' \
+    'SystemInteractiveSelectionTracker' \
+    'selectionResultFromCoreGraphics(' \
+    'wasCancelledForControlModifier' \
+    'process.interrupt()' \
+    'screenCaptureService.capture(selection)' \
     'prepared.session.cancel()'; do
     require_text "$system_capture" "$system_capture_contract"
 done
@@ -122,13 +126,18 @@ process_files="$({ /usr/bin/grep -R -lE '\bProcess\(\)' \
     fail 'Capture subprocess creation must remain confined to its narrow service.'
 
 if /usr/bin/grep -nE \
-    '(/bin/(sh|bash|zsh)|-c["'\'' ]|NSTask|temporaryDirectory|Data.*write\(to:|NSPasteboard|print\(|debugPrint\(|NSLog\(|os_log|Logger\()' \
+    '(/bin/(sh|bash|zsh)|-c["'\'' ]|NSTask|temporaryDirectory|Data.*write\(to:|NSPasteboard|Pipe\(|standardOutput = outputPipe|/dev/stdout|CGImageSource|ImageIO|print\(|debugPrint\(|NSLog\(|os_log|Logger\()' \
     "$repository_root/$system_capture"; then
-    fail 'The system selector must not use a shell, files, pasteboard output, or logging.'
+    fail 'The system selector must not use a shell, screenshot transport, pasteboard output, or logging.'
+fi
+
+if /usr/bin/grep -nF 'SIGKILL' "$repository_root/$system_capture"; then
+    echo "G46 native-selector cancellation must permit clean macOS teardown." >&2
+    exit 1
 fi
 
 if /usr/bin/grep -nE \
-    'NSApp\.activate|makeKeyAndOrderFront|makeKey\(|orderFrontRegardless|CGEventTapCreate|CGEvent\.tapCreate|CGWarpMouseCursorPosition|CGDisplay(Hide|Show)Cursor|CGS[A-Z]|SLS[A-Z]' \
+    'NSApp\.activate|makeKeyAndOrderFront|makeKey\(|orderFrontRegardless|CGEventTapCreate|CGEvent\.tapCreate|CGRequest(Listen|Post)EventAccess|CGWarpMouseCursorPosition|CGDisplay(Hide|Show)Cursor|CGS[A-Z]|SLS[A-Z]' \
     "$repository_root/$system_capture" \
     "$repository_root/$capture_command" \
     "$repository_root/$global_shortcut_controller"; then

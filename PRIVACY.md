@@ -1,17 +1,16 @@
 # CopyLasso Privacy
 
 **Status:** Approved privacy contract for public CopyLasso 0.2.0.
-Current unreleased-source capture differences are identified below.
 
-CopyLasso is a local-first macOS utility. It captures only the screen region you
-select, recognizes visible text or supported codes on this Mac, and writes the
-result to the clipboard.
+CopyLasso captures only the screen region you select, recognizes text or
+supported codes locally, and writes the result to the clipboard.
 
 ## Capture and recognition
 
-- Public 0.2.0 uses Apple ScreenCaptureKit. Current unreleased source invokes
-  Apple's fixed interactive region selector directly and receives its one PNG
-  through a bounded anonymous pipe. OCR uses Apple Vision locally.
+- Public 0.2.0 uses Apple ScreenCaptureKit. Current source invokes Apple's fixed
+  interactive region selector for the native crosshair and drag, derives only
+  the selected rectangle from pointer state, then captures that rectangle in
+  memory with ScreenCaptureKit. OCR uses Apple Vision locally.
   Code payloads are recognized locally with Vision in five formats: QR, Code 128,
   Data Matrix, PDF417, and Aztec.
 - Captured images, recognition observations, complete results, and the bounded
@@ -19,24 +18,29 @@ result to the clipboard.
   them. CopyLasso does not save or upload them.
 - Code payloads are copied as inert plain text. CopyLasso never opens, executes,
   validates as a URL, or otherwise acts on their contents.
-- Core capture and recognition work offline. Protected content may be blank or
-  unavailable, and CopyLasso does not attempt to bypass macOS protections.
+- Core capture and recognition work offline. CopyLasso does not bypass macOS
+  protected-content restrictions.
 
-CopyLasso has no accounts, synchronization, analytics, telemetry, capture
-history, clipboard history, or content logs. It never logs or persists screen
-pixels, recognized text, code payloads, clipboard text, or HUD previews.
+CopyLasso has no accounts, sync, analytics, telemetry, history, or content logs.
+It never logs or persists pixels, recognized text, code payloads, clipboard
+text, or HUD previews.
 
 ## Permission and clipboard
 
 CopyLasso asks for macOS Screen Recording access only after a user starts a
 capture. Current source starts only `/usr/sbin/screencapture` with fixed
 project-owned arguments: there is no shell or user-controlled command. macOS
-may show its direct-screen-access confirmation for this native selector. The
-PNG output is limited to 128 MiB and 100 million pixels, validated, decoded
-once in memory, and never written to a file or the screenshot clipboard. The
-encoded bytes and image are released after local recognition or cancellation.
+may show its direct-screen-access confirmation for this native selector. Its
+image destination is `/dev/null`; CopyLasso receives no encoded screenshot from
+the subprocess. ScreenCaptureKit returns only the selected pixels in memory,
+and the image is released after recognition or cancellation.
 The core workflow needs no Accessibility, Input Monitoring, microphone, or
 notification permission.
+
+If Control is held before or during selection, CopyLasso cancels the attempt
+because macOS would otherwise redirect the screenshot to the clipboard. It
+checks only pointer position, left-button state, and that content-free modifier
+state while the selector is active.
 
 Successful capture replaces the general pasteboard with one plain-text value.
 CopyLasso never reads or snapshots the previous clipboard. Cancellation,
@@ -57,16 +61,16 @@ CopyLasso stores only ordinary preferences for onboarding, the Capture
 shortcut, permission-request history, Launch at Login presentation, sound, and
 update controls. Update state contains the schedule and preference, a deferred
 build, and the highest authenticated build used to reject replay or downgrade.
-It does not store appcast bodies, release notes, captured content, or clipboard
-content. Launch at Login state is read from macOS. Fixed lifecycle diagnostics
-contain no content, application name, display geometry, or user value.
+It stores no appcast bodies, release notes, captured content, or clipboard
+content. Launch at Login state comes from macOS. Fixed lifecycle diagnostics
+contain no content, application name, geometry, or user value.
 
 ## Network activity
 
-The secure updater is CopyLasso's only network feature. Capture, recognition,
-clipboard output, Settings, onboarding, sound, and Launch at Login do not use
-the network. Automatic checks default on, run no more often than every 24
-hours, and can be disabled; **Check for Updates** starts a manual check.
+The secure updater is the only network feature. Capture, recognition, clipboard
+output, Settings, onboarding, sound, and Launch at Login stay offline.
+Automatic checks default on, run at most every 24 hours, and can be disabled;
+**Check for Updates** starts a manual check.
 
 Sparkle retrieves one fixed signed feed at
 `https://updates.copylasso.com/appcast.xml` and accepts only the matching

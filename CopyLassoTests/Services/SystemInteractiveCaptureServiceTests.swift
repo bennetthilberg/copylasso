@@ -1,7 +1,6 @@
 import CoreGraphics
+import Darwin
 import Foundation
-import ImageIO
-import UniformTypeIdentifiers
 import XCTest
 
 @testable import CopyLasso
@@ -17,28 +16,33 @@ final class SystemInteractiveCaptureServiceTests: XCTestCase {
     )
     XCTAssertEqual(
       configuration.arguments,
-      ["-i", "-s", "-x", "-t", "png", "/dev/stdout"]
+      ["-i", "-s", "-x", "-t", "png", "/dev/null"]
     )
-    XCTAssertEqual(configuration.maximumOutputBytes, 128 * 1_024 * 1_024)
-    XCTAssertEqual(configuration.maximumPixelCount, 100_000_000)
   }
 
-  func testPrepareStartsTheSystemSelectorSynchronouslyAndCaptureUsesThatSession() async throws {
-    let image = try makeImage(width: 8, height: 6)
+  func testPrepareStartsSelectorSynchronouslyAndCapturesSelectedGeometryInMemory() async throws {
+    let display = try makeDisplay()
+    let selection = try XCTUnwrap(
+      display.selectionResultFromCoreGraphics(
+        from: CGPoint(x: 100, y: 120),
+        to: CGPoint(x: 420, y: 300)
+      )
+    )
+    let image = try makeImage(width: 320, height: 180)
     let session = StubSystemInteractiveCaptureProcessSession(
       result: .success(
         SystemInteractiveCaptureProcessResult(
-          terminationStatus: 0,
+          terminationStatus: 1,
           terminationReason: .exit,
-          output: Data([0x89, 0x50, 0x4E, 0x47])
+          selectionOutcome: .selected(selection)
         )
       )
     )
     let launcher = RecordingSystemInteractiveCaptureProcessLauncher(sessions: [session])
-    let decoder = StubSystemInteractiveCaptureImageDecoder(result: .success(image))
+    let screenCapture = StubScreenCaptureService(result: .success(image))
     let service = SystemInteractiveCaptureService(
       launcher: launcher,
-      decoder: decoder
+      screenCaptureService: screenCapture
     )
 
     service.prepareForCaptureTransition()
@@ -49,10 +53,11 @@ final class SystemInteractiveCaptureServiceTests: XCTestCase {
     guard case .captured(let capturedImage) = outcome else {
       return XCTFail("Expected captured image")
     }
-    XCTAssertEqual(capturedImage.width, 8)
-    XCTAssertEqual(capturedImage.height, 6)
+    XCTAssertEqual(capturedImage.width, 320)
+    XCTAssertEqual(capturedImage.height, 180)
+    let capturedSelections = await screenCapture.selections
+    XCTAssertEqual(capturedSelections, [selection])
     XCTAssertEqual(launcher.configurations, [.copyLasso])
-    XCTAssertEqual(decoder.maximumPixelCounts, [100_000_000])
   }
 
   func testRepeatedPreparationDoesNotStartOverlappingSelectors() {
@@ -60,10 +65,7 @@ final class SystemInteractiveCaptureServiceTests: XCTestCase {
       result: .success(.cancelledFixture)
     )
     let launcher = RecordingSystemInteractiveCaptureProcessLauncher(sessions: [session])
-    let service = SystemInteractiveCaptureService(
-      launcher: launcher,
-      decoder: StubSystemInteractiveCaptureImageDecoder(result: .failure(.injected))
-    )
+    let service = makeService(launcher: launcher)
 
     service.prepareForCaptureTransition()
     service.prepareForCaptureTransition()
@@ -76,47 +78,210 @@ final class SystemInteractiveCaptureServiceTests: XCTestCase {
       result: .success(.cancelledFixture)
     )
     let launcher = RecordingSystemInteractiveCaptureProcessLauncher(sessions: [session])
-    let service = SystemInteractiveCaptureService(
-      launcher: launcher,
-      decoder: StubSystemInteractiveCaptureImageDecoder(result: .failure(.injected))
-    )
+    let service = makeService(launcher: launcher)
 
     let outcome = try await service.capture()
 
     XCTAssertEqual(launcher.configurations, [.copyLasso])
     guard case .cancelled(.escape) = outcome else {
-      return XCTFail("Expected an inert cancellation for empty interactive output")
+      return XCTFail("Expected Escape cancellation")
     }
   }
 
-  func testNonzeroProcessFailureWithOutputIsNotMisreportedAsCancellation() async {
+  func testSuccessfulSelectorExitWithoutADragIsAlsoEscape() async throws {
+    let service = makeService(
+      result: SystemInteractiveCaptureProcessResult(
+        terminationStatus: 0,
+        terminationReason: .exit
+      )
+    )
+
+    guard case .cancelled(.escape) = try await service.capture() else {
+      return XCTFail("Expected empty successful selector exit to cancel")
+    }
+  }
+
+  func testControlHeldBeforeLaunchIsRejectedWithoutStartingAProcess() throws {
+    let launcher = makeLiveLauncher(controlModifierProvider: { true })
+
+    XCTAssertThrowsError(try launcher.start(.exitingFixture)) { error in
+      XCTAssertEqual(
+        error as? SystemInteractiveCaptureProcessError,
+        .controlModifierActive
+      )
+    }
+  }
+
+  func testUnavailableDisplaysRejectLaunchWithoutStartingAProcess() {
+    let launcher = SystemInteractiveCaptureProcessLauncher(
+      controlModifierProvider: { false },
+      pointerStateProvider: { .releasedFixture },
+      displayProvider: { [] }
+    )
+
+    XCTAssertThrowsError(try launcher.start(.exitingFixture)) { error in
+      XCTAssertEqual(
+        error as? SystemInteractiveCaptureProcessError,
+        .displayUnavailable
+      )
+    }
+  }
+
+  func testControlHeldBeforeMenuCaptureIsAnInertCancellation() async throws {
+    let service = SystemInteractiveCaptureService(
+      launcher: FailingSystemInteractiveCaptureProcessLauncher(
+        error: .controlModifierActive
+      ),
+      screenCaptureService: StubScreenCaptureService(result: .failure(.injected))
+    )
+
+    let outcome = try await service.capture()
+
+    guard case .cancelled(.systemInterrupted) = outcome else {
+      return XCTFail("Expected held Control to cancel before capture")
+    }
+  }
+
+  func testLiveSessionCancelsWhenControlIsPressedDuringSelection() async throws {
+    let modifierState = LockedControlModifierState(isPressed: false)
+    let configuration = SystemInteractiveCaptureConfiguration(
+      executableURL: URL(fileURLWithPath: "/bin/sleep"),
+      arguments: ["5"]
+    )
+    let launcher = makeLiveLauncher(
+      controlModifierProvider: { modifierState.isPressed }
+    )
+    let session = try launcher.start(configuration)
+
+    modifierState.isPressed = true
+    let result = try await session.result()
+
+    XCTAssertTrue(result.wasCancelledForControlModifier)
+    XCTAssertNil(result.selectionOutcome)
+    XCTAssertEqual(result.terminationReason, .uncaughtSignal)
+    XCTAssertEqual(result.terminationStatus, SIGINT)
+
+    modifierState.isPressed = false
+    let followupSession = try launcher.start(.exitingFixture)
+    let followupResult = try await followupSession.result()
+
+    XCTAssertEqual(followupResult.terminationReason, .exit)
+    XCTAssertEqual(followupResult.terminationStatus, 0)
+    XCTAssertNil(followupResult.selectionOutcome)
+  }
+
+  func testControlDetectedDuringSelectionIsAnInertCancellation() async throws {
     let result = SystemInteractiveCaptureProcessResult(
-      terminationStatus: 2,
-      terminationReason: .exit,
-      output: Data([0x89, 0x50, 0x4E, 0x47])
+      terminationStatus: SIGINT,
+      terminationReason: .uncaughtSignal,
+      wasCancelledForControlModifier: true
     )
     let service = makeService(result: result)
+
+    let outcome = try await service.capture()
+
+    guard case .cancelled(.systemInterrupted) = outcome else {
+      return XCTFail("Expected detected Control to cancel capture")
+    }
+  }
+
+  func testSelectionIsAcceptedDespiteNativeSelectorOutputFailure() async throws {
+    let display = try makeDisplay()
+    let selection = try XCTUnwrap(
+      display.selectionResultFromCoreGraphics(
+        from: CGPoint(x: 40, y: 50),
+        to: CGPoint(x: 240, y: 150)
+      )
+    )
+    let image = try makeImage(width: 200, height: 100)
+    let screenCapture = StubScreenCaptureService(result: .success(image))
+    let service = makeService(
+      result: SystemInteractiveCaptureProcessResult(
+        terminationStatus: 1,
+        terminationReason: .exit,
+        selectionOutcome: .selected(selection)
+      ),
+      screenCaptureService: screenCapture
+    )
+
+    guard case .captured(let captured) = try await service.capture() else {
+      return XCTFail("Expected selected geometry to be captured")
+    }
+    XCTAssertEqual(captured.width, 200)
+    XCTAssertEqual(captured.height, 100)
+    let capturedSelections = await screenCapture.selections
+    XCTAssertEqual(capturedSelections, [selection])
+  }
+
+  func testProcessFailureWithoutSelectionIsNotMisreportedAsCancellation() async {
+    let service = makeService(
+      result: SystemInteractiveCaptureProcessResult(
+        terminationStatus: 2,
+        terminationReason: .exit
+      )
+    )
 
     await assertThrowsErrorAsync(try await service.capture()) { error in
       XCTAssertEqual(error as? InteractiveCaptureError, .processFailed(status: 2))
     }
   }
 
-  func testInvalidPNGIsRejectedWithoutReturningPixels() async {
-    let result = SystemInteractiveCaptureProcessResult(
-      terminationStatus: 0,
-      terminationReason: .exit,
-      output: Data([0x89, 0x50, 0x4E, 0x47])
-    )
-    let service = SystemInteractiveCaptureService(
-      launcher: RecordingSystemInteractiveCaptureProcessLauncher(
-        sessions: [StubSystemInteractiveCaptureProcessSession(result: .success(result))]
+  func testTooSmallSelectionDoesNotRequestPixels() async throws {
+    let screenCapture = StubScreenCaptureService(result: .failure(.injected))
+    let service = makeService(
+      result: SystemInteractiveCaptureProcessResult(
+        terminationStatus: 1,
+        terminationReason: .exit,
+        selectionOutcome: .cancelled(.tooSmall)
       ),
-      decoder: StubSystemInteractiveCaptureImageDecoder(result: .failure(.injected))
+      screenCaptureService: screenCapture
+    )
+
+    guard case .cancelled(.tooSmall) = try await service.capture() else {
+      return XCTFail("Expected too-small cancellation")
+    }
+    let capturedSelections = await screenCapture.selections
+    XCTAssertTrue(capturedSelections.isEmpty)
+  }
+
+  func testScreenCapturePermissionDenialMapsToInteractivePermissionDenial() async {
+    let display = try? makeDisplay()
+    let selection = try? display?.selectionResultFromCoreGraphics(
+      from: CGPoint(x: 10, y: 10),
+      to: CGPoint(x: 100, y: 100)
+    )
+    let service = makeService(
+      result: SystemInteractiveCaptureProcessResult(
+        terminationStatus: 1,
+        terminationReason: .exit,
+        selectionOutcome: selection.flatMap { $0 }.map(SelectionOutcome.selected)
+      ),
+      screenCaptureService: FailingScreenCaptureService(error: .permissionDenied)
     )
 
     await assertThrowsErrorAsync(try await service.capture()) { error in
-      XCTAssertEqual(error as? InteractiveCaptureError, .invalidImage)
+      XCTAssertEqual(error as? InteractiveCaptureError, .permissionDenied)
+    }
+  }
+
+  func testOtherScreenCaptureFailureMapsToCaptureFailure() async throws {
+    let display = try makeDisplay()
+    let selection = try XCTUnwrap(
+      display.selectionResultFromCoreGraphics(
+        from: CGPoint(x: 10, y: 10),
+        to: CGPoint(x: 100, y: 100)
+      )
+    )
+    let service = makeService(
+      result: SystemInteractiveCaptureProcessResult(
+        terminationStatus: 1,
+        terminationReason: .exit,
+        selectionOutcome: .selected(selection)
+      )
+    )
+
+    await assertThrowsErrorAsync(try await service.capture()) { error in
+      XCTAssertEqual(error as? InteractiveCaptureError, .captureFailed)
     }
   }
 
@@ -124,10 +289,7 @@ final class SystemInteractiveCaptureServiceTests: XCTestCase {
     let first = StubSystemInteractiveCaptureProcessSession(result: .success(.cancelledFixture))
     let second = StubSystemInteractiveCaptureProcessSession(result: .success(.cancelledFixture))
     let launcher = RecordingSystemInteractiveCaptureProcessLauncher(sessions: [first, second])
-    let service = SystemInteractiveCaptureService(
-      launcher: launcher,
-      decoder: StubSystemInteractiveCaptureImageDecoder(result: .failure(.injected))
-    )
+    let service = makeService(launcher: launcher)
 
     service.prepareForCaptureTransition()
     service.cancelCapture()
@@ -142,10 +304,7 @@ final class SystemInteractiveCaptureServiceTests: XCTestCase {
     let first = HoldingSystemInteractiveCaptureProcessSession()
     let second = StubSystemInteractiveCaptureProcessSession(result: .success(.cancelledFixture))
     let launcher = RecordingSystemInteractiveCaptureProcessLauncher(sessions: [first, second])
-    let service = SystemInteractiveCaptureService(
-      launcher: launcher,
-      decoder: StubSystemInteractiveCaptureImageDecoder(result: .failure(.injected))
-    )
+    let service = makeService(launcher: launcher)
 
     service.prepareForCaptureTransition()
     let staleCapture = Task { @MainActor in
@@ -165,86 +324,60 @@ final class SystemInteractiveCaptureServiceTests: XCTestCase {
     XCTAssertEqual(launcher.configurations, [.copyLasso, .copyLasso])
   }
 
-  func testLiveProcessSessionCapturesStandardOutputWithoutAFile() async throws {
-    let configuration = SystemInteractiveCaptureConfiguration(
-      executableURL: URL(fileURLWithPath: "/usr/bin/printf"),
-      arguments: ["system-selector"],
-      maximumOutputBytes: 64,
-      maximumPixelCount: 100
-    )
-    let session = try SystemInteractiveCaptureProcessLauncher().start(configuration)
+  func testLiveProcessSessionExitsWithoutReadingOrWritingCaptureData() async throws {
+    let session = try makeLiveLauncher().start(.exitingFixture)
 
     let result = try await session.result()
 
     XCTAssertEqual(result.terminationStatus, 0)
     XCTAssertEqual(result.terminationReason, .exit)
-    XCTAssertEqual(result.output, Data("system-selector".utf8))
-  }
-
-  func testLiveProcessSessionRejectsOutputBeyondTheConfiguredBound() async throws {
-    let configuration = SystemInteractiveCaptureConfiguration(
-      executableURL: URL(fileURLWithPath: "/usr/bin/printf"),
-      arguments: ["oversized"],
-      maximumOutputBytes: 4,
-      maximumPixelCount: 100
-    )
-    let session = try SystemInteractiveCaptureProcessLauncher().start(configuration)
-
-    await assertThrowsErrorAsync(try await session.result()) { error in
-      XCTAssertEqual(error as? SystemInteractiveCaptureProcessError, .outputTooLarge)
-    }
-  }
-
-  func testImageDecoderAcceptsPNGAndEnforcesThePixelBound() async throws {
-    let data = try makePNG(width: 8, height: 6)
-    let decoder = SystemInteractiveCaptureImageDecoder()
-
-    let image = try await decoder.decode(data, maximumPixelCount: 48)
-
-    XCTAssertEqual(image.width, 8)
-    XCTAssertEqual(image.height, 6)
-    await assertThrowsErrorAsync(
-      try await decoder.decode(data, maximumPixelCount: 47)
-    ) { error in
-      XCTAssertEqual(error as? InteractiveCaptureError, .invalidImage)
-    }
-  }
-
-  func testImageDecoderRejectsNonPNGData() async {
-    let decoder = SystemInteractiveCaptureImageDecoder()
-
-    await assertThrowsErrorAsync(
-      try await decoder.decode(Data("not private pixels".utf8), maximumPixelCount: 100)
-    ) { error in
-      XCTAssertEqual(error as? InteractiveCaptureError, .invalidImage)
-    }
+    XCTAssertNil(result.selectionOutcome)
+    XCTAssertFalse(result.wasCancelledForControlModifier)
   }
 
   private func makeService(
-    result: SystemInteractiveCaptureProcessResult
+    result: SystemInteractiveCaptureProcessResult,
+    screenCaptureService: any ScreenCaptureService = StubScreenCaptureService(
+      result: .failure(.injected)
+    )
   ) -> SystemInteractiveCaptureService {
-    SystemInteractiveCaptureService(
+    makeService(
       launcher: RecordingSystemInteractiveCaptureProcessLauncher(
         sessions: [StubSystemInteractiveCaptureProcessSession(result: .success(result))]
       ),
-      decoder: StubSystemInteractiveCaptureImageDecoder(result: .failure(.injected))
+      screenCaptureService: screenCaptureService
     )
   }
 
-  private func makePNG(width: Int, height: Int) throws -> Data {
-    let image = try makeImage(width: width, height: height)
-    let data = NSMutableData()
-    let destination = try XCTUnwrap(
-      CGImageDestinationCreateWithData(
-        data,
-        UTType.png.identifier as CFString,
-        1,
-        nil
-      )
+  private func makeService(
+    launcher: any SystemInteractiveCaptureProcessLaunching,
+    screenCaptureService: any ScreenCaptureService = StubScreenCaptureService(
+      result: .failure(.injected)
     )
-    CGImageDestinationAddImage(destination, image, nil)
-    XCTAssertTrue(CGImageDestinationFinalize(destination))
-    return data as Data
+  ) -> SystemInteractiveCaptureService {
+    SystemInteractiveCaptureService(
+      launcher: launcher,
+      screenCaptureService: screenCaptureService
+    )
+  }
+
+  private func makeLiveLauncher(
+    controlModifierProvider: @escaping @Sendable () -> Bool = { false }
+  ) -> SystemInteractiveCaptureProcessLauncher {
+    SystemInteractiveCaptureProcessLauncher(
+      controlModifierProvider: controlModifierProvider,
+      pointerStateProvider: { .releasedFixture },
+      displayProvider: { [try self.makeDisplay()] }
+    )
+  }
+
+  private func makeDisplay() throws -> DisplayGeometry {
+    try DisplayGeometry(
+      displayID: 7,
+      appKitFrame: CGRect(x: 0, y: 0, width: 1_920, height: 1_080),
+      coreGraphicsBounds: CGRect(x: 0, y: 0, width: 1_920, height: 1_080),
+      backingScale: 1
+    )
   }
 
   private func makeImage(width: Int, height: Int) throws -> CGImage {
@@ -282,6 +415,37 @@ private final class RecordingSystemInteractiveCaptureProcessLauncher:
     configurations.append(configuration)
     guard !sessions.isEmpty else { throw TestServiceError.injected }
     return sessions.removeFirst()
+  }
+}
+
+@MainActor
+private final class FailingSystemInteractiveCaptureProcessLauncher:
+  SystemInteractiveCaptureProcessLaunching
+{
+  private let error: SystemInteractiveCaptureProcessError
+
+  init(error: SystemInteractiveCaptureProcessError) {
+    self.error = error
+  }
+
+  func start(
+    _ configuration: SystemInteractiveCaptureConfiguration
+  ) throws -> any SystemInteractiveCaptureProcessSession {
+    throw error
+  }
+}
+
+private final class LockedControlModifierState: @unchecked Sendable {
+  private let lock = NSLock()
+  private var storedIsPressed: Bool
+
+  init(isPressed: Bool) {
+    storedIsPressed = isPressed
+  }
+
+  var isPressed: Bool {
+    get { lock.withLock { storedIsPressed } }
+    set { lock.withLock { storedIsPressed = newValue } }
   }
 }
 
@@ -355,33 +519,36 @@ private final class HoldingSystemInteractiveCaptureProcessSession:
   }
 }
 
-private final class StubSystemInteractiveCaptureImageDecoder:
-  SystemInteractiveCaptureImageDecoding,
-  @unchecked Sendable
-{
-  private let storedResult: Result<CGImage, TestServiceError>
-  private let lock = NSLock()
-  private var storedMaximumPixelCounts: [Int] = []
+private actor FailingScreenCaptureService: ScreenCaptureService {
+  let error: ScreenCaptureError
 
-  init(result: Result<CGImage, TestServiceError>) {
-    storedResult = result
+  init(error: ScreenCaptureError) {
+    self.error = error
   }
 
-  var maximumPixelCounts: [Int] {
-    lock.withLock { storedMaximumPixelCounts }
+  func capture(_ selection: SelectionResult) async throws -> CGImage {
+    throw error
   }
+}
 
-  func decode(_ data: Data, maximumPixelCount: Int) async throws -> CGImage {
-    lock.withLock { storedMaximumPixelCounts.append(maximumPixelCount) }
-    return try storedResult.get()
-  }
+extension SystemInteractiveCaptureConfiguration {
+  fileprivate static let exitingFixture = SystemInteractiveCaptureConfiguration(
+    executableURL: URL(fileURLWithPath: "/usr/bin/true"),
+    arguments: []
+  )
+}
+
+extension SystemInteractivePointerState {
+  fileprivate static let releasedFixture = SystemInteractivePointerState(
+    location: CGPoint(x: 100, y: 100),
+    isLeftButtonPressed: false
+  )
 }
 
 extension SystemInteractiveCaptureProcessResult {
   fileprivate static let cancelledFixture = SystemInteractiveCaptureProcessResult(
     terminationStatus: 1,
-    terminationReason: .exit,
-    output: Data()
+    terminationReason: .exit
   )
 }
 

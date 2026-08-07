@@ -34,10 +34,11 @@ The result must report `CopyLasso-0.2.0.dmg: OK`. Then:
 3. Complete the short first-run setup and keep the suggested `⇧⌘2` shortcut or record another one.
 4. The first capture asks macOS for Screen Recording permission. Approve CopyLasso, then choose **Quit & Reopen** if macOS offers it.
 
-Current unreleased source also uses macOS's native interactive region selector.
-On systems that show the additional direct-screen-access confirmation, choose
-**Allow**; it applies to the same user-initiated capture and does not grant a
-second permission category.
+Current unreleased source uses macOS's native interactive region selector for
+the crosshair and drag, then captures only that rectangle in memory through
+ScreenCaptureKit. On systems that show the additional direct-screen-access
+confirmation, choose **Allow**; it applies to the same user-initiated capture
+and does not grant a second permission category.
 
 ## Use CopyLasso
 

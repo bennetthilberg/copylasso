@@ -71,10 +71,19 @@ Permission history contains only the two booleans needed for these neutral label
 ## G46 Production Interactive Capture
 
 Normal builds synchronously start Apple's fixed interactive selector after a
-granted shortcut preflight. Direct tests pin the executable to
-`/usr/sbin/screencapture`, pin all six arguments, reject overlapping sessions,
-bound stdout to 128 MiB, validate exactly one PNG within 100 million pixels,
-and prove cancellation and stale completion cannot reach OCR or the clipboard.
+granted shortcut preflight. Direct tests pin the executable and arguments,
+including the `/dev/null` image destination, reject overlapping sessions, and
+prove that the subprocess cannot return screenshot bytes to CopyLasso. Pure
+tests cover pointer-state selection tracking, initiating-display clamping,
+coordinate conversion, menu-button release, tiny drags, cancellation, and stale
+completion. Service tests prove only a completed rectangle reaches the existing
+in-memory ScreenCaptureKit adapter and that its permission and capture failures
+remain correctly classified.
+
+Tests also reject Control before process launch, cancel a live selector when
+Control appears with clean process termination, prove the launcher is
+immediately reusable, distinguish Escape from failure, and prove every such
+path leaves CopyLasso's write-only clipboard service and success sound untouched.
 Workflow tests cover menu and same-turn shortcut starts, permission loss,
 capture failure, OCR/code continuation, clipboard preservation, sound ordering,
 HUD feedback, and immediate reuse.
@@ -86,6 +95,11 @@ sound and HUD, Escape, rapid reuse while the prior HUD is visible, Spaces, and
 a connected second display when available. A one-time macOS direct-access
 confirmation is acceptable; any Accessibility, Input Monitoring, microphone,
 file-access, or new entitlement request is not.
+
+Repeat once from the menu while holding Control and once by pressing Control
+during an active drag. Both attempts must stop without a CopyLasso clipboard
+write, success sound, or success HUD; a following ordinary capture must remain
+immediately reusable.
 
 The G13 and G14 matrices below remain historical and Debug-fixture coverage for
 the prior AppKit geometry and ScreenCaptureKit crop boundaries. They do not
