@@ -39,7 +39,8 @@ notification permission.
 Control during selection cancels because macOS could redirect the screenshot
 to the clipboard. An observe-only monitor retains down, drag, and up coordinates
 plus Control and Space state. It ignores clicks without a drag and cancels
-Space-adjusted rectangles. CopyLasso neither intercepts nor synthesizes input.
+Space-adjusted or cross-display rectangles that it cannot reproduce faithfully.
+CopyLasso neither intercepts nor synthesizes input.
 
 Successful capture replaces the general pasteboard with one plain-text value.
 CopyLasso never reads or snapshots the previous clipboard. Cancellation,

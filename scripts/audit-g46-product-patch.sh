@@ -95,6 +95,7 @@ for system_capture_contract in \
     'spaceModifierActive: spaceModifierProvider()' \
     'SystemInteractivePointerTransition' \
     'SystemInteractiveSelectionTracker' \
+    'let endedOnDifferentDisplay =' \
     'selectionResultFromCoreGraphics(' \
     'wasCancelledForControlModifier' \
     'process.interrupt()' \
@@ -102,6 +103,10 @@ for system_capture_contract in \
     'prepared.session.cancel()'; do
     require_text "$system_capture" "$system_capture_contract"
 done
+
+require_text \
+    'CopyLassoTests/Services/SystemInteractiveSelectionTrackerTests.swift' \
+    'testCrossDisplayReleaseFailsClosedInsteadOfCroppingTheVisibleRectangle'
 
 if /usr/bin/grep -nE \
     'CGEventTap|\.keyDown|\.keyUp|\.flagsChanged' \

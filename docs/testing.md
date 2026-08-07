@@ -77,7 +77,7 @@ prove that the subprocess cannot return screenshot bytes to CopyLasso. Pure
 tests cover event-coordinate selection tracking, queued fast drags,
 initiating-display clamping, coordinate conversion, stray mouse-up events, tiny
 drags, confirmation clicks without a drag, final-candidate replacement,
-Space-adjustment rejection, cancellation, and stale completion. Service tests
+Space-adjustment rejection, cross-display release rejection, cancellation, and stale completion. Service tests
 prove only a completed rectangle reaches the existing in-memory ScreenCaptureKit
 adapter, complete display bounds are revalidated, and permission and capture
 failures remain correctly classified.
@@ -109,6 +109,10 @@ normal drag. The confirmation click must not consume the selection and the real
 drag must complete normally. In a separate attempt, begin a drag and hold Space
 while moving the rectangle. CopyLasso must cancel without OCR, clipboard write,
 sound, or HUD; the following direct drag must work normally.
+
+With two displays connected, begin a native selection on one display and release
+on the other. CopyLasso must cancel without cropping, OCR, clipboard write,
+sound, or HUD; a following selection contained on either display must work.
 
 The G13 and G14 matrices below remain historical and Debug-fixture coverage for
 the prior AppKit geometry and ScreenCaptureKit crop boundaries. They do not

@@ -227,6 +227,15 @@ struct SystemInteractiveSelectionTracker {
       guard transition.kind == .released else { return nil }
       phase = .waitingForPress
       guard didDrag else { return nil }
+      let endedOnDifferentDisplay =
+        !display.contains(coreGraphicsPoint: transition.location)
+        && displays.contains(where: {
+          $0.displayID != display.displayID
+            && $0.contains(coreGraphicsPoint: transition.location)
+        })
+      guard !endedOnDifferentDisplay else {
+        return .cancelled(.displayChanged)
+      }
       let outcome: SelectionOutcome
       do {
         if let selection = try display.selectionResultFromCoreGraphics(

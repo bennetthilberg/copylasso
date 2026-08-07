@@ -84,7 +84,7 @@ See the [privacy policy](PRIVACY.md), [security and privacy review](docs/securit
 ## Known Limitations
 
 - Version 0.2 targets ordinary, approximately horizontal, single-column U.S. English text. Dense tables, handwriting, strongly rotated text, and complex multi-column layouts can be incomplete or reordered.
-- A selection belongs to the display where the drag begins and clamps at that display's edge. Start another capture to select text on a different display.
+- Public 0.2.0 keeps a selection on the display where the drag begins. Current unreleased source cancels if the native selector is released on a different display rather than cropping a cross-display rectangle; start another capture on the intended display.
 - Protected or DRM-restricted content can appear blank or unavailable to screen capture. CopyLasso follows macOS capture restrictions and does not bypass them.
 - Public 0.2.0 can briefly leave the ordinary pointer visible during immediate stationary-pointer reuse. Current unreleased source replaces that handoff with macOS's native interactive selector; the fix is not yet in the public download.
 - Current unreleased source accepts a direct region drag in the native selector. Holding Space to reposition an in-progress rectangle cancels that attempt so CopyLasso cannot capture geometry different from what macOS displayed.

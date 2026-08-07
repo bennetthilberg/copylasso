@@ -168,6 +168,25 @@ final class SystemInteractiveSelectionTrackerTests: XCTestCase {
     )
   }
 
+  func testCrossDisplayReleaseFailsClosedInsteadOfCroppingTheVisibleRectangle() throws {
+    let initiatingDisplay = try makeDisplay()
+    let adjacentDisplay = try DisplayGeometry(
+      displayID: 8,
+      appKitFrame: CGRect(x: 1_920, y: 0, width: 1_280, height: 1_024),
+      coreGraphicsBounds: CGRect(x: 1_920, y: 0, width: 1_280, height: 1_024),
+      backingScale: 1
+    )
+    var tracker = SystemInteractiveSelectionTracker(
+      displays: [initiatingDisplay, adjacentDisplay]
+    )
+
+    XCTAssertNil(tracker.observe(.pressed(at: CGPoint(x: 1_800, y: 200))))
+    XCTAssertNil(tracker.observe(.dragged(at: CGPoint(x: 2_100, y: 300))))
+    let outcome = tracker.observe(.released(at: CGPoint(x: 2_200, y: 400)))
+
+    XCTAssertEqual(outcome, .cancelled(.displayChanged))
+  }
+
   private func makeDisplay() throws -> DisplayGeometry {
     try DisplayGeometry(
       displayID: 7,
