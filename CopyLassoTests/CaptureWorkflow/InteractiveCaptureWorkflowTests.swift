@@ -55,6 +55,7 @@ final class InteractiveCaptureWorkflowTests: XCTestCase {
     XCTAssertTrue(context.feedback.presentedFeedback.isEmpty)
     XCTAssertEqual(context.permission.recordCaptureSuccessCallCount, 0)
     XCTAssertEqual(context.coordinator.state, .idle)
+    XCTAssertEqual(context.permission.authoritativeObservationCallCount, 1)
   }
 
   func testEmptySelectionOutputBecomesPermissionRecoveryWhenAccessChanged() async throws {
@@ -74,6 +75,60 @@ final class InteractiveCaptureWorkflowTests: XCTestCase {
     XCTAssertEqual(context.sound.playCallCount, 0)
     XCTAssertTrue(context.feedback.presentedFeedback.isEmpty)
     XCTAssertEqual(context.coordinator.state, .idle)
+    XCTAssertEqual(context.permission.authoritativeObservationCallCount, 1)
+  }
+
+  func testEmptySelectionUsesAuthoritativeAccessWhenPreflightRemainsStale() async throws {
+    let capture = StubInteractiveCaptureService(result: .success(.cancelled(.escape)))
+    let context = makeContext(capture: capture)
+    context.permission.authoritativeResult = .notGrantedAfterPreviouslyGranted
+
+    _ = context.command.performFromGlobalShortcut()
+    await context.scheduler.runNext()
+
+    XCTAssertEqual(context.permission.authoritativeObservationCallCount, 1)
+    XCTAssertEqual(context.permission.recordCaptureDenialCallCount, 1)
+    XCTAssertEqual(
+      context.recovery.presentedObservations,
+      [.notGrantedAfterPreviouslyGranted]
+    )
+    XCTAssertTrue(context.feedback.presentedFeedback.isEmpty)
+  }
+
+  func testInteractivePixelsAreReleasedBeforeFeedbackPresentation() async throws {
+    let capture = EphemeralInteractiveCaptureService()
+    let feedback = ImageLifetimeFeedbackService(capture: capture)
+    let coordinator = CaptureCoordinator()
+    let scheduler = InteractiveCaptureWorkScheduler()
+    let command = CaptureCommand(
+      coordinator: coordinator,
+      permissionService: StubScreenCapturePermissionService(
+        currentResult: .granted,
+        requestResult: .granted
+      ),
+      interactiveCaptureService: capture,
+      ocrService: StubOCRService(
+        result: .success([
+          RecognizedTextObservation(
+            text: "system selector text",
+            confidence: 0.99,
+            boundingBox: CGRect(x: 0.1, y: 0.2, width: 0.7, height: 0.2)
+          )
+        ])
+      ),
+      textAssembler: SpyTextAssembler(result: "system selector text"),
+      barcodeService: StubBarcodeRecognitionService(result: .success([])),
+      clipboardService: SpyClipboardService(),
+      successSoundPlayer: SpySuccessSoundPlayer(),
+      feedbackService: feedback,
+      recoveryPresenter: SpyPermissionRecoveryPresenter(),
+      scheduleWork: scheduler.schedule
+    )
+
+    _ = command.performFromGlobalShortcut()
+    await scheduler.runNext()
+
+    XCTAssertEqual(feedback.imageReleaseObservations, [true])
   }
 
   func testDeniedPermissionNeverStartsInteractiveSelector() async throws {
@@ -235,6 +290,54 @@ private final class StubInteractiveCaptureService: InteractiveCaptureService {
   func cancelCapture() {
     cancelCallCount += 1
   }
+}
+
+@MainActor
+private final class EphemeralInteractiveCaptureService: InteractiveCaptureService {
+  private weak var image: CGImage?
+
+  func prepareForCaptureTransition() {}
+
+  func capture() async throws -> InteractiveCaptureOutcome {
+    guard
+      let context = CGContext(
+        data: nil,
+        width: 320,
+        height: 180,
+        bitsPerComponent: 8,
+        bytesPerRow: 0,
+        space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+      ),
+      let image = context.makeImage()
+    else {
+      throw InteractiveCaptureError.captureFailed
+    }
+    self.image = image
+    return .captured(image)
+  }
+
+  func cancelCapture() {}
+
+  func imageWasReleased() -> Bool {
+    image == nil
+  }
+}
+
+@MainActor
+private final class ImageLifetimeFeedbackService: FeedbackService {
+  private let capture: EphemeralInteractiveCaptureService
+  private(set) var imageReleaseObservations: [Bool] = []
+
+  init(capture: EphemeralInteractiveCaptureService) {
+    self.capture = capture
+  }
+
+  func present(_ feedback: CaptureFeedback) throws {
+    imageReleaseObservations.append(capture.imageWasReleased())
+  }
+
+  func dismiss() {}
 }
 
 @MainActor

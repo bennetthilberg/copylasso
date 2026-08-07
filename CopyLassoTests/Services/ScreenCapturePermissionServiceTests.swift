@@ -10,6 +10,7 @@ final class ScreenCapturePermissionServiceTests: XCTestCase {
     _ = context.service
 
     XCTAssertEqual(context.client.preflightCallCount, 0)
+    XCTAssertEqual(context.client.authoritativePreflightCallCount, 0)
     XCTAssertEqual(context.client.requestCallCount, 0)
     XCTAssertEqual(context.client.openedURLs, [])
   }
@@ -45,6 +46,20 @@ final class ScreenCapturePermissionServiceTests: XCTestCase {
     XCTAssertFalse(context.history.history.hasRequested)
     XCTAssertEqual(context.client.preflightCallCount, 1)
     XCTAssertEqual(context.client.requestCallCount, 0)
+  }
+
+  func testAuthoritativeObservationDoesNotTrustAStaleGrantedPreflight() async {
+    let context = makeContext(
+      history: ScreenCapturePermissionHistory(hasObservedGranted: true),
+      preflight: true,
+      authoritativePreflight: false
+    )
+
+    let observation = await context.service.authoritativeObservation()
+
+    XCTAssertEqual(observation, .notGrantedAfterPreviouslyGranted)
+    XCTAssertEqual(context.client.preflightCallCount, 0)
+    XCTAssertEqual(context.client.authoritativePreflightCallCount, 1)
   }
 
   func testRequestPersistsHistoryBeforeInvokingTheSystemClient() {
@@ -170,12 +185,14 @@ final class ScreenCapturePermissionServiceTests: XCTestCase {
   private func makeContext(
     history: ScreenCapturePermissionHistory = ScreenCapturePermissionHistory(),
     preflight: Bool = false,
+    authoritativePreflight: Bool? = nil,
     request: Bool = false,
     openSettings: Bool = true
   ) -> Context {
     let historyStore = StubPermissionHistoryStore(history: history)
     let client = PermissionClientSpy(
       preflightResult: preflight,
+      authoritativePreflightResult: authoritativePreflight ?? preflight,
       requestResult: request,
       openResult: openSettings
     )
@@ -209,14 +226,22 @@ private final class StubPermissionHistoryStore: ScreenCapturePermissionHistorySt
 @MainActor
 private final class PermissionClientSpy {
   let preflightResult: Bool
+  let authoritativePreflightResult: Bool
   let requestResult: Bool
   let openResult: Bool
   private(set) var preflightCallCount = 0
+  private(set) var authoritativePreflightCallCount = 0
   private(set) var requestCallCount = 0
   private(set) var openedURLs: [URL] = []
 
-  init(preflightResult: Bool, requestResult: Bool, openResult: Bool) {
+  init(
+    preflightResult: Bool,
+    authoritativePreflightResult: Bool,
+    requestResult: Bool,
+    openResult: Bool
+  ) {
     self.preflightResult = preflightResult
+    self.authoritativePreflightResult = authoritativePreflightResult
     self.requestResult = requestResult
     self.openResult = openResult
   }
@@ -227,6 +252,11 @@ private final class PermissionClientSpy {
         guard let self else { return false }
         preflightCallCount += 1
         return preflightResult
+      },
+      authoritativePreflight: { [weak self] in
+        guard let self else { return false }
+        authoritativePreflightCallCount += 1
+        return authoritativePreflightResult
       },
       request: { [weak self] in
         guard let self else { return false }

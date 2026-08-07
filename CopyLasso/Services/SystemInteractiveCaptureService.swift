@@ -400,12 +400,13 @@ final class SystemInteractiveCaptureService: InteractiveCaptureService {
       if result.wasCancelledForControlModifier {
         return .cancelled(.systemInterrupted)
       }
+      guard result.terminationReason == .exit else {
+        throw InteractiveCaptureError.processFailed(status: result.terminationStatus)
+      }
       if let selectionOutcome = result.selectionOutcome {
         return try await complete(selectionOutcome)
       }
-      if result.terminationReason == .exit,
-        result.terminationStatus == 0 || result.terminationStatus == 1
-      {
+      if result.terminationStatus == 0 || result.terminationStatus == 1 {
         return .cancelled(.escape)
       }
       throw InteractiveCaptureError.processFailed(status: result.terminationStatus)

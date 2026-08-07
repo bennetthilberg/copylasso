@@ -193,10 +193,10 @@ for required_patch_guard in \
     "approved_post_v02_security_patch_tree_pattern" \
     "g46_product_patch_tree_pattern" \
     "g44_release_state_tree_pattern" \
-    "expected_candidate_baseline_tree_digest='5550ab4569fe6917d1b0d4390d6c881afbe42055ec6717b4ff9ec00dac2916bf'" \
+    "expected_candidate_baseline_tree_digest='2c49860084c74bc4ac5956bdd8eef8afd2e8c064710dc97f816900fcc1e891a6'" \
     "expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'" \
-    "expected_g44_release_state_files_digest='20d0b760a61db6de40caf947acb7ac0613c5e930df9005d445348e766fdfd8de'" \
-    "expected_approved_post_candidate_patch_digest='8061a8a309335b535ae44476fd56ff12c5b71e78befe5ea48fb6e79f179fcc53'" \
+    "expected_g44_release_state_files_digest='ca6ebe968b5622fa109cb4b7ea53c00cef945d5d93233f316a1ab470c4480962'" \
+    "expected_approved_post_candidate_patch_digest='b80b2087ccf2be739d11b7a32c1b738d0a30ca455205fa77ec146c57d4738d72'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
     '"$current_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest"' \
@@ -275,6 +275,9 @@ for required_g46_guard in \
     'SystemInteractiveSelectionTracker' \
     'screenCaptureService.capture(selection)' \
     'interactiveCaptureService.prepareForCaptureTransition()' \
+    'func authoritativeObservation() async' \
+    '_ = try await SCShareableContent.current' \
+    'resolveInteractiveCapture(using: service)' \
     'CGDisplay(Hide|Show)Cursor' \
     'captureCommand.performFromGlobalShortcut()' \
     'Data.*write\(to:'; do
@@ -285,6 +288,8 @@ for required_g46_guard in \
 done
 for required_g46_ci_guard in \
     'static let selectionStyleMask: NSWindow.StyleMask = .borderless' \
+    'readonly expected_capture_api_files="$permission_client' \
+    'ScreenCaptureKit APIs must remain confined to the production permission and in-memory capture services.' \
     'Debug display and selection-overlay APIs must remain confined to the AppKit fixture service.'; do
     if ! /usr/bin/grep -Fq -- "$required_g46_ci_guard" "$ci_script"; then
         fail "Canonical CI is missing its Debug-only AppKit fixture guard: $required_g46_ci_guard"

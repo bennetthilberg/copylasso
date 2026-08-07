@@ -8,33 +8,32 @@ supported codes locally, and writes the result to the clipboard.
 ## Capture and recognition
 
 - Public 0.2.0 uses ScreenCaptureKit. Current source uses Apple's region
-  selector, derives only the rectangle from mouse events, then captures that rectangle in
-  memory with ScreenCaptureKit. OCR uses Apple Vision locally.
-  Code payloads are recognized locally with Vision in five formats: QR, Code 128,
-  Data Matrix, PDF417, and Aztec.
+  selector, transient pointer samples, and ScreenCaptureKit. Apple Vision
+  recognizes OCR plus QR, Code 128, Data Matrix, PDF417, and Aztec locally.
 - Captured images, recognition observations, complete results, and the bounded
   HUD preview remain in memory only as long as their active operation needs
   them. CopyLasso does not save or upload them.
-- Code payloads are inert plain text. CopyLasso never opens, executes, or
-  interprets them.
+- Code payloads are recognized locally and copied as inert plain text.
+  CopyLasso never opens, executes, or interprets them.
 - Core capture and recognition work offline. CopyLasso does not bypass macOS
   protected-content restrictions.
 
 CopyLasso has no accounts, sync, analytics, telemetry, history, or content logs.
-It never logs or persists pixels, recognized text, code payloads, clipboard
-text, or HUD previews.
+It never logs or persists captured or recognized content.
 
 ## Permission and clipboard
 
-CopyLasso asks for macOS Screen Recording access only after a user starts a
-capture. Current source starts only `/usr/sbin/screencapture` with fixed
-project-owned arguments: there is no shell or user-controlled command. macOS
-may show its direct-screen-access confirmation for this native selector. Its
+CopyLasso asks for Screen Recording access only after capture starts. Current
+source runs `/usr/sbin/screencapture` with fixed project arguments and no shell
+or user-controlled command. macOS may show a direct-access confirmation. Its
 image destination is `/dev/null`; CopyLasso receives no encoded screenshot from
 the subprocess. ScreenCaptureKit returns only the selected pixels in memory,
-and the image is released after recognition or cancellation.
+and the image is released before feedback begins or when the operation cancels.
+If the selector returns without geometry, CopyLasso asks ScreenCaptureKit only
+to verify current access before deciding whether the attempt was Escape or a
+permission denial. It retains no shareable-content metadata from that check.
 The core workflow needs no Accessibility, Input Monitoring, microphone, or
-notification permission.
+notification access.
 
 Control during selection cancels because macOS could redirect the screenshot
 to the clipboard. While the selector is active, CopyLasso samples only pointer
@@ -53,8 +52,8 @@ tradeoff that avoids reading and temporarily retaining arbitrary prior data.
 
 Success sound playback receives no captured pixels, recognized content, or clipboard text.
 It occurs only after a successful clipboard write and can be disabled.
-HUD feedback is nonactivating, bounded to 80 preview characters, and cleared
-after 2.5 seconds; cancellation presents no HUD.
+HUD feedback is nonactivating, bounded, and cleared after 2.5 seconds;
+cancellation presents no HUD.
 
 ## Stored settings
 
@@ -78,10 +77,10 @@ CopyLasso DMG on GitHub Releases. System profiling, cookies, external notes,
 automatic download, and automatic installation are disabled. Authenticated
 notes are transient; download and installation each require a user decision.
 
-The feed host and GitHub can observe IP address and request time. Sparkle's user
-agent identifies the CopyLasso and Sparkle versions. Update requests send no screen pixels, selected rectangle,
-recognized text, code payload, clipboard data, HUD preview, frontmost-app name,
-hardware profile, stable user or device identifier, analytics, or telemetry.
+The feed host and GitHub can observe IP address, request time, and a user agent
+containing CopyLasso and Sparkle versions. Update requests send no screen pixels,
+recognized content, clipboard data, app name, hardware profile, stable identifier,
+analytics, or telemetry.
 Links in Settings open in the default browser rather than being fetched by
 CopyLasso.
 

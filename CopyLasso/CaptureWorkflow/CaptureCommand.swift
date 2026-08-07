@@ -11,6 +11,11 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
   typealias Work = @MainActor @Sendable () async -> Void
   typealias WorkScheduler = @MainActor (@escaping Work) -> Void
 
+  private enum InteractiveCaptureResolution {
+    case feedback(CaptureFeedback)
+    case finished
+  }
+
   private let coordinator: CaptureCoordinator
   private let permissionService: any ScreenCapturePermissionService
   private let selectionService: (any RegionSelectionService)?
@@ -276,15 +281,29 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
   private func proceedToInteractiveCapture(
     using service: any InteractiveCaptureService
   ) async {
+    let resolution = await resolveInteractiveCapture(using: service)
+    if case .feedback(let feedback) = resolution {
+      presentCompletionFeedback(feedback)
+    }
+  }
+
+  private func resolveInteractiveCapture(
+    using service: any InteractiveCaptureService
+  ) async -> InteractiveCaptureResolution {
     do {
       selectionTransitionPrepared = false
       let outcome = try await service.capture()
       switch outcome {
       case .captured(let image):
-        guard !transitionToRequestedCancellationIfNeeded() else { return }
-        await completeInteractiveCapture(image)
+        guard !transitionToRequestedCancellationIfNeeded() else {
+          return .finished
+        }
+        return await completeInteractiveCapture(image).map(
+          InteractiveCaptureResolution.feedback
+        ) ?? .finished
       case .cancelled(let reason):
-        if permissionService.currentObservation() == .granted {
+        let observation = await permissionService.authoritativeObservation()
+        if observation == .granted {
           _ = coordinator.handle(
             .cancel(requestedCancellationReason ?? reason.captureCancellationReason)
           )
@@ -292,10 +311,11 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
           recoveryPresenter.present(permissionService.recordCaptureDenial())
           _ = coordinator.handle(.fail(.capture))
         }
+        return .finished
       }
     } catch let error as InteractiveCaptureError {
       if transitionToRequestedCancellationIfNeeded() {
-        return
+        return .finished
       }
       if error == .permissionDenied {
         recoveryPresenter.present(permissionService.recordCaptureDenial())
@@ -308,6 +328,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
         presentTerminalFailure(.capture)
       }
     }
+    return .finished
   }
 
   private func completeSelection(_ selection: SelectionResult) async {
@@ -325,9 +346,9 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     }
   }
 
-  private func completeInteractiveCapture(_ image: CGImage) async {
+  private func completeInteractiveCapture(_ image: CGImage) async -> CaptureFeedback? {
     guard case .transitioned = coordinator.handle(.selectionCompleted) else {
-      return
+      return nil
     }
     permissionService.recordCaptureSuccess()
 
@@ -336,13 +357,13 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
       guard case .transitioned = coordinator.handle(.captureCompleted) else {
         throw CaptureOperationInterruption.failure(.internal)
       }
-      let feedback = try await recognizeAndWrite(image)
-      presentCompletionFeedback(feedback)
+      return try await recognizeAndWrite(image)
     } catch let interruption as CaptureOperationInterruption {
       handle(interruption)
     } catch {
       presentTerminalFailure(.internal)
     }
+    return nil
   }
 
   private func runPrivateOperation(_ selection: SelectionResult) async throws -> CaptureFeedback {

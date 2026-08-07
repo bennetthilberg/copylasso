@@ -226,6 +226,36 @@ final class SystemInteractiveCaptureServiceTests: XCTestCase {
     }
   }
 
+  func testSignalledTerminationRejectsCachedSelectionGeometry() async throws {
+    let display = try makeDisplay()
+    let selection = try XCTUnwrap(
+      display.selectionResultFromCoreGraphics(
+        from: CGPoint(x: 40, y: 50),
+        to: CGPoint(x: 240, y: 150)
+      )
+    )
+    let screenCapture = StubScreenCaptureService(
+      result: .success(try makeImage(width: 200, height: 100))
+    )
+    let service = makeService(
+      result: SystemInteractiveCaptureProcessResult(
+        terminationStatus: SIGTERM,
+        terminationReason: .uncaughtSignal,
+        selectionOutcome: .selected(selection)
+      ),
+      screenCaptureService: screenCapture
+    )
+
+    await assertThrowsErrorAsync(try await service.capture()) { error in
+      XCTAssertEqual(
+        error as? InteractiveCaptureError,
+        .processFailed(status: SIGTERM)
+      )
+    }
+    let capturedSelections = await screenCapture.selections
+    XCTAssertTrue(capturedSelections.isEmpty)
+  }
+
   func testTooSmallSelectionDoesNotRequestPixels() async throws {
     let screenCapture = StubScreenCaptureService(result: .failure(.injected))
     let service = makeService(

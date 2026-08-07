@@ -80,7 +80,9 @@ clicks followed by a real drag, final-candidate replacement, cross-display
 release rejection, cancellation, and stale completion. Service tests
 prove only a completed rectangle reaches the existing in-memory ScreenCaptureKit
 adapter, complete display bounds are revalidated, and permission and capture
-failures remain correctly classified.
+failures remain correctly classified. Empty native-selector output performs an
+injected authoritative ScreenCaptureKit access check, and signalled termination
+cannot consume cached geometry.
 
 Tests also reject Control before process launch, cancel a live selector when
 polled Control appears, prove the launcher is immediately
@@ -88,7 +90,8 @@ reusable, distinguish Escape from failure, and prove every such path leaves
 CopyLasso's write-only clipboard service and success sound untouched.
 Workflow tests cover menu and same-turn shortcut starts, permission loss,
 capture failure, OCR/code continuation, clipboard preservation, sound ordering,
-HUD feedback, and immediate reuse.
+HUD feedback, immediate reuse, and release of interactive pixels before HUD
+presentation.
 
 The signed physical check must use one running build and cover a stationary
 pointer in Safari and another application, exactly one immediate native

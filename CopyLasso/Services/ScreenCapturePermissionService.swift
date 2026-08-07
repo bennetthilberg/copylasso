@@ -1,9 +1,9 @@
-import AppKit
-import CoreGraphics
+import Foundation
 
 @MainActor
 protocol ScreenCapturePermissionService: AnyObject {
   func currentObservation() -> ScreenCaptureAuthorizationObservation
+  func authoritativeObservation() async -> ScreenCaptureAuthorizationObservation
   func requestAccess() -> ScreenCaptureAuthorizationObservation
   func recordCaptureDenial() -> ScreenCaptureAuthorizationObservation
   func recordCaptureSuccess()
@@ -12,6 +12,10 @@ protocol ScreenCapturePermissionService: AnyObject {
 }
 
 extension ScreenCapturePermissionService {
+  func authoritativeObservation() async -> ScreenCaptureAuthorizationObservation {
+    currentObservation()
+  }
+
   func recordCaptureSuccess() {}
   func beginUserInitiatedRetry() {}
 }
@@ -23,14 +27,22 @@ struct ScreenCapturePermissionClient {
   )!
 
   let preflight: () -> Bool
+  let authoritativePreflight: () async -> Bool
   let request: () -> Bool
   let openURL: (URL) -> Bool
 
-  static let live = ScreenCapturePermissionClient(
-    preflight: { CGPreflightScreenCaptureAccess() },
-    request: { CGRequestScreenCaptureAccess() },
-    openURL: { NSWorkspace.shared.open($0) }
-  )
+  init(
+    preflight: @escaping () -> Bool,
+    authoritativePreflight: (() async -> Bool)? = nil,
+    request: @escaping () -> Bool,
+    openURL: @escaping (URL) -> Bool
+  ) {
+    self.preflight = preflight
+    self.authoritativePreflight = authoritativePreflight ?? { preflight() }
+    self.request = request
+    self.openURL = openURL
+  }
+
 }
 
 @MainActor
@@ -56,6 +68,10 @@ final class SystemScreenCapturePermissionService: ScreenCapturePermissionService
       hasUserInitiatedObservationRetry = false
     }
     return observation(granted: client.preflight())
+  }
+
+  func authoritativeObservation() async -> ScreenCaptureAuthorizationObservation {
+    observation(granted: await client.authoritativePreflight())
   }
 
   func requestAccess() -> ScreenCaptureAuthorizationObservation {

@@ -34,7 +34,7 @@ privacy_words="$(/usr/bin/wc -w < "$repository_root/PRIVACY.md" | /usr/bin/tr -d
 [[ "$privacy_words" -le 700 ]] || \
     fail "PRIVACY.md must remain concise (700 words maximum; found $privacy_words)."
 for privacy_boundary in \
-    'Update requests send no screen pixels' \
+    'Update requests send no screen' \
     'Success sound playback receives no captured pixels, recognized content, or clipboard text.' \
     'Code payloads are recognized locally' \
     'manually install public CopyLasso 0.2.0 once'; do
@@ -60,9 +60,9 @@ require_text README.md \
 require_text README.md \
     'Current unreleased source replaces that handoff with macOS'
 require_text PRIVACY.md \
-    'derives only'
+    'transient pointer samples'
 require_text PRIVACY.md \
-    'then captures that rectangle in'
+    'selector, transient pointer samples, and ScreenCaptureKit.'
 require_text docs/architecture/capture-workflow.md \
     'Native interactive selection and bounded in-memory capture'
 require_text docs/architecture/overview.md \
@@ -76,6 +76,8 @@ readonly application='CopyLasso/App/CopyLassoApp.swift'
 readonly global_shortcut_controller='CopyLasso/App/GlobalShortcutController.swift'
 readonly capture_command='CopyLasso/CaptureWorkflow/CaptureCommand.swift'
 readonly interactive_capture_contract='CopyLasso/Services/InteractiveCaptureService.swift'
+readonly permission_service='CopyLasso/Services/ScreenCapturePermissionService.swift'
+readonly permission_client='CopyLasso/Services/SystemScreenCapturePermissionClient.swift'
 readonly system_capture='CopyLasso/Services/SystemInteractiveCaptureService.swift'
 readonly screen_capture='CopyLasso/Services/SystemScreenCaptureService.swift'
 
@@ -101,6 +103,9 @@ for system_capture_contract in \
     require_text "$system_capture" "$system_capture_contract"
 done
 
+require_text "$permission_service" 'func authoritativeObservation() async'
+require_text "$permission_client" '_ = try await SCShareableContent.current'
+
 require_text \
     'CopyLassoTests/Services/SystemInteractiveSelectionTrackerTests.swift' \
     'testCrossDisplayReleaseFailsClosedInsteadOfClamping'
@@ -110,6 +115,12 @@ require_text \
 require_text \
     'CopyLassoTests/Services/SystemInteractiveCaptureServiceTests.swift' \
     'testLiveProcessSessionUsesRealDragAfterTinyConfirmationClick'
+require_text \
+    'CopyLassoTests/Services/SystemInteractiveCaptureServiceTests.swift' \
+    'testSignalledTerminationRejectsCachedSelectionGeometry'
+require_text \
+    'CopyLassoTests/CaptureWorkflow/InteractiveCaptureWorkflowTests.swift' \
+    'testInteractivePixelsAreReleasedBeforeFeedbackPresentation'
 
 if /usr/bin/grep -nE \
     'CGEventTap|NSEvent\.add(Global|Local)MonitorForEvents|\.keyDown|\.keyUp|\.flagsChanged' \
@@ -127,6 +138,8 @@ done
 for workflow_contract in \
     'interactiveCaptureService.prepareForCaptureTransition()' \
     'let outcome = try await service.capture()' \
+    'await permissionService.authoritativeObservation()' \
+    'resolveInteractiveCapture(using: service)' \
     'permissionService.recordCaptureSuccess()' \
     'interactiveCaptureService.cancelCapture()'; do
     require_text "$capture_command" "$workflow_contract"
