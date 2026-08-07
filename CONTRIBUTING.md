@@ -53,6 +53,16 @@ A pull request should explain:
 
 Submit only green commits. Reviewers may ask for a change to be split if unrelated work makes the behavior or verification difficult to assess.
 
+Codex automated review is limited to three requests per pull request, including
+an automatic review that actually runs. Maintainers triage every result, fix
+and verify valid findings, and dispose of stale, duplicate, or inapplicable
+findings with evidence. After the third request, no fourth review is requested:
+the final head receives a direct diff, CI, and unresolved-thread audit instead.
+A pull request is review-clean when no valid blocking finding remains after
+that bounded disposition. Any unresolved valid blocker or accepted residual
+risk must be reported to the maintainer rather than hidden behind another
+automated-review loop.
+
 Maintainers may temporarily apply the `ci-failure-probe` pull-request label to verify that both CI architectures report a controlled failing unit test. The label must be removed after the red result; removal reruns the same commit without the probe. Do not add a deliberately failing commit for this purpose.
 
 By contributing, you agree that your contribution is licensed under the repository's [MIT License](LICENSE).
