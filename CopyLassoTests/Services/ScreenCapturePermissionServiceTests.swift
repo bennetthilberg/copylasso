@@ -52,12 +52,27 @@ final class ScreenCapturePermissionServiceTests: XCTestCase {
     let context = makeContext(
       history: ScreenCapturePermissionHistory(hasObservedGranted: true),
       preflight: true,
-      authoritativePreflight: false
+      authoritativePreflight: .denied
     )
 
     let observation = await context.service.authoritativeObservation()
 
     XCTAssertEqual(observation, .notGrantedAfterPreviouslyGranted)
+    XCTAssertEqual(context.client.preflightCallCount, 0)
+    XCTAssertEqual(context.client.authoritativePreflightCallCount, 1)
+  }
+
+  func testAuthoritativeObservationPreservesAnUnavailableProbe() async {
+    let context = makeContext(
+      history: ScreenCapturePermissionHistory(hasObservedGranted: true),
+      preflight: true,
+      authoritativePreflight: .unavailable
+    )
+
+    let observation = await context.service.authoritativeObservation()
+
+    XCTAssertNil(observation)
+    XCTAssertEqual(context.history.history.hasObservedGranted, true)
     XCTAssertEqual(context.client.preflightCallCount, 0)
     XCTAssertEqual(context.client.authoritativePreflightCallCount, 1)
   }
@@ -185,14 +200,15 @@ final class ScreenCapturePermissionServiceTests: XCTestCase {
   private func makeContext(
     history: ScreenCapturePermissionHistory = ScreenCapturePermissionHistory(),
     preflight: Bool = false,
-    authoritativePreflight: Bool? = nil,
+    authoritativePreflight: ScreenCaptureAuthoritativePreflightResult? = nil,
     request: Bool = false,
     openSettings: Bool = true
   ) -> Context {
     let historyStore = StubPermissionHistoryStore(history: history)
     let client = PermissionClientSpy(
       preflightResult: preflight,
-      authoritativePreflightResult: authoritativePreflight ?? preflight,
+      authoritativePreflightResult: authoritativePreflight
+        ?? (preflight ? .granted : .denied),
       requestResult: request,
       openResult: openSettings
     )
@@ -226,7 +242,7 @@ private final class StubPermissionHistoryStore: ScreenCapturePermissionHistorySt
 @MainActor
 private final class PermissionClientSpy {
   let preflightResult: Bool
-  let authoritativePreflightResult: Bool
+  let authoritativePreflightResult: ScreenCaptureAuthoritativePreflightResult
   let requestResult: Bool
   let openResult: Bool
   private(set) var preflightCallCount = 0
@@ -236,7 +252,7 @@ private final class PermissionClientSpy {
 
   init(
     preflightResult: Bool,
-    authoritativePreflightResult: Bool,
+    authoritativePreflightResult: ScreenCaptureAuthoritativePreflightResult,
     requestResult: Bool,
     openResult: Bool
   ) {
@@ -254,7 +270,7 @@ private final class PermissionClientSpy {
         return preflightResult
       },
       authoritativePreflight: { [weak self] in
-        guard let self else { return false }
+        guard let self else { return .unavailable }
         authoritativePreflightCallCount += 1
         return authoritativePreflightResult
       },

@@ -228,6 +228,25 @@ final class InteractiveCaptureWorkflowTests: XCTestCase {
     XCTAssertEqual(context.coordinator.state, .idle)
   }
 
+  func testUnavailableAuthoritativePermissionCheckIsACaptureFailureNotADenial() async {
+    let permission = StubScreenCapturePermissionService(
+      currentResult: .granted,
+      requestResult: .granted
+    )
+    permission.authoritativeObservationHandler = { nil }
+    let capture = StubInteractiveCaptureService(result: .success(.cancelled(.escape)))
+    let context = makeContext(capture: capture, permission: permission)
+
+    _ = context.command.performFromGlobalShortcut()
+    await context.scheduler.runNext()
+
+    XCTAssertEqual(context.permission.authoritativeObservationCallCount, 1)
+    XCTAssertEqual(context.permission.recordCaptureDenialCallCount, 0)
+    XCTAssertTrue(context.recovery.presentedObservations.isEmpty)
+    XCTAssertEqual(context.feedback.presentedFeedback, [.failure(.capture)])
+    XCTAssertEqual(context.coordinator.state, .idle)
+  }
+
   private func makeContext(
     capture: any InteractiveCaptureService,
     currentPermission: ScreenCaptureAuthorizationObservation = .granted,

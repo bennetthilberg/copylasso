@@ -309,6 +309,10 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
         guard !transitionToRequestedCancellationIfNeeded() else {
           return .finished
         }
+        guard let observation else {
+          presentTerminalFailure(.capture)
+          return .finished
+        }
         if observation == .granted {
           _ = coordinator.handle(
             .cancel(requestedCancellationReason ?? reason.captureCancellationReason)

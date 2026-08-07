@@ -105,6 +105,11 @@ done
 
 require_text "$permission_service" 'func authoritativeObservation() async'
 require_text "$permission_client" '_ = try await SCShareableContent.current'
+require_text "$permission_client" 'SCStreamError.Code.userDeclined.rawValue'
+require_text "$permission_client" 'return .unavailable'
+require_text \
+    'CopyLassoTests/Services/SystemScreenCapturePermissionClientTests.swift' \
+    'testDisplayAndFrameworkFailuresRemainUnavailable'
 
 require_text \
     'CopyLassoTests/Services/SystemInteractiveSelectionTrackerTests.swift' \
