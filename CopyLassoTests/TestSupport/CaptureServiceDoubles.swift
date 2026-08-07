@@ -11,6 +11,7 @@ enum TestServiceError: Error, Equatable, Sendable {
 final class StubScreenCapturePermissionService: ScreenCapturePermissionService {
   var currentResult: ScreenCaptureAuthorizationObservation
   var authoritativeResult: ScreenCaptureAuthorizationObservation?
+  var authoritativeObservationHandler: (() async -> ScreenCaptureAuthorizationObservation)?
   var requestResult: ScreenCaptureAuthorizationObservation
   var openSystemSettingsResult = true
   private(set) var currentObservationCallCount = 0
@@ -36,6 +37,9 @@ final class StubScreenCapturePermissionService: ScreenCapturePermissionService {
 
   func authoritativeObservation() async -> ScreenCaptureAuthorizationObservation {
     authoritativeObservationCallCount += 1
+    if let authoritativeObservationHandler {
+      return await authoritativeObservationHandler()
+    }
     return authoritativeResult ?? currentResult
   }
 

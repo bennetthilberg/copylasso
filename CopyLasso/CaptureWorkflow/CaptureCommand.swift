@@ -302,7 +302,13 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
           InteractiveCaptureResolution.feedback
         ) ?? .finished
       case .cancelled(let reason):
+        guard !transitionToRequestedCancellationIfNeeded() else {
+          return .finished
+        }
         let observation = await permissionService.authoritativeObservation()
+        guard !transitionToRequestedCancellationIfNeeded() else {
+          return .finished
+        }
         if observation == .granted {
           _ = coordinator.handle(
             .cancel(requestedCancellationReason ?? reason.captureCancellationReason)

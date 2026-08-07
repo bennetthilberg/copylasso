@@ -181,27 +181,65 @@ final class InteractiveCaptureWorkflowTests: XCTestCase {
   }
 
   func testCancellingActiveInteractiveSelectionTerminatesItsSession() async throws {
-    let capture = StubInteractiveCaptureService(result: .success(.cancelled(.escape)))
+    let capture = HoldingInteractiveCaptureService()
     let context = makeContext(capture: capture)
+    context.permission.authoritativeResult = .notGrantedAfterPreviouslyGranted
 
     _ = context.command.performFromGlobalShortcut()
+    let scheduledWork = Task { @MainActor in
+      await context.scheduler.runNext()
+    }
+    await capture.waitUntilStarted()
     XCTAssertTrue(context.command.cancelActiveOperation(reason: .systemInterrupted))
 
     XCTAssertEqual(capture.cancelCallCount, 1)
-    await context.scheduler.runNext()
+    await scheduledWork.value
     XCTAssertEqual(context.coordinator.state, .idle)
     XCTAssertTrue(context.clipboard.writtenTexts.isEmpty)
+    XCTAssertEqual(context.permission.authoritativeObservationCallCount, 0)
+    XCTAssertEqual(context.permission.recordCaptureDenialCallCount, 0)
+    XCTAssertTrue(context.recovery.presentedObservations.isEmpty)
+  }
+
+  func testCancellationDuringAuthoritativePermissionCheckRemainsSilent() async throws {
+    let permission = StubScreenCapturePermissionService(
+      currentResult: .granted,
+      requestResult: .granted
+    )
+    let observation = HoldingPermissionObservation()
+    permission.authoritativeObservationHandler = {
+      await observation.value()
+    }
+    let capture = StubInteractiveCaptureService(result: .success(.cancelled(.escape)))
+    let context = makeContext(capture: capture, permission: permission)
+
+    _ = context.command.performFromGlobalShortcut()
+    let scheduledWork = Task { @MainActor in
+      await context.scheduler.runNext()
+    }
+    await observation.waitUntilRequested()
+    XCTAssertTrue(context.command.cancelActiveOperation(reason: .systemInterrupted))
+    observation.resume(returning: .notGrantedAfterPreviouslyGranted)
+    await scheduledWork.value
+
+    XCTAssertEqual(permission.authoritativeObservationCallCount, 1)
+    XCTAssertEqual(permission.recordCaptureDenialCallCount, 0)
+    XCTAssertTrue(context.recovery.presentedObservations.isEmpty)
+    XCTAssertEqual(context.coordinator.state, .idle)
   }
 
   private func makeContext(
-    capture: StubInteractiveCaptureService,
-    currentPermission: ScreenCaptureAuthorizationObservation = .granted
+    capture: any InteractiveCaptureService,
+    currentPermission: ScreenCaptureAuthorizationObservation = .granted,
+    permission suppliedPermission: StubScreenCapturePermissionService? = nil
   ) -> Context {
     let coordinator = CaptureCoordinator()
-    let permission = StubScreenCapturePermissionService(
-      currentResult: currentPermission,
-      requestResult: currentPermission
-    )
+    let permission =
+      suppliedPermission
+      ?? StubScreenCapturePermissionService(
+        currentResult: currentPermission,
+        requestResult: currentPermission
+      )
     let clipboard = SpyClipboardService()
     let sound = SpySuccessSoundPlayer()
     let feedback = SpyFeedbackService()
@@ -289,6 +327,76 @@ private final class StubInteractiveCaptureService: InteractiveCaptureService {
 
   func cancelCapture() {
     cancelCallCount += 1
+  }
+}
+
+@MainActor
+private final class HoldingInteractiveCaptureService: InteractiveCaptureService {
+  private var continuation: CheckedContinuation<InteractiveCaptureOutcome, Error>?
+  private var startWaiters: [CheckedContinuation<Void, Never>] = []
+  private(set) var cancelCallCount = 0
+
+  func prepareForCaptureTransition() {}
+
+  func capture() async throws -> InteractiveCaptureOutcome {
+    try await withCheckedThrowingContinuation { continuation in
+      self.continuation = continuation
+      let waiters = startWaiters
+      startWaiters.removeAll()
+      for waiter in waiters {
+        waiter.resume()
+      }
+    }
+  }
+
+  func cancelCapture() {
+    cancelCallCount += 1
+    let continuation = continuation
+    self.continuation = nil
+    continuation?.resume(returning: .cancelled(.systemInterrupted))
+  }
+
+  func waitUntilStarted() async {
+    await withCheckedContinuation { continuation in
+      if self.continuation != nil {
+        continuation.resume()
+      } else {
+        startWaiters.append(continuation)
+      }
+    }
+  }
+}
+
+@MainActor
+private final class HoldingPermissionObservation {
+  private var continuation: CheckedContinuation<ScreenCaptureAuthorizationObservation, Never>?
+  private var requestWaiters: [CheckedContinuation<Void, Never>] = []
+
+  func value() async -> ScreenCaptureAuthorizationObservation {
+    await withCheckedContinuation { continuation in
+      self.continuation = continuation
+      let waiters = requestWaiters
+      requestWaiters.removeAll()
+      for waiter in waiters {
+        waiter.resume()
+      }
+    }
+  }
+
+  func waitUntilRequested() async {
+    await withCheckedContinuation { continuation in
+      if self.continuation != nil {
+        continuation.resume()
+      } else {
+        requestWaiters.append(continuation)
+      }
+    }
+  }
+
+  func resume(returning observation: ScreenCaptureAuthorizationObservation) {
+    let continuation = continuation
+    self.continuation = nil
+    continuation?.resume(returning: observation)
   }
 }
 
