@@ -63,14 +63,19 @@ final class CaptureCommandTests: XCTestCase {
     }
   }
 
-  func testCompletingFeedbackIsDismissedBeforeReplacementWorkIsScheduled() {
+  func testCompletingFeedbackWaitsForCursorPreparationBeforeDismissal() async {
     let coordinator = CaptureCoordinator(initialState: .completing)
     let scheduler = ManualCaptureCompletionScheduler()
     let feedback = SpyFeedbackService()
+    let selection = StubRegionSelectionService(result: .failure(.injected))
+    var events: [String] = []
+    selection.onPrepareForSelectionTransition = { events.append("prepare") }
+    feedback.onDismiss = { events.append("dismiss") }
     let command = makeTestCaptureCommand(
       coordinator: coordinator,
       scheduleWork: scheduler.schedule,
-      feedbackService: feedback
+      feedbackService: feedback,
+      selectionService: selection
     )
     XCTAssertNoThrow(try feedback.present(.noContent))
 
@@ -79,9 +84,16 @@ final class CaptureCommandTests: XCTestCase {
       command.perform(),
       .transitioned(from: .completing, to: .requestingPermission)
     )
-    XCTAssertEqual(feedback.dismissCallCount, 1)
+    XCTAssertEqual(feedback.dismissCallCount, 0)
+    XCTAssertEqual(events, [])
     XCTAssertEqual(coordinator.state, .requestingPermission)
     XCTAssertEqual(scheduler.scheduledCompletionCount, 1)
+
+    await scheduler.runNext()
+
+    XCTAssertEqual(selection.prepareForSelectionTransitionCallCount, 1)
+    XCTAssertEqual(feedback.dismissCallCount, 1)
+    XCTAssertEqual(events, ["prepare", "dismiss"])
   }
 
   func testCaptureCommandCanCompleteThreeSequentialRequests() async {

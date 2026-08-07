@@ -1,9 +1,9 @@
-import AppKit
-import CoreGraphics
+import Foundation
 
 @MainActor
 protocol ScreenCapturePermissionService: AnyObject {
   func currentObservation() -> ScreenCaptureAuthorizationObservation
+  func authoritativeObservation() async -> ScreenCaptureAuthorizationObservation?
   func requestAccess() -> ScreenCaptureAuthorizationObservation
   func recordCaptureDenial() -> ScreenCaptureAuthorizationObservation
   func recordCaptureSuccess()
@@ -12,8 +12,18 @@ protocol ScreenCapturePermissionService: AnyObject {
 }
 
 extension ScreenCapturePermissionService {
+  func authoritativeObservation() async -> ScreenCaptureAuthorizationObservation? {
+    currentObservation()
+  }
+
   func recordCaptureSuccess() {}
   func beginUserInitiatedRetry() {}
+}
+
+enum ScreenCaptureAuthoritativePreflightResult: Equatable, Sendable {
+  case granted
+  case denied
+  case unavailable
 }
 
 @MainActor
@@ -23,14 +33,25 @@ struct ScreenCapturePermissionClient {
   )!
 
   let preflight: () -> Bool
+  let authoritativePreflight: () async -> ScreenCaptureAuthoritativePreflightResult
   let request: () -> Bool
   let openURL: (URL) -> Bool
 
-  static let live = ScreenCapturePermissionClient(
-    preflight: { CGPreflightScreenCaptureAccess() },
-    request: { CGRequestScreenCaptureAccess() },
-    openURL: { NSWorkspace.shared.open($0) }
-  )
+  init(
+    preflight: @escaping () -> Bool,
+    authoritativePreflight: (() async -> ScreenCaptureAuthoritativePreflightResult)? = nil,
+    request: @escaping () -> Bool,
+    openURL: @escaping (URL) -> Bool
+  ) {
+    self.preflight = preflight
+    self.authoritativePreflight =
+      authoritativePreflight ?? {
+        preflight() ? .granted : .denied
+      }
+    self.request = request
+    self.openURL = openURL
+  }
+
 }
 
 @MainActor
@@ -56,6 +77,17 @@ final class SystemScreenCapturePermissionService: ScreenCapturePermissionService
       hasUserInitiatedObservationRetry = false
     }
     return observation(granted: client.preflight())
+  }
+
+  func authoritativeObservation() async -> ScreenCaptureAuthorizationObservation? {
+    switch await client.authoritativePreflight() {
+    case .granted:
+      observation(granted: true)
+    case .denied:
+      observation(granted: false)
+    case .unavailable:
+      nil
+    }
   }
 
   func requestAccess() -> ScreenCaptureAuthorizationObservation {

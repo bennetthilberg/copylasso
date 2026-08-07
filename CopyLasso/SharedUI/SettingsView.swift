@@ -104,7 +104,7 @@ struct SettingsView: View {
         .accessibilityHint(AccessibilityAuditCopy.automaticUpdatesHelp)
         .accessibilityIdentifier("copylasso.settings.automatic-updates")
 
-        Button("Check for Updates…") {
+        Button("Check for Updates") {
           updateController.checkForUpdates()
         }
         .disabled(!updateController.canCheckForUpdates)

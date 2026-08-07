@@ -5,6 +5,30 @@ import XCTest
 
 @MainActor
 final class CapturePermissionFlowTests: XCTestCase {
+  func testGrantedShortcutRequestPreparesSelectionBeforeSchedulingAsyncWork() {
+    let context = makeContext(current: .granted)
+
+    XCTAssertEqual(
+      context.command.performFromGlobalShortcut(),
+      .transitioned(from: .idle, to: .requestingPermission)
+    )
+
+    XCTAssertEqual(context.permission.currentObservationCallCount, 1)
+    XCTAssertEqual(context.selection.prepareForSelectionTransitionCallCount, 1)
+    XCTAssertEqual(context.selection.selectRegionCallCount, 0)
+    XCTAssertEqual(context.scheduler.pendingWorkCount, 1)
+  }
+
+  func testUnavailableShortcutRequestDoesNotPrepareSelection() {
+    let context = makeContext(current: .notGrantedAfterRequest)
+
+    _ = context.command.performFromGlobalShortcut()
+
+    XCTAssertEqual(context.permission.currentObservationCallCount, 1)
+    XCTAssertEqual(context.selection.prepareForSelectionTransitionCallCount, 0)
+    XCTAssertEqual(context.scheduler.pendingWorkCount, 1)
+  }
+
   func testGrantedPermissionReachesSelectionExactlyOnceAndReturnsIdleAfterStubFailure() async {
     let context = makeContext(current: .granted)
 

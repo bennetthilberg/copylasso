@@ -6,26 +6,29 @@ import XCTest
 
 @MainActor
 final class GlobalShortcutControllerTests: XCTestCase {
-  func testKeyUpInvokesTheSharedCaptureCommand() async {
+  func testKeyDownInvokesTheSharedCaptureCommandAndKeyUpIsIgnored() async {
     let context = makeContext()
     context.controller.start()
 
     context.events.emit(.keyDown)
-    await Task.yield()
-    XCTAssertEqual(context.coordinator.state, .idle)
+    XCTAssertEqual(context.coordinator.state, .requestingPermission)
+    await waitForState(.requestingPermission, coordinator: context.coordinator)
+    XCTAssertEqual(context.scheduler.scheduledCompletionCount, 1)
 
     context.events.emit(.keyUp)
-    await waitForState(.requestingPermission, coordinator: context.coordinator)
+    await Task.yield()
+
+    XCTAssertEqual(context.coordinator.state, .requestingPermission)
     XCTAssertEqual(context.scheduler.scheduledCompletionCount, 1)
   }
 
   func testBusyShortcutRequestIsRejectedWithoutAnotherWorkflow() async {
     let context = makeContext()
     context.controller.start()
-    context.events.emit(.keyUp)
+    context.events.emit(.keyDown)
     await waitForState(.requestingPermission, coordinator: context.coordinator)
 
-    context.events.emit(.keyUp)
+    context.events.emit(.keyDown)
     await Task.yield()
 
     XCTAssertEqual(context.coordinator.state, .requestingPermission)
@@ -37,7 +40,7 @@ final class GlobalShortcutControllerTests: XCTestCase {
     context.controller.start()
 
     for _ in 0..<3 {
-      context.events.emit(.keyUp)
+      context.events.emit(.keyDown)
       await waitForState(.requestingPermission, coordinator: context.coordinator)
       await context.scheduler.runNext()
       XCTAssertEqual(context.coordinator.state, .idle)
@@ -53,14 +56,126 @@ final class GlobalShortcutControllerTests: XCTestCase {
       registrar: registrar,
       shortcutProvider: { shortcut }
     )
-    var iterator = source.events().makeAsyncIterator()
+    var events: [GlobalShortcutEvent] = []
+    source.start { events.append($0) }
 
     XCTAssertEqual(registrar.registeredShortcuts, [shortcut])
 
     registrar.emit(.keyDown)
-    let event = await iterator.next()
 
-    XCTAssertEqual(event, .keyDown)
+    XCTAssertEqual(events, [.keyDown])
+  }
+
+  func testSystemEventSourceDefersControlShortcutUntilControlIsReleased() {
+    let shortcut = KeyboardShortcuts.Shortcut(
+      .two,
+      modifiers: [.control, .shift, .command]
+    )
+    let registrar = RecordingGlobalShortcutHotKeyRegistrar()
+    let modifierFlags = RecordingModifierFlags(flags: [.control])
+    let releaseScheduler = RecordingControlReleaseScheduler()
+    let source = SystemGlobalShortcutEventSource(
+      registrar: registrar,
+      shortcutProvider: { shortcut },
+      modifierFlagsProvider: { modifierFlags.flags },
+      scheduleControlReleaseCheck: releaseScheduler.schedule
+    )
+    var events: [GlobalShortcutEvent] = []
+    source.start { events.append($0) }
+
+    registrar.emit(.keyDown)
+    registrar.emit(.keyUp)
+
+    XCTAssertTrue(events.isEmpty)
+    XCTAssertEqual(releaseScheduler.scheduledCount, 1)
+
+    releaseScheduler.runNext()
+
+    XCTAssertTrue(events.isEmpty)
+    XCTAssertEqual(releaseScheduler.scheduledCount, 1)
+
+    modifierFlags.flags = []
+    releaseScheduler.runNext()
+
+    XCTAssertEqual(events, [.keyDown])
+    XCTAssertEqual(releaseScheduler.scheduledCount, 0)
+  }
+
+  func testSystemEventSourceStartsControlShortcutImmediatelyWhenControlIsAlreadyReleased() {
+    let shortcut = KeyboardShortcuts.Shortcut(.two, modifiers: [.control, .command])
+    let registrar = RecordingGlobalShortcutHotKeyRegistrar()
+    let releaseScheduler = RecordingControlReleaseScheduler()
+    let source = SystemGlobalShortcutEventSource(
+      registrar: registrar,
+      shortcutProvider: { shortcut },
+      modifierFlagsProvider: { [] },
+      scheduleControlReleaseCheck: releaseScheduler.schedule
+    )
+    var events: [GlobalShortcutEvent] = []
+    source.start { events.append($0) }
+
+    registrar.emit(.keyDown)
+    registrar.emit(.keyUp)
+
+    XCTAssertEqual(events, [.keyDown])
+    XCTAssertEqual(releaseScheduler.scheduledCount, 0)
+  }
+
+  func testChangingShortcutSuppressesPendingControlShortcut() {
+    let notificationCenter = NotificationCenter()
+    let controlShortcut = KeyboardShortcuts.Shortcut(
+      .two,
+      modifiers: [.control, .command]
+    )
+    let replacement = KeyboardShortcuts.Shortcut(.eight, modifiers: [.shift, .command])
+    let shortcutProvider = RecordingShortcutProvider(shortcut: controlShortcut)
+    let registrar = RecordingGlobalShortcutHotKeyRegistrar()
+    let modifierFlags = RecordingModifierFlags(flags: [.control])
+    let releaseScheduler = RecordingControlReleaseScheduler()
+    let source = SystemGlobalShortcutEventSource(
+      registrar: registrar,
+      notificationCenter: notificationCenter,
+      shortcutProvider: { shortcutProvider.shortcut },
+      modifierFlagsProvider: { modifierFlags.flags },
+      scheduleControlReleaseCheck: releaseScheduler.schedule
+    )
+    var events: [GlobalShortcutEvent] = []
+    source.start { events.append($0) }
+    registrar.emit(.keyDown)
+    registrar.emit(.keyUp)
+
+    shortcutProvider.shortcut = replacement
+    notificationCenter.post(
+      name: Notification.Name("KeyboardShortcuts_shortcutByNameDidChange"),
+      object: nil
+    )
+    modifierFlags.flags = []
+    releaseScheduler.runNext()
+
+    XCTAssertTrue(events.isEmpty)
+  }
+
+  func testStoppingEventSourceSuppressesPendingControlShortcut() {
+    let shortcut = KeyboardShortcuts.Shortcut(.two, modifiers: [.control, .command])
+    let registrar = RecordingGlobalShortcutHotKeyRegistrar()
+    let modifierFlags = RecordingModifierFlags(flags: [.control])
+    let releaseScheduler = RecordingControlReleaseScheduler()
+    let source = SystemGlobalShortcutEventSource(
+      registrar: registrar,
+      shortcutProvider: { shortcut },
+      modifierFlagsProvider: { modifierFlags.flags },
+      scheduleControlReleaseCheck: releaseScheduler.schedule
+    )
+    var events: [GlobalShortcutEvent] = []
+    source.start { events.append($0) }
+    registrar.emit(.keyDown)
+    registrar.emit(.keyUp)
+
+    source.stop()
+    modifierFlags.flags = []
+    releaseScheduler.runNext()
+
+    XCTAssertTrue(events.isEmpty)
   }
 
   func testSystemEventSourceReregistersWhenTheSavedShortcutChanges() {
@@ -74,7 +189,7 @@ final class GlobalShortcutControllerTests: XCTestCase {
       notificationCenter: notificationCenter,
       shortcutProvider: { shortcutProvider.shortcut }
     )
-    _ = source.events()
+    source.start { _ in }
 
     shortcutProvider.shortcut = replacement
     notificationCenter.post(
@@ -95,7 +210,7 @@ final class GlobalShortcutControllerTests: XCTestCase {
       isApplicationActive: { true },
       shortcutProvider: { shortcut }
     )
-    _ = source.events()
+    source.start { _ in }
 
     notificationCenter.post(
       name: Notification.Name("KeyboardShortcuts_recorderActiveStatusDidChange"),
@@ -121,7 +236,7 @@ final class GlobalShortcutControllerTests: XCTestCase {
       isApplicationActive: { false },
       shortcutProvider: { shortcut }
     )
-    _ = source.events()
+    source.start { _ in }
 
     notificationCenter.post(
       name: Notification.Name("KeyboardShortcuts_recorderActiveStatusDidChange"),
@@ -145,7 +260,7 @@ final class GlobalShortcutControllerTests: XCTestCase {
       isApplicationActive: { applicationActivity.isActive },
       shortcutProvider: { shortcut }
     )
-    _ = source.events()
+    source.start { _ in }
     notificationCenter.post(
       name: Notification.Name("KeyboardShortcuts_recorderActiveStatusDidChange"),
       object: nil,
@@ -161,21 +276,22 @@ final class GlobalShortcutControllerTests: XCTestCase {
     XCTAssertEqual(registrar.registeredShortcuts, [shortcut, nil, shortcut])
   }
 
-  func testSystemEventSourceRestartDoesNotLetTheOldStreamUnregisterTheNewOne() async {
+  func testSystemEventSourceRestartReplacesTheOldHandlerWithoutUnregisteringTheNewOne() {
     let shortcut = KeyboardShortcuts.Shortcut(.two, modifiers: [.shift, .command])
     let registrar = RecordingGlobalShortcutHotKeyRegistrar()
     let source = SystemGlobalShortcutEventSource(
       registrar: registrar,
       shortcutProvider: { shortcut }
     )
-    _ = source.events()
-    var replacementIterator = source.events().makeAsyncIterator()
+    var oldEvents: [GlobalShortcutEvent] = []
+    var replacementEvents: [GlobalShortcutEvent] = []
+    source.start { oldEvents.append($0) }
+    source.start { replacementEvents.append($0) }
 
-    await Task.yield()
     registrar.emit(.keyUp)
-    let event = await replacementIterator.next()
 
-    XCTAssertEqual(event, .keyUp)
+    XCTAssertTrue(oldEvents.isEmpty)
+    XCTAssertEqual(replacementEvents, [.keyUp])
     XCTAssertEqual(registrar.registeredShortcuts, [shortcut, nil, shortcut])
   }
 
@@ -183,13 +299,11 @@ final class GlobalShortcutControllerTests: XCTestCase {
     let context = makeContext()
     context.controller.start()
     context.controller.stop()
-    await context.events.waitForCancellation()
 
-    context.events.emit(.keyUp)
-    await Task.yield()
+    context.events.emit(.keyDown)
 
     XCTAssertEqual(context.coordinator.state, .idle)
-    XCTAssertTrue(context.events.wasCancelled)
+    XCTAssertEqual(context.events.stopCallCount, 2)
   }
 
   private func makeContext() -> Context {
@@ -245,6 +359,33 @@ private final class RecordingApplicationActivity {
 
   init(isActive: Bool) {
     self.isActive = isActive
+  }
+}
+
+@MainActor
+private final class RecordingModifierFlags {
+  var flags: NSEvent.ModifierFlags
+
+  init(flags: NSEvent.ModifierFlags) {
+    self.flags = flags
+  }
+}
+
+@MainActor
+private final class RecordingControlReleaseScheduler {
+  private var scheduledWork: [@MainActor @Sendable () -> Void] = []
+
+  var scheduledCount: Int {
+    scheduledWork.count
+  }
+
+  func schedule(_ work: @escaping @MainActor @Sendable () -> Void) {
+    scheduledWork.append(work)
+  }
+
+  func runNext() {
+    guard !scheduledWork.isEmpty else { return }
+    scheduledWork.removeFirst()()
   }
 }
 

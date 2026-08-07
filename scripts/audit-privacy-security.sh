@@ -54,9 +54,21 @@ if /usr/bin/grep -nE \
     exit 1
 fi
 
-readonly prohibited_content_persistence_pattern='CGImageDestination|NSBitmapImageRep|representation\(using:|pngRepresentation|jpegRepresentation|CIContext.*write|Data.*write\(to:|FileManager|NSFileHandle|FileHandle'
+readonly prohibited_content_persistence_pattern='CGImageDestination|NSBitmapImageRep|representation\(using:|pngRepresentation|jpegRepresentation|CIContext.*write|Data.*write\(to:|FileManager|NSFileHandle'
 if /usr/bin/grep -R -nE "$prohibited_content_persistence_pattern" CopyLasso; then
     echo "The application target must not encode or persist captured content." >&2
+    exit 1
+fi
+
+readonly interactive_capture_service='CopyLasso/Services/SystemInteractiveCaptureService.swift'
+file_handle_files="$({ /usr/bin/grep -R -lF 'FileHandle' CopyLasso || true; })"
+if [[ "$file_handle_files" != "$interactive_capture_service" ]] || \
+    ! /usr/bin/grep -Fq 'process.standardInput = FileHandle.nullDevice' "$interactive_capture_service" || \
+    ! /usr/bin/grep -Fq 'process.standardOutput = FileHandle.nullDevice' "$interactive_capture_service" || \
+    ! /usr/bin/grep -Fq 'process.standardError = FileHandle.nullDevice' "$interactive_capture_service" || \
+    /usr/bin/grep -nE 'Pipe\(|FileHandle\.(standard(Output|Input)|forWritingAtPath)|write\(' \
+        "$interactive_capture_service"; then
+    echo "System-selector standard streams must remain content-free null devices." >&2
     exit 1
 fi
 

@@ -27,6 +27,10 @@ import SwiftUI
     var usesDebugCaptureService: Bool {
       (isUITesting || isLiveSelectionTesting) && !isLiveCaptureTesting
     }
+
+    var usesLegacyCaptureWorkflow: Bool {
+      isUITesting || isLiveSelectionTesting || isLiveCaptureTesting
+    }
   }
 #endif
 
@@ -46,8 +50,9 @@ struct CopyLassoApp: App {
     let shortcutStore = KeyboardShortcutsStore()
     let launchAtLoginService: any LaunchAtLoginServicing
     let permissionService: any ScreenCapturePermissionService
-    let selectionService: any RegionSelectionService
-    let screenCaptureService: any ScreenCaptureService
+    let selectionService: (any RegionSelectionService)?
+    let screenCaptureService: (any ScreenCaptureService)?
+    let interactiveCaptureService: (any InteractiveCaptureService)?
     let barcodeService: any BarcodeRecognitionService
     let updateService: any UpdateServicing
 
@@ -83,6 +88,10 @@ struct CopyLassoApp: App {
         runtimeOptions.usesDebugCaptureService
         ? DebugScreenCaptureService()
         : SystemScreenCaptureService()
+      interactiveCaptureService =
+        runtimeOptions.usesLegacyCaptureWorkflow
+        ? nil
+        : SystemInteractiveCaptureService()
       updateService =
         runtimeOptions.isUITesting
         ? DebugUpdateService()
@@ -94,8 +103,9 @@ struct CopyLassoApp: App {
     #else
       launchAtLoginService = SystemLaunchAtLoginService()
       permissionService = SystemScreenCapturePermissionService(historyStore: settingsStore)
-      selectionService = AppKitRegionSelectionService()
-      screenCaptureService = SystemScreenCaptureService()
+      selectionService = nil
+      screenCaptureService = nil
+      interactiveCaptureService = SystemInteractiveCaptureService()
       barcodeService = VisionBarcodeService()
       updateService = SparkleUpdateService()
     #endif
@@ -130,20 +140,39 @@ struct CopyLassoApp: App {
     let recoveryController = PermissionRecoveryPanelController(
       permissionService: permissionService
     )
-    let captureCommand = CaptureCommand(
-      coordinator: coordinator,
-      permissionService: permissionService,
-      selectionService: selectionService,
-      screenCaptureService: screenCaptureService,
-      ocrService: VisionOCRService(),
-      textAssembler: TextAssembler(),
-      barcodeService: barcodeService,
-      codePayloadAssembler: CodePayloadAssembler(),
-      clipboardService: SystemClipboardService(),
-      successSoundPlayer: successSoundPlayer,
-      feedbackService: feedbackController,
-      recoveryPresenter: recoveryController
-    )
+    let captureCommand: CaptureCommand
+    if let interactiveCaptureService {
+      captureCommand = CaptureCommand(
+        coordinator: coordinator,
+        permissionService: permissionService,
+        interactiveCaptureService: interactiveCaptureService,
+        ocrService: VisionOCRService(),
+        textAssembler: TextAssembler(),
+        barcodeService: barcodeService,
+        codePayloadAssembler: CodePayloadAssembler(),
+        clipboardService: SystemClipboardService(),
+        successSoundPlayer: successSoundPlayer,
+        feedbackService: feedbackController,
+        recoveryPresenter: recoveryController
+      )
+    } else if let selectionService, let screenCaptureService {
+      captureCommand = CaptureCommand(
+        coordinator: coordinator,
+        permissionService: permissionService,
+        selectionService: selectionService,
+        screenCaptureService: screenCaptureService,
+        ocrService: VisionOCRService(),
+        textAssembler: TextAssembler(),
+        barcodeService: barcodeService,
+        codePayloadAssembler: CodePayloadAssembler(),
+        clipboardService: SystemClipboardService(),
+        successSoundPlayer: successSoundPlayer,
+        feedbackService: feedbackController,
+        recoveryPresenter: recoveryController
+      )
+    } else {
+      preconditionFailure("Legacy capture services are available only to Debug fixtures.")
+    }
     recoveryController.captureRequester = captureCommand
     commandHandler = MenuBarCommandHandler(
       captureCommand: captureCommand,
