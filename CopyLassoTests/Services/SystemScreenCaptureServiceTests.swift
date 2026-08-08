@@ -99,6 +99,42 @@ final class SystemScreenCaptureServiceTests: XCTestCase {
     }
   }
 
+  func testDisplayValidationRejectsChangedOriginWithTheSameIdentitySizeAndScale() throws {
+    let display = try DisplayGeometry(
+      displayID: 44,
+      appKitFrame: CGRect(x: -1_440, y: 100, width: 1_440, height: 900),
+      coreGraphicsBounds: CGRect(x: -1_440, y: 180, width: 1_440, height: 900),
+      backingScale: 2
+    )
+    let selection = try XCTUnwrap(
+      display.selectionResult(
+        from: CGPoint(x: -1_200, y: 300),
+        to: CGPoint(x: -900, y: 500)
+      )
+    )
+    let request = try ScreenCaptureRequestPlanner.request(for: selection)
+    let unchanged = ScreenCaptureDisplaySnapshot(
+      displayID: request.displayID,
+      pointSize: request.expectedDisplayPointSize,
+      pointPixelScale: request.backingScale,
+      bounds: display.coreGraphicsBounds
+    )
+    let moved = ScreenCaptureDisplaySnapshot(
+      displayID: request.displayID,
+      pointSize: request.expectedDisplayPointSize,
+      pointPixelScale: request.backingScale,
+      bounds: display.coreGraphicsBounds.offsetBy(dx: 1_440, dy: -180)
+    )
+
+    XCTAssertEqual(request.expectedDisplayBounds, display.coreGraphicsBounds)
+    XCTAssertNoThrow(try ScreenCaptureRequestValidator.validate(request, against: unchanged))
+    XCTAssertThrowsError(
+      try ScreenCaptureRequestValidator.validate(request, against: moved)
+    ) { error in
+      XCTAssertEqual(error as? ScreenCaptureError, .displayConfigurationChanged)
+    }
+  }
+
   func testDisplayValidationRejectsPixelDimensionsThatDoNotMatchSourceGeometry() throws {
     let request = try ScreenCaptureRequestPlanner.request(for: makeSelection(scale: 1.5))
     let snapshot = ScreenCaptureDisplaySnapshot(

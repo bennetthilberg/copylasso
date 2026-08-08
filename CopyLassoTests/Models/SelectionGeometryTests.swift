@@ -186,6 +186,23 @@ final class SelectionGeometryTests: XCTestCase {
     )
   }
 
+  func testDisplayContainmentUsesHalfOpenBounds() throws {
+    let display = try makeDisplay(
+      appKitFrame: CGRect(x: 100, y: 200, width: 300, height: 400),
+      coreGraphicsBounds: CGRect(x: 500, y: 600, width: 300, height: 400)
+    )
+
+    XCTAssertTrue(display.contains(point: CGPoint(x: 100, y: 200)))
+    XCTAssertTrue(display.contains(point: CGPoint(x: 399.999, y: 599.999)))
+    XCTAssertFalse(display.contains(point: CGPoint(x: 400, y: 300)))
+    XCTAssertFalse(display.contains(point: CGPoint(x: 200, y: 600)))
+
+    XCTAssertTrue(display.contains(coreGraphicsPoint: CGPoint(x: 500, y: 600)))
+    XCTAssertTrue(display.contains(coreGraphicsPoint: CGPoint(x: 799.999, y: 999.999)))
+    XCTAssertFalse(display.contains(coreGraphicsPoint: CGPoint(x: 800, y: 700)))
+    XCTAssertFalse(display.contains(coreGraphicsPoint: CGPoint(x: 600, y: 1_000)))
+  }
+
   func testInvalidDisplayGeometryIsRejected() {
     let invalidFrames = [
       CGRect(x: 0, y: 0, width: 0, height: 100),

@@ -17,11 +17,12 @@ readonly candidate_evidence_tree_pattern=$'\t(\\.github/workflows/prepare-public
 readonly approved_post_publication_patch_tree_pattern=$'\t(CHANGELOG\\.md|CopyLasso/App/CopyLassoApp\\.swift|CopyLasso/Models/SecureUpdateReleaseNotesPresentation\\.swift|CopyLasso/SharedUI/SecureUpdatePresentation\\.swift|CopyLassoTests/Update/SecureUpdateReleaseNotesPresentationTests\\.swift|CopyLassoUITests/CopyLassoUITests\\.swift|docs/architecture/overview\\.md|docs/manual-qa-and-performance\\.md|docs/secure-update-operations\\.md|docs/testing\\.md)$'
 readonly approved_post_publication_runtime_tree_pattern=$'\t(CopyLasso/App/CopyLassoApp\\.swift|CopyLasso/Models/SecureUpdateReleaseNotesPresentation\\.swift|CopyLasso/SharedUI/SecureUpdatePresentation\\.swift)$'
 readonly approved_post_v02_security_patch_tree_pattern=$'\t(\\.github/workflows/ci\\.yml|\\.github/workflows/release\\.yml|CopyLasso/Services/VisionOCRService\\.swift|CopyLassoTests/Services/VisionOCRServiceTests\\.swift|CopyLassoUITests/CopyLassoUITests\\.swift|scripts/audit-privacy-security\\.sh|scripts/audit-release-workflow\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/ci\\.sh|scripts/create-draft-release\\.sh|scripts/lib/project-security-verification\\.sh|scripts/lib/release-package-verification\\.sh|scripts/lib/release-workflow-verification\\.sh|scripts/test-privacy-security\\.sh|scripts/test-release-package\\.sh|scripts/test-release-workflow\\.sh)$'
+readonly g46_product_patch_tree_pattern=$'\t(CHANGELOG\\.md|CopyLasso/App/CopyLassoApp\\.swift|CopyLasso/App/GlobalShortcutController\\.swift|CopyLasso/App/SystemGlobalShortcutEventSource\\.swift|CopyLasso/CaptureWorkflow/CaptureCommand\\.swift|CopyLasso/Models/SelectionGeometry\\.swift|CopyLasso/Services/AppKitRegionSelectionService\\.swift|CopyLasso/Services/InteractiveCaptureService\\.swift|CopyLasso/Services/RegionSelectionService\\.swift|CopyLasso/Services/ScreenCapturePermissionService\\.swift|CopyLasso/Services/SystemInteractiveCaptureService\\.swift|CopyLasso/Services/SystemScreenCapturePermissionClient\\.swift|CopyLasso/Services/SystemScreenCaptureService\\.swift|CopyLasso/SharedUI/AboutView\\.swift|CopyLasso/SharedUI/MenuBarMenuView\\.swift|CopyLasso/SharedUI/SettingsView\\.swift|CopyLassoTests/App/GlobalShortcutControllerTests\\.swift|CopyLassoTests/App/MenuBarShellTests\\.swift|CopyLassoTests/CaptureWorkflow/CaptureCommandTests\\.swift|CopyLassoTests/CaptureWorkflow/CapturePermissionFlowTests\\.swift|CopyLassoTests/CaptureWorkflow/CaptureWorkflowIntegrationTests\\.swift|CopyLassoTests/CaptureWorkflow/InteractiveCaptureWorkflowTests\\.swift|CopyLassoTests/Models/MultiDisplayBehaviorTests\\.swift|CopyLassoTests/Models/SelectionGeometryTests\\.swift|CopyLassoTests/Services/AppKitRegionSelectionServiceTests\\.swift|CopyLassoTests/Services/ScreenCapturePermissionServiceTests\\.swift|CopyLassoTests/Services/SystemInteractiveCaptureServiceTests\\.swift|CopyLassoTests/Services/SystemInteractiveSelectionTrackerTests\\.swift|CopyLassoTests/Services/SystemScreenCapturePermissionClientTests\\.swift|CopyLassoTests/Services/SystemScreenCaptureServiceTests\\.swift|CopyLassoTests/TestSupport/CaptureServiceDoubles\\.swift|CopyLassoTests/TestSupport/SettingsDoubles\\.swift|CopyLassoUITests/CopyLassoUITests\\.swift|PRIVACY\\.md|README\\.md|docs/architecture/ADR-002-screen-capture\\.md|docs/architecture/capture-workflow\\.md|docs/architecture/overview\\.md|docs/security-and-privacy-review\\.md|docs/testing\\.md|scripts/audit-g46-product-patch\\.sh|scripts/audit-privacy-security\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/ci\\.sh|scripts/test-ci-contract\\.sh)$'
 readonly g44_release_state_tree_pattern=$'\t(CHANGELOG\\.md|CONTRIBUTING\\.md|PRIVACY\\.md|README\\.md|SECURITY\\.md|docs/architecture/overview\\.md|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/security-and-privacy-review\\.md|docs/testing\\.md|docs/v0\\.2-product-contract\\.md|docs/v0\\.2-release-state\\.md|scripts/audit-brand-release\\.sh|scripts/audit-code-recognition\\.sh|scripts/audit-secure-update-architecture\\.sh|scripts/audit-v02-contract\\.sh|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/audit-v02-release-state\\.sh|scripts/ci\\.sh|scripts/test-ci-contract\\.sh|scripts/test-release-metadata\\.sh)$'
-readonly expected_candidate_baseline_tree_digest='ecbcf39d0cac2b1525e46dc154123eb5418db3a9e790770a36a281b5160775bf'
-readonly expected_approved_post_publication_runtime_tree_digest='388191bdbca550efa34ca64d9f8ebba3f127457313e4f0739d4601919fa9de7d'
-readonly expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'
-readonly expected_approved_post_candidate_patch_digest='4d5783226ec5b1a48c8d7490a4196f46cc9c407d4b27661dcf55de67029bb9fc'
+readonly expected_candidate_baseline_tree_digest='1e4844388bc872b8ac4644a13b00223af1239f431d390130346daa8e914aafa0'
+readonly expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'
+readonly expected_g44_release_state_files_digest='fe1accfe498d45bda4ac81fb35ddedaf1acc5ff185696fde424b35afb15e16e7'
+readonly expected_approved_post_candidate_patch_digest='8c45e3cd5c2e81b23442d871f8d42a9ade6d1f6ed810f34405fc00f51c1eb2a8'
 
 fail() {
     echo "$1" >&2
@@ -50,6 +51,8 @@ approved_post_candidate_path() {
             /usr/bin/grep -Eq "$approved_post_publication_patch_tree_pattern" || \
         printf '%s\n' "$tree_line" | \
             /usr/bin/grep -Eq "$approved_post_v02_security_patch_tree_pattern" || \
+        printf '%s\n' "$tree_line" | \
+            /usr/bin/grep -Eq "$g46_product_patch_tree_pattern" || \
         printf '%s\n' "$tree_line" | \
             /usr/bin/grep -Eq "$g44_release_state_tree_pattern"
 }
@@ -187,7 +190,8 @@ approved_post_candidate_patch_digest="$(
             "$approved_path" == "scripts/test-ci-contract.sh" ]]; then
             approved_digest="$(
                 /usr/bin/sed -E \
-                    's/(expected_approved_post_candidate_patch_digest[^0-9a-f]*)[0-9a-f]{64}/\1<self-normalized>/g' \
+                    -e 's/(expected_approved_post_candidate_patch_digest[^0-9a-f]*)[0-9a-f]{64}/\1<self-normalized>/g' \
+                    -e 's/(expected_g44_release_state_files_digest[^0-9a-f]*)[0-9a-f]{64}/\1<self-normalized>/g' \
                     "$repository_root/$approved_path" | \
                     /usr/bin/shasum -a 256 | \
                     /usr/bin/awk '{print $1}'
@@ -224,6 +228,7 @@ candidate_baseline_tree_digest="$(
         /usr/bin/grep -Ev "$candidate_evidence_tree_pattern" |
         /usr/bin/grep -Ev "$approved_post_publication_patch_tree_pattern" |
         /usr/bin/grep -Ev "$approved_post_v02_security_patch_tree_pattern" |
+        /usr/bin/grep -Ev "$g46_product_patch_tree_pattern" |
         /usr/bin/grep -Ev "$g44_release_state_tree_pattern" |
         /usr/bin/shasum -a 256 |
         /usr/bin/awk '{print $1}'
@@ -236,6 +241,7 @@ current_baseline_tree_digest="$(
         /usr/bin/grep -Ev "$candidate_evidence_tree_pattern" |
         /usr/bin/grep -Ev "$approved_post_publication_patch_tree_pattern" |
         /usr/bin/grep -Ev "$approved_post_v02_security_patch_tree_pattern" |
+        /usr/bin/grep -Ev "$g46_product_patch_tree_pattern" |
         /usr/bin/grep -Ev "$g44_release_state_tree_pattern" |
         /usr/bin/shasum -a 256 |
         /usr/bin/awk '{print $1}'

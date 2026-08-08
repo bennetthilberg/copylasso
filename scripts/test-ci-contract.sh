@@ -16,6 +16,7 @@ readonly v02_contract_audit_script="$repository_root/scripts/audit-v02-contract.
 readonly v02_release_qualification_audit_script="$repository_root/scripts/audit-v02-release-qualification.sh"
 readonly v02_publication_audit_script="$repository_root/scripts/audit-v02-publication.sh"
 readonly v02_release_state_audit_script="$repository_root/scripts/audit-v02-release-state.sh"
+readonly g46_product_patch_audit_script="$repository_root/scripts/audit-g46-product-patch.sh"
 readonly v02_publication_test_script="$repository_root/scripts/test-v02-publication.sh"
 readonly code_recognition_audit_script="$repository_root/scripts/audit-code-recognition.sh"
 readonly latex_feasibility_audit_script="$repository_root/scripts/audit-latex-feasibility.sh"
@@ -190,20 +191,23 @@ for required_patch_guard in \
     "approved_post_publication_patch_tree_pattern" \
     "approved_post_publication_runtime_tree_pattern" \
     "approved_post_v02_security_patch_tree_pattern" \
+    "g46_product_patch_tree_pattern" \
     "g44_release_state_tree_pattern" \
-    "expected_candidate_baseline_tree_digest='ecbcf39d0cac2b1525e46dc154123eb5418db3a9e790770a36a281b5160775bf'" \
-    "expected_approved_post_publication_runtime_tree_digest='388191bdbca550efa34ca64d9f8ebba3f127457313e4f0739d4601919fa9de7d'" \
-    "expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'" \
-    "expected_approved_post_candidate_patch_digest='4d5783226ec5b1a48c8d7490a4196f46cc9c407d4b27661dcf55de67029bb9fc'" \
+    "expected_candidate_baseline_tree_digest='1e4844388bc872b8ac4644a13b00223af1239f431d390130346daa8e914aafa0'" \
+    "expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'" \
+    "expected_g44_release_state_files_digest='fe1accfe498d45bda4ac81fb35ddedaf1acc5ff185696fde424b35afb15e16e7'" \
+    "expected_approved_post_candidate_patch_digest='8c45e3cd5c2e81b23442d871f8d42a9ade6d1f6ed810f34405fc00f51c1eb2a8'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
     '"$current_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest"' \
     'approved_post_candidate_path "$approved_path"' \
     'hash-object -- "$approved_path"' \
     'expected_approved_post_candidate_patch_digest[^0-9a-f]*' \
+    'expected_g44_release_state_files_digest[^0-9a-f]*' \
     '<self-normalized>' \
     'The approved post-candidate patch differs from its reviewed digest.' \
     '/usr/bin/grep -Ev "$approved_post_v02_security_patch_tree_pattern"' \
+    '/usr/bin/grep -Ev "$g46_product_patch_tree_pattern"' \
     '/usr/bin/grep -Ev "$g44_release_state_tree_pattern"' \
     'The approved G43A runtime patch differs from its reviewed tree digest.'; do
     if ! /usr/bin/grep -Fq "$required_patch_guard" \
@@ -247,6 +251,51 @@ v02_release_state_audit_invocations="$({
 if [[ "$v02_release_state_audit_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/audit-v02-release-state.sh exactly once."
 fi
+
+g46_product_patch_audit_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/audit-g46-product-patch\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$g46_product_patch_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-g46-product-patch.sh exactly once."
+fi
+for required_g46_guard in \
+    'Check for Updates(\.\.\.|…)' \
+    '700 words maximum' \
+    'rendered release notes' \
+    '/usr/sbin/screencapture' \
+    'arguments: ["-i", "-s", "-x", "-t", "png", "/dev/null"]' \
+    'process.standardOutput = FileHandle.nullDevice' \
+    'CGEvent(source: nil)?.location' \
+    'CGEventSource.buttonState(' \
+    'Thread.sleep(forTimeInterval: 0.001)' \
+    'NSEvent\.add(Global|Local)MonitorForEvents' \
+    'let endedOnDifferentDisplay =' \
+    'expectedDisplayBounds' \
+    'SystemInteractiveSelectionTracker' \
+    'screenCaptureService.capture(selection)' \
+    'interactiveCaptureService.prepareForCaptureTransition()' \
+    'func authoritativeObservation() async' \
+    '_ = try await SCShareableContent.current' \
+    'resolveInteractiveCapture(using: service)' \
+    'CGDisplay(Hide|Show)Cursor' \
+    'captureCommand.performFromGlobalShortcut()' \
+    'Data.*write\(to:'; do
+    if ! /usr/bin/grep -Fq -- "$required_g46_guard" \
+        "$g46_product_patch_audit_script"; then
+        fail "The G46 audit is missing its product-patch guard: $required_g46_guard"
+    fi
+done
+for required_g46_ci_guard in \
+    'static let selectionStyleMask: NSWindow.StyleMask = .borderless' \
+    'readonly expected_capture_api_files="$permission_client' \
+    'ScreenCaptureKit APIs must remain confined to the production permission and in-memory capture services.' \
+    'Debug display and selection-overlay APIs must remain confined to the AppKit fixture service.'; do
+    if ! /usr/bin/grep -Fq -- "$required_g46_ci_guard" "$ci_script"; then
+        fail "Canonical CI is missing its Debug-only AppKit fixture guard: $required_g46_ci_guard"
+    fi
+done
 for required_release_state_guard in \
     'expected_release_commit="43f1d0c676b08fb24b49fc628213fede90c4ed9d"' \
     'expected_release_id="361797888"' \

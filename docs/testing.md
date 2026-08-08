@@ -12,9 +12,9 @@ The pipeline lints all Swift source, resolves the exact package dependencies, bu
 
 Signed UI tests use Debug-only permission doubles. They cover prior-request and previously-granted recovery wording, singleton reuse, System Settings failure instructions, retry routing, Cancel, menu availability, keyboard actions, and accessibility identifiers without calling Core Graphics permission functions or changing real TCC state.
 
-Ordinary signed UI tests use deterministic Debug-only selection and capture doubles so shell tests never unexpectedly cover the desktop or touch TCC. Tests launched with `--g13-live-selection` use the production AppKit service with controlled permission and in-memory capture. They verify that the overlay is accessible, cancellation removes it, a valid drag reaches the deterministic downstream workflow and no-text feedback, the command becomes reusable, and the clipboard remains unchanged.
+Ordinary signed UI tests use deterministic Debug-only selection and capture doubles so shell tests never unexpectedly cover the desktop or touch TCC. Tests launched with `--g13-live-selection` retain the historical AppKit service with controlled permission and in-memory capture. They verify that the overlay is accessible, cancellation removes it, a valid drag reaches the deterministic downstream workflow and no-text feedback, the command becomes reusable, and the clipboard remains unchanged.
 
-The controlled launch arguments begin with `--g12-` and `--g13-` and are compiled out of Release. CI inspects the Release executable to prevent them from leaking. The application uses the real production permission and selection services unless the existing `--g10-g11-ui-testing` boundary selects their controlled alternatives; `--g13-live-selection` explicitly restores the real selection adapter for overlay UI coverage.
+The controlled launch arguments begin with `--g12-` and `--g13-` and are compiled out of Release. CI inspects the Release executable to prevent them from leaking. Normal Debug and Release runs use the production permission service plus G46's fixed system interactive-capture service. Explicit UI, live-selection, and live-capture flags retain the prior AppKit and ScreenCaptureKit adapters only for deterministic regression coverage.
 
 Run the signed UI suite through Xcode with the shared `CopyLasso` scheme and **My Mac**, or use a locally signed `xcodebuild test` invocation. Keep the development team only in ignored `Local.xcconfig`; never paste signing identity details into logs or documentation.
 
@@ -36,12 +36,12 @@ Verify in this order:
 2. With another application frontmost, invoke **Capture Text**, choose **Deny** in the macOS dialog, and confirm one CopyLasso recovery panel appears. Selection must not begin, and the clipboard must remain unchanged.
 3. Invoke Capture Text again from both the menu and shortcut. Confirm macOS does not stack request dialogs, CopyLasso reuses one recovery panel, and each attempt returns the coordinator to idle.
 4. Choose **Open System Settings**. Confirm the Screen & System Audio Recording pane opens. Enable CopyLasso and follow the actual macOS **Quit & Reopen** prompt if one appears; otherwise return to CopyLasso and explicitly choose **Try Again**. CopyLasso must not retry automatically. If **Later** was chosen and access is still unavailable, **Try Again** reports that CopyLasso must be quit and reopened rather than appearing inert.
-5. After any required relaunch, invoke Capture Text. Confirm authorization presents the production selection overlay and temporarily activates CopyLasso. Cancel with Escape and verify the overlay disappears, the previously frontmost application is restored before completion, the clipboard is unchanged, and the command returns to idle.
+5. After any required relaunch, invoke Capture Text. If macOS shows its direct-screen-access confirmation for the native selector, choose **Allow** once. Confirm the native crosshair appears without activating CopyLasso or changing the frontmost window. Cancel with Escape and verify selection disappears, the clipboard is unchanged, and the command returns to idle.
 6. Disable CopyLasso in Screen & System Audio Recording and relaunch it. Invoke Capture Text and confirm the recovery copy says access was previously available and may have been turned off; it must not claim definitive revocation.
 7. Repeat recovery while an ordinary full-screen application is frontmost. Confirm presenting or updating CopyLasso's nonactivating panel does not change the frontmost application. Only **Open System Settings** intentionally changes focus.
-8. Confirm macOS did not show the ScreenCaptureKit private-window-picker-bypass warning and that no Accessibility, Input Monitoring, Microphone, or clipboard access was introduced.
+8. Confirm no Accessibility, Input Monitoring, Microphone, file-access, or clipboard-access permission was introduced. The direct-screen-access confirmation described above is accepted G46 behavior inside the existing Screen Recording category.
 
-Core Graphics preflight may remain positive inside a process after permission is disabled. G12 records revocation once preflight reflects it, normally after relaunch. The G14 capture path treats an actual ScreenCaptureKit denial as authoritative when preflight is stale. Ordinary capture requests retain that denial; an explicit **Try Again** permits one fresh preflight observation. The denial remains authoritative after cancellation, a too-small selection, or capture failure and clears only after a successful ScreenCaptureKit capture.
+Core Graphics preflight may remain positive inside a process after permission is disabled. G12 records revocation once preflight reflects it, normally after relaunch. Current source rechecks authorization when the system selector returns empty output, so a direct-access denial enters the existing authoritative recovery flow rather than being treated as Escape. An explicit **Try Again** permits one fresh preflight observation. The denial remains authoritative after later cancellation or capture failure and clears only after a successful captured image returns.
 
 ### G12 Verified Result
 
@@ -67,6 +67,68 @@ During the revocation check, macOS initially relaunched a retired scaffold from 
 | Not granted; access was previously observed | Not granted after previously observed access; access may have been turned off |
 
 Permission history contains only the two booleans needed for these neutral labels. It contains no pixels, recognized text, raw platform error, or definitive copy of macOS authorization state.
+
+## G46 Production Interactive Capture
+
+Normal builds synchronously start Apple's fixed interactive selector after a
+granted shortcut preflight. Direct tests pin the executable and arguments,
+including the `/dev/null` image destination, reject overlapping sessions, and
+prove that the subprocess cannot return screenshot bytes to CopyLasso. Pure
+tests cover pointer-state selection tracking, a button already held at startup,
+initiating-display clamping, coordinate conversion, tiny drags, confirmation
+clicks followed by a real drag, Shift/Option/Space-adjustment rejection,
+final-candidate replacement, cross-display release rejection, cancellation,
+and stale completion. Service tests
+prove only a completed rectangle reaches the existing in-memory ScreenCaptureKit
+adapter, complete display bounds are revalidated, and permission and capture
+failures remain correctly classified. Empty native-selector output performs an
+injected authoritative ScreenCaptureKit access check, and signalled termination
+cannot consume cached geometry.
+
+Tests also reject Control before process launch, cancel a live selector when
+polled Control appears, prove the launcher is immediately
+reusable, distinguish Escape from failure, and prove every such path leaves
+CopyLasso's write-only clipboard service and success sound untouched.
+Shortcut tests require Shift, Option, and Control to be released before selector
+launch while preserving immediate command-only delivery. Geometry tests use
+half-open bounds and prove a shared display edge has exactly one owner.
+Workflow tests cover menu and same-turn shortcut starts, permission loss,
+capture failure, OCR/code continuation, clipboard preservation, sound ordering,
+HUD feedback, immediate reuse, and release of interactive pixels before HUD
+presentation.
+
+The signed physical check must use one running build and cover a stationary
+pointer in Safari and another application, exactly one immediate native
+crosshair, no application activation or focus change, text and QR output,
+sound and HUD, Escape, rapid reuse while the prior HUD is visible, Spaces, and
+a connected second display when available. A one-time macOS direct-access
+confirmation is acceptable; any Accessibility, Input Monitoring, microphone,
+file-access, or new entitlement request is not.
+
+Repeat once from the menu while holding Control and once by pressing Control
+during an active drag. Both attempts must stop without a CopyLasso clipboard
+write, success sound, or success HUD; a following ordinary capture must remain
+immediately reusable.
+
+The passive sampler cannot atomically intercept an exact Control-at-mouse-up
+transition. That race may let macOS replace the clipboard with its screenshot
+before CopyLasso cancels. It can also rarely retain a dragged first-use
+confirmation followed by Escape or miss an entire drag completed between
+one-millisecond samples. These are accepted option-3 residuals, not automated
+passes. Verify ordinary direct drags and retry any exceptionally fast miss.
+
+If macOS presents its direct-access confirmation, click **Allow**, then make a
+normal drag. The confirmation click must not consume the selection and the real
+drag must complete normally. Use a direct drag without native modifier-based
+rectangle adjustment.
+
+With two displays connected, begin a native selection on one display and release
+on the other. CopyLasso must cancel without cropping, OCR, clipboard write,
+sound, or HUD; a following selection contained on either display must work.
+
+The G13 and G14 matrices below remain historical and Debug-fixture coverage for
+the prior AppKit geometry and ScreenCaptureKit crop boundaries. They do not
+describe the normal G46 Release wiring.
 
 ## Real Selection Overlay Matrix
 

@@ -17,8 +17,7 @@ The tracked `CopyLasso.entitlements` contains App Sandbox, outbound network clie
 | --- | --- | --- | --- |
 | Request | Unified Capture command event and payload-free coordinator state | One operation | None |
 | Permission | Two local history booleans and direct Core Graphics observation | Preferences plus current check | Requested-before and observed-granted booleans only |
-| Selection | Display identity, frames, scale, and rectangle | Active selection through capture validation | None |
-| Capture | One `CGImage` for the selected local rectangle | Private async operation scope | None; no encoder or image writer exists |
+| Selection and capture | Transient pointer/button samples that derive a user-controlled rectangle, then one ScreenCaptureKit `CGImage` | Selection-scoped sampler and private async operation scope | None; no encoded subprocess image, file, or screenshot-clipboard output exists |
 | Text recognition | Text, confidence, and normalized bounds | Private async operation scope | None |
 | Code recognition | String payload, supported symbology, confidence, and normalized bounds | Private async operation scope | None |
 | Assembly | One inert plain `String` | Private async operation scope | None |
@@ -55,10 +54,10 @@ An inspected development container contained preference/window metadata, one 240
 - Network client: present solely for Sparkle's fixed signed-feed and immutable GitHub enclosure requests. The app has no second networking stack, custom headers, cookie use, query parameters, system profiling, or external release-note request.
 - Network server: absent.
 - Sparkle installer services: exactly `$(PRODUCT_BUNDLE_IDENTIFIER)-spks` and `$(PRODUCT_BUNDLE_IDENTIFIER)-spki`; the separate downloader service is disabled.
-- Screen Recording: requested only after a user Capture command.
+- Screen Recording: requested only after a user Capture command. Current source may also show macOS's direct-screen-access confirmation for its native interactive selector; this is the same TCC category, not another entitlement.
 - Accessibility and Input Monitoring: not required by the shortcut, menu, selection, OCR, or output path.
-- Microphone and system-audio capture: not requested; ScreenCaptureKit capture disables audio. The output-only success sound uses `NSSound` and requests no privacy permission.
-- Files and folders: no user-selected or temporary-file entitlement; captured pixels and code payloads never use a file intermediate.
+- Microphone and system-audio capture: not requested. The native selector receives no audio option, and the output-only success sound uses `NSSound` without requesting a privacy permission.
+- Files and folders: no user-selected or temporary-file entitlement; the fixed selector's unused image destination is `/dev/null`, and ScreenCaptureKit returns the selected pixels directly in memory.
 
 Settings links ask macOS to open the user's default browser. CopyLasso itself does not fetch those URLs. The shipping updater is isolated from core capture and has one fixed feed URL. Automatic checks default on at a 24-hour interval but can be disabled; manual checks remain available. Download and install never occur automatically. The user sees authenticated version, inline plain-text notes, and exact size before download, then explicitly confirms download and later install/relaunch.
 
@@ -83,14 +82,20 @@ downloader-service name, or unrelated capability.
 
 | Boundary or misuse case | Mitigation and limitation |
 | --- | --- |
-| Broad Screen Recording consent | CopyLasso captures only after a user command and region selection, validates the initiating display snapshot, and keeps pixels in memory. macOS consent still authorizes the process at the OS boundary. |
-| Wrong display after reconfiguration | Identity, point size, scale, bounds, and derived pixel dimensions must match a fresh ScreenCaptureKit snapshot or capture fails before OCR. |
+| Broad Screen Recording consent | CopyLasso starts the system selector only after a user command, derives only the completed rectangle, and asks ScreenCaptureKit for only those pixels. macOS consent still authorizes the process at the OS boundary. |
+| Stale permission preflight | If the native selector exits without geometry, CopyLasso asks `SCShareableContent.current` to authoritatively verify access before classifying the result as Escape. The check captures no pixels and its shareable-content metadata is discarded immediately. |
+| Selector subprocess misuse | Production invokes only `/usr/sbin/screencapture` with one fixed argument list, without a shell or caller-controlled value. Its standard streams and `/dev/null` image destination yield no screenshot data to CopyLasso; the actual selected pixels arrive only through the bounded ScreenCaptureKit service. |
+| Passive selection tracking | While the native selector is active, CopyLasso samples only the current Core Graphics pointer position, left-button state, and Shift/Option/Space geometry-adjustment state. It intercepts no event, synthesizes no input, requests no Accessibility or Input Monitoring access, and discards all samples when selection ends. The tracker waits out a preexisting press, permits a real drag to replace a tiny confirmation click, and rejects adjusted geometry. An entire drag between samples can be missed or start at the first observed point; a dragged first-use confirmation followed by Escape can rarely remain a candidate. |
+| Control-modified native selection | Shortcut routing waits for Shift, Option, and Control release before launch. macOS can redirect the native selector to its screenshot clipboard when Control is held, so CopyLasso polls and interrupts when it observes Control. Because input is not intercepted, exact Control at mouse-up can let macOS replace the clipboard before cancellation. CopyLasso never reads that value or forwards it to recognition. |
+| Cross-display native selection | The system selector can display a rectangle spanning displays, while CopyLasso captures one display at a time. Half-open display bounds assign each shared edge to exactly one display; a release on a different known display cancels instead of silently cropping the visible rectangle. |
+| Display changes during selection | The derived rectangle is clamped to the display where the drag began, then the existing ScreenCaptureKit request validator requires that display identity, complete global bounds including origin, scale, source bounds, and pixel dimensions still match before pixels can reach recognition. |
 | Protected or DRM content | CopyLasso follows macOS capture restrictions and does not bypass protected pixels. Blank protected output may yield no text. |
 | Misleading or hostile visible text | OCR output is untrusted plain text. CopyLasso copies it but never executes it, interprets markup, follows a link, or invokes a shell. Users must review text before using it as a command or credential. |
 | Malicious or action-shaped code payload | Code output is untrusted inert plain text. CopyLasso never opens a URL, launches an application, joins a network, creates a contact or calendar item, invokes a shell, or otherwise interprets or acts on it. |
 | Clipboard visibility | After a successful write, macOS and other clipboard-aware software control access. CopyLasso writes one plain-string representation and never reads prior contents. |
 | Audio content leakage or playback failure | The sound service receives no pixels, recognized text, clipboard text, preview, geometry, or application identity. It plays one fixed bundled asset after a successful write; missing, muted, unavailable, or refused playback fails silently without delaying or failing capture. |
 | Crash or forced termination during private processing | Operation values are memory-only and no in-app crash reporter receives them. Operating-system diagnostics or a privileged memory inspector remain outside the app's trust boundary. |
+| Abnormal selector termination | Geometry observed before a signal is discarded. Only normal process exit can pass a completed rectangle to ScreenCaptureKit. |
 | Diagnostic leakage | The only logger emits four fixed lifecycle messages. CI rejects interpolation and content-bearing logging APIs elsewhere. |
 | Dependency compromise | KeyboardShortcuts and Sparkle are exact-version and exact-revision pinned, licensed, and covered by complete local notices. Sparkle is confined to one production adapter plus direct policy/session tests; canonical audits verify its framework, configuration, public key, installer entitlements, and absence of a second network stack. |
 | Feed, hosting, DNS, or transport compromise | The compiled public key authenticates both the appcast and enclosure. Policy accepts one fixed feed, one exact version-matched GitHub asset shape, nonempty inline plain-text notes, canonical monotonic builds, and a 256 MiB cap. Transport cannot authorize installation. |

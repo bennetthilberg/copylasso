@@ -67,7 +67,10 @@ protocol SelectionOverlayLifecycleObserving: AnyObject {
 
 @MainActor
 protocol SelectionCursorManaging: AnyObject {
+  func hideUntilCrosshairIsStable()
+  func revealStableCrosshair()
   func pushCrosshair()
+  func setCrosshair()
   func popCrosshair()
 }
 
@@ -102,11 +105,19 @@ protocol SelectionApplicationWindowProviding: AnyObject {
 
 @MainActor
 final class AppKitRegionSelectionService: RegionSelectionService {
+  static let cursorStabilizationDelays: [Duration] = [
+    .milliseconds(16),
+    .milliseconds(50),
+    .milliseconds(100),
+    .milliseconds(160),
+  ]
+
   typealias CompletionWork = @MainActor @Sendable () -> Void
   typealias CompletionScheduler = @MainActor (@escaping CompletionWork) -> Void
   typealias CursorInstallationWork = @MainActor @Sendable () -> Void
   typealias CursorInstallationScheduler =
     @MainActor (
+      _ delay: Duration,
       @escaping CursorInstallationWork
     ) -> Void
 
@@ -120,9 +131,20 @@ final class AppKitRegionSelectionService: RegionSelectionService {
   private let scheduleCompletion: CompletionScheduler
   private var activeController: SelectionOverlayController?
   private var hasPendingContinuation = false
+  private var hasPreparedHiddenCursor = false
 
   var hasActiveSelection: Bool {
     activeController != nil
+  }
+
+  func prepareForSelectionTransition() {
+    guard
+      activeController == nil,
+      !hasPendingContinuation,
+      !hasPreparedHiddenCursor
+    else { return }
+    cursorManager.hideUntilCrosshairIsStable()
+    hasPreparedHiddenCursor = true
   }
 
   convenience init() {
@@ -143,7 +165,7 @@ final class AppKitRegionSelectionService: RegionSelectionService {
     activationManager: any SelectionApplicationActivationManaging,
     pointerLocation: @escaping () -> CGPoint = { NSEvent.mouseLocation },
     scheduleCursorInstallation: @escaping CursorInstallationScheduler = AppKitRegionSelectionService
-      .scheduleOnNextMainActorTurn,
+      .scheduleCursorStabilization,
     scheduleCompletion: @escaping CompletionScheduler = AppKitRegionSelectionService
       .scheduleOnNextMainActorTurn
   ) {
@@ -162,16 +184,25 @@ final class AppKitRegionSelectionService: RegionSelectionService {
       throw AppKitRegionSelectionError.selectionAlreadyActive
     }
 
-    let displays = try validatedDisplays(displayProvider.currentDisplays())
+    let displays: [DisplayGeometry]
+    do {
+      displays = try validatedDisplays(displayProvider.currentDisplays())
+    } catch {
+      releasePreparedHiddenCursor()
+      throw error
+    }
     hasPendingContinuation = true
 
     return try await withCheckedThrowingContinuation { continuation in
+      let cursorInitiallyHidden = hasPreparedHiddenCursor
+      hasPreparedHiddenCursor = false
       let controller = SelectionOverlayController(
         displays: displays,
         surfaceFactory: surfaceFactory,
         lifecycleObserver: lifecycleObserver,
         cursorManager: cursorManager,
         activationManager: activationManager,
+        cursorInitiallyHidden: cursorInitiallyHidden,
         pointerLocation: pointerLocation,
         scheduleCursorInstallation: scheduleCursorInstallation
       )
@@ -188,7 +219,17 @@ final class AppKitRegionSelectionService: RegionSelectionService {
   }
 
   func cancelSelection() {
-    activeController?.cancel(.applicationTerminated)
+    if let activeController {
+      activeController.cancel(.applicationTerminated)
+    } else {
+      releasePreparedHiddenCursor()
+    }
+  }
+
+  private func releasePreparedHiddenCursor() {
+    guard hasPreparedHiddenCursor else { return }
+    cursorManager.revealStableCrosshair()
+    hasPreparedHiddenCursor = false
   }
 
   private func validatedDisplays(_ displays: [DisplayGeometry]) throws -> [DisplayGeometry] {
@@ -206,6 +247,17 @@ final class AppKitRegionSelectionService: RegionSelectionService {
   private static func scheduleOnNextMainActorTurn(_ work: @escaping CompletionWork) {
     Task { @MainActor in
       await Task.yield()
+      work()
+    }
+  }
+
+  private static func scheduleCursorStabilization(
+    after delay: Duration,
+    _ work: @escaping CursorInstallationWork
+  ) {
+    Task { @MainActor in
+      try? await Task.sleep(for: delay)
+      guard !Task.isCancelled else { return }
       work()
     }
   }
@@ -228,9 +280,11 @@ private final class SelectionOverlayController {
   private var completion: Completion?
   private var hasFinished = false
   private var lifecycleStarted = false
+  private var cursorHiddenForHandoff = false
   private var cursorPushed = false
-  private var cursorInstallationScheduled = false
+  private var cursorStabilizationGeneration = 0
   private var activationRequested = false
+  private var inputReadinessRequested = false
   private lazy var session = SelectionSession(displays: displays) { [weak self] outcome in
     self?.finish(.success(outcome))
   }
@@ -241,6 +295,7 @@ private final class SelectionOverlayController {
     lifecycleObserver: any SelectionOverlayLifecycleObserving,
     cursorManager: any SelectionCursorManaging,
     activationManager: any SelectionApplicationActivationManaging,
+    cursorInitiallyHidden: Bool,
     pointerLocation: @escaping () -> CGPoint,
     scheduleCursorInstallation:
       @escaping AppKitRegionSelectionService
@@ -251,6 +306,7 @@ private final class SelectionOverlayController {
     self.lifecycleObserver = lifecycleObserver
     self.cursorManager = cursorManager
     self.activationManager = activationManager
+    cursorHiddenForHandoff = cursorInitiallyHidden
     self.pointerLocation = pointerLocation
     self.scheduleCursorInstallation = scheduleCursorInstallation
   }
@@ -263,19 +319,6 @@ private final class SelectionOverlayController {
       applicationTermination: { [weak self] in self?.cancel(.applicationTerminated) }
     )
     lifecycleStarted = true
-    activationRequested = true
-    activationManager.activateForSelection(
-      whenActive: { [weak self] in
-        self?.applicationDidBecomeActive()
-      },
-      whenUnavailable: { [weak self] in
-        self?.finish(.failure(AppKitRegionSelectionError.applicationActivationFailed))
-      }
-    )
-  }
-
-  private func applicationDidBecomeActive() {
-    guard !hasFinished, activationRequested, surfaces.isEmpty else { return }
 
     do {
       for display in displays {
@@ -290,16 +333,42 @@ private final class SelectionOverlayController {
       for surface in surfaces {
         surface.show()
       }
-      let pointer = pointerLocation()
-      let inputSurface = inputSurface(at: pointer)
-      let inputSurfaceID = inputSurface?.displayID
-      inputSurface?.makeInputReady { [weak self] in
-        self?.inputSurfaceBecameKey(inputSurfaceID)
-      }
     } catch {
       finish(
         .failure((error as? AppKitRegionSelectionError) ?? .surfaceCreationFailed)
       )
+      return
+    }
+
+    if !cursorHiddenForHandoff {
+      cursorManager.hideUntilCrosshairIsStable()
+      cursorHiddenForHandoff = true
+    }
+    activationRequested = true
+    activationManager.activateForSelection(
+      whenActive: { [weak self] in
+        self?.applicationDidBecomeActive()
+      },
+      whenUnavailable: { [weak self] in
+        self?.finish(.failure(AppKitRegionSelectionError.applicationActivationFailed))
+      }
+    )
+  }
+
+  private func applicationDidBecomeActive() {
+    guard
+      !hasFinished,
+      activationRequested,
+      !surfaces.isEmpty,
+      !inputReadinessRequested
+    else { return }
+    inputReadinessRequested = true
+
+    let pointer = pointerLocation()
+    let inputSurface = inputSurface(at: pointer)
+    let inputSurfaceID = inputSurface?.displayID
+    inputSurface?.makeInputReady { [weak self] in
+      self?.inputSurfaceBecameKey(inputSurfaceID)
     }
   }
 
@@ -309,18 +378,44 @@ private final class SelectionOverlayController {
       surface.cancelInputReadiness()
     }
     surfaces.first(where: { $0.displayID == displayID })?.refreshCursorRects()
-    guard !cursorPushed, !cursorInstallationScheduled else { return }
-    cursorInstallationScheduled = true
-    scheduleCursorInstallation { [weak self] in
-      self?.installCrosshairAfterCursorRectsSettle()
+    claimCrosshair()
+    beginCursorStabilization()
+  }
+
+  private func claimCrosshair() {
+    if cursorPushed {
+      cursorManager.setCrosshair()
+    } else {
+      cursorManager.pushCrosshair()
+      cursorPushed = true
     }
   }
 
-  private func installCrosshairAfterCursorRectsSettle() {
-    cursorInstallationScheduled = false
-    guard !hasFinished, !cursorPushed else { return }
-    cursorManager.pushCrosshair()
-    cursorPushed = true
+  private func beginCursorStabilization() {
+    cursorStabilizationGeneration &+= 1
+    let generation = cursorStabilizationGeneration
+    for (index, delay) in AppKitRegionSelectionService.cursorStabilizationDelays.enumerated() {
+      scheduleCursorInstallation(delay) { [weak self] in
+        self?.performCursorStabilization(
+          generation: generation,
+          revealCursor: index == AppKitRegionSelectionService.cursorStabilizationDelays.count - 1
+        )
+      }
+    }
+  }
+
+  private func performCursorStabilization(generation: Int, revealCursor: Bool) {
+    guard
+      !hasFinished,
+      generation == cursorStabilizationGeneration
+    else {
+      return
+    }
+
+    claimCrosshair()
+    if revealCursor {
+      revealStableCrosshair()
+    }
   }
 
   func cancel(_ reason: SelectionCancellationReason) {
@@ -333,6 +428,11 @@ private final class SelectionOverlayController {
 
     switch event {
     case .mouseDown(let point):
+      claimCrosshair()
+      revealStableCrosshair()
+      for surface in surfaces where surface.displayID != displayID {
+        surface.cancelInputReadiness()
+      }
       let inputSurface = surfaces.first(where: { $0.displayID == displayID })
       inputSurface?.makeInputReady { [weak self] in
         self?.inputSurfaceBecameKey(displayID)
@@ -387,6 +487,7 @@ private final class SelectionOverlayController {
   }
 
   private func cleanupSurfaces() -> Bool {
+    cursorStabilizationGeneration &+= 1
     if lifecycleStarted {
       lifecycleObserver.stop()
       lifecycleStarted = false
@@ -403,6 +504,7 @@ private final class SelectionOverlayController {
       cursorManager.popCrosshair()
       cursorPushed = false
     }
+    revealStableCrosshair()
     let everySurfaceHidden = surfaces.allSatisfy { !$0.isVisible }
     surfaces.removeAll()
     return everySurfaceHidden
@@ -410,6 +512,12 @@ private final class SelectionOverlayController {
 
   private func inputSurface(at pointer: CGPoint) -> (any SelectionOverlaySurface)? {
     return surfaces.first(where: { $0.frame.contains(pointer) }) ?? surfaces.first
+  }
+
+  private func revealStableCrosshair() {
+    guard cursorHiddenForHandoff else { return }
+    cursorManager.revealStableCrosshair()
+    cursorHiddenForHandoff = false
   }
 }
 
@@ -523,7 +631,7 @@ private final class AppKitSelectionOverlaySurface: SelectionOverlaySurface {
     frame = display.appKitFrame
     panel = RegionSelectionPanel(
       contentRect: display.appKitFrame,
-      styleMask: [.borderless, .nonactivatingPanel],
+      styleMask: RegionSelectionPanel.selectionStyleMask,
       backing: .buffered,
       defer: false
     )
@@ -564,7 +672,9 @@ private final class AppKitSelectionOverlaySurface: SelectionOverlaySurface {
       panel.makeFirstResponder(contentView)
       whenKey()
     }
-    panel.makeKey()
+    panel.makeFirstResponder(contentView)
+    panel.makeKeyAndOrderFront(nil)
+    panel.orderFrontRegardless()
   }
 
   func cancelInputReadiness() {
@@ -586,6 +696,8 @@ private final class AppKitSelectionOverlaySurface: SelectionOverlaySurface {
 }
 
 final class RegionSelectionPanel: NSPanel {
+  static let selectionStyleMask: NSWindow.StyleMask = .borderless
+
   private var keyReadiness: (@MainActor @Sendable () -> Void)?
 
   override var canBecomeKey: Bool { true }
@@ -814,8 +926,20 @@ final class RegionSelectionView: NSView {
 
 @MainActor
 final class SystemSelectionCursorManager: SelectionCursorManaging {
+  func hideUntilCrosshairIsStable() {
+    NSCursor.hide()
+  }
+
+  func revealStableCrosshair() {
+    NSCursor.unhide()
+  }
+
   func pushCrosshair() {
     NSCursor.crosshair.push()
+    NSCursor.crosshair.set()
+  }
+
+  func setCrosshair() {
     NSCursor.crosshair.set()
   }
 
@@ -1107,8 +1231,18 @@ final class SystemSelectionApplicationWindowVisibilityManager:
 
 @MainActor
 final class SystemSelectionApplicationWindowProvider: SelectionApplicationWindowProviding {
+  private let applicationWindows: () -> [NSWindow]
+
+  convenience init() {
+    self.init(applicationWindows: { NSApp?.windows ?? [] })
+  }
+
+  init(applicationWindows: @escaping () -> [NSWindow]) {
+    self.applicationWindows = applicationWindows
+  }
+
   func allApplicationWindows() -> [any SelectionApplicationWindowPresenting] {
-    NSApp?.windows ?? []
+    applicationWindows().filter { !($0 is RegionSelectionPanel) }
   }
 }
 

@@ -7,6 +7,9 @@ All notable changes to CopyLasso will be documented in this file.
 ### Fixed
 
 - Update offers now render authenticated release notes in a bounded, scrollable native panel instead of exposing Markdown syntax or expanding beyond the screen.
+- Selection now uses macOS's native interactive crosshair without activating CopyLasso or changing application focus, then captures the completed display-clamped rectangle in memory through ScreenCaptureKit.
+- Saved-shortcut Shift, Option, and Control modifiers are released before the native selector starts, and adjacent display edges now have deterministic ownership. The native selector retains narrow documented races for exact Control-at-mouse-up, dragged first-use confirmation followed by Escape, and an entire drag completed between pointer samples.
+- Update commands use the concise “Check for Updates” label, About has clearer icon-to-title spacing, and the privacy policy is substantially shorter.
 
 ## 0.2.0 - 2026-07-29
 

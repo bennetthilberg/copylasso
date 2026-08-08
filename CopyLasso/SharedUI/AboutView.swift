@@ -26,14 +26,16 @@ struct AboutView: View {
 
   var body: some View {
     VStack(spacing: 10) {
-      DeferredApplicationIconView(source: applicationIconSource)
-        .frame(width: 80, height: 80)
-        .accessibilityLabel("CopyLasso app icon")
-        .accessibilityIdentifier("copylasso.about.icon")
+      VStack(spacing: AboutLayout.iconTitleSpacing) {
+        DeferredApplicationIconView(source: applicationIconSource)
+          .frame(width: 80, height: 80)
+          .accessibilityLabel("CopyLasso app icon")
+          .accessibilityIdentifier("copylasso.about.icon")
 
-      Text(metadata.applicationName)
-        .font(.title2.weight(.semibold))
-        .accessibilityIdentifier("copylasso.about.title")
+        Text(metadata.applicationName)
+          .font(.title2.weight(.semibold))
+          .accessibilityIdentifier("copylasso.about.title")
+      }
 
       Text(metadata.versionDescription)
         .foregroundStyle(.secondary)
@@ -69,6 +71,10 @@ struct AboutView: View {
       AcknowledgementsView(acknowledgements: metadata.acknowledgements)
     }
   }
+}
+
+enum AboutLayout {
+  static let iconTitleSpacing: CGFloat = 18
 }
 
 private struct DeferredApplicationIconView: NSViewRepresentable {

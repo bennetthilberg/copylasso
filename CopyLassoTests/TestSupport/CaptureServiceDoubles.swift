@@ -10,9 +10,12 @@ enum TestServiceError: Error, Equatable, Sendable {
 @MainActor
 final class StubScreenCapturePermissionService: ScreenCapturePermissionService {
   var currentResult: ScreenCaptureAuthorizationObservation
+  var authoritativeResult: ScreenCaptureAuthorizationObservation?
+  var authoritativeObservationHandler: (() async -> ScreenCaptureAuthorizationObservation?)?
   var requestResult: ScreenCaptureAuthorizationObservation
   var openSystemSettingsResult = true
   private(set) var currentObservationCallCount = 0
+  private(set) var authoritativeObservationCallCount = 0
   private(set) var requestAccessCallCount = 0
   private(set) var recordCaptureDenialCallCount = 0
   private(set) var recordCaptureSuccessCallCount = 0
@@ -30,6 +33,14 @@ final class StubScreenCapturePermissionService: ScreenCapturePermissionService {
   func currentObservation() -> ScreenCaptureAuthorizationObservation {
     currentObservationCallCount += 1
     return currentResult
+  }
+
+  func authoritativeObservation() async -> ScreenCaptureAuthorizationObservation? {
+    authoritativeObservationCallCount += 1
+    if let authoritativeObservationHandler {
+      return await authoritativeObservationHandler()
+    }
+    return authoritativeResult ?? currentResult
   }
 
   func requestAccess() -> ScreenCaptureAuthorizationObservation {
@@ -73,11 +84,18 @@ final class SpyPermissionRecoveryPresenter: PermissionRecoveryPresenting {
 @MainActor
 final class StubRegionSelectionService: RegionSelectionService {
   var result: Result<SelectionOutcome, TestServiceError>
+  var onPrepareForSelectionTransition: (() -> Void)?
+  private(set) var prepareForSelectionTransitionCallCount = 0
   private(set) var selectRegionCallCount = 0
   private(set) var cancelSelectionCallCount = 0
 
   init(result: Result<SelectionOutcome, TestServiceError>) {
     self.result = result
+  }
+
+  func prepareForSelectionTransition() {
+    prepareForSelectionTransitionCallCount += 1
+    onPrepareForSelectionTransition?()
   }
 
   func selectRegion() async throws -> SelectionOutcome {
@@ -194,6 +212,7 @@ final class SpySuccessSoundPlayer: SuccessSoundPlaying {
 final class SpyFeedbackService: FeedbackService {
   var error: TestServiceError?
   var onPresent: ((CaptureFeedback) -> Void)?
+  var onDismiss: (() -> Void)?
   private(set) var presentedFeedback: [CaptureFeedback] = []
   private(set) var dismissCallCount = 0
   private(set) var isVisible = false
@@ -210,6 +229,7 @@ final class SpyFeedbackService: FeedbackService {
   func dismiss() {
     guard isVisible else { return }
     dismissCallCount += 1
+    onDismiss?()
     isVisible = false
   }
 }
@@ -219,7 +239,8 @@ func makeTestCaptureCommand(
   coordinator: CaptureCoordinator,
   scheduleWork: @escaping CaptureCommand.WorkScheduler,
   feedbackService: any FeedbackService = SpyFeedbackService(),
-  successSoundPlayer: any SuccessSoundPlaying = NoopSuccessSoundPlayer()
+  successSoundPlayer: any SuccessSoundPlaying = NoopSuccessSoundPlayer(),
+  selectionService: (any RegionSelectionService)? = nil
 ) -> CaptureCommand {
   CaptureCommand(
     coordinator: coordinator,
@@ -227,7 +248,8 @@ func makeTestCaptureCommand(
       currentResult: .granted,
       requestResult: .granted
     ),
-    selectionService: StubRegionSelectionService(result: .failure(.injected)),
+    selectionService: selectionService
+      ?? StubRegionSelectionService(result: .failure(.injected)),
     screenCaptureService: StubScreenCaptureService(result: .failure(.injected)),
     ocrService: StubOCRService(result: .failure(.injected)),
     textAssembler: TextAssembler(),

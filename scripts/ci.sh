@@ -95,6 +95,9 @@ echo "Auditing v0.2 publication controls"
 echo "Auditing the closed v0.2 release state"
 ./scripts/audit-v02-release-state.sh
 
+echo "Auditing the G46 product patch"
+./scripts/audit-g46-product-patch.sh
+
 echo "Auditing on-screen code recognition"
 ./scripts/audit-code-recognition.sh
 
@@ -154,11 +157,12 @@ if [[ "$service_management_imports" != "CopyLasso/Services/LaunchAtLoginService.
 fi
 
 readonly permission_service='CopyLasso/Services/ScreenCapturePermissionService.swift'
+readonly permission_client='CopyLasso/Services/SystemScreenCapturePermissionClient.swift'
 permission_api_files="$({ /usr/bin/grep -R -lE \
     'CGPreflightScreenCaptureAccess|CGRequestScreenCaptureAccess' CopyLasso || true; })"
-if [[ "$permission_api_files" != "$permission_service" ]] || \
-    ! /usr/bin/grep -q 'CGPreflightScreenCaptureAccess' "$permission_service" || \
-    ! /usr/bin/grep -q 'CGRequestScreenCaptureAccess' "$permission_service"; then
+if [[ "$permission_api_files" != "$permission_client" ]] || \
+    ! /usr/bin/grep -q 'CGPreflightScreenCaptureAccess' "$permission_client" || \
+    ! /usr/bin/grep -q 'CGRequestScreenCaptureAccess' "$permission_client"; then
     echo "Core Graphics Screen Recording permission APIs must remain confined to the production permission service." >&2
     exit 1
 fi
@@ -189,12 +193,15 @@ fi
 
 readonly capture_service='CopyLasso/Services/SystemScreenCaptureService.swift'
 capture_api_files="$({ /usr/bin/grep -R -lE \
-    'import[[:space:]]+ScreenCaptureKit|SCScreenshotManager|SCShareableContent|SCContentFilter|SCStreamConfiguration' CopyLasso || true; })"
-if [[ "$capture_api_files" != "$capture_service" ]] || \
+    'import[[:space:]]+ScreenCaptureKit|SCScreenshotManager|SCShareableContent|SCContentFilter|SCStreamConfiguration' CopyLasso || true; } | LC_ALL=C /usr/bin/sort)"
+readonly expected_capture_api_files="$permission_client
+$capture_service"
+if [[ "$capture_api_files" != "$expected_capture_api_files" ]] || \
+    ! /usr/bin/grep -q 'SCShareableContent.current' "$permission_client" || \
     ! /usr/bin/grep -q 'SCScreenshotManager.captureImage' "$capture_service" || \
     ! /usr/bin/grep -q 'configuration.showsCursor = request.showsCursor' "$capture_service" || \
     ! /usr/bin/grep -q 'configuration.capturesAudio = request.capturesAudio' "$capture_service"; then
-    echo "ScreenCaptureKit APIs must remain confined to the production in-memory capture service." >&2
+    echo "ScreenCaptureKit APIs must remain confined to the production permission and in-memory capture services." >&2
     exit 1
 fi
 
@@ -208,10 +215,12 @@ readonly selection_service='CopyLasso/Services/AppKitRegionSelectionService.swif
 selection_api_files="$({ /usr/bin/grep -R -lE \
     'CGDisplayBounds|didChangeScreenParametersNotification|NSCursor\.crosshair|RegionSelectionPanel' CopyLasso || true; })"
 if [[ "$selection_api_files" != "$selection_service" ]] || \
-    ! /usr/bin/grep -q 'styleMask: \[.borderless, .nonactivatingPanel\]' "$selection_service" || \
+    ! /usr/bin/grep -q \
+      'static let selectionStyleMask: NSWindow.StyleMask = .borderless' \
+      "$selection_service" || \
     ! /usr/bin/grep -q 'panel.level = .screenSaver' "$selection_service" || \
     ! /usr/bin/grep -q 'panel.collectionBehavior = \[.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle\]' "$selection_service"; then
-    echo "Production display and selection-overlay APIs must remain confined to the AppKit selection service." >&2
+    echo "Debug display and selection-overlay APIs must remain confined to the AppKit fixture service." >&2
     exit 1
 fi
 

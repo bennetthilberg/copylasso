@@ -300,7 +300,12 @@ final class CopyLassoUITests: XCTestCase {
       menuItem("About CopyLasso", in: app).click()
       let aboutTitle = app.staticTexts["copylasso.about.title"]
       XCTAssertTrue(aboutTitle.waitForExistence(timeout: 5))
-      XCTAssertTrue(app.images["copylasso.about.icon"].exists)
+      let aboutIcon = app.images["copylasso.about.icon"]
+      XCTAssertTrue(aboutIcon.exists)
+      XCTAssertGreaterThanOrEqual(
+        aboutTitle.frame.minY - aboutIcon.frame.maxY,
+        16
+      )
       assertAccessibleText(
         app.staticTexts["copylasso.about.version"], equals: "Version 0.2.0 (3)"
       )
@@ -540,7 +545,9 @@ final class CopyLassoUITests: XCTestCase {
     ]
     XCTAssertTrue(successSound.exists)
     XCTAssertTrue(switchIsOn(successSound))
-    XCTAssertTrue(app.buttons["copylasso.settings.check-for-updates"].isEnabled)
+    let checkForUpdates = app.buttons["copylasso.settings.check-for-updates"]
+    XCTAssertTrue(checkForUpdates.isEnabled)
+    XCTAssertEqual(checkForUpdates.label, "Check for Updates")
     XCTAssertTrue(
       app.descendants(matching: .any)["copylasso.login.status"].exists
     )
@@ -854,7 +861,7 @@ final class CopyLassoUITests: XCTestCase {
 
   private static let requiredMenuLabels = [
     "Capture",
-    "Check for Updates…",
+    "Check for Updates",
     "Settings…",
     "About CopyLasso",
     "Quit CopyLasso",
