@@ -188,6 +188,47 @@ final class SystemInteractiveSelectionTrackerTests: XCTestCase {
     XCTAssertEqual(outcome, .cancelled(.displayChanged))
   }
 
+  func testSharedDisplayEdgeBelongsToTheDisplayWhoseMinimumContainsIt() throws {
+    let primary = try makeDisplay()
+    let secondary = try DisplayGeometry(
+      displayID: 8,
+      appKitFrame: CGRect(x: 1_920, y: 0, width: 1_280, height: 800),
+      coreGraphicsBounds: CGRect(x: 1_920, y: 0, width: 1_280, height: 800),
+      backingScale: 1
+    )
+    var tracker = SystemInteractiveSelectionTracker(
+      displays: [primary, secondary],
+      initialPointerState: SystemInteractivePointerState(
+        location: CGPoint(x: 1_920, y: 100),
+        isLeftButtonPressed: false
+      )
+    )
+
+    XCTAssertNil(
+      tracker.observe(
+        SystemInteractivePointerState(
+          location: CGPoint(x: 1_920, y: 100),
+          isLeftButtonPressed: true
+        )
+      )
+    )
+    let outcome = tracker.observe(
+      SystemInteractivePointerState(
+        location: CGPoint(x: 2_100, y: 400),
+        isLeftButtonPressed: false
+      )
+    )
+
+    guard case .selected(let selection) = outcome else {
+      return XCTFail("Expected the shared-edge drag to remain on the secondary display")
+    }
+    XCTAssertEqual(selection.displayID, secondary.displayID)
+    XCTAssertEqual(
+      selection.coreGraphicsGlobalRect,
+      CGRect(x: 1_920, y: 100, width: 180, height: 300)
+    )
+  }
+
   func testGeometryAdjustmentDuringDragCancelsInsteadOfCapturingDifferentPixels() throws {
     for adjustment in [
       SystemInteractiveGeometryAdjustments.shift,

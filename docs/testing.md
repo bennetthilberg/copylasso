@@ -89,6 +89,9 @@ Tests also reject Control before process launch, cancel a live selector when
 polled Control appears, prove the launcher is immediately
 reusable, distinguish Escape from failure, and prove every such path leaves
 CopyLasso's write-only clipboard service and success sound untouched.
+Shortcut tests require Shift, Option, and Control to be released before selector
+launch while preserving immediate command-only delivery. Geometry tests use
+half-open bounds and prove a shared display edge has exactly one owner.
 Workflow tests cover menu and same-turn shortcut starts, permission loss,
 capture failure, OCR/code continuation, clipboard preservation, sound ordering,
 HUD feedback, immediate reuse, and release of interactive pixels before HUD
@@ -106,6 +109,13 @@ Repeat once from the menu while holding Control and once by pressing Control
 during an active drag. Both attempts must stop without a CopyLasso clipboard
 write, success sound, or success HUD; a following ordinary capture must remain
 immediately reusable.
+
+The passive sampler cannot atomically intercept an exact Control-at-mouse-up
+transition. That race may let macOS replace the clipboard with its screenshot
+before CopyLasso cancels. It can also rarely retain a dragged first-use
+confirmation followed by Escape or miss an entire drag completed between
+one-millisecond samples. These are accepted option-3 residuals, not automated
+passes. Verify ordinary direct drags and retry any exceptionally fast miss.
 
 If macOS presents its direct-access confirmation, click **Allow**, then make a
 normal drag. The confirmation click must not consume the selection and the real

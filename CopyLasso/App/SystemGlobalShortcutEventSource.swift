@@ -13,7 +13,7 @@ final class SystemGlobalShortcutEventSource: GlobalShortcutEventSourcing {
   typealias ShortcutProvider = @MainActor () -> KeyboardShortcuts.Shortcut?
   typealias ApplicationActiveProvider = @MainActor () -> Bool
   typealias ModifierFlagsProvider = @MainActor () -> NSEvent.ModifierFlags
-  typealias ControlReleaseCheckScheduler =
+  typealias ShortcutReleaseCheckScheduler =
     @MainActor (
       @escaping @MainActor @Sendable () -> Void
     ) -> Void
@@ -31,14 +31,14 @@ final class SystemGlobalShortcutEventSource: GlobalShortcutEventSourcing {
   private let isApplicationActive: ApplicationActiveProvider
   private let shortcutProvider: ShortcutProvider
   private let modifierFlagsProvider: ModifierFlagsProvider
-  private let scheduleControlReleaseCheck: ControlReleaseCheckScheduler
+  private let scheduleShortcutReleaseCheck: ShortcutReleaseCheckScheduler
   private var eventHandler: ((GlobalShortcutEvent) -> Void)?
   private var notificationObservers: [NSObjectProtocol] = []
   private var isRecorderActive = false
   private var hasRegistrationState = false
   private var registeredShortcut: KeyboardShortcuts.Shortcut?
-  private var isAwaitingControlShortcutRelease = false
-  private var controlShortcutGeneration: UInt = 0
+  private var isAwaitingShortcutRelease = false
+  private var shortcutReleaseGeneration: UInt = 0
 
   convenience init() {
     self.init(registrar: SystemGlobalShortcutHotKeyRegistrar())
@@ -55,7 +55,7 @@ final class SystemGlobalShortcutEventSource: GlobalShortcutEventSourcing {
     modifierFlagsProvider: @escaping ModifierFlagsProvider = {
       NSEvent.modifierFlags
     },
-    scheduleControlReleaseCheck: @escaping ControlReleaseCheckScheduler = { work in
+    scheduleShortcutReleaseCheck: @escaping ShortcutReleaseCheckScheduler = { work in
       Task { @MainActor in
         try? await Task.sleep(for: .milliseconds(10))
         work()
@@ -68,7 +68,7 @@ final class SystemGlobalShortcutEventSource: GlobalShortcutEventSourcing {
     self.isApplicationActive = isApplicationActive
     self.shortcutProvider = shortcutProvider
     self.modifierFlagsProvider = modifierFlagsProvider
-    self.scheduleControlReleaseCheck = scheduleControlReleaseCheck
+    self.scheduleShortcutReleaseCheck = scheduleShortcutReleaseCheck
   }
 
   func start(_ eventHandler: @escaping (GlobalShortcutEvent) -> Void) {
@@ -144,53 +144,71 @@ final class SystemGlobalShortcutEventSource: GlobalShortcutEventSourcing {
       return
     }
 
-    invalidatePendingControlShortcut()
+    invalidatePendingShortcut()
     registrar.register(desiredShortcut)
     registeredShortcut = desiredShortcut
     hasRegistrationState = true
   }
 
   private func handleHotKeyEvent(_ event: GlobalShortcutEvent) {
-    guard registeredShortcut?.modifiers.contains(.control) == true else {
+    guard !selectorSensitiveModifiers.isEmpty else {
       eventHandler?(event)
       return
     }
 
     switch event {
     case .keyDown:
-      invalidatePendingControlShortcut()
-      isAwaitingControlShortcutRelease = true
+      invalidatePendingShortcut()
+      isAwaitingShortcutRelease = true
     case .keyUp:
-      guard isAwaitingControlShortcutRelease else { return }
-      isAwaitingControlShortcutRelease = false
-      deliverControlShortcutWhenReleased(generation: controlShortcutGeneration)
+      guard isAwaitingShortcutRelease else {
+        eventHandler?(.keyUp)
+        return
+      }
+      isAwaitingShortcutRelease = false
+      deliverShortcutWhenReleased(generation: shortcutReleaseGeneration)
     }
   }
 
-  private func deliverControlShortcutWhenReleased(generation: UInt) {
+  private func deliverShortcutWhenReleased(generation: UInt) {
     guard
-      generation == controlShortcutGeneration,
+      generation == shortcutReleaseGeneration,
       eventHandler != nil
     else {
       return
     }
-    guard modifierFlagsProvider().contains(.control) else {
+    guard !modifierFlagsProvider().intersection(selectorSensitiveModifiers).isEmpty else {
       eventHandler?(.keyDown)
       return
     }
 
-    scheduleControlReleaseCheck { [weak self] in
-      self?.deliverControlShortcutWhenReleased(generation: generation)
+    scheduleShortcutReleaseCheck { [weak self] in
+      self?.deliverShortcutWhenReleased(generation: generation)
     }
   }
 
-  private func invalidatePendingControlShortcut() {
-    isAwaitingControlShortcutRelease = false
-    controlShortcutGeneration &+= 1
+  private var selectorSensitiveModifiers: NSEvent.ModifierFlags {
+    guard let modifiers = registeredShortcut?.modifiers else { return [] }
+    var flags: NSEvent.ModifierFlags = []
+    if modifiers.contains(.control) {
+      flags.insert(.control)
+    }
+    if modifiers.contains(.shift) {
+      flags.insert(.shift)
+    }
+    if modifiers.contains(.option) {
+      flags.insert(.option)
+    }
+    return flags
+  }
+
+  private func invalidatePendingShortcut() {
+    isAwaitingShortcutRelease = false
+    shortcutReleaseGeneration &+= 1
   }
 
   private func stopListening() {
-    invalidatePendingControlShortcut()
+    invalidatePendingShortcut()
     let wasListening = eventHandler != nil || !notificationObservers.isEmpty
     for observer in notificationObservers {
       notificationCenter.removeObserver(observer)

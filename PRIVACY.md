@@ -35,13 +35,15 @@ permission denial. It retains no shareable-content metadata from that check.
 The core workflow needs no Accessibility, Input Monitoring, microphone, or
 notification access.
 
-Control during selection cancels because macOS could redirect the screenshot
-to the clipboard. While the selector is active, CopyLasso samples only pointer
-position, left-button state, and whether Shift, Option, or Space is adjusting
-the native rectangle. It installs no event monitor, ignores a tiny confirmation
-click when a later real drag follows, rejects modifier-adjusted rectangles, and
-cancels a release on a different display rather than cropping it. CopyLasso
-neither intercepts nor synthesizes input.
+Before selection, CopyLasso waits for saved-shortcut Shift, Option, and Control
+release. Control can redirect macOS's screenshot to the clipboard, so
+CopyLasso cancels when observed. Without input interception, an exact
+Control-at-mouse-up race can replace the clipboard before cancellation;
+CopyLasso neither reads it nor sends it to recognition. During selection it
+samples only pointer, left-button, and Shift/Option/Space state. Adjusted
+rectangles and cross-display releases are rejected. A dragged first-use
+confirmation followed by Escape or an entire drag between one-millisecond
+samples can rarely produce or miss geometry.
 
 Successful capture replaces the general pasteboard with one plain-text value.
 CopyLasso never reads or snapshots the previous clipboard. Cancellation,

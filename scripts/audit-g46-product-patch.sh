@@ -71,9 +71,16 @@ require_text docs/security-and-privacy-review.md \
     '| Selector subprocess misuse |'
 require_text docs/testing.md \
     '## G46 Production Interactive Capture'
+require_text docs/v0.2-product-contract.md \
+    '### Unreleased native-selector amendment'
+require_text PRIVACY.md \
+    'Control-at-mouse-up race can replace the clipboard'
+require_text README.md \
+    'An entire exceptionally fast drag between the one-millisecond pointer samples'
 
 readonly application='CopyLasso/App/CopyLassoApp.swift'
 readonly global_shortcut_controller='CopyLasso/App/GlobalShortcutController.swift'
+readonly global_shortcut_event_source='CopyLasso/App/SystemGlobalShortcutEventSource.swift'
 readonly capture_command='CopyLasso/CaptureWorkflow/CaptureCommand.swift'
 readonly interactive_capture_contract='CopyLasso/Services/InteractiveCaptureService.swift'
 readonly permission_service='CopyLasso/Services/ScreenCapturePermissionService.swift'
@@ -168,6 +175,17 @@ require_text "$application" 'interactiveCaptureService: interactiveCaptureServic
 
 require_text "$global_shortcut_controller" 'guard event == .keyDown else {'
 require_text "$global_shortcut_controller" 'captureCommand.performFromGlobalShortcut()'
+require_text "$global_shortcut_event_source" 'selectorSensitiveModifiers'
+require_text "$global_shortcut_event_source" 'modifiers.contains(.shift)'
+require_text "$global_shortcut_event_source" 'modifiers.contains(.option)'
+require_text "$global_shortcut_event_source" 'modifiers.contains(.control)'
+require_text CopyLasso/Models/SelectionGeometry.swift \
+    'point.x < appKitFrame.maxX'
+require_text CopyLasso/Models/SelectionGeometry.swift \
+    'point.x < coreGraphicsBounds.maxX'
+require_text \
+    'CopyLassoTests/Services/SystemInteractiveSelectionTrackerTests.swift' \
+    'testSharedDisplayEdgeBelongsToTheDisplayWhoseMinimumContainsIt'
 
 system_selector_files="$({ /usr/bin/grep -R -lF '/usr/sbin/screencapture' \
     "$repository_root/CopyLasso" || true; })"

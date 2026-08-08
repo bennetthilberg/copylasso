@@ -193,10 +193,10 @@ for required_patch_guard in \
     "approved_post_v02_security_patch_tree_pattern" \
     "g46_product_patch_tree_pattern" \
     "g44_release_state_tree_pattern" \
-    "expected_candidate_baseline_tree_digest='2c49860084c74bc4ac5956bdd8eef8afd2e8c064710dc97f816900fcc1e891a6'" \
+    "expected_candidate_baseline_tree_digest='1e4844388bc872b8ac4644a13b00223af1239f431d390130346daa8e914aafa0'" \
     "expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'" \
-    "expected_g44_release_state_files_digest='6e6cdaa467f420762d7d0b95adb4c902fb8c6f7580a645f6e64d3120557554c7'" \
-    "expected_approved_post_candidate_patch_digest='579920ad4fe047a3d3bfe6e12322e18971fb109ec0f1d85b7965f22e8cb23e90'" \
+    "expected_g44_release_state_files_digest='fe1accfe498d45bda4ac81fb35ddedaf1acc5ff185696fde424b35afb15e16e7'" \
+    "expected_approved_post_candidate_patch_digest='8c45e3cd5c2e81b23442d871f8d42a9ade6d1f6ed810f34405fc00f51c1eb2a8'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
     '"$current_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest"' \

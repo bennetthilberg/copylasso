@@ -148,13 +148,13 @@ struct DisplayGeometry: Equatable, Sendable {
   }
 
   func contains(point: CGPoint) -> Bool {
-    point.x >= appKitFrame.minX && point.x <= appKitFrame.maxX
-      && point.y >= appKitFrame.minY && point.y <= appKitFrame.maxY
+    point.x >= appKitFrame.minX && point.x < appKitFrame.maxX
+      && point.y >= appKitFrame.minY && point.y < appKitFrame.maxY
   }
 
   func contains(coreGraphicsPoint point: CGPoint) -> Bool {
-    point.x >= coreGraphicsBounds.minX && point.x <= coreGraphicsBounds.maxX
-      && point.y >= coreGraphicsBounds.minY && point.y <= coreGraphicsBounds.maxY
+    point.x >= coreGraphicsBounds.minX && point.x < coreGraphicsBounds.maxX
+      && point.y >= coreGraphicsBounds.minY && point.y < coreGraphicsBounds.maxY
   }
 
   private func clamped(coreGraphicsPoint point: CGPoint) -> CGPoint {
