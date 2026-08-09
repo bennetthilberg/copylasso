@@ -33,7 +33,7 @@ for required_text in \
     '# CopyLasso v0.2 Product Contract' \
     '**Status:** Released product contract' \
     '**Approved:** July 22, 2026' \
-    '**Implementation status:** Released as 0.2.0 (3) on July 29, 2026.' \
+    '**Implementation status:** Released as 0.2.1 (4) on August 9, 2026.' \
     '[v0.1 product contract](v0.1-product-contract.md)' \
     'automatic update checks are enabled by default' \
     'disable automatic checks in Settings' \
@@ -79,9 +79,9 @@ for required_text in \
     '## Accessibility, Focus, and Failure Behavior' \
     'Keyboard-only and VoiceOver users can check, defer, confirm, cancel, and retry' \
     'No outcome relies on sound or color alone.' \
-    'publicly available as version and build `0.2.0 (3)`' \
+    'publicly available as version and build `0.2.1 (4)`' \
     '[v0.2 release-state record](v0.2-release-state.md)' \
-    'G39 concluded no-go, so CopyLasso 0.2.0 contains no LaTeX recognition' \
+    'G39 concluded no-go, so CopyLasso 0.2.1 contains no LaTeX recognition' \
     'G40 is omitted.' \
     'issue #36' \
     'issue #38' \
@@ -96,13 +96,13 @@ if /usr/bin/grep -Eq '(^|[^0-9])0\.2\.0[[:space:]]*\([[:space:]]*[12][[:space:]]
 fi
 
 /usr/bin/grep -Eq \
-    '^COPYLASSO_RELEASE_VERSION[[:space:]]*=[[:space:]]*0\.2\.1[[:space:]]*$' \
+    '^COPYLASSO_RELEASE_VERSION[[:space:]]*=[[:space:]]*0\.2\.2[[:space:]]*$' \
     "$release_metadata" || \
-    fail "G48 must freeze current candidate source at version 0.2.1."
+    fail "The current security-hotfix source must remain at version 0.2.2."
 /usr/bin/grep -Eq \
-    '^COPYLASSO_RELEASE_BUILD[[:space:]]*=[[:space:]]*4[[:space:]]*$' \
+    '^COPYLASSO_RELEASE_BUILD[[:space:]]*=[[:space:]]*5[[:space:]]*$' \
     "$release_metadata" || \
-    fail "G48 must freeze current candidate source at build 4."
+    fail "The current security-hotfix source must remain at build 5."
 
 [[ -f "$entitlements" ]] || fail "The approved v0.2 sandbox entitlements file is missing."
 entitlements_json="$(/usr/bin/plutil -convert json -o - "$entitlements")" || \
@@ -124,11 +124,11 @@ if ! /usr/bin/jq -e '
 fi
 
 for documentation_contract in \
-    "$repository_root/README.md:CopyLasso 0.2.0 is the first updater-enabled public release:" \
-    "$repository_root/README.md:Users running 0.1.x must install 0.2.0" \
+    "$repository_root/README.md:CopyLasso 0.2.0 was the first updater-enabled public release." \
+    "$repository_root/README.md:those older application binaries contain" \
     "$repository_root/PRIVACY.md:Update requests send no screen pixels" \
-    "$repository_root/PRIVACY.md:manually install public CopyLasso 0.2.0 once" \
-    "$repository_root/docs/security-and-privacy-review.md:This review describes the public CopyLasso 0.2.0 boundary."; do
+    "$repository_root/PRIVACY.md:manually install the latest public release once" \
+    "$repository_root/docs/security-and-privacy-review.md:This review describes the public CopyLasso 0.2.1 boundary."; do
     documentation_file="${documentation_contract%%:*}"
     required_text="${documentation_contract#*:}"
     /usr/bin/grep -Fq "$required_text" "$documentation_file" || \

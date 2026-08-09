@@ -1,8 +1,8 @@
 # ADR-004: Sparkle Provides the Secure Update Boundary
 
-- **Status:** Implemented by G36
+- **Status:** Implemented by G36; dependency pin amended by G50
 - **Date:** July 22, 2026
-- **Scope:** G35 architecture proof and G36 shipping integration; no public feed or release in G36
+- **Scope:** G35 architecture proof, G36 shipping integration, and G50 security update
 
 ## Context
 
@@ -24,21 +24,28 @@ links the same reviewed package into the application, ships its complete license
 notice, and adds only the sandbox capabilities required by the selected
 installer boundary.
 
+G50 responds to public advisory `GHSA-gmj2-gq3j-vqmj` by updating the shipping
+pin to [Sparkle 2.9.5](https://github.com/sparkle-project/Sparkle/releases/tag/2.9.5)
+at source revision `79bc9e872948e47877e76f194cb0c8e0412b0b90`. Its official
+Swift Package artifact has SHA-256
+`34b9b2071f3de0012eca3faa3a9290bb94e62131e9a74f6dc91514a000097a6c`.
+The product integration and all trust boundaries below remain unchanged.
+
 ## Options
 
-| Criterion | Sparkle 2.9.4 | First-party updater |
+| Criterion | Sparkle 2.9.5 | First-party updater |
 | --- | --- | --- |
 | Feed and archive authentication | Ed25519 appcast and archive verification with maintained tools | New canonicalization, signing, parsing, and rotation code to design and audit |
 | Sandboxed installation | Documented installer services and hardened-runtime integration | New privileged/helper lifecycle and replacement transaction |
 | macOS 14 and Universal 2 | Pinned artifact supports macOS 10.15+ and contains `arm64` plus `x86_64` | Every helper, installer, and transaction must be built and qualified twice |
 | Failure recovery | Mature download, extraction, install, relaunch, and error paths | New interruption, disk-full, rollback, cleanup, and relaunch state machine |
 | User control | Scheduled and user-initiated drivers, deferral, cancellation, progress | Every state and accessible surface must be built from scratch |
-| Maintenance and license | Active, permissive [license bundle](https://github.com/sparkle-project/Sparkle/blob/2.9.4/LICENSE); one pinned dependency | No dependency, but CopyLasso permanently owns a large security-sensitive subsystem |
-| Small dockless app fit | 2.9.4 specifically fixes dockless app activation during update UI | Unknown until independently implemented and qualified |
+| Maintenance and license | Active, permissive [license bundle](https://github.com/sparkle-project/Sparkle/blob/2.9.5/LICENSE); one pinned dependency | No dependency, but CopyLasso permanently owns a large security-sensitive subsystem |
+| Small dockless app fit | Retains the dockless app activation fix introduced before 2.9.5 | Unknown until independently implemented and qualified |
 
 ## Decision
 
-Use Sparkle 2.9.4 for update retrieval, Ed25519 verification, staging,
+Use Sparkle 2.9.5 for update retrieval, Ed25519 verification, staging,
 installation, and relaunch. Building the equivalent first-party subsystem would
 create substantially more security-critical code without improving the product's
 privacy contract.
@@ -68,7 +75,7 @@ content or network origin from entering the update flow.
 
 [GitHub's release-asset API](https://docs.github.com/en/rest/releases/assets#get-a-release-asset)
 documents that an asset request may return the bytes directly or redirect the
-client. Sparkle 2.9.4 constructs the initial enclosure request from
+client. Sparkle 2.9.5 constructs the initial enclosure request from
 `SUAppcastItem.fileURL`, exposes that request through
 `updater:willDownloadUpdate:withRequest:`, and then downloads it with an
 internal `NSURLSession`. Its public API exposes no per-redirect decision hook;
@@ -96,7 +103,7 @@ G36 uses these non-secret settings:
 - `SUSignedFeedFailureExpirationInterval = 0`; and
 - `SUEnableInstallerLauncherService = YES`, without the downloader service.
 
-The signed-feed expiration spelling above is locked to the pinned 2.9.4 source:
+The signed-feed expiration spelling above is locked to the pinned 2.9.5 source:
 `SUConstants.m` maps `SUSignedFeedFailureExpirationIntervalKey` to that exact
 Info.plist key, and `SUAppcastDriver.m` treats zero as never recovering from a
 failed feed signature.
@@ -175,8 +182,9 @@ upload a standalone appcast or publish a feed.
 
 ## Consequences
 
-Sparkle 2.9.4 becomes a reviewed test-only package dependency in G35 and a
-shipping dependency in G36. The production key boundary, sandbox services, UI
+Sparkle 2.9.4 became a reviewed test-only package dependency in G35 and a
+shipping dependency in G36; G50 replaces that shipping pin with security-fixed
+2.9.5. The production key boundary, sandbox services, UI
 behavior, acknowledgements, privacy copy, release workflow, and rollback record
 satisfy [`secure-update-operations.md`](../secure-update-operations.md) and
 [`secure-update-threat-model.md`](../secure-update-threat-model.md). The

@@ -81,7 +81,7 @@ final class MenuBarShellTests: XCTestCase {
       "https://github.com/bennetthilberg/copylasso/blob/main/LICENSE"
     )
     XCTAssertEqual(
-      metadata.acknowledgements.map(\.title), ["KeyboardShortcuts 3.0.1", "Sparkle 2.9.4"])
+      metadata.acknowledgements.map(\.title), ["KeyboardShortcuts 3.0.1", "Sparkle 2.9.5"])
     XCTAssertEqual(metadata.acknowledgements[0].author, "Sindre Sorhus")
     XCTAssertEqual(metadata.acknowledgements[0].license, "MIT")
     XCTAssertTrue(metadata.acknowledgements[0].notice.contains("Permission is hereby granted"))

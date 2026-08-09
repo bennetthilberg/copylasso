@@ -1,14 +1,18 @@
 # Security And Privacy Review
 
-This review describes the public CopyLasso 0.2.0 boundary. It reconciles the
+This review describes the public CopyLasso 0.2.1 boundary. It reconciles the
 source, shipped product, dependency graph, entitlements, persistence, and
 public privacy promises. Version 0.1.x remains historical and contains none of
 the updater, sound, or unified code-recognition additions described here.
 
-G48 qualifies candidate source `0.2.1 (4)` against this same boundary. It adds
-no permission, entitlement, dependency, recognition mode, content persistence,
-or network path. Public 0.2.0 (3) and its immutable security evidence remain
-unchanged until a separately approved publication goal.
+G48 qualified `0.2.1 (4)` against this same boundary, and G49 published those
+exact bytes without rebuilding. The maintenance release adds no permission,
+entitlement, dependency, recognition mode, content persistence, or network
+path. Immutable 0.2.0 evidence remains historical.
+
+G50 candidate source `0.2.2 (5)` updates only the shipping Sparkle dependency
+to 2.9.5. It adds no permission, entitlement, destination, feature, or delta
+update path; public 0.2.1 remains unchanged until separate publication approval.
 
 ## Result
 
@@ -70,15 +74,15 @@ The feed server and GitHub can observe ordinary transport metadata, including
 IP address, request time, and the CopyLasso/Sparkle versions in the ordinary
 user agent. Requests contain no pixels, geometry, recognized text, clipboard
 data, HUD preview, frontmost-application identity, hardware profile, stable
-identifier, analytics event, or telemetry. Public 0.2.0 authenticates the
-published feed; users of 0.1.x must install 0.2.0 manually once because their
-existing binaries contain no updater.
+identifier, analytics event, or telemetry. Public 0.2.1 authenticates the
+published feed; users of 0.1.x must install the latest release manually once
+because their existing binaries contain no updater.
 
 Local Apple Development signing adds `com.apple.security.get-task-allow` to
 audited development-signed products. That key is not present in the tracked
 product entitlement or a Developer ID artifact. The historical public 0.1.1
 application was verified to contain only the Boolean App Sandbox entitlement
-before and after notarization. The public v0.2.0 Developer ID artifact verifies
+before and after notarization. The public v0.2.0 and v0.2.1 Developer ID artifacts verify
 exactly Boolean App Sandbox, Boolean outbound network client, and the two
 production-bundle Sparkle installer-service names, with no `get-task-allow`,
 downloader-service name, or unrelated capability.
@@ -162,12 +166,13 @@ part of the dependency inventory below.
 | Dependency | Scope | Version and revision | Purpose | License | Upstream |
 | --- | --- | --- | --- | --- | --- |
 | KeyboardShortcuts | Shipping application and tests | 3.0.1, `49c3fc04ea827f816df67843bfcc57286b47ff06` | Global shortcut recording, validation, persistence, menu presentation, replacement, and clearing | MIT | <https://github.com/sindresorhus/KeyboardShortcuts> |
-| Sparkle | Shipping application and tests | 2.9.4, `b6496a74a087257ef5e6da1c5b29a447a60f5bd7` | Signed appcast and enclosure verification, bounded download, staging, sandboxed installation, relaunch, and comparator behavior | Permissive Sparkle license bundle | <https://github.com/sparkle-project/Sparkle/blob/2.9.4/LICENSE> |
+| Sparkle | Shipping application and tests | 2.9.5, `79bc9e872948e47877e76f194cb0c8e0412b0b90` | Signed appcast and enclosure verification, bounded download, staging, sandboxed installation, relaunch, and comparator behavior | Permissive Sparkle license bundle | <https://github.com/sparkle-project/Sparkle/blob/2.9.5/LICENSE> |
 
 KeyboardShortcuts declares no transitive dependency. The Release executable contains its code statically. CopyLasso uses native permission-free hotkey registration for event delivery, while the package supplies the SwiftUI recorder, persistence, conflict validation, and menu presentation. Its exact license text and attribution are in [Third-Party Notices](../THIRD_PARTY_NOTICES.md). A July 22, 2026 GitHub Advisory Database query for KeyboardShortcuts 3.0.1 returned zero matching Swift advisories; this time-sensitive check must be repeated for each release.
 
-Sparkle is a shipping binary framework in public v0.2.0. Its
-exact tag, source revision, official artifact checksum, complete shipped
+Sparkle is a shipping binary framework in public v0.2.1, which contains the
+affected 2.9.4 release. G50 candidate source replaces it with 2.9.5. The
+current tag, source revision, official artifact checksum, complete shipped
 license bundle, About acknowledgement, fixed configuration, entitlement
 boundary, and justification are recorded in [Third-Party
 Notices](../THIRD_PARTY_NOTICES.md), [ADR-004](architecture/ADR-004-secure-updates.md),
@@ -178,7 +183,17 @@ architecture, and notarization checks.
 
 `CopyLassoSuccess.wav` is original project-authored audio generated deterministically by the tracked synthesis script from seeded texture and analytic partials. It contains no third-party recording, dependency, content, or metadata; its construction, fixed digest, cross-architecture reproduction, and provenance are recorded in [Brand Assets](brand-assets.md).
 
-GitHub's tag readback records Sparkle 2.9.4 as a non-draft, non-prerelease release published July 3, 2026. A July 22, 2026 GitHub Advisory Database query for `sparkle@2.9.4` returned zero matching Swift advisories. This is a dated result, not a permanent guarantee; repeat it and review upstream release/security notices before every updater-enabled release.
+The July 22, 2026 advisory check for Sparkle 2.9.4 was time-bounded and became
+stale. A refreshed August 9, 2026 GitHub advisory readback identified public
+medium-severity `GHSA-gmj2-gq3j-vqmj`, affecting versions through 2.9.4.
+CopyLasso's public v0.2.1 feed contains no delta item and every tracked appcast
+generator uses `--maximum-deltas 0`, materially limiting reachability, but the
+affected code remained shipped. G50 therefore pins upstream security-fix
+release 2.9.5 at commit `79bc9e872948e47877e76f194cb0c8e0412b0b90`
+instead of accepting residual risk. A same-day refreshed upstream release and
+advisory check found KeyboardShortcuts 3.0.1 unchanged and no published
+repository security advisory for that dependency. These are dated results and
+must be repeated before every updater-enabled release.
 
 ## Reproducible Verification
 

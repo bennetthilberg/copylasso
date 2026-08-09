@@ -1,30 +1,30 @@
 # Release Candidate Qualification
 
-## G48 v0.2.1 Maintenance Candidate Qualification
+## G50 v0.2.2 Maintenance Candidate Qualification
 
-After the G48 source-enablement pull request is separately merged, dispatch the
+After the G50 source-enablement pull request is separately merged, dispatch the
 protected workflow from that exact protected-main commit with the first unused
-positive `candidate_number`. The expected first tag is `v0.2.1-rc.1`, but live
+positive `candidate_number`. The expected first tag is `v0.2.2-rc.1`, but live
 collision readback is authoritative. The private draft uses reviewed
-[`release-notes/0.2.1.md`](release-notes/0.2.1.md) and exactly these restricted
+[`release-notes/0.2.2.md`](release-notes/0.2.2.md) and exactly these restricted
 assets:
 
-- `CopyLasso-0.2.1.dmg`
-- `CopyLasso-0.2.1.dmg.sha256`
-- `CopyLasso-0.2.1.dSYM.zip`
-- `CopyLasso-0.2.1-verification.zip`
+- `CopyLasso-0.2.2.dmg`
+- `CopyLasso-0.2.2.dmg.sha256`
+- `CopyLasso-0.2.2.dSYM.zip`
+- `CopyLasso-0.2.2-verification.zip`
 
 Verify exact source, GitHub digests, checksum, Developer ID signature, secure
 timestamp, Hardened Runtime, reviewed entitlements, nested code,
 notarization/stapling, Gatekeeper, Universal 2 slices, dSYM UUIDs, production
-identity, version `0.2.1`, build `4`, and the candidate appcast key, signature,
+identity, version `0.2.2`, build `5`, and the candidate appcast key, signature,
 URL, length, ordering, and tamper rejection. Use a genuine Safari-quarantined
 download for the compact current-host capture smoke.
 
-Exercise an isolated nonshipping updater fixture from exact public `0.2.0 (3)`
+Exercise an isolated nonshipping updater fixture from exact public `0.2.1 (4)`
 to the byte-identical candidate app. Test Later, Download, Install and Relaunch,
 offline/interrupted preservation, preference and Launch-at-Login retention,
-post-update capture, build-high-water advancement to `4`, and rollback refusal.
+post-update capture, build-high-water advancement to `5`, and rollback refusal.
 Do not rebuild, publish, replace, or deploy the candidate. Any tracked input
 change abandons it and requires a new positive number.
 

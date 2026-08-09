@@ -87,7 +87,7 @@ require_text "$workflow" \
     'COPYLASSO_CANDIDATE_NUMBER: ${{ github.event.client_payload.candidate_number }}'
 require_text "$workflow" 'assert_release_candidate_number "$COPYLASSO_CANDIDATE_NUMBER"'
 require_text "$workflow" 'release_candidate_tag "$COPYLASSO_CANDIDATE_NUMBER"'
-require_text "$workflow" 'release_tag="v${COPYLASSO_G28_VERSION}-g48.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"'
+require_text "$workflow" 'release_tag="v${COPYLASSO_G28_VERSION}-g50.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"'
 if [[ "$(/usr/bin/grep -Fc '${{ github.event.client_payload.' "$workflow")" != "1" ]]; then
     fail "candidate_number must be the protected workflow's sole dispatch payload field."
 fi
@@ -270,7 +270,7 @@ for required_documentation_text in \
     'credential cleanup' \
     'Draft creation is transactional' \
     'Never publish a private rehearsal' \
-    'v0.2.1-rc.N' \
+    'v0.2.2-rc.N' \
     'candidate_number' \
     'asset digests' \
     'candidate tag is' \
@@ -278,7 +278,7 @@ for required_documentation_text in \
     'ambiguous release-creation response retains' \
     'cleanup failure is an explicit blocking state' \
     'G32' \
-    'G48' \
+    'G50' \
     'COPYLASSO_SPARKLE_PRIVATE_KEY' \
     'encrypted offline recovery copy' \
     '`appcast.xml` generated for that exact candidate' \
@@ -299,12 +299,12 @@ for required_qualification_text in \
     require_text "$qualification_documentation" "$required_qualification_text"
 done
 for required_release_note_text in \
-    'CopyLasso 0.2.1' \
+    'CopyLasso 0.2.2' \
     'private, offline screen-text' \
-    'authenticated Markdown' \
-    'native crosshair' \
-    'No processing indicator is included.' \
-    'CopyLasso 0.1.x users must still install public 0.2.0 manually once'; do
+    'GHSA-gmj2-gq3j-vqmj' \
+    'full-package updates only' \
+    'no new network destination' \
+    'CopyLasso 0.1.x users must install CopyLasso 0.2.2 manually once'; do
     require_text "$release_notes" "$required_release_note_text"
 done
 require_text "$product_contract" \

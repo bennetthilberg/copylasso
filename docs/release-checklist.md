@@ -207,7 +207,21 @@ inferred pass; see [`v0.2-release-qualification.md`](v0.2-release-qualification.
 ## G49 - Publish CopyLasso v0.2.1
 
 - [x] Begin only after the exact G48 private candidate is separately approved. Revalidate immutable candidate identity before changing publication controls.
-- [ ] Phase 1: merge the green G49 publication-control PR before dispatching the protected preparation workflow.
-- [ ] Phase 2: reverify the immutable candidate without rebuilding, create the private two-asset final draft and final-URL appcast, then publish the signed final tag, exact DMG and checksum, and authenticated feed through the approved transaction.
-- [ ] Phase 2: complete unauthenticated public-download, updater, installation, source-archive, feed, and immutable-tag verification.
-- [ ] Phase 3: date and close the public release state in a separate green ready PR without changing release bytes, tags, feed, or application code.
+- [x] Phase 1: merge the green G49 publication-control PR before dispatching the protected preparation workflow.
+- [x] Phase 2: reverify the immutable candidate without rebuilding, create the private two-asset final draft and final-URL appcast, then publish the signed final tag, exact DMG and checksum, and authenticated feed through the approved transaction.
+- [x] Phase 2: complete unauthenticated public-download, updater, installation, source-archive, feed, and immutable-tag verification.
+- [x] Phase 3: date and close the public release state in a separate green ready PR without changing release bytes, tags, feed, or application code.
+
+## G50 - Patch Sparkle Security Advisory
+
+- [ ] Phase 1: freeze source at `0.2.2 (5)`, pin Sparkle 2.9.5 at reviewed
+  commit `79bc9e872948e47877e76f194cb0c8e0412b0b90`, and reject affected
+  versions through 2.9.4 in canonical CI.
+- [ ] Phase 1: preserve exact current entitlements, updater-only networking,
+  full-package-only appcast generation, and the immutable public v0.2.1 state.
+- [ ] Phase 1: pass local and hosted arm64/x86_64 checks, Universal 2 Release
+  verification, bounded review, and ready-PR readback; stop for merge approval.
+- [ ] Phase 2: after a separately approved merge, create and fully qualify one
+  private exact-head `v0.2.2-rc.N` candidate without publication.
+- [ ] Phase 3: prepare and execute publication only through separately approved
+  protected controls, then close release-state documentation in a separate PR.

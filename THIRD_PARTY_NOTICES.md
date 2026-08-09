@@ -34,7 +34,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## Sparkle 2.9.4
+## Sparkle 2.9.5
 
 - Purpose: authenticated update checks, bounded staging, installation, and relaunch
 - Source: <https://github.com/sparkle-project/Sparkle>
@@ -43,4 +43,4 @@ SOFTWARE.
 - Justification: Sparkle provides maintained Ed25519 feed and archive verification, sandboxed installation services, recovery, and Universal 2 support for a security-sensitive boundary that should not be reimplemented casually.
 
 The exact complete license bundle shipped inside CopyLasso is tracked at
-[`CopyLasso/Resources/Sparkle-2.9.4-LICENSE.txt`](CopyLasso/Resources/Sparkle-2.9.4-LICENSE.txt).
+[`CopyLasso/Resources/Sparkle-2.9.5-LICENSE.txt`](CopyLasso/Resources/Sparkle-2.9.5-LICENSE.txt).

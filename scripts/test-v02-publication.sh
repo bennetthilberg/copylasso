@@ -58,8 +58,8 @@ feed_step="$(/usr/bin/sed -n \
     fail "The G49 feed step must load pinned v0.2.1 publication metadata."
 [[ "$feed_step" != *'source ./scripts/lib/release-metadata.sh'* ]] || \
     fail "The G49 feed step must not load mutable current release metadata."
-[[ "$feed_step" == *'--release-notes "docs/release-notes/$COPYLASSO_RELEASE_VERSION.md"'* ]] || \
-    fail "The G49 feed step must derive notes from the pinned v0.2.1 version."
+[[ "$feed_step" == *'--release-notes "scripts/fixtures/v0.2.1-published-release-notes.md"'* ]] || \
+    fail "The G49 feed step must use the byte-exact published v0.2.1 notes fixture."
 
 if /usr/bin/grep -Fq -- '--pinned-v02-metadata' "$package_verifier"; then
     fail "G49 package verification must use current 0.2.1 release metadata."
@@ -96,7 +96,7 @@ expect_failure() {
     fi
 }
 
-readonly release_notes_path="$repository_root/docs/release-notes/0.2.1.md"
+readonly release_notes_path="$repository_root/scripts/fixtures/v0.2.1-published-release-notes.md"
 assert_v02_repository "bennetthilberg/copylasso"
 expect_failure "only on the reviewed CopyLasso repository" \
     assert_v02_repository "other/repository"

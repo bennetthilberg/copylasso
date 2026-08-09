@@ -59,7 +59,7 @@ readonly runbook="$repository_root/docs/v0.2-publication-runbook.md"
 readonly release_workflow_documentation="$repository_root/docs/release-workflow.md"
 readonly update_operations="$repository_root/docs/secure-update-operations.md"
 readonly release_checklist="$repository_root/docs/release-checklist.md"
-readonly notes="$repository_root/docs/release-notes/0.2.1.md"
+readonly notes="$repository_root/scripts/fixtures/v0.2.1-published-release-notes.md"
 
 fail() {
     echo "$1" >&2
@@ -273,7 +273,7 @@ require_text "$release_workflow_documentation" '## G49 Publication Preparation'
 require_text "$update_operations" 'updates.copylasso.com'
 require_text "$release_checklist" '## G49 - Publish CopyLasso v0.2.1'
 require_text "$release_checklist" \
-    '- [ ] Phase 1: merge the green G49 publication-control PR before dispatching the protected preparation workflow.'
+    '- [x] Phase 1: merge the green G49 publication-control PR before dispatching the protected preparation workflow.'
 
 credential_marker='set -x|BEGIN '
 credential_marker+='([A-Z ]+ )?PRIVATE KEY|[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}'

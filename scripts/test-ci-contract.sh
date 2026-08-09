@@ -19,6 +19,7 @@ readonly v02_release_state_audit_script="$repository_root/scripts/audit-v02-rele
 readonly g46_product_patch_audit_script="$repository_root/scripts/audit-g46-product-patch.sh"
 readonly g48_patch_qualification_audit_script="$repository_root/scripts/audit-g48-patch-qualification.sh"
 readonly g49_publication_audit_script="$repository_root/scripts/audit-g49-publication.sh"
+readonly g50_sparkle_hotfix_audit_script="$repository_root/scripts/audit-g50-sparkle-hotfix.sh"
 readonly v02_publication_test_script="$repository_root/scripts/test-v02-publication.sh"
 readonly code_recognition_audit_script="$repository_root/scripts/audit-code-recognition.sh"
 readonly latex_feasibility_audit_script="$repository_root/scripts/audit-latex-feasibility.sh"
@@ -197,27 +198,29 @@ for required_patch_guard in \
     "g44_release_state_tree_pattern" \
     "g48_patch_tree_pattern" \
     "expected_candidate_baseline_tree_digest='1e4844388bc872b8ac4644a13b00223af1239f431d390130346daa8e914aafa0'" \
-    "expected_g48_baseline_tree_digest='e9ee74d177cbbfa5c1216f3104e231e294f593fc7f7e056937c04137ca1e7dc6'" \
+    "expected_g48_baseline_tree_digest='95d7dfdf8a9545b8ce85568437ffc57d6951344c912945d86f391639a1e105be'" \
     "expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'" \
     "expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'" \
-    "expected_approved_post_candidate_patch_digest='7f0497cdb8466fa6aadd7140903f39ced69d1f301ce205b3385c5ccfce5bdaef'" \
+    "expected_approved_post_candidate_patch_digest='d8d17150094baa7f81d2936b879fe0d4b9802b7620b9c0d59ce94d6ea419f5d3'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
     '"$current_baseline_tree_digest" == "$expected_g48_baseline_tree_digest"' \
     'approved_post_candidate_path "$approved_path"' \
     'hash-object -- "$approved_path"' \
     'expected_approved_post_candidate_patch_digest[^0-9a-f]*' \
+    'expected_g48_baseline_tree_digest[^0-9a-f]*' \
     'expected_g44_release_state_files_digest[^0-9a-f]*' \
     '<self-normalized>' \
-    'The approved post-candidate patch differs from its reviewed digest.' \
+    'The approved post-candidate patch differs from its reviewed digest:' \
     '/usr/bin/grep -Ev "$approved_post_v02_security_patch_tree_pattern"' \
     '/usr/bin/grep -Ev "$g46_product_patch_tree_pattern"' \
     '/usr/bin/grep -Ev "$g44_release_state_tree_pattern"' \
     '/usr/bin/grep -Ev "$g48_patch_tree_pattern"' \
+    '/usr/bin/grep -Ev "$g50_security_hotfix_tree_pattern"' \
     'The approved G43A runtime patch differs from its reviewed tree digest.'; do
     if ! /usr/bin/grep -Fq "$required_patch_guard" \
         "$v02_release_qualification_audit_script"; then
-        fail "The v0.2 qualification audit must pin the exact approved G43A patch."
+        fail "The v0.2 qualification audit must pin the exact approved post-candidate patch."
     fi
 done
 
@@ -281,6 +284,25 @@ g49_publication_audit_invocations="$({
 if [[ "$g49_publication_audit_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/audit-g49-publication.sh exactly once."
 fi
+g50_sparkle_hotfix_audit_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/audit-g50-sparkle-hotfix\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$g50_sparkle_hotfix_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-g50-sparkle-hotfix.sh exactly once."
+fi
+for required_g50_guard in \
+    '0\.2\.2' \
+    '2.9.5' \
+    '79bc9e872948e47877e76f194cb0c8e0412b0b90' \
+    'GHSA-gmj2-gq3j-vqmj' \
+    '--maximum-deltas'; do
+    if ! /usr/bin/grep -Fq -- "$required_g50_guard" \
+        "$g50_sparkle_hotfix_audit_script"; then
+        fail "The G50 audit is missing its security hotfix guard: $required_g50_guard"
+    fi
+done
 for required_g49_guard in \
     '0.2.1' \
     'copylasso_prepare_publication' \
@@ -292,8 +314,8 @@ for required_g49_guard in \
     fi
 done
 for required_g48_guard in \
-    '0\.2\.1' \
-    'release_goal=G48' \
+    '0.2.1' \
+    'release_goal=G50' \
     'No processing indicator is included.' \
     'COPYLASSO_V02_FINAL_TAG="v0.2.1"'; do
     if ! /usr/bin/grep -Fq -- "$required_g48_guard" \
@@ -338,14 +360,15 @@ for required_g46_ci_guard in \
     fi
 done
 for required_release_state_guard in \
-    'expected_release_commit="43f1d0c676b08fb24b49fc628213fede90c4ed9d"' \
-    'expected_release_id="361797888"' \
-    'expected_dmg_sha256="697cb008cf294b32500e2ad84e5777a51fe8b88916856c5a8e9f1ec4eb74ba19"' \
-    'expected_appcast_sha256="a6be6c899e31e5913d5be315f209884100f709bd0e13d7490da8f07c9ed08ace"' \
-    'The current Unreleased section must remain empty during G48 qualification.'; do
+    'expected_release_commit="813de17c739097217aad55a5a35c04ea3c73d99f"' \
+    'expected_release_id="367570430"' \
+    'expected_dmg_sha256="05180caa3600bcd282246297a9172517136e43e55c6e8fa192b55ba44af4a017"' \
+    'expected_appcast_sha256="c721b9396682c05082e019bdfa1297bc320f9883aabac2fd20c647f228aa8454"' \
+    'Release ID: `361797888`' \
+    'The 0.2.2 section must remain an unreleased candidate until G50 publication.'; do
     if ! /usr/bin/grep -Fq -- "$required_release_state_guard" \
         "$v02_release_state_audit_script"; then
-        fail "The G44 audit must pin the immutable public release and post-release boundary."
+        fail "The release-state audit must pin current v0.2.1 and historical v0.2.0 boundaries."
     fi
 done
 

@@ -321,7 +321,7 @@ final class CopyLassoUITests: XCTestCase {
         app.staticTexts["copylasso.about.acknowledgements.title"].waitForExistence(timeout: 5)
       )
       XCTAssertTrue(app.staticTexts["KeyboardShortcuts 3.0.1"].exists)
-      XCTAssertTrue(app.staticTexts["Sparkle 2.9.4"].exists)
+      XCTAssertTrue(app.staticTexts["Sparkle 2.9.5"].exists)
       app.buttons["copylasso.about.acknowledgements.done"].click()
       app.typeKey("w", modifierFlags: .command)
       XCTAssertTrue(aboutTitle.waitForNonExistence(timeout: 5))

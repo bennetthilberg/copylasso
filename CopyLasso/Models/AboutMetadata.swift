@@ -37,7 +37,7 @@ struct AboutMetadata: Equatable, Sendable {
     version = bundle.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
     build = bundle.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
     let sparkleNotice = bundle.url(
-      forResource: "Sparkle-2.9.4-LICENSE",
+      forResource: "Sparkle-2.9.5-LICENSE",
       withExtension: "txt"
     ).flatMap { try? String(contentsOf: $0, encoding: .utf8) }
     acknowledgements = Self.makeAcknowledgements(sparkleNotice: sparkleNotice)
@@ -52,7 +52,7 @@ struct AboutMetadata: Equatable, Sendable {
         notice: keyboardShortcutsNotice
       ),
       AboutAcknowledgement(
-        title: "Sparkle 2.9.4",
+        title: "Sparkle 2.9.5",
         author: "Sparkle Project contributors",
         license: "BSD-style and bundled third-party licenses",
         notice: sparkleNotice ?? "The complete Sparkle license notice is unavailable."

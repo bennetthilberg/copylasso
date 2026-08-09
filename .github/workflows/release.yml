@@ -31,7 +31,7 @@ jobs:
       contents: write
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
-      # Omit candidate_number only for a private G48 rehearsal.
+      # Omit candidate_number only for a private G50 rehearsal.
       COPYLASSO_CANDIDATE_NUMBER: ${{ github.event.client_payload.candidate_number }}
     steps:
       - name: Check out exact protected commit
@@ -53,15 +53,15 @@ jobs:
       - name: Initialize ephemeral release paths
         run: |
           source ./scripts/lib/release-workflow-verification.sh
-          release_goal=G48
-          release_subdirectory=g48
+          release_goal=G50
+          release_subdirectory=g50
           release_mode=rehearsal
-          release_tag="v${COPYLASSO_G28_VERSION}-g48.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"
+          release_tag="v${COPYLASSO_G28_VERSION}-g50.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"
           if [[ -n "$COPYLASSO_CANDIDATE_NUMBER" ]]; then
             assert_release_candidate_number "$COPYLASSO_CANDIDATE_NUMBER"
             release_tag="$(release_candidate_tag "$COPYLASSO_CANDIDATE_NUMBER")"
-            release_goal=G48
-            release_subdirectory=g48
+            release_goal=G50
+            release_subdirectory=g50
             release_mode=candidate
           fi
           release_keychain_password="$(/usr/bin/openssl rand -hex 32)"

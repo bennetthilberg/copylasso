@@ -21,12 +21,13 @@ readonly g46_product_patch_tree_pattern=$'\t(CHANGELOG\\.md|CopyLasso/App/CopyLa
 readonly g44_release_state_tree_pattern=$'\t(CHANGELOG\\.md|CONTRIBUTING\\.md|PRIVACY\\.md|README\\.md|SECURITY\\.md|docs/architecture/overview\\.md|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/security-and-privacy-review\\.md|docs/testing\\.md|docs/v0\\.2-product-contract\\.md|docs/v0\\.2-release-state\\.md|scripts/audit-brand-release\\.sh|scripts/audit-code-recognition\\.sh|scripts/audit-secure-update-architecture\\.sh|scripts/audit-v02-contract\\.sh|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/audit-v02-release-state\\.sh|scripts/ci\\.sh|scripts/test-ci-contract\\.sh|scripts/test-release-metadata\\.sh)$'
 readonly g48_patch_tree_pattern=$'\t(\\.github/workflows/prepare-publication\\.yml|\\.github/workflows/release\\.yml|CHANGELOG\\.md|Configuration/ReleaseMetadata\\.xcconfig|PRIVACY\\.md|README\\.md|SECURITY\\.md|docs/architecture/build-configuration\\.md|docs/architecture/overview\\.md|docs/manual-qa-and-performance\\.md|docs/release-candidate-qualification\\.md|docs/release-checklist\\.md|docs/release-notes/0\\.2\\.1\\.md|docs/release-packaging\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/security-and-privacy-review\\.md|docs/testing\\.md|docs/v0\\.2-product-contract\\.md|docs/v0\\.2\\.1-source-qualification\\.md|scripts/audit-brand-release\\.sh|scripts/audit-g48-patch-qualification\\.sh|scripts/audit-release-package\\.sh|scripts/audit-release-workflow\\.sh|scripts/audit-secure-update-architecture\\.sh|scripts/audit-v02-contract\\.sh|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/audit-v02-release-state\\.sh|scripts/ci\\.sh|scripts/create-draft-release\\.sh|scripts/lib/release-package-verification\\.sh|scripts/lib/release-workflow-verification\\.sh|scripts/lib/v02-publication-verification\\.sh|scripts/test-ci-contract\\.sh|scripts/test-developer-id-release\\.sh|scripts/test-release-metadata\\.sh|scripts/test-release-package\\.sh|scripts/test-release-workflow\\.sh|scripts/test-v02-publication\\.sh|scripts/verify-release-package\\.sh|scripts/verify-v02-candidate-package\\.sh)$'
 readonly g49_publication_tree_pattern=$'\t(\\.github/workflows/prepare-publication\\.yml|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/v0\\.2-publication-runbook\\.md|scripts/audit-g48-patch-qualification\\.sh|scripts/audit-g49-publication\\.sh|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/ci\\.sh|scripts/download-v02-candidate\\.sh|scripts/generate-release-appcast\\.sh|scripts/lib/release-package-verification\\.sh|scripts/lib/v020-release-package-metadata\\.sh|scripts/lib/v02-publication-transaction\\.sh|scripts/lib/v02-publication-verification\\.sh|scripts/prepare-update-feed\\.sh|scripts/test-ci-contract\\.sh|scripts/test-v02-publication\\.sh|scripts/verify-v02-candidate-package\\.sh)$'
+readonly g50_security_hotfix_tree_pattern=$'\t(CopyLasso\\.xcodeproj/project\\.pbxproj|CopyLasso\\.xcodeproj/project\\.xcworkspace/xcshareddata/swiftpm/Package\\.resolved|CopyLasso/Models/AboutMetadata\\.swift|CopyLasso/Resources/Sparkle-2\\.9\\.(4|5)-LICENSE\\.txt|CopyLassoTests/App/MenuBarShellTests\\.swift|CopyLassoUITests/CopyLassoUITests\\.swift|THIRD_PARTY_NOTICES\\.md|docs/architecture/ADR-004-secure-updates\\.md|docs/release-notes/0\\.2\\.2\\.md|scripts/audit-g50-sparkle-hotfix\\.sh|scripts/build-private-update-fixture\\.sh|scripts/fixtures/v0\\.2\\.1-published-release-notes\\.md)$'
 readonly g44_release_state_commit='295ea80bdc0d51579840ef9c2bfcad5278f87099'
 readonly expected_candidate_baseline_tree_digest='1e4844388bc872b8ac4644a13b00223af1239f431d390130346daa8e914aafa0'
-readonly expected_g48_baseline_tree_digest='e9ee74d177cbbfa5c1216f3104e231e294f593fc7f7e056937c04137ca1e7dc6'
+readonly expected_g48_baseline_tree_digest='95d7dfdf8a9545b8ce85568437ffc57d6951344c912945d86f391639a1e105be'
 readonly expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'
 readonly expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'
-readonly expected_approved_post_candidate_patch_digest='7f0497cdb8466fa6aadd7140903f39ced69d1f301ce205b3385c5ccfce5bdaef'
+readonly expected_approved_post_candidate_patch_digest='d8d17150094baa7f81d2936b879fe0d4b9802b7620b9c0d59ce94d6ea419f5d3'
 
 fail() {
     echo "$1" >&2
@@ -62,7 +63,9 @@ approved_post_candidate_path() {
         printf '%s\n' "$tree_line" | \
             /usr/bin/grep -Eq "$g48_patch_tree_pattern" || \
         printf '%s\n' "$tree_line" | \
-            /usr/bin/grep -Eq "$g49_publication_tree_pattern"
+            /usr/bin/grep -Eq "$g49_publication_tree_pattern" || \
+        printf '%s\n' "$tree_line" | \
+            /usr/bin/grep -Eq "$g50_security_hotfix_tree_pattern"
 }
 
 for required_file in \
@@ -79,27 +82,29 @@ for required_file in \
     docs/v0.2-release-candidate.md \
     docs/release-notes/0.2.0.md \
     docs/release-notes/0.2.1.md \
+    docs/release-notes/0.2.2.md \
     docs/release-checklist.md; do
     require_file "$required_file"
 done
 
 /usr/bin/grep -Eq \
-    '^COPYLASSO_RELEASE_VERSION[[:space:]]*=[[:space:]]*0\.2\.1[[:space:]]*$' \
-    "$metadata" || fail "G48 must freeze candidate source at version 0.2.1."
+    '^COPYLASSO_RELEASE_VERSION[[:space:]]*=[[:space:]]*0\.2\.2[[:space:]]*$' \
+    "$metadata" || fail "G50 must freeze candidate source at version 0.2.2."
 /usr/bin/grep -Eq \
-    '^COPYLASSO_RELEASE_BUILD[[:space:]]*=[[:space:]]*4[[:space:]]*$' \
-    "$metadata" || fail "G48 must freeze candidate source at build 4."
+    '^COPYLASSO_RELEASE_BUILD[[:space:]]*=[[:space:]]*5[[:space:]]*$' \
+    "$metadata" || fail "G50 must freeze candidate source at build 5."
 
 require_text CHANGELOG.md '## 0.2.0 - 2026-07-29'
-require_text README.md 'CopyLasso 0.2.0 is the latest public release.'
-require_text README.md 'CopyLasso 0.2.0 is the first updater-enabled public release:'
-require_text README.md 'Existing 0.1.x users must install 0.2.0 manually once'
+require_text CHANGELOG.md '## 0.2.1 - 2026-08-09'
+require_text README.md 'CopyLasso 0.2.1 is the latest public release.'
+require_text README.md 'CopyLasso 0.2.0 was the first updater-enabled public release.'
+require_text README.md 'those older application binaries contain'
 require_text PRIVACY.md 'Update requests send no screen pixels'
 require_text SECURITY.md 'CopyLasso 0.2.x is the currently supported public release line.'
 require_text docs/v0.2-product-contract.md \
-    '**Implementation status:** Released as 0.2.0 (3) on July 29, 2026.'
+    '**Implementation status:** Released as 0.2.1 (4) on August 9, 2026.'
 require_text docs/v0.2-product-contract.md \
-    'G39 concluded no-go, so CopyLasso 0.2.0 contains no LaTeX recognition'
+    'G39 concluded no-go, so CopyLasso 0.2.1 contains no LaTeX recognition'
 require_text docs/v0.2-release-qualification.md '# CopyLasso v0.2 Source Qualification'
 require_text docs/v0.2-release-qualification.md 'Public release remains `0.1.1`.'
 require_text docs/v0.2-release-qualification.md 'G42 is a later release gate'
@@ -145,6 +150,8 @@ require_text docs/release-notes/0.2.0.md 'CopyLasso 0.1.x does not contain an up
 require_text docs/release-notes/0.2.0.md 'LaTeX recognition is not included'
 require_text docs/release-notes/0.2.1.md '# CopyLasso 0.2.1'
 require_text docs/release-notes/0.2.1.md 'No processing indicator is included.'
+require_text docs/release-notes/0.2.2.md '# CopyLasso 0.2.2'
+require_text docs/release-notes/0.2.2.md 'GHSA-gmj2-gq3j-vqmj'
 require_text docs/release-checklist.md '## G41 - v0.2 Feature Qualification'
 require_text docs/release-checklist.md '## G42 - v0.2 Release Candidate'
 require_text docs/release-checklist.md \
@@ -155,11 +162,11 @@ require_text docs/release-checklist.md \
     '- [x] Exercise the private staged updater path, classify blockers and accepted gaps, and obtain explicit maintainer approval or rejection. Do not publish.'
 
 require_text THIRD_PARTY_NOTICES.md '## KeyboardShortcuts 3.0.1'
-require_text THIRD_PARTY_NOTICES.md '## Sparkle 2.9.4'
+require_text THIRD_PARTY_NOTICES.md '## Sparkle 2.9.5'
 require_text CopyLasso.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved \
     '"version" : "3.0.1"'
 require_text CopyLasso.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved \
-    '"version" : "2.9.4"'
+    '"version" : "2.9.5"'
 require_text docs/brand-assets.md \
     'The maintainer selected the seventeenth of eighteen project-authored candidates'
 require_text CopyLasso/Settings/AppSettingsStore.swift \
@@ -202,6 +209,7 @@ approved_post_candidate_patch_digest="$(
             approved_digest="$(
                 /usr/bin/sed -E \
                     -e 's/(expected_approved_post_candidate_patch_digest[^0-9a-f]*)[0-9a-f]{64}/\1<self-normalized>/g' \
+                    -e 's/(expected_g48_baseline_tree_digest[^0-9a-f]*)[0-9a-f]{64}/\1<self-normalized>/g' \
                     -e 's/(expected_g44_release_state_files_digest[^0-9a-f]*)[0-9a-f]{64}/\1<self-normalized>/g' \
                     "$repository_root/$approved_path" | \
                     /usr/bin/shasum -a 256 | \
@@ -223,7 +231,7 @@ approved_post_candidate_patch_digest="$(
 )"
 [[ "$approved_post_candidate_patch_digest" == \
     "$expected_approved_post_candidate_patch_digest" ]] || \
-    fail "The approved post-candidate patch differs from its reviewed digest."
+    fail "The approved post-candidate patch differs from its reviewed digest: $approved_post_candidate_patch_digest"
 
 qualified_candidate_input_tree_digest="$(
     git -C "$repository_root" ls-tree -r --full-tree "$candidate_source_commit" |
@@ -256,11 +264,12 @@ current_baseline_tree_digest="$(
         /usr/bin/grep -Ev "$g44_release_state_tree_pattern" |
         /usr/bin/grep -Ev "$g48_patch_tree_pattern" |
         /usr/bin/grep -Ev "$g49_publication_tree_pattern" |
+        /usr/bin/grep -Ev "$g50_security_hotfix_tree_pattern" |
         /usr/bin/shasum -a 256 |
         /usr/bin/awk '{print $1}'
 )"
 [[ "$current_baseline_tree_digest" == "$expected_g48_baseline_tree_digest" ]] || \
-    fail "A tracked candidate input outside the approved post-publication patch differs from source commit $candidate_source_commit."
+    fail "A tracked candidate input outside the approved post-publication patch differs from source commit $candidate_source_commit: $current_baseline_tree_digest"
 
 approved_post_publication_runtime_tree_digest="$(
     git -C "$repository_root" ls-tree -r --full-tree HEAD |
@@ -372,15 +381,15 @@ for prohibited_pattern in \
 done
 
 require_text .github/workflows/release.yml \
-    'Omit candidate_number only for a private G48 rehearsal.'
-require_text .github/workflows/release.yml 'release_goal=G48'
-require_text .github/workflows/release.yml 'release_subdirectory=g48'
+    'Omit candidate_number only for a private G50 rehearsal.'
+require_text .github/workflows/release.yml 'release_goal=G50'
+require_text .github/workflows/release.yml 'release_subdirectory=g50'
 require_text .github/workflows/release.yml \
-    'release_tag="v${COPYLASSO_G28_VERSION}-g48.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"'
+    'release_tag="v${COPYLASSO_G28_VERSION}-g50.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"'
 if /usr/bin/grep -Eq \
     '(^|[[:space:]])(publish|make_latest|draft:[[:space:]]*false)([[:space:]]|$)' \
     "$workflow"; then
-    fail "G48 must not add a publication path to the protected candidate workflow."
+    fail "G50 must not add a publication path to the protected candidate workflow."
 fi
 
 echo "CopyLasso v0.2 release qualification audit passed."
