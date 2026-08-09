@@ -53,6 +53,7 @@ readonly draft_creator="$repository_root/scripts/create-v02-publication-draft.sh
 readonly feed_preparer="$repository_root/scripts/prepare-update-feed.sh"
 readonly verifier_library="$repository_root/scripts/lib/v02-publication-verification.sh"
 readonly transaction_library="$repository_root/scripts/lib/v02-publication-transaction.sh"
+readonly v021_package_metadata="$repository_root/scripts/lib/v021-release-package-metadata.sh"
 readonly signature_verifier_source="$repository_root/scripts/lib/verify-sparkle-signatures.swift"
 readonly focused_tests="$repository_root/scripts/test-v02-publication.sh"
 readonly runbook="$repository_root/docs/v0.2-publication-runbook.md"
@@ -89,6 +90,7 @@ for readable in \
     "$candidate_workflow" \
     "$verifier_library" \
     "$transaction_library" \
+    "$v021_package_metadata" \
     "$signature_verifier_source" \
     "$runbook" \
     "$release_workflow_documentation" \
@@ -220,6 +222,12 @@ for required_downloader_text in \
     'assert_v02_candidate_files'; do
     require_text "$candidate_downloader" "$required_downloader_text"
 done
+require_text "$candidate_downloader" \
+    'scripts/fixtures/v0.2.1-published-release-notes.md'
+require_text "$package_verifier" \
+    'COPYLASSO_RELEASE_PACKAGE_METADATA_PROFILE=v0.2.1'
+require_text "$v021_package_metadata" 'readonly COPYLASSO_RELEASE_VERSION="0.2.1"'
+require_text "$v021_package_metadata" 'readonly COPYLASSO_RELEASE_BUILD="4"'
 for required_generator_text in \
     'unset COPYLASSO_SPARKLE_PRIVATE_KEY' \
     'assert_v02_candidate_files' \

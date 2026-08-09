@@ -74,8 +74,28 @@ fi
 if /usr/bin/grep -Fq -- '--pinned-v02-metadata' "$package_verifier"; then
     fail "G49 package verification must use current 0.2.1 release metadata."
 fi
+/usr/bin/grep -Fq -- \
+    'COPYLASSO_RELEASE_PACKAGE_METADATA_PROFILE=v0.2.1' \
+    "$package_verifier" || \
+    fail "The v0.2.1 candidate verifier must select immutable package metadata."
 /usr/bin/grep -Fq -- '--pinned-v02-metadata' "$generic_package_verifier" || \
     fail "The generic verifier must retain explicit historical v0.2.0 support."
+
+pinned_v021_package_metadata="$(
+    COPYLASSO_RELEASE_PACKAGE_METADATA_PROFILE=v0.2.1 \
+        /bin/bash -c '
+            source "$1"
+            printf "%s|%s|%s|%s|%s\n" \
+                "$COPYLASSO_RELEASE_VERSION" \
+                "$COPYLASSO_RELEASE_BUILD" \
+                "$COPYLASSO_RELEASE_DMG" \
+                "$COPYLASSO_RELEASE_DSYM" \
+                "$COPYLASSO_RELEASE_APPCAST"
+        ' _ "$release_package_library"
+)"
+[[ "$pinned_v021_package_metadata" == \
+    '0.2.1|4|CopyLasso-0.2.1.dmg|CopyLasso-0.2.1.dSYM.zip|CopyLasso-0.2.1-appcast.xml' ]] || \
+    fail "The v0.2.1 package profile must resolve only immutable candidate metadata."
 
 pinned_package_metadata="$(
     COPYLASSO_RELEASE_PACKAGE_METADATA_PROFILE=v0.2.0 \
