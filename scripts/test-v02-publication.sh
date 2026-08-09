@@ -61,6 +61,16 @@ feed_step="$(/usr/bin/sed -n \
 [[ "$feed_step" == *'--release-notes "scripts/fixtures/v0.2.1-published-release-notes.md"'* ]] || \
     fail "The G49 feed step must use the byte-exact published v0.2.1 notes fixture."
 
+/usr/bin/grep -Fq -- \
+    'scripts/fixtures/v0.2.1-published-release-notes.md' \
+    "$candidate_downloader" || \
+    fail "The candidate downloader must validate against immutable published v0.2.1 notes."
+if /usr/bin/grep -Fq -- \
+    'docs/release-notes/$COPYLASSO_RELEASE_VERSION.md' \
+    "$candidate_downloader"; then
+    fail "The candidate downloader must not validate against mutable reader-facing notes."
+fi
+
 if /usr/bin/grep -Fq -- '--pinned-v02-metadata' "$package_verifier"; then
     fail "G49 package verification must use current 0.2.1 release metadata."
 fi
