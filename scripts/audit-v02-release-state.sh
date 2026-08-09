@@ -66,6 +66,10 @@ require_text "$repository_root/docs/security-and-privacy-review.md" \
     'This review describes the public CopyLasso 0.2.1 boundary.'
 require_text "$repository_root/docs/secure-update-operations.md" \
     'CopyLasso 0.2.1 is the current public updater-enabled release.'
+require_text "$repository_root/docs/secure-update-operations.md" \
+    '## 0.1.x Bootstrap and Current Public Release'
+require_text "$repository_root/docs/secure-update-operations.md" \
+    'CopyLasso 0.2.1, the current updater-enabled release, from the GitHub release page'
 require_text "$repository_root/docs/release-checklist.md" \
     '- [x] Phase 1: merge the green G49 publication-control PR before dispatching the protected preparation workflow.'
 require_text "$repository_root/docs/release-checklist.md" \
@@ -140,6 +144,12 @@ for prohibited_phrase in \
         fail "Current public documentation retains stale v0.2.1 candidate text: $prohibited_phrase"
     fi
 done
+
+if /usr/bin/grep -Fq -- \
+    'CopyLasso 0.2.0, the first updater-enabled release, from the GitHub release page' \
+    "$repository_root/docs/secure-update-operations.md"; then
+    fail "The secure-update bootstrap must not direct users to superseded 0.2.0."
+fi
 
 prohibited_publication_pattern='release upload|release edit.+--draft=false|make_latest=true|'
 prohibited_publication_pattern+='git push.+v0\.2\.1|git tag.+v0\.2\.1'

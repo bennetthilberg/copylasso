@@ -116,12 +116,12 @@ authorizes Install and Relaunch. Closing, Escape, Later, or Cancel preserves the
 current application; a deferred update may be shown again without downloading
 automatically.
 
-## 0.1.x Bootstrap and Public 0.2.0
+## 0.1.x Bootstrap and Current Public Release
 
 CopyLasso 0.1.x contains no updater. Its users must download and install public
-CopyLasso 0.2.0, the first updater-enabled release, from the GitHub release page and verify it
-with the existing checksum, Developer ID, notarization, and Gatekeeper flow.
-Only that installed version can begin automatic checks.
+CopyLasso 0.2.1, the current updater-enabled release, from the GitHub release page
+and verify it with the published checksum, Developer ID, notarization, and
+Gatekeeper flow. That installed version can begin automatic checks.
 
 G35 did not create a production key, add an app entitlement, link Sparkle into
 the product, publish a feed, change release bytes, or perform an update. Its
