@@ -87,15 +87,16 @@ done
 for required_phrase in \
     'exact G26' \
     'copylasso-notary' \
-    'CopyLasso-0.2.0.dmg' \
-    'CopyLasso-0.2.0.dmg.sha256' \
-    'CopyLasso-0.2.0.dSYM.zip' \
+    'CopyLasso-0.2.1.dmg' \
+    'CopyLasso-0.2.1.dmg.sha256' \
+    'CopyLasso-0.2.1.dSYM.zip' \
     'two complete runs' \
     'payload commit' \
     'packaging commit' \
     'Applications' \
     'G28' \
     'G41 exact-head qualification package' \
+    'G48 exact-head qualification package' \
     'Do not publish'; do
     /usr/bin/grep -Fiq -- "$required_phrase" "$packaging_documentation" || \
         fail "Release-packaging documentation is missing required guidance: $required_phrase"

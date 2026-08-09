@@ -35,6 +35,7 @@ for required_file in \
     docs/release-checklist.md \
     docs/release-workflow.md \
     docs/release-candidate-qualification.md \
+    docs/release-packaging.md \
     docs/secure-update-operations.md \
     docs/security-and-privacy-review.md \
     docs/testing.md \
@@ -71,6 +72,22 @@ require_text docs/release-notes/0.2.1.md 'cross-display'
 require_text docs/v0.2.1-source-qualification.md '# CopyLasso 0.2.1 Source Qualification'
 require_text docs/manual-qa-and-performance.md \
     '[`v0.2.1-source-qualification.md`](v0.2.1-source-qualification.md)'
+require_text docs/architecture/overview.md \
+    '| G46 | Concise product copy, focus-preserving native system selector, transient geometry handoff to ScreenCaptureKit, and cursor-readiness product polish |'
+[[ "$(/usr/bin/grep -Fc '| G46 |' "$repository_root/docs/architecture/overview.md")" == "1" ]] || \
+    fail "Architecture goal ownership must contain exactly one canonical G46 row."
+g44_line="$(/usr/bin/grep -nF '| G44 |' "$repository_root/docs/architecture/overview.md" | /usr/bin/cut -d: -f1)"
+g45_line="$(/usr/bin/grep -nF '| G45 |' "$repository_root/docs/architecture/overview.md" | /usr/bin/cut -d: -f1)"
+g46_line="$(/usr/bin/grep -nF '| G46 |' "$repository_root/docs/architecture/overview.md" | /usr/bin/cut -d: -f1)"
+g48_line="$(/usr/bin/grep -nF '| G48 |' "$repository_root/docs/architecture/overview.md" | /usr/bin/cut -d: -f1)"
+[[ "$g44_line" -lt "$g45_line" && "$g45_line" -lt "$g46_line" && \
+    "$g46_line" -lt "$g48_line" ]] || \
+    fail "Architecture goal ownership must retain chronological G44-G48 ordering."
+require_text docs/release-packaging.md '## G48 exact-head qualification package'
+require_text docs/release-packaging.md 'version `0.2.1`, build `4`'
+require_text docs/release-packaging.md 'CopyLasso-0.2.1.dmg'
+require_text docs/testing.md 'retained post-release G43A fixes under the'
+require_text docs/testing.md '`0.2.1 - Unreleased` draft'
 
 require_text .github/workflows/release.yml 'release_goal=G48'
 require_text .github/workflows/release.yml 'release_subdirectory=g48'

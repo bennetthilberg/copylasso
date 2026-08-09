@@ -451,8 +451,9 @@ those separate qualification and publication gates.
 
 `scripts/audit-v02-release-state.sh` binds current public documentation to the
 immutable v0.2.0 release commit, release ID, two public asset digests,
-authenticated appcast digest, dated changelog, retained post-release G43A
-`Unreleased` note, and narrowly closed shipped-feature issues. Canonical CI
+authenticated appcast digest, dated changelog, and narrowly closed
+shipped-feature issues. It also binds retained post-release G43A fixes under the
+`0.2.1 - Unreleased` draft. Canonical CI
 invokes it exactly once, enforced by `scripts/test-ci-contract.sh`.
 
 The detailed live evidence, including public source-archive equality, the one
