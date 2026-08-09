@@ -59,7 +59,7 @@ readonly runbook="$repository_root/docs/v0.2-publication-runbook.md"
 readonly release_workflow_documentation="$repository_root/docs/release-workflow.md"
 readonly update_operations="$repository_root/docs/secure-update-operations.md"
 readonly release_checklist="$repository_root/docs/release-checklist.md"
-readonly notes="$repository_root/docs/release-notes/$COPYLASSO_RELEASE_VERSION.md"
+readonly notes="$repository_root/docs/release-notes/0.2.0.md"
 
 fail() {
     echo "$1" >&2

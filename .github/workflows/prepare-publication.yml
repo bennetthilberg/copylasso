@@ -115,7 +115,7 @@ jobs:
 
       - name: Prepare feed-only deployment bundle
         run: |
-          source ./scripts/lib/release-metadata.sh
+          source ./scripts/lib/v02-publication-verification.sh
           ./scripts/prepare-update-feed.sh \
             --appcast "$COPYLASSO_G43_APPCAST" \
             --release-notes "docs/release-notes/$COPYLASSO_RELEASE_VERSION.md" \

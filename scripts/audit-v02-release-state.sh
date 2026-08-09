@@ -51,7 +51,7 @@ require_text "$repository_root/CHANGELOG.md" \
     'Update offers now render authenticated release notes in a bounded, scrollable native panel'
 require_text "$repository_root/CHANGELOG.md" "## 0.2.0 - $expected_release_date"
 require_text "$repository_root/PRIVACY.md" \
-    '**Status:** Approved privacy contract for public CopyLasso 0.2.0.'
+    '**Status:** Public 0.2.0 (3); candidate 0.2.1 (4) keeps these boundaries.'
 require_text "$repository_root/SECURITY.md" '| 0.2.x | Yes |'
 require_text "$repository_root/SECURITY.md" '| 0.1.x | No |'
 require_text "$repository_root/CONTRIBUTING.md" 'CopyLasso 0.2.0 is publicly released.'
@@ -85,10 +85,17 @@ unreleased_section="$(/usr/bin/awk '
     /^## / && capture { exit }
     capture { print }
 ' "$repository_root/CHANGELOG.md")"
-[[ "$unreleased_section" == *'### Fixed'* ]] || \
-    fail "The Unreleased section must retain the post-v0.2 G43A fix."
-[[ "$unreleased_section" == *'bounded, scrollable native panel'* ]] || \
-    fail "The G43A fix must remain under Unreleased instead of being folded into v0.2.0."
+[[ -z "${unreleased_section//[[:space:]]/}" ]] || \
+    fail "The current Unreleased section must remain empty during G48 qualification."
+patch_section="$(/usr/bin/awk '
+    /^## 0\.2\.1 - Unreleased$/ { capture = 1; next }
+    /^## / && capture { exit }
+    capture { print }
+' "$repository_root/CHANGELOG.md")"
+[[ "$patch_section" == *'### Fixed'* ]] || \
+    fail "The 0.2.1 draft must retain the post-v0.2 fixes."
+[[ "$patch_section" == *'bounded, scrollable native panel'* ]] || \
+    fail "The G43A fix must remain under 0.2.1 instead of being folded into v0.2.0."
 
 readonly current_public_files=(
     README.md

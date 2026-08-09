@@ -19,10 +19,12 @@ readonly approved_post_publication_runtime_tree_pattern=$'\t(CopyLasso/App/CopyL
 readonly approved_post_v02_security_patch_tree_pattern=$'\t(\\.github/workflows/ci\\.yml|\\.github/workflows/release\\.yml|CopyLasso/Services/VisionOCRService\\.swift|CopyLassoTests/Services/VisionOCRServiceTests\\.swift|CopyLassoUITests/CopyLassoUITests\\.swift|scripts/audit-privacy-security\\.sh|scripts/audit-release-workflow\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/ci\\.sh|scripts/create-draft-release\\.sh|scripts/lib/project-security-verification\\.sh|scripts/lib/release-package-verification\\.sh|scripts/lib/release-workflow-verification\\.sh|scripts/test-privacy-security\\.sh|scripts/test-release-package\\.sh|scripts/test-release-workflow\\.sh)$'
 readonly g46_product_patch_tree_pattern=$'\t(CHANGELOG\\.md|CopyLasso/App/CopyLassoApp\\.swift|CopyLasso/App/GlobalShortcutController\\.swift|CopyLasso/App/SystemGlobalShortcutEventSource\\.swift|CopyLasso/CaptureWorkflow/CaptureCommand\\.swift|CopyLasso/Models/SelectionGeometry\\.swift|CopyLasso/Services/AppKitRegionSelectionService\\.swift|CopyLasso/Services/InteractiveCaptureService\\.swift|CopyLasso/Services/RegionSelectionService\\.swift|CopyLasso/Services/ScreenCapturePermissionService\\.swift|CopyLasso/Services/SystemInteractiveCaptureService\\.swift|CopyLasso/Services/SystemScreenCapturePermissionClient\\.swift|CopyLasso/Services/SystemScreenCaptureService\\.swift|CopyLasso/SharedUI/AboutView\\.swift|CopyLasso/SharedUI/MenuBarMenuView\\.swift|CopyLasso/SharedUI/SettingsView\\.swift|CopyLassoTests/App/GlobalShortcutControllerTests\\.swift|CopyLassoTests/App/MenuBarShellTests\\.swift|CopyLassoTests/CaptureWorkflow/CaptureCommandTests\\.swift|CopyLassoTests/CaptureWorkflow/CapturePermissionFlowTests\\.swift|CopyLassoTests/CaptureWorkflow/CaptureWorkflowIntegrationTests\\.swift|CopyLassoTests/CaptureWorkflow/InteractiveCaptureWorkflowTests\\.swift|CopyLassoTests/Models/MultiDisplayBehaviorTests\\.swift|CopyLassoTests/Models/SelectionGeometryTests\\.swift|CopyLassoTests/Services/AppKitRegionSelectionServiceTests\\.swift|CopyLassoTests/Services/ScreenCapturePermissionServiceTests\\.swift|CopyLassoTests/Services/SystemInteractiveCaptureServiceTests\\.swift|CopyLassoTests/Services/SystemInteractiveSelectionTrackerTests\\.swift|CopyLassoTests/Services/SystemScreenCapturePermissionClientTests\\.swift|CopyLassoTests/Services/SystemScreenCaptureServiceTests\\.swift|CopyLassoTests/TestSupport/CaptureServiceDoubles\\.swift|CopyLassoTests/TestSupport/SettingsDoubles\\.swift|CopyLassoUITests/CopyLassoUITests\\.swift|PRIVACY\\.md|README\\.md|docs/architecture/ADR-002-screen-capture\\.md|docs/architecture/capture-workflow\\.md|docs/architecture/overview\\.md|docs/security-and-privacy-review\\.md|docs/testing\\.md|scripts/audit-g46-product-patch\\.sh|scripts/audit-privacy-security\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/ci\\.sh|scripts/test-ci-contract\\.sh)$'
 readonly g44_release_state_tree_pattern=$'\t(CHANGELOG\\.md|CONTRIBUTING\\.md|PRIVACY\\.md|README\\.md|SECURITY\\.md|docs/architecture/overview\\.md|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/security-and-privacy-review\\.md|docs/testing\\.md|docs/v0\\.2-product-contract\\.md|docs/v0\\.2-release-state\\.md|scripts/audit-brand-release\\.sh|scripts/audit-code-recognition\\.sh|scripts/audit-secure-update-architecture\\.sh|scripts/audit-v02-contract\\.sh|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/audit-v02-release-state\\.sh|scripts/ci\\.sh|scripts/test-ci-contract\\.sh|scripts/test-release-metadata\\.sh)$'
+readonly g48_patch_tree_pattern=$'\t(\\.github/workflows/prepare-publication\\.yml|\\.github/workflows/release\\.yml|CHANGELOG\\.md|Configuration/ReleaseMetadata\\.xcconfig|PRIVACY\\.md|README\\.md|SECURITY\\.md|docs/architecture/build-configuration\\.md|docs/architecture/overview\\.md|docs/manual-qa-and-performance\\.md|docs/release-candidate-qualification\\.md|docs/release-checklist\\.md|docs/release-notes/0\\.2\\.1\\.md|docs/release-packaging\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/security-and-privacy-review\\.md|docs/testing\\.md|docs/v0\\.2-product-contract\\.md|docs/v0\\.2\\.1-source-qualification\\.md|scripts/audit-brand-release\\.sh|scripts/audit-g48-patch-qualification\\.sh|scripts/audit-release-package\\.sh|scripts/audit-release-workflow\\.sh|scripts/audit-secure-update-architecture\\.sh|scripts/audit-v02-contract\\.sh|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/audit-v02-release-state\\.sh|scripts/ci\\.sh|scripts/create-draft-release\\.sh|scripts/lib/release-package-verification\\.sh|scripts/lib/release-workflow-verification\\.sh|scripts/lib/v02-publication-verification\\.sh|scripts/test-ci-contract\\.sh|scripts/test-developer-id-release\\.sh|scripts/test-release-metadata\\.sh|scripts/test-release-package\\.sh|scripts/test-release-workflow\\.sh|scripts/test-v02-publication\\.sh|scripts/verify-release-package\\.sh|scripts/verify-v02-candidate-package\\.sh)$'
 readonly expected_candidate_baseline_tree_digest='1e4844388bc872b8ac4644a13b00223af1239f431d390130346daa8e914aafa0'
+readonly expected_g48_baseline_tree_digest='e9ee74d177cbbfa5c1216f3104e231e294f593fc7f7e056937c04137ca1e7dc6'
 readonly expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'
-readonly expected_g44_release_state_files_digest='fe1accfe498d45bda4ac81fb35ddedaf1acc5ff185696fde424b35afb15e16e7'
-readonly expected_approved_post_candidate_patch_digest='8c45e3cd5c2e81b23442d871f8d42a9ade6d1f6ed810f34405fc00f51c1eb2a8'
+readonly expected_g44_release_state_files_digest='1b052ac8d5c5ead190a0e9be230d4404faadb121c47688f6b1014808e08709a4'
+readonly expected_approved_post_candidate_patch_digest='773703c7aea2748341b622d0e42f5277fd43c3fe45841868a4fb60fe403d4a6d'
 
 fail() {
     echo "$1" >&2
@@ -54,7 +56,9 @@ approved_post_candidate_path() {
         printf '%s\n' "$tree_line" | \
             /usr/bin/grep -Eq "$g46_product_patch_tree_pattern" || \
         printf '%s\n' "$tree_line" | \
-            /usr/bin/grep -Eq "$g44_release_state_tree_pattern"
+            /usr/bin/grep -Eq "$g44_release_state_tree_pattern" || \
+        printf '%s\n' "$tree_line" | \
+            /usr/bin/grep -Eq "$g48_patch_tree_pattern"
 }
 
 for required_file in \
@@ -70,16 +74,17 @@ for required_file in \
     docs/v0.2-release-qualification.md \
     docs/v0.2-release-candidate.md \
     docs/release-notes/0.2.0.md \
+    docs/release-notes/0.2.1.md \
     docs/release-checklist.md; do
     require_file "$required_file"
 done
 
 /usr/bin/grep -Eq \
-    '^COPYLASSO_RELEASE_VERSION[[:space:]]*=[[:space:]]*0\.2\.0[[:space:]]*$' \
-    "$metadata" || fail "G41 must freeze CopyLasso at version 0.2.0."
+    '^COPYLASSO_RELEASE_VERSION[[:space:]]*=[[:space:]]*0\.2\.1[[:space:]]*$' \
+    "$metadata" || fail "G48 must freeze candidate source at version 0.2.1."
 /usr/bin/grep -Eq \
-    '^COPYLASSO_RELEASE_BUILD[[:space:]]*=[[:space:]]*3[[:space:]]*$' \
-    "$metadata" || fail "G41 must freeze CopyLasso at build 3."
+    '^COPYLASSO_RELEASE_BUILD[[:space:]]*=[[:space:]]*4[[:space:]]*$' \
+    "$metadata" || fail "G48 must freeze candidate source at build 4."
 
 require_text CHANGELOG.md '## 0.2.0 - 2026-07-29'
 require_text README.md 'CopyLasso 0.2.0 is the latest public release.'
@@ -134,6 +139,8 @@ require_text docs/release-notes/0.2.0.md '# CopyLasso 0.2.0'
 require_text docs/release-notes/0.2.0.md 'QR, Code 128, Data Matrix, PDF417, and Aztec'
 require_text docs/release-notes/0.2.0.md 'CopyLasso 0.1.x does not contain an updater'
 require_text docs/release-notes/0.2.0.md 'LaTeX recognition is not included'
+require_text docs/release-notes/0.2.1.md '# CopyLasso 0.2.1'
+require_text docs/release-notes/0.2.1.md 'No processing indicator is included.'
 require_text docs/release-checklist.md '## G41 - v0.2 Feature Qualification'
 require_text docs/release-checklist.md '## G42 - v0.2 Release Candidate'
 require_text docs/release-checklist.md \
@@ -243,10 +250,11 @@ current_baseline_tree_digest="$(
         /usr/bin/grep -Ev "$approved_post_v02_security_patch_tree_pattern" |
         /usr/bin/grep -Ev "$g46_product_patch_tree_pattern" |
         /usr/bin/grep -Ev "$g44_release_state_tree_pattern" |
+        /usr/bin/grep -Ev "$g48_patch_tree_pattern" |
         /usr/bin/shasum -a 256 |
         /usr/bin/awk '{print $1}'
 )"
-[[ "$current_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest" ]] || \
+[[ "$current_baseline_tree_digest" == "$expected_g48_baseline_tree_digest" ]] || \
     fail "A tracked candidate input outside the approved post-publication patch differs from source commit $candidate_source_commit."
 
 approved_post_publication_runtime_tree_digest="$(
@@ -357,15 +365,15 @@ for prohibited_pattern in \
 done
 
 require_text .github/workflows/release.yml \
-    'Omit candidate_number only for a private G42 rehearsal.'
-require_text .github/workflows/release.yml 'release_goal=G42'
-require_text .github/workflows/release.yml 'release_subdirectory=g42'
+    'Omit candidate_number only for a private G48 rehearsal.'
+require_text .github/workflows/release.yml 'release_goal=G48'
+require_text .github/workflows/release.yml 'release_subdirectory=g48'
 require_text .github/workflows/release.yml \
-    'release_tag="v${COPYLASSO_G28_VERSION}-g42.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"'
+    'release_tag="v${COPYLASSO_G28_VERSION}-g48.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"'
 if /usr/bin/grep -Eq \
     '(^|[[:space:]])(publish|make_latest|draft:[[:space:]]*false)([[:space:]]|$)' \
     "$workflow"; then
-    fail "G41 must not add a publication path to the protected candidate workflow."
+    fail "G48 must not add a publication path to the protected candidate workflow."
 fi
 
 echo "CopyLasso v0.2 release qualification audit passed."

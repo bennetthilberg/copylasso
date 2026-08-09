@@ -5,9 +5,11 @@ set -euo pipefail
 readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && /bin/pwd -P)"
 readonly workflow="$repository_root/.github/workflows/prepare-publication.yml"
 readonly verifier_library="$repository_root/scripts/lib/v02-publication-verification.sh"
+readonly release_package_library="$repository_root/scripts/lib/release-package-verification.sh"
 readonly transaction_library="$repository_root/scripts/lib/v02-publication-transaction.sh"
 readonly candidate_downloader="$repository_root/scripts/download-v02-candidate.sh"
 readonly package_verifier="$repository_root/scripts/verify-v02-candidate-package.sh"
+readonly generic_package_verifier="$repository_root/scripts/verify-release-package.sh"
 readonly appcast_generator="$repository_root/scripts/generate-release-appcast.sh"
 readonly draft_creator="$repository_root/scripts/create-v02-publication-draft.sh"
 readonly feed_preparer="$repository_root/scripts/prepare-update-feed.sh"
@@ -30,7 +32,13 @@ for executable in \
         fail "G43 publication executable is missing: $(/usr/bin/basename "$executable")"
 done
 
-for readable in "$workflow" "$verifier_library" "$transaction_library" "$runbook"; do
+for readable in \
+    "$workflow" \
+    "$verifier_library" \
+    "$release_package_library" \
+    "$transaction_library" \
+    "$generic_package_verifier" \
+    "$runbook"; do
     [[ -r "$readable" ]] || \
         fail "G43 publication contract file is missing: $(/usr/bin/basename "$readable")"
 done
@@ -39,6 +47,42 @@ done
 source "$verifier_library"
 # shellcheck source=scripts/lib/v02-publication-transaction.sh
 source "$transaction_library"
+
+[[ "$COPYLASSO_RELEASE_APPCAST" == "CopyLasso-0.2.0-appcast.xml" ]] || \
+    fail "The historical v0.2 verifier must pin its restricted appcast filename."
+
+feed_step="$(/usr/bin/sed -n \
+    '/- name: Prepare feed-only deployment bundle/,/- name: Create verified private final draft/p' \
+    "$workflow")"
+[[ "$feed_step" == *'source ./scripts/lib/v02-publication-verification.sh'* ]] || \
+    fail "The G43 feed step must load pinned v0.2 publication metadata."
+[[ "$feed_step" != *'source ./scripts/lib/release-metadata.sh'* ]] || \
+    fail "The G43 feed step must not load current release metadata."
+[[ "$feed_step" == *'--release-notes "docs/release-notes/$COPYLASSO_RELEASE_VERSION.md"'* ]] || \
+    fail "The G43 feed step must derive notes from the pinned v0.2 version."
+
+require_pinned_package_flag() {
+    /usr/bin/grep -Fq -- '--pinned-v02-metadata' "$1" || \
+        fail "The historical package path must request explicit pinned v0.2 metadata: $1"
+}
+require_pinned_package_flag "$package_verifier"
+require_pinned_package_flag "$generic_package_verifier"
+
+pinned_package_metadata="$(
+    COPYLASSO_RELEASE_PACKAGE_METADATA_PROFILE=v0.2.0 \
+        /bin/bash -c '
+            source "$1"
+            printf "%s|%s|%s|%s|%s\n" \
+                "$COPYLASSO_RELEASE_VERSION" \
+                "$COPYLASSO_RELEASE_BUILD" \
+                "$COPYLASSO_RELEASE_DMG" \
+                "$COPYLASSO_RELEASE_DSYM" \
+                "$COPYLASSO_RELEASE_APPCAST"
+        ' _ "$release_package_library"
+)"
+[[ "$pinned_package_metadata" == \
+    '0.2.0|3|CopyLasso-0.2.0.dmg|CopyLasso-0.2.0.dSYM.zip|CopyLasso-0.2.0-appcast.xml' ]] || \
+    fail "The explicit historical package profile must resolve only pinned v0.2 metadata."
 
 expect_failure() {
     local expected_message="$1"
@@ -53,7 +97,7 @@ expect_failure() {
     fi
 }
 
-readonly release_notes_path="$repository_root/docs/release-notes/$COPYLASSO_RELEASE_VERSION.md"
+readonly release_notes_path="$repository_root/docs/release-notes/0.2.0.md"
 assert_v02_repository "bennetthilberg/copylasso"
 expect_failure "only on the reviewed CopyLasso repository" \
     assert_v02_repository "other/repository"

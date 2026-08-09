@@ -68,6 +68,22 @@ During the revocation check, macOS initially relaunched a retired scaffold from 
 
 Permission history contains only the two booleans needed for these neutral labels. It contains no pixels, recognized text, raw platform error, or definitive copy of macOS authorization state.
 
+## G48 Patch Qualification
+
+G48 freezes the merged maintenance patch as candidate source `0.2.1 (4)` while
+public `0.2.0 (3)` remains unchanged. Canonical CI invokes
+`audit-g48-patch-qualification.sh` exactly once to verify current metadata and
+notes, G43A/G45/G46 ancestry, immutable v0.2.0 records, unchanged dependencies
+and entitlements, draft-only protected-candidate behavior, and absence of the
+deferred G47 processing indicator.
+
+The focused release-workflow tests derive `v0.2.1-rc.N` and all four asset names
+from canonical metadata, accept only one positive `candidate_number`, and
+reject arbitrary tag, ref, publication, overwrite, and final-feed paths. G48
+Phase 1 runs no privileged workflow. After a separately approved merge, Phase 2
+must use the exact protected-main commit for package, update, quarantine, and
+physical capture verification.
+
 ## G46 Production Interactive Capture
 
 Normal builds synchronously start Apple's fixed interactive selector after a
@@ -435,8 +451,9 @@ those separate qualification and publication gates.
 
 `scripts/audit-v02-release-state.sh` binds current public documentation to the
 immutable v0.2.0 release commit, release ID, two public asset digests,
-authenticated appcast digest, dated changelog, retained post-release G43A
-`Unreleased` note, and narrowly closed shipped-feature issues. Canonical CI
+authenticated appcast digest, dated changelog, and narrowly closed
+shipped-feature issues. It also binds retained post-release G43A fixes under the
+`0.2.1 - Unreleased` draft. Canonical CI
 invokes it exactly once, enforced by `scripts/test-ci-contract.sh`.
 
 The detailed live evidence, including public source-archive equality, the one

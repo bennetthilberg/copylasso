@@ -96,13 +96,13 @@ if /usr/bin/grep -Eq '(^|[^0-9])0\.2\.0[[:space:]]*\([[:space:]]*[12][[:space:]]
 fi
 
 /usr/bin/grep -Eq \
-    '^COPYLASSO_RELEASE_VERSION[[:space:]]*=[[:space:]]*0\.2\.0[[:space:]]*$' \
+    '^COPYLASSO_RELEASE_VERSION[[:space:]]*=[[:space:]]*0\.2\.1[[:space:]]*$' \
     "$release_metadata" || \
-    fail "G41 must freeze the current source at version 0.2.0."
+    fail "G48 must freeze current candidate source at version 0.2.1."
 /usr/bin/grep -Eq \
-    '^COPYLASSO_RELEASE_BUILD[[:space:]]*=[[:space:]]*3[[:space:]]*$' \
+    '^COPYLASSO_RELEASE_BUILD[[:space:]]*=[[:space:]]*4[[:space:]]*$' \
     "$release_metadata" || \
-    fail "G41 must freeze the current source at build 3."
+    fail "G48 must freeze current candidate source at build 4."
 
 [[ -f "$entitlements" ]] || fail "The approved v0.2 sandbox entitlements file is missing."
 entitlements_json="$(/usr/bin/plutil -convert json -o - "$entitlements")" || \

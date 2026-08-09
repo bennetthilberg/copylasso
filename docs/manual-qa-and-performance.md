@@ -8,6 +8,10 @@
 
 This is the release record for system behavior that unit tests and unsigned hosted runners cannot faithfully validate. A result is **Pass**, **Fail**, **Blocked**, or **Not applicable**. Historical spike screenshots and injected-service tests provide context but never replace a fresh G24 result.
 
+The current maintenance-source gate is recorded separately in
+[`v0.2.1-source-qualification.md`](v0.2.1-source-qualification.md); this G24
+record remains immutable historical evidence.
+
 ## Required Environment Record
 
 Fill every field before the interactive run:

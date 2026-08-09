@@ -98,6 +98,9 @@ echo "Auditing the closed v0.2 release state"
 echo "Auditing the G46 product patch"
 ./scripts/audit-g46-product-patch.sh
 
+echo "Auditing the G48 patch qualification"
+./scripts/audit-g48-patch-qualification.sh
+
 echo "Auditing on-screen code recognition"
 ./scripts/audit-code-recognition.sh
 

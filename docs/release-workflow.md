@@ -2,8 +2,8 @@
 
 The maintainer-dispatched workflow builds one signed, notarized, and verified
 CopyLasso release from the exact protected `main` commit. It creates a private
-draft prerelease and never publishes it. G41 updates this source-only trust
-boundary for G42 and version `0.2.0`; it does not dispatch the workflow. A final
+draft prerelease and never publishes it. G48 updates this source-only trust
+boundary for maintenance version `0.2.1`; it does not dispatch the workflow. A final
 release is published only after the draft, asset digests, checksum, signed
 application, Gatekeeper result, authenticated update metadata, and smoke test
 have been independently read back.
@@ -80,10 +80,10 @@ no account identifier. Archive and export therefore use the same protected ident
 interactive Xcode account or permission to create signing assets. The local G26 automatic export
 contract remains separate.
 
-## Run a Private G42 Rehearsal
+## Run a Private G48 Rehearsal
 
-Only after the G41 source pull request is reviewed, green, and separately
-merged, and G42 is explicitly approved:
+Only after the G48 source pull request is reviewed, green, and separately
+merged, and G48 Phase 2 is explicitly approved:
 
 1. Dispatch `copylasso_protected_release` through GitHub's repository dispatch API without a
    `candidate_number` payload field.
@@ -100,7 +100,7 @@ complete workflow again.
 The workflow uses the established Developer ID application verifier and release
 package process. Its protected commit is both the application payload commit
 and packaging commit. A blank candidate number uses the nonrelease form
-`v0.2.0-g42.<run>` so it cannot be mistaken for G42's `v0.2.0-rc.N` candidate.
+`v0.2.1-g48.<run>` so it cannot be mistaken for G48's `v0.2.1-rc.N` candidate.
 
 ## G30 Protected Candidate Handoff
 
@@ -113,7 +113,31 @@ historical release record remains immutable. G32 later reused the same trust
 boundary for `0.1.1`; G42 uses the current version-derived names without
 altering either historical record.
 
-## G42 v0.2 Candidate Handoff
+## G48 v0.2.1 Maintenance Candidate Handoff
+
+G48 has two ordered phases.
+
+1. Merge the reviewed G48 source-enablement pull request to protected `main`.
+   No protected release can run from the unmerged branch because the default
+   branch owns the `repository_dispatch` workflow definition.
+2. In a separately approved Phase 2 run, provide only the first unused positive
+   `candidate_number`. The workflow derives `v0.2.1-rc.N`, refuses collisions,
+   and builds exact protected main through the complete quality gate and
+   protected `release` environment.
+
+The job derives all four `0.2.1` asset names from canonical metadata, signs,
+notarizes, staples, packages, cleans credentials, and creates one private draft
+prerelease. The restricted verification bundle contains candidate-specific
+authenticated update metadata. It never publishes, overwrites an asset, moves
+a tag, accepts an arbitrary ref, or deploys a feed.
+
+The reviewed candidate body is
+[`release-notes/0.2.1.md`](release-notes/0.2.1.md). Follow the G48 procedure in
+[`release-candidate-qualification.md`](release-candidate-qualification.md) and
+[`release-checklist.md`](release-checklist.md). Any tracked candidate-input
+change abandons the candidate and requires a new positive number.
+
+## Historical G42 v0.2 Candidate Handoff
 
 G42 has two ordered phases.
 
@@ -213,10 +237,10 @@ boundary.
 
 The draft prerelease contains exactly:
 
-- `CopyLasso-0.2.0.dmg`;
-- `CopyLasso-0.2.0.dmg.sha256`;
-- `CopyLasso-0.2.0.dSYM.zip`; and
-- `CopyLasso-0.2.0-verification.zip`.
+- `CopyLasso-0.2.1.dmg`;
+- `CopyLasso-0.2.1.dmg.sha256`;
+- `CopyLasso-0.2.1.dSYM.zip`; and
+- `CopyLasso-0.2.1-verification.zip`.
 
 The verification bundle contains the exact stapled source application, the authenticated
 `appcast.xml` generated for that exact candidate, and the portable records
@@ -275,9 +299,9 @@ notarization, stapling, package verification, or credential cleanup prevent draf
 - **Stale draft:** delete the incomplete rehearsal through GitHub Releases. Never overwrite assets
   under an existing draft tag.
 
-G42 stops after one exact run, downloaded local re-verification, log and
+G48 stops after one exact run, downloaded local re-verification, log and
 cleanup inspection, authenticated updater-path smoke, and a verified draft
-release. It does not publish until the separately approved G43 promotion step.
+release. It does not publish; G49 is the separate publication goal.
 
 ## G43 Publication Preparation
 

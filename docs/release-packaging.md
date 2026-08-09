@@ -124,5 +124,21 @@ editing, re-signing, or replacing files in the prior commit-addressed
 directory. G42 later rebuilds from protected `main`; G41's local package never
 serves as a release candidate.
 
-The current derived artifact names are `CopyLasso-0.2.0.dmg`,
-`CopyLasso-0.2.0.dmg.sha256`, and `CopyLasso-0.2.0.dSYM.zip`.
+## G48 exact-head qualification package
+
+G48 Phase 1 freezes the current generic packaging contract at version `0.2.1`, build `4`.
+After that reviewed source is separately merged, the protected Phase-2 workflow
+archives, exports, notarizes, staples, packages, and verifies exact protected
+`main`. Its private candidate must identify production bundle
+`io.github.bennetthilberg.copylasso`, both `arm64` and `x86_64`, Hardened
+Runtime, secure timestamps, reviewed entitlements, valid nested signatures,
+accepted notarization, stapled tickets, and Gatekeeper acceptance. It is not
+published and cannot reuse G41 or G42 artifacts.
+
+The generic verifier uses current metadata by default. Only the immutable G42
+package-reverification wrapper passes `--pinned-v02-metadata`, which selects
+the historical public `0.2.0 (3)` names and evidence rather than silently
+applying current G48 metadata to old bytes.
+
+The current derived artifact names are `CopyLasso-0.2.1.dmg`,
+`CopyLasso-0.2.1.dmg.sha256`, and `CopyLasso-0.2.1.dSYM.zip`.

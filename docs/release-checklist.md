@@ -194,3 +194,18 @@ inferred pass; see [`v0.2-release-qualification.md`](v0.2-release-qualification.
 
 - [x] Date the changelog from the actual publication timestamp and update release-state documentation without changing immutable release bytes.
 - [x] Close only shipped-and-publicly-verified feature issues, install the exact public app locally, and read back protected main, checks, tags, assets, feed, source archives, issues, and the final ready PR.
+
+## G48 - Qualify CopyLasso v0.2.1
+
+- [ ] Phase 1: freeze current source at `0.2.1 (4)`, add reviewed maintenance notes, reconcile public-versus-candidate documentation, and pass the focused G48 qualification audit exactly once through canonical CI.
+- [ ] Phase 1: update the protected workflow from historical G42 execution paths to G48 while retaining exact-main provenance, one positive `candidate_number`, protected credentials, derived asset names, draft-only output, and no publication path.
+- [ ] Phase 1: pass local and hosted arm64/x86_64 plus maintained macOS 15 checks, Universal 2 Release verification, exact-head review, and ready-PR readback; stop for separate merge approval without dispatching the workflow.
+- [ ] Phase 2: after the reviewed head is separately merged, dispatch from exact protected main with the first unused candidate number and create one immutable private `v0.2.1-rc.N` draft with four restricted assets.
+- [ ] Phase 2: verify signatures, notarization, Gatekeeper, package layout, checksums, GitHub digests, dSYM UUIDs, authenticated candidate metadata, browser quarantine, and the compact current-host capture matrix without rebuilding.
+- [ ] Phase 2: exercise an isolated update from exact public `0.2.0 (3)` to the byte-identical candidate, record the maintainer decision, and leave the candidate unpublished.
+
+## G49 - Publish CopyLasso v0.2.1
+
+- [ ] Begin only after the exact G48 private candidate is separately approved. Revalidate immutable candidate bytes and prepare publication controls without rebuilding or moving the RC tag.
+- [ ] Publish the final signed tag, exact public DMG and checksum, and authenticated feed only through a separately approved G49 transaction.
+- [ ] Complete public-download, updater, installation, source-archive, documentation, and release-state verification before closing the patch release.

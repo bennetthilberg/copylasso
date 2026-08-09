@@ -5,8 +5,20 @@ set -euo pipefail
 readonly release_package_verification_library_root="$(
     cd "$(dirname "${BASH_SOURCE[0]}")/../.." && /bin/pwd -P
 )"
-# shellcheck source=scripts/lib/release-metadata.sh
-source "$release_package_verification_library_root/scripts/lib/release-metadata.sh"
+case "${COPYLASSO_RELEASE_PACKAGE_METADATA_PROFILE:-current}" in
+    current)
+        # shellcheck source=scripts/lib/release-metadata.sh
+        source "$release_package_verification_library_root/scripts/lib/release-metadata.sh"
+        ;;
+    v0.2.0)
+        # shellcheck source=scripts/lib/v02-publication-verification.sh
+        source "$release_package_verification_library_root/scripts/lib/v02-publication-verification.sh"
+        ;;
+    *)
+        echo "The release-package metadata profile is invalid." >&2
+        exit 1
+        ;;
+esac
 readonly COPYLASSO_RELEASE_DMG_IDENTIFIER="io.github.bennetthilberg.copylasso.dmg"
 
 release_package_fail() {

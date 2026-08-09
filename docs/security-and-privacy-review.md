@@ -5,6 +5,11 @@ source, shipped product, dependency graph, entitlements, persistence, and
 public privacy promises. Version 0.1.x remains historical and contains none of
 the updater, sound, or unified code-recognition additions described here.
 
+G48 qualifies candidate source `0.2.1 (4)` against this same boundary. It adds
+no permission, entitlement, dependency, recognition mode, content persistence,
+or network path. Public 0.2.0 (3) and its immutable security evidence remain
+unchanged until a separately approved publication goal.
+
 ## Result
 
 The implementation remains local-first and offline-capable. Screen Recording is the only macOS privacy permission required by the core workflow. The app has no content-history store, account, telemetry, or crash-reporting SDK. Its sole network capability is the isolated, user-controlled Sparkle updater; text and code recognition, clipboard output, local success sound, Settings, onboarding, and Launch at Login remain operational with update networking unavailable.
