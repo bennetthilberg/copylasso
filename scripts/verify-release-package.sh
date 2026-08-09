@@ -8,6 +8,7 @@ usage() {
     cat >&2 <<'TEXT'
 Usage: verify-release-package.sh \
   [--pinned-v02-metadata] \
+  [--release-metadata-profile current|v0.2.0|v0.2.1] \
   --payload-app /path/to/G26/<commit>/export/CopyLasso.app \
   --payload-commit <40-character-commit> \
   --packaging-commit <40-character-commit> \
@@ -21,12 +22,23 @@ expected_payload_commit=""
 expected_packaging_commit=""
 run_candidate=""
 release_metadata_profile="current"
+release_metadata_profile_was_set="false"
 while [[ "$#" -gt 0 ]]; do
     case "$1" in
         --pinned-v02-metadata)
-            [[ "$release_metadata_profile" == "current" ]] || usage
+            [[ "$release_metadata_profile_was_set" == "false" ]] || usage
             release_metadata_profile="v0.2.0"
+            release_metadata_profile_was_set="true"
             shift
+            ;;
+        --release-metadata-profile)
+            [[ "$#" -ge 2 && "$release_metadata_profile_was_set" == "false" ]] || usage
+            case "$2" in
+                current|v0.2.0|v0.2.1) release_metadata_profile="$2" ;;
+                *) usage ;;
+            esac
+            release_metadata_profile_was_set="true"
+            shift 2
             ;;
         --payload-app)
             [[ "$#" -ge 2 ]] || usage

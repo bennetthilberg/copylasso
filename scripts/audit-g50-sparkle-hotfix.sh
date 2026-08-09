@@ -102,7 +102,7 @@ require_text docs/security-and-privacy-review.md \
 require_text scripts/download-v02-candidate.sh \
     'scripts/fixtures/v0.2.1-published-release-notes.md'
 require_text scripts/verify-v02-candidate-package.sh \
-    'COPYLASSO_RELEASE_PACKAGE_METADATA_PROFILE=v0.2.1'
+    '--release-metadata-profile v0.2.1'
 
 require_text .github/workflows/release.yml 'release_goal=G50'
 require_text .github/workflows/release.yml 'release_subdirectory=g50'

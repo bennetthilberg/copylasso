@@ -99,8 +99,8 @@ for evidence in \
     /bin/cp "$extracted/run/$evidence" "$verification_run/$evidence"
 done
 
-COPYLASSO_RELEASE_PACKAGE_METADATA_PROFILE=v0.2.1 \
-    "$repository_root/scripts/verify-release-package.sh" \
+"$repository_root/scripts/verify-release-package.sh" \
+    --release-metadata-profile v0.2.1 \
     --payload-app "$application" \
     --payload-commit "$COPYLASSO_V02_CANDIDATE_COMMIT" \
     --packaging-commit "$COPYLASSO_V02_CANDIDATE_COMMIT" \

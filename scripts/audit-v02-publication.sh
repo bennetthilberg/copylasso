@@ -225,7 +225,7 @@ done
 require_text "$candidate_downloader" \
     'scripts/fixtures/v0.2.1-published-release-notes.md'
 require_text "$package_verifier" \
-    'COPYLASSO_RELEASE_PACKAGE_METADATA_PROFILE=v0.2.1'
+    '--release-metadata-profile v0.2.1'
 require_text "$v021_package_metadata" 'readonly COPYLASSO_RELEASE_VERSION="0.2.1"'
 require_text "$v021_package_metadata" 'readonly COPYLASSO_RELEASE_BUILD="4"'
 for required_generator_text in \
