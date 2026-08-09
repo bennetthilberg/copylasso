@@ -206,8 +206,8 @@ assert_release_draft_tag() {
     local g28_tag="$1"
     local escaped_version="${COPYLASSO_G28_VERSION//./\\.}"
 
-    [[ "$g28_tag" =~ ^v${escaped_version}-g42\.[1-9][0-9]*$ ]] || \
-        protected_release_fail "The G42 draft tag name is invalid."
+    [[ "$g28_tag" =~ ^v${escaped_version}-g48\.[1-9][0-9]*$ ]] || \
+        protected_release_fail "The G48 draft tag name is invalid."
 }
 
 assert_release_candidate_number() {
@@ -237,7 +237,7 @@ assert_authenticated_draft_tag() {
     local draft_tag="$1"
     local escaped_version="${COPYLASSO_G28_VERSION//./\\.}"
 
-    [[ "$draft_tag" =~ ^v${escaped_version}-(rc\.[1-9][0-9]*|g42\.[1-9][0-9]*)$ ]] || \
+    [[ "$draft_tag" =~ ^v${escaped_version}-(rc\.[1-9][0-9]*|g48\.[1-9][0-9]*)$ ]] || \
         protected_release_fail "The authenticated update draft tag is invalid."
 }
 

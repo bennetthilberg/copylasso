@@ -253,10 +253,10 @@ for application in \
     done
 done
 
-require_literal "$release_metadata" 'COPYLASSO_RELEASE_VERSION = 0.2.0' \
-    "G41 must freeze the first updater-enabled version at 0.2.0."
-require_literal "$release_metadata" 'COPYLASSO_RELEASE_BUILD = 3' \
-    "G41 must freeze the first updater-enabled build at 3."
+require_literal "$release_metadata" 'COPYLASSO_RELEASE_VERSION = 0.2.1' \
+    "G48 must freeze the maintenance candidate at 0.2.1."
+require_literal "$release_metadata" 'COPYLASSO_RELEASE_BUILD = 4' \
+    "G48 must freeze the maintenance candidate at build 4."
 
 require_literal "$repository_root/docs/architecture/ADR-004-secure-updates.md" \
     'https://updates.copylasso.com/appcast.xml' \

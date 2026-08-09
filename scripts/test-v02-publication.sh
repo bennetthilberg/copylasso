@@ -53,7 +53,7 @@ expect_failure() {
     fi
 }
 
-readonly release_notes_path="$repository_root/docs/release-notes/$COPYLASSO_RELEASE_VERSION.md"
+readonly release_notes_path="$repository_root/docs/release-notes/0.2.0.md"
 assert_v02_repository "bennetthilberg/copylasso"
 expect_failure "only on the reviewed CopyLasso repository" \
     assert_v02_repository "other/repository"

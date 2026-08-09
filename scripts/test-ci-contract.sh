@@ -17,6 +17,7 @@ readonly v02_release_qualification_audit_script="$repository_root/scripts/audit-
 readonly v02_publication_audit_script="$repository_root/scripts/audit-v02-publication.sh"
 readonly v02_release_state_audit_script="$repository_root/scripts/audit-v02-release-state.sh"
 readonly g46_product_patch_audit_script="$repository_root/scripts/audit-g46-product-patch.sh"
+readonly g48_patch_qualification_audit_script="$repository_root/scripts/audit-g48-patch-qualification.sh"
 readonly v02_publication_test_script="$repository_root/scripts/test-v02-publication.sh"
 readonly code_recognition_audit_script="$repository_root/scripts/audit-code-recognition.sh"
 readonly latex_feasibility_audit_script="$repository_root/scripts/audit-latex-feasibility.sh"
@@ -193,13 +194,15 @@ for required_patch_guard in \
     "approved_post_v02_security_patch_tree_pattern" \
     "g46_product_patch_tree_pattern" \
     "g44_release_state_tree_pattern" \
+    "g48_patch_tree_pattern" \
     "expected_candidate_baseline_tree_digest='1e4844388bc872b8ac4644a13b00223af1239f431d390130346daa8e914aafa0'" \
+    "expected_g48_baseline_tree_digest='29a161affc3afcf3c8de17c8fe5f307f419d22a939a357c67750b0079b195eef'" \
     "expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'" \
-    "expected_g44_release_state_files_digest='fe1accfe498d45bda4ac81fb35ddedaf1acc5ff185696fde424b35afb15e16e7'" \
-    "expected_approved_post_candidate_patch_digest='8c45e3cd5c2e81b23442d871f8d42a9ade6d1f6ed810f34405fc00f51c1eb2a8'" \
+    "expected_g44_release_state_files_digest='515679686da7679e64995eb1f55a6c94d87e5ed503cab8d26a30ba2b7c9759ed'" \
+    "expected_approved_post_candidate_patch_digest='b10e1819295df00c7931aff9337fae25edd8315383cb723ed19d4ae7c31e606d'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
-    '"$current_baseline_tree_digest" == "$expected_candidate_baseline_tree_digest"' \
+    '"$current_baseline_tree_digest" == "$expected_g48_baseline_tree_digest"' \
     'approved_post_candidate_path "$approved_path"' \
     'hash-object -- "$approved_path"' \
     'expected_approved_post_candidate_patch_digest[^0-9a-f]*' \
@@ -209,6 +212,7 @@ for required_patch_guard in \
     '/usr/bin/grep -Ev "$approved_post_v02_security_patch_tree_pattern"' \
     '/usr/bin/grep -Ev "$g46_product_patch_tree_pattern"' \
     '/usr/bin/grep -Ev "$g44_release_state_tree_pattern"' \
+    '/usr/bin/grep -Ev "$g48_patch_tree_pattern"' \
     'The approved G43A runtime patch differs from its reviewed tree digest.'; do
     if ! /usr/bin/grep -Fq "$required_patch_guard" \
         "$v02_release_qualification_audit_script"; then
@@ -260,6 +264,24 @@ g46_product_patch_audit_invocations="$({
 if [[ "$g46_product_patch_audit_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/audit-g46-product-patch.sh exactly once."
 fi
+g48_patch_qualification_audit_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/audit-g48-patch-qualification\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$g48_patch_qualification_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-g48-patch-qualification.sh exactly once."
+fi
+for required_g48_guard in \
+    '0\.2\.1' \
+    'release_goal=G48' \
+    'No processing indicator is included.' \
+    'COPYLASSO_V02_FINAL_TAG="v0.2.0"'; do
+    if ! /usr/bin/grep -Fq -- "$required_g48_guard" \
+        "$g48_patch_qualification_audit_script"; then
+        fail "The G48 audit is missing its patch-qualification guard: $required_g48_guard"
+    fi
+done
 for required_g46_guard in \
     'Check for Updates(\.\.\.|…)' \
     '700 words maximum' \
@@ -301,7 +323,7 @@ for required_release_state_guard in \
     'expected_release_id="361797888"' \
     'expected_dmg_sha256="697cb008cf294b32500e2ad84e5777a51fe8b88916856c5a8e9f1ec4eb74ba19"' \
     'expected_appcast_sha256="a6be6c899e31e5913d5be315f209884100f709bd0e13d7490da8f07c9ed08ace"' \
-    'The Unreleased section must retain the post-v0.2 G43A fix.'; do
+    'The current Unreleased section must remain empty during G48 qualification.'; do
     if ! /usr/bin/grep -Fq -- "$required_release_state_guard" \
         "$v02_release_state_audit_script"; then
         fail "The G44 audit must pin the immutable public release and post-release boundary."

@@ -192,6 +192,23 @@ deployment and the same reviewed signing boundary. A hosting failure never
 authorizes unsigned metadata, a replacement release asset, or movement of an
 existing release tag.
 
+## G48 Maintenance Candidate Handoff
+
+G48 candidate source is `0.2.1 (4)`. Public `0.2.0 (3)` remains installed and
+served by the production feed until G49 is separately approved and completed.
+The protected workflow derives the private `v0.2.1-rc.N` tag and all four
+versioned assets from canonical metadata, accepts only one positive
+`candidate_number`, and creates a draft prerelease from exact protected main.
+It cannot publish or replace an asset, accept an arbitrary tag or ref, or
+deploy a feed.
+
+The restricted candidate verification bundle may contain one authenticated
+candidate appcast. It is not a public feed. Phase 2 must test an isolated
+nonshipping updater fixture from exact public `0.2.0 (3)` to the byte-identical
+candidate app and prove authenticated discovery, consent, replacement,
+preference retention, high-water advancement, and rollback rejection. Any
+tracked candidate-input correction requires a new candidate number.
+
 CopyLasso 0.2.0 is the first public updater-enabled release. Its published feed
 and immutable GitHub enclosure passed signature, length, URL, version-ordering,
 browser-download, install, and public updater-path readback. The exact public

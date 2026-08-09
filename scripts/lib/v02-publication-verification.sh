@@ -8,10 +8,13 @@ readonly COPYLASSO_V02_PUBLICATION_VERIFICATION_LOADED=1
 readonly copylasso_v02_publication_root="$(
     cd "$(dirname "${BASH_SOURCE[0]}")/../.." && /bin/pwd -P
 )"
-# shellcheck source=scripts/lib/release-metadata.sh
-source "$copylasso_v02_publication_root/scripts/lib/release-metadata.sh"
-
 readonly COPYLASSO_V02_REPOSITORY="bennetthilberg/copylasso"
+readonly COPYLASSO_RELEASE_VERSION="0.2.0"
+readonly COPYLASSO_RELEASE_BUILD="3"
+readonly COPYLASSO_RELEASE_DMG="CopyLasso-0.2.0.dmg"
+readonly COPYLASSO_RELEASE_CHECKSUM="CopyLasso-0.2.0.dmg.sha256"
+readonly COPYLASSO_RELEASE_DSYM="CopyLasso-0.2.0.dSYM.zip"
+readonly COPYLASSO_RELEASE_VERIFICATION="CopyLasso-0.2.0-verification.zip"
 readonly COPYLASSO_V02_CANDIDATE_COMMIT="43f1d0c676b08fb24b49fc628213fede90c4ed9d"
 readonly COPYLASSO_V02_CANDIDATE_RELEASE_ID="361203156"
 readonly COPYLASSO_V02_CANDIDATE_TAG="v0.2.0-rc.1"

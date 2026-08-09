@@ -8,6 +8,10 @@ CopyLasso 0.2.0 is the latest public release. It adds authenticated,
 user-controlled updates, an optional success sound, and local recognition of
 five QR and barcode formats through the existing Capture command.
 
+Current source is being qualified as CopyLasso 0.2.1 (4). This maintenance
+patch is not yet a public download and leaves the public 0.2.0 release,
+artifacts, and update feed unchanged.
+
 ## Requirements
 
 - macOS 14 or newer
