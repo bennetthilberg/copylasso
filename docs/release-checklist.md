@@ -209,5 +209,5 @@ inferred pass; see [`v0.2-release-qualification.md`](v0.2-release-qualification.
 - [x] Begin only after the exact G48 private candidate is separately approved. Revalidate immutable candidate identity before changing publication controls.
 - [x] Phase 1: merge the green G49 publication-control PR before dispatching the protected preparation workflow.
 - [x] Phase 2: reverify the immutable candidate without rebuilding, create the private two-asset final draft and final-URL appcast, then publish the signed final tag, exact DMG and checksum, and authenticated feed through the approved transaction.
-- [ ] Phase 2: complete unauthenticated public-download, updater, installation, source-archive, feed, and immutable-tag verification.
+- [x] Phase 2: complete unauthenticated public-download, updater, installation, source-archive, feed, and immutable-tag verification.
 - [x] Phase 3: date and close the public release state in a separate green ready PR without changing release bytes, tags, feed, or application code.

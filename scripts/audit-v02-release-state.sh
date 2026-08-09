@@ -71,6 +71,8 @@ require_text "$repository_root/docs/release-checklist.md" \
 require_text "$repository_root/docs/release-checklist.md" \
     '- [x] Phase 2: reverify the immutable candidate without rebuilding, create the private two-asset final draft and final-URL appcast, then publish the signed final tag, exact DMG and checksum, and authenticated feed through the approved transaction.'
 require_text "$repository_root/docs/release-checklist.md" \
+    '- [x] Phase 2: complete unauthenticated public-download, updater, installation, source-archive, feed, and immutable-tag verification.'
+require_text "$repository_root/docs/release-checklist.md" \
     '- [x] Phase 3: date and close the public release state in a separate green ready PR without changing release bytes, tags, feed, or application code.'
 
 for release_record in \
@@ -94,6 +96,7 @@ for historical_record in \
     'Release: [`v0.2.0`](https://github.com/bennetthilberg/copylasso/releases/tag/v0.2.0)' \
     'Release ID: `361797888`' \
     'Release commit: `43f1d0c676b08fb24b49fc628213fede90c4ed9d`' \
+    'Release state: public, non-prerelease, and superseded by v0.2.1' \
     'Appcast SHA-256: `a6be6c899e31e5913d5be315f209884100f709bd0e13d7490da8f07c9ed08ace`'; do
     require_text "$release_state" "$historical_record"
 done
