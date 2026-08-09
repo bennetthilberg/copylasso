@@ -273,7 +273,7 @@ require_text "$release_workflow_documentation" '## G49 Publication Preparation'
 require_text "$update_operations" 'updates.copylasso.com'
 require_text "$release_checklist" '## G49 - Publish CopyLasso v0.2.1'
 require_text "$release_checklist" \
-    '- [ ] Phase 1: merge the green G49 publication-control PR before dispatching the protected preparation workflow.'
+    '- [x] Phase 1: merge the green G49 publication-control PR before dispatching the protected preparation workflow.'
 
 credential_marker='set -x|BEGIN '
 credential_marker+='([A-Z ]+ )?PRIVATE KEY|[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}'

@@ -1,14 +1,14 @@
 # Security And Privacy Review
 
-This review describes the public CopyLasso 0.2.0 boundary. It reconciles the
+This review describes the public CopyLasso 0.2.1 boundary. It reconciles the
 source, shipped product, dependency graph, entitlements, persistence, and
 public privacy promises. Version 0.1.x remains historical and contains none of
 the updater, sound, or unified code-recognition additions described here.
 
-G48 qualifies candidate source `0.2.1 (4)` against this same boundary. It adds
-no permission, entitlement, dependency, recognition mode, content persistence,
-or network path. Public 0.2.0 (3) and its immutable security evidence remain
-unchanged until a separately approved publication goal.
+G48 qualified `0.2.1 (4)` against this same boundary, and G49 published those
+exact bytes without rebuilding. The maintenance release adds no permission,
+entitlement, dependency, recognition mode, content persistence, or network
+path. Immutable 0.2.0 evidence remains historical.
 
 ## Result
 
@@ -70,15 +70,15 @@ The feed server and GitHub can observe ordinary transport metadata, including
 IP address, request time, and the CopyLasso/Sparkle versions in the ordinary
 user agent. Requests contain no pixels, geometry, recognized text, clipboard
 data, HUD preview, frontmost-application identity, hardware profile, stable
-identifier, analytics event, or telemetry. Public 0.2.0 authenticates the
-published feed; users of 0.1.x must install 0.2.0 manually once because their
-existing binaries contain no updater.
+identifier, analytics event, or telemetry. Public 0.2.1 authenticates the
+published feed; users of 0.1.x must install the latest release manually once
+because their existing binaries contain no updater.
 
 Local Apple Development signing adds `com.apple.security.get-task-allow` to
 audited development-signed products. That key is not present in the tracked
 product entitlement or a Developer ID artifact. The historical public 0.1.1
 application was verified to contain only the Boolean App Sandbox entitlement
-before and after notarization. The public v0.2.0 Developer ID artifact verifies
+before and after notarization. The public v0.2.0 and v0.2.1 Developer ID artifacts verify
 exactly Boolean App Sandbox, Boolean outbound network client, and the two
 production-bundle Sparkle installer-service names, with no `get-task-allow`,
 downloader-service name, or unrelated capability.
@@ -166,7 +166,7 @@ part of the dependency inventory below.
 
 KeyboardShortcuts declares no transitive dependency. The Release executable contains its code statically. CopyLasso uses native permission-free hotkey registration for event delivery, while the package supplies the SwiftUI recorder, persistence, conflict validation, and menu presentation. Its exact license text and attribution are in [Third-Party Notices](../THIRD_PARTY_NOTICES.md). A July 22, 2026 GitHub Advisory Database query for KeyboardShortcuts 3.0.1 returned zero matching Swift advisories; this time-sensitive check must be repeated for each release.
 
-Sparkle is a shipping binary framework in public v0.2.0. Its
+Sparkle is a shipping binary framework in public v0.2.1. Its
 exact tag, source revision, official artifact checksum, complete shipped
 license bundle, About acknowledgement, fixed configuration, entitlement
 boundary, and justification are recorded in [Third-Party

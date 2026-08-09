@@ -1,6 +1,6 @@
 # Contributing to CopyLasso
 
-Thank you for helping build CopyLasso. CopyLasso 0.2.0 is publicly released.
+Thank you for helping build CopyLasso. CopyLasso 0.2.1 is publicly released.
 Focused changes that preserve its privacy and reliability contracts are the
 easiest to review. Every implementation goal still requires its own bounded
 plan and approval.
@@ -10,7 +10,7 @@ plan and approval.
 - Read the [v0.1 product contract](docs/v0.1-product-contract.md) for supported behavior, privacy guarantees, and non-goals.
 - Read the [v0.2 product contract](docs/v0.2-product-contract.md) when working
   near updater, sound, or QR/barcode behavior. Those features ship in public
-  0.2.0. G39 concluded no-go for LaTeX, so adding it requires a new contract
+  0.2.1. G39 concluded no-go for LaTeX, so adding it requires a new contract
   and roadmap decision.
 - Review the [development environment](docs/development-environment.md) and use the documented stable Xcode toolchain.
 - Open an issue before starting a large feature, architectural change, new dependency, or product-scope change.

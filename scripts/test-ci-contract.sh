@@ -200,7 +200,7 @@ for required_patch_guard in \
     "expected_g48_baseline_tree_digest='e9ee74d177cbbfa5c1216f3104e231e294f593fc7f7e056937c04137ca1e7dc6'" \
     "expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'" \
     "expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'" \
-    "expected_approved_post_candidate_patch_digest='7f0497cdb8466fa6aadd7140903f39ced69d1f301ce205b3385c5ccfce5bdaef'" \
+    "expected_approved_post_candidate_patch_digest='a9f45b5b2df2e977294542677dbc28fd01dd3a932f52e176b2cd56cc35d9e27c'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
     '"$current_baseline_tree_digest" == "$expected_g48_baseline_tree_digest"' \
@@ -217,7 +217,7 @@ for required_patch_guard in \
     'The approved G43A runtime patch differs from its reviewed tree digest.'; do
     if ! /usr/bin/grep -Fq "$required_patch_guard" \
         "$v02_release_qualification_audit_script"; then
-        fail "The v0.2 qualification audit must pin the exact approved G43A patch."
+        fail "The v0.2 qualification audit must pin the exact approved post-candidate patch."
     fi
 done
 
@@ -338,14 +338,15 @@ for required_g46_ci_guard in \
     fi
 done
 for required_release_state_guard in \
-    'expected_release_commit="43f1d0c676b08fb24b49fc628213fede90c4ed9d"' \
-    'expected_release_id="361797888"' \
-    'expected_dmg_sha256="697cb008cf294b32500e2ad84e5777a51fe8b88916856c5a8e9f1ec4eb74ba19"' \
-    'expected_appcast_sha256="a6be6c899e31e5913d5be315f209884100f709bd0e13d7490da8f07c9ed08ace"' \
-    'The current Unreleased section must remain empty during G48 qualification.'; do
+    'expected_release_commit="813de17c739097217aad55a5a35c04ea3c73d99f"' \
+    'expected_release_id="367570430"' \
+    'expected_dmg_sha256="05180caa3600bcd282246297a9172517136e43e55c6e8fa192b55ba44af4a017"' \
+    'expected_appcast_sha256="c721b9396682c05082e019bdfa1297bc320f9883aabac2fd20c647f228aa8454"' \
+    'Release ID: `361797888`' \
+    'The current Unreleased section must remain empty after v0.2.1 publication.'; do
     if ! /usr/bin/grep -Fq -- "$required_release_state_guard" \
         "$v02_release_state_audit_script"; then
-        fail "The G44 audit must pin the immutable public release and post-release boundary."
+        fail "The release-state audit must pin current v0.2.1 and historical v0.2.0 boundaries."
     fi
 done
 

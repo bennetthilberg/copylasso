@@ -26,7 +26,7 @@ readonly expected_candidate_baseline_tree_digest='1e4844388bc872b8ac4644a13b0022
 readonly expected_g48_baseline_tree_digest='e9ee74d177cbbfa5c1216f3104e231e294f593fc7f7e056937c04137ca1e7dc6'
 readonly expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'
 readonly expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'
-readonly expected_approved_post_candidate_patch_digest='7f0497cdb8466fa6aadd7140903f39ced69d1f301ce205b3385c5ccfce5bdaef'
+readonly expected_approved_post_candidate_patch_digest='a9f45b5b2df2e977294542677dbc28fd01dd3a932f52e176b2cd56cc35d9e27c'
 
 fail() {
     echo "$1" >&2
@@ -91,15 +91,16 @@ done
     "$metadata" || fail "G48 must freeze candidate source at build 4."
 
 require_text CHANGELOG.md '## 0.2.0 - 2026-07-29'
-require_text README.md 'CopyLasso 0.2.0 is the latest public release.'
-require_text README.md 'CopyLasso 0.2.0 is the first updater-enabled public release:'
-require_text README.md 'Existing 0.1.x users must install 0.2.0 manually once'
+require_text CHANGELOG.md '## 0.2.1 - 2026-08-09'
+require_text README.md 'CopyLasso 0.2.1 is the latest public release.'
+require_text README.md 'CopyLasso 0.2.0 was the first updater-enabled public release.'
+require_text README.md 'those older application binaries contain'
 require_text PRIVACY.md 'Update requests send no screen pixels'
 require_text SECURITY.md 'CopyLasso 0.2.x is the currently supported public release line.'
 require_text docs/v0.2-product-contract.md \
-    '**Implementation status:** Released as 0.2.0 (3) on July 29, 2026.'
+    '**Implementation status:** Released as 0.2.1 (4) on August 9, 2026.'
 require_text docs/v0.2-product-contract.md \
-    'G39 concluded no-go, so CopyLasso 0.2.0 contains no LaTeX recognition'
+    'G39 concluded no-go, so CopyLasso 0.2.1 contains no LaTeX recognition'
 require_text docs/v0.2-release-qualification.md '# CopyLasso v0.2 Source Qualification'
 require_text docs/v0.2-release-qualification.md 'Public release remains `0.1.1`.'
 require_text docs/v0.2-release-qualification.md 'G42 is a later release gate'

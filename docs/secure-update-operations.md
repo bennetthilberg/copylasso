@@ -194,8 +194,9 @@ existing release tag.
 
 ## G48 Maintenance Candidate Handoff
 
-G48 candidate source is `0.2.1 (4)`. Public `0.2.0 (3)` remains installed and
-served by the production feed until G49 is separately approved and completed.
+G48 qualified candidate source `0.2.1 (4)` while public `0.2.0 (3)` remained
+installed and served by the production feed. G49 later published that exact
+candidate without rebuilding.
 The protected workflow derives the private `v0.2.1-rc.N` tag and all four
 versioned assets from canonical metadata, accepts only one positive
 `candidate_number`, and creates a draft prerelease from exact protected main.
@@ -229,3 +230,11 @@ Cloudflare Pages project. It does not change the custom domain, apex DNS,
 nameservers, hosting scope, update key, or application trust settings. A failed
 GitHub or feed readback freezes the state for remediation; it never authorizes
 moving a tag, replacing an asset, or serving unsigned metadata.
+
+CopyLasso 0.2.1 is the current public updater-enabled release. The signed final
+tag and direct RC tag both peel to the exact G48 candidate commit. The public
+release contains only the reviewed DMG and checksum, and production deployment
+`e768eb55-98d7-4d44-9603-65e3972fd66d` serves the authenticated appcast whose
+SHA-256 is `c721b9396682c05082e019bdfa1297bc320f9883aabac2fd20c647f228aa8454`.
+An exact public 0.2.0 installation updated through that feed to byte-identical
+0.2.1 only after separate download and install-and-relaunch consent.

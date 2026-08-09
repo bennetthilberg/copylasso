@@ -58,11 +58,11 @@ done
     '^COPYLASSO_RELEASE_BUILD[[:space:]]*=[[:space:]]*4[[:space:]]*$' \
     "$metadata" || fail "G48 must freeze CopyLasso at build 4."
 
-require_text CHANGELOG.md '## 0.2.1 - Unreleased'
-require_text README.md 'CopyLasso 0.2.0 is the latest public release.'
-require_text README.md 'Current source is being qualified as CopyLasso 0.2.1 (4).'
+require_text CHANGELOG.md '## 0.2.1 - 2026-08-09'
+require_text README.md 'CopyLasso 0.2.1 is the latest public release.'
+require_text README.md 'CopyLasso-0.2.1.dmg.sha256'
 require_text docs/v0.2-product-contract.md \
-    'Candidate source is being qualified as 0.2.1 (4); public 0.2.0 (3) remains unchanged.'
+    '**Implementation status:** Released as 0.2.1 (4) on August 9, 2026.'
 require_text docs/release-notes/0.2.1.md '# CopyLasso 0.2.1'
 require_text docs/release-notes/0.2.1.md 'No processing indicator is included.'
 require_text docs/release-notes/0.2.1.md \
@@ -88,8 +88,8 @@ g48_line="$(/usr/bin/grep -nF '| G48 |' "$repository_root/docs/architecture/over
 require_text docs/release-packaging.md '## G48 exact-head qualification package'
 require_text docs/release-packaging.md 'version `0.2.1`, build `4`'
 require_text docs/release-packaging.md 'CopyLasso-0.2.1.dmg'
-require_text docs/testing.md 'retained post-release G43A fixes under the'
-require_text docs/testing.md '`0.2.1 - Unreleased` draft'
+require_text docs/testing.md 'binds current public documentation to v0.2.1'
+require_text docs/testing.md 'G49 Phase 3 likewise changes'
 
 require_text .github/workflows/release.yml 'release_goal=G48'
 require_text .github/workflows/release.yml 'release_subdirectory=g48'
@@ -172,6 +172,6 @@ require_text scripts/lib/v02-publication-verification.sh \
     'COPYLASSO_RELEASE_VERSION="0.2.1"'
 require_text scripts/lib/v02-publication-verification.sh \
     'COPYLASSO_RELEASE_DMG="CopyLasso-0.2.1.dmg"'
-require_text scripts/audit-v02-release-state.sh 'expected_release_id="361797888"'
+require_text scripts/audit-v02-release-state.sh 'expected_release_id="367570430"'
 
 echo "CopyLasso G48 patch qualification audit passed."
