@@ -13,7 +13,7 @@ usage() {
     cat >&2 <<'TEXT'
 Usage: create-v02-publication-draft.sh \
   --repository bennetthilberg/copylasso \
-  --candidate-dir /path/to/downloaded/G42/assets \
+  --candidate-dir /path/to/downloaded/G48/assets \
   --readback /path/to/final-draft.json
 TEXT
     exit 64
@@ -65,4 +65,4 @@ create_v02_publication_draft_transaction \
     "$gh_binary" \
     assert_v02_publication_draft_record
 
-echo "Private final v0.2 publication draft created and verified."
+echo "Private final v0.2.1 publication draft created and verified."

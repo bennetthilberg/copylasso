@@ -28,32 +28,32 @@ create_v02_publication_draft_transaction() (
     local upload_succeeded
 
     publication_transaction_directory="$(/usr/bin/mktemp -d \
-        "${TMPDIR:-/private/tmp}/copylasso-g43-draft.XXXXXX")"
+        "${TMPDIR:-/private/tmp}/copylasso-g49-draft.XXXXXX")"
     creation_record="$publication_transaction_directory/created.json"
     release_listing="$publication_transaction_directory/releases.json"
     latest_release_record="$publication_transaction_directory/latest-release.json"
     final_release_lookup="$publication_transaction_directory/final-release-lookup.txt"
     final_tag_lookup="$publication_transaction_directory/final-tag-lookup.txt"
     final_record="$publication_transaction_directory/final.json"
-    COPYLASSO_G43_TRANSACTION_REPOSITORY="$repository"
-    COPYLASSO_G43_TRANSACTION_GH_BINARY="$transaction_gh_binary"
-    COPYLASSO_G43_TRANSACTION_DIRECTORY="$publication_transaction_directory"
-    COPYLASSO_G43_TRANSACTION_RELEASE_IDENTIFIER=""
-    COPYLASSO_G43_TRANSACTION_COMMITTED="false"
-    COPYLASSO_G43_TRANSACTION_OWNS_DRAFT="false"
+    COPYLASSO_G49_TRANSACTION_REPOSITORY="$repository"
+    COPYLASSO_G49_TRANSACTION_GH_BINARY="$transaction_gh_binary"
+    COPYLASSO_G49_TRANSACTION_DIRECTORY="$publication_transaction_directory"
+    COPYLASSO_G49_TRANSACTION_RELEASE_IDENTIFIER=""
+    COPYLASSO_G49_TRANSACTION_COMMITTED="false"
+    COPYLASSO_G49_TRANSACTION_OWNS_DRAFT="false"
 
     cleanup_v02_publication_draft_transaction() {
-        if [[ -n "$COPYLASSO_G43_TRANSACTION_RELEASE_IDENTIFIER" &&
-            "$COPYLASSO_G43_TRANSACTION_COMMITTED" != "true" &&
-            "$COPYLASSO_G43_TRANSACTION_OWNS_DRAFT" == "true" ]]; then
+        if [[ -n "$COPYLASSO_G49_TRANSACTION_RELEASE_IDENTIFIER" &&
+            "$COPYLASSO_G49_TRANSACTION_COMMITTED" != "true" &&
+            "$COPYLASSO_G49_TRANSACTION_OWNS_DRAFT" == "true" ]]; then
             local release_path
-            release_path="repos/$COPYLASSO_G43_TRANSACTION_REPOSITORY/releases/$COPYLASSO_G43_TRANSACTION_RELEASE_IDENTIFIER"
-            "$COPYLASSO_G43_TRANSACTION_GH_BINARY" api \
+            release_path="repos/$COPYLASSO_G49_TRANSACTION_REPOSITORY/releases/$COPYLASSO_G49_TRANSACTION_RELEASE_IDENTIFIER"
+            "$COPYLASSO_G49_TRANSACTION_GH_BINARY" api \
                 --method DELETE \
                 "$release_path" \
                 >/dev/null 2>&1 || true
         fi
-        /bin/rm -rf "$COPYLASSO_G43_TRANSACTION_DIRECTORY"
+        /bin/rm -rf "$COPYLASSO_G49_TRANSACTION_DIRECTORY"
     }
     trap cleanup_v02_publication_draft_transaction EXIT
 
@@ -62,7 +62,7 @@ create_v02_publication_draft_transaction() (
             --paginate \
             --slurp \
             "repos/$repository/releases?per_page=100" > "$release_listing"; then
-            v02_publication_fail "Existing releases could not be checked before G43 mutation."
+            v02_publication_fail "Existing releases could not be checked before G49 mutation."
         fi
         /usr/bin/jq -e '
             type == "array" and all(.[]; type == "array")
@@ -143,14 +143,14 @@ create_v02_publication_draft_transaction() (
                 "The final v0.2 draft could not be created or identified through exact readback."
         fi
     else
-        COPYLASSO_G43_TRANSACTION_OWNS_DRAFT="true"
+        COPYLASSO_G49_TRANSACTION_OWNS_DRAFT="true"
     fi
 
     release_identifier="$(/usr/bin/jq -er '
         if (.id | type) == "number" and .id > 0 then .id else error("invalid id") end
     ' "$creation_record" 2>/dev/null)" || \
         v02_publication_fail "The final v0.2 draft has no valid identifier."
-    COPYLASSO_G43_TRANSACTION_RELEASE_IDENTIFIER="$release_identifier"
+    COPYLASSO_G49_TRANSACTION_RELEASE_IDENTIFIER="$release_identifier"
     assert_v02_publication_release_identity \
         "$creation_record" "$transaction_release_notes" true false
     [[ "$(/usr/bin/jq -er '.assets | length' \
@@ -179,7 +179,7 @@ create_v02_publication_draft_transaction() (
     /bin/cp "$final_record" "$readback"
     /bin/chmod 600 "$readback"
     draft_committed="true"
-    COPYLASSO_G43_TRANSACTION_COMMITTED="$draft_committed"
+    COPYLASSO_G49_TRANSACTION_COMMITTED="$draft_committed"
     cleanup_v02_publication_draft_transaction
     trap - EXIT
 )

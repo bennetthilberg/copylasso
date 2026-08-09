@@ -9,30 +9,30 @@ readonly copylasso_v02_publication_root="$(
     cd "$(dirname "${BASH_SOURCE[0]}")/../.." && /bin/pwd -P
 )"
 readonly COPYLASSO_V02_REPOSITORY="bennetthilberg/copylasso"
-readonly COPYLASSO_RELEASE_VERSION="0.2.0"
-readonly COPYLASSO_RELEASE_BUILD="3"
-readonly COPYLASSO_RELEASE_DMG="CopyLasso-0.2.0.dmg"
-readonly COPYLASSO_RELEASE_CHECKSUM="CopyLasso-0.2.0.dmg.sha256"
-readonly COPYLASSO_RELEASE_DSYM="CopyLasso-0.2.0.dSYM.zip"
-readonly COPYLASSO_RELEASE_VERIFICATION="CopyLasso-0.2.0-verification.zip"
-readonly COPYLASSO_RELEASE_APPCAST="CopyLasso-0.2.0-appcast.xml"
-readonly COPYLASSO_V02_CANDIDATE_COMMIT="43f1d0c676b08fb24b49fc628213fede90c4ed9d"
-readonly COPYLASSO_V02_CANDIDATE_RELEASE_ID="361203156"
-readonly COPYLASSO_V02_CANDIDATE_TAG="v0.2.0-rc.1"
-readonly COPYLASSO_V02_FINAL_TAG="v0.2.0"
-readonly COPYLASSO_V02_PREVIOUS_PUBLIC_TAG="v0.1.1"
-readonly COPYLASSO_V02_FINAL_TAG_MESSAGE="CopyLasso 0.2.0"
-readonly COPYLASSO_V02_RELEASE_NAME="CopyLasso 0.2.0"
-readonly COPYLASSO_V02_NOTES_SHA256="0b40f9524389b684124189ce743109429af97baf124e28bf1d12313eba26d807"
-readonly COPYLASSO_V02_CANDIDATE_APPCAST_SHA256="a80260d6cd501ffee65ec41cbe1a232b9de662a9b41b4d78a0cd9b361bfe9fe6"
-readonly COPYLASSO_V02_DMG_SIZE="3665931"
-readonly COPYLASSO_V02_DMG_SHA256="697cb008cf294b32500e2ad84e5777a51fe8b88916856c5a8e9f1ec4eb74ba19"
+readonly COPYLASSO_RELEASE_VERSION="0.2.1"
+readonly COPYLASSO_RELEASE_BUILD="4"
+readonly COPYLASSO_RELEASE_DMG="CopyLasso-0.2.1.dmg"
+readonly COPYLASSO_RELEASE_CHECKSUM="CopyLasso-0.2.1.dmg.sha256"
+readonly COPYLASSO_RELEASE_DSYM="CopyLasso-0.2.1.dSYM.zip"
+readonly COPYLASSO_RELEASE_VERIFICATION="CopyLasso-0.2.1-verification.zip"
+readonly COPYLASSO_RELEASE_APPCAST="CopyLasso-0.2.1-appcast.xml"
+readonly COPYLASSO_V02_CANDIDATE_COMMIT="813de17c739097217aad55a5a35c04ea3c73d99f"
+readonly COPYLASSO_V02_CANDIDATE_RELEASE_ID="367523470"
+readonly COPYLASSO_V02_CANDIDATE_TAG="v0.2.1-rc.1"
+readonly COPYLASSO_V02_FINAL_TAG="v0.2.1"
+readonly COPYLASSO_V02_PREVIOUS_PUBLIC_TAG="v0.2.0"
+readonly COPYLASSO_V02_FINAL_TAG_MESSAGE="CopyLasso 0.2.1"
+readonly COPYLASSO_V02_RELEASE_NAME="CopyLasso 0.2.1"
+readonly COPYLASSO_V02_NOTES_SHA256="24dd1c6c235ba0e0d0bf433e07d6b1ddd5a8c2425fa368a4fa16926eb016b503"
+readonly COPYLASSO_V02_CANDIDATE_APPCAST_SHA256="ef48b25ed3527416ba2242cae4bf3975b3c61d21790e24e0b31669a1082bf779"
+readonly COPYLASSO_V02_DMG_SIZE="3737908"
+readonly COPYLASSO_V02_DMG_SHA256="05180caa3600bcd282246297a9172517136e43e55c6e8fa192b55ba44af4a017"
 readonly COPYLASSO_V02_CHECKSUM_SIZE="86"
-readonly COPYLASSO_V02_CHECKSUM_SHA256="6dfd44d92f6af1c14d765bc6c827ed3e9a0edd5ffe289c3e74ac6e1dd0c834b0"
-readonly COPYLASSO_V02_DSYM_SIZE="6094121"
-readonly COPYLASSO_V02_DSYM_SHA256="b644da8776f857c1f42a95f903b315b7dde418000d173b48829c5ee346bc4754"
-readonly COPYLASSO_V02_VERIFICATION_SIZE="3708469"
-readonly COPYLASSO_V02_VERIFICATION_SHA256="e4d424bdd9675b00ffa647bccdc3f3bc47b43b4d041535c0898f79cf79e3a073"
+readonly COPYLASSO_V02_CHECKSUM_SHA256="b9a85f82686dce479cb41247fe9fc025ec8a0d099bbc08028c4239899359b1c9"
+readonly COPYLASSO_V02_DSYM_SIZE="6315506"
+readonly COPYLASSO_V02_DSYM_SHA256="0301eecaccb9fac76c1e25d2ae1db2edc99ff42febe55bfcf6f07ef4ffcbd368"
+readonly COPYLASSO_V02_VERIFICATION_SIZE="3771716"
+readonly COPYLASSO_V02_VERIFICATION_SHA256="689aad0296e90b9aab83e198eaef0524da907d1742fbeab8078bddc823a1b108"
 readonly COPYLASSO_V02_PUBLIC_APPCAST_NAME="appcast.xml"
 readonly COPYLASSO_V02_FEED_HOST="updates.copylasso.com"
 readonly COPYLASSO_V02_FEED_URL="https://$COPYLASSO_V02_FEED_HOST/$COPYLASSO_V02_PUBLIC_APPCAST_NAME"
@@ -47,14 +47,14 @@ assert_v02_repository() {
     local repository="$1"
 
     [[ "$repository" == "$COPYLASSO_V02_REPOSITORY" ]] || \
-        v02_publication_fail "G43 may operate only on the reviewed CopyLasso repository."
+        v02_publication_fail "G49 may operate only on the reviewed CopyLasso repository."
 }
 
 assert_v02_candidate_commit() {
     local commit="$1"
 
     [[ "$commit" == "$COPYLASSO_V02_CANDIDATE_COMMIT" ]] || \
-        v02_publication_fail "G43 may publish only the approved G42 source commit."
+        v02_publication_fail "G49 may publish only the approved G48 source commit."
 }
 
 assert_v02_final_tag() {
@@ -129,9 +129,9 @@ assert_v02_candidate_release_record() {
     local actual_body
 
     [[ -f "$record" && ! -L "$record" ]] || \
-        v02_publication_fail "The private G42 release readback is unavailable."
+        v02_publication_fail "The private G48 release readback is unavailable."
     /usr/bin/jq -e . "$record" >/dev/null 2>&1 || \
-        v02_publication_fail "The private G42 release readback is invalid."
+        v02_publication_fail "The private G48 release readback is invalid."
     assert_v02_release_notes "$v02_release_notes_file"
 
     /usr/bin/jq -e \
@@ -145,12 +145,12 @@ assert_v02_candidate_release_record() {
         and .tag_name == $tag
         and .target_commitish == $commit
     ' "$record" >/dev/null 2>&1 || \
-        v02_publication_fail "The private G42 release identity or state is invalid."
+        v02_publication_fail "The private G48 release identity or state is invalid."
 
     expected_body="$(/bin/cat "$v02_release_notes_file")"
     actual_body="$(/usr/bin/jq -er '.body' "$record" 2>/dev/null || true)"
     [[ "$actual_body" == "$expected_body" ]] || \
-        v02_publication_fail "The private G42 release notes differ from the approved source."
+        v02_publication_fail "The private G48 release notes differ from the approved source."
 
     expected_assets="$(printf '%s\n' \
         "$COPYLASSO_RELEASE_DMG" \
@@ -159,7 +159,7 @@ assert_v02_candidate_release_record() {
         "$COPYLASSO_RELEASE_VERIFICATION" | LC_ALL=C /usr/bin/sort)"
     actual_assets="$(v02_release_asset_names "$record" 2>/dev/null || true)"
     [[ "$actual_assets" == "$expected_assets" ]] || \
-        v02_publication_fail "The private G42 release has an unexpected asset set."
+        v02_publication_fail "The private G48 release has an unexpected asset set."
 
     assert_v02_asset_record \
         "$record" "$COPYLASSO_RELEASE_DMG" \
@@ -183,7 +183,7 @@ assert_v02_candidate_files() {
     local actual_checksum
 
     [[ -d "$directory" && ! -L "$directory" ]] || \
-        v02_publication_fail "The downloaded G42 candidate directory is unavailable."
+        v02_publication_fail "The downloaded G48 candidate directory is unavailable."
     expected_names="$(printf '%s\n' \
         "$COPYLASSO_RELEASE_DMG" \
         "$COPYLASSO_RELEASE_CHECKSUM" \
@@ -198,7 +198,7 @@ assert_v02_candidate_files() {
             done | LC_ALL=C /usr/bin/sort
     })"
     [[ "$actual_names" == "$expected_names" ]] || \
-        v02_publication_fail "The downloaded G42 candidate has an unexpected file set."
+        v02_publication_fail "The downloaded G48 candidate has an unexpected file set."
 
     assert_v02_exact_file \
         "$directory/$COPYLASSO_RELEASE_DMG" \
@@ -317,7 +317,7 @@ assert_v02_candidate_tag_record() {
     local record="$1"
 
     [[ -f "$record" && ! -L "$record" ]] || \
-        v02_publication_fail "The G42 candidate tag readback is unavailable."
+        v02_publication_fail "The G48 candidate tag readback is unavailable."
     /usr/bin/jq -e \
         --arg ref "refs/tags/$COPYLASSO_V02_CANDIDATE_TAG" \
         --arg commit "$COPYLASSO_V02_CANDIDATE_COMMIT" '
@@ -325,7 +325,7 @@ assert_v02_candidate_tag_record() {
         and .object.type == "commit"
         and .object.sha == $commit
     ' "$record" >/dev/null 2>&1 || \
-        v02_publication_fail "The G42 candidate tag no longer identifies the approved source commit."
+        v02_publication_fail "The G48 candidate tag no longer identifies the approved source commit."
 }
 
 assert_v02_prepublication_latest_record() {
@@ -341,7 +341,7 @@ assert_v02_prepublication_latest_record() {
         and (.published_at | type) == "string"
         and (.published_at | length) > 0
     ' "$record" >/dev/null 2>&1 || \
-        v02_publication_fail "CopyLasso v0.1.1 is no longer the latest public release."
+        v02_publication_fail "CopyLasso v0.2.0 is no longer the latest public release."
 }
 
 assert_v02_final_tag_ref_record() {
@@ -386,7 +386,7 @@ assert_v02_latest_release_record() {
     release_id="$(/usr/bin/jq -er '.id' "$release_record" 2>/dev/null || true)"
     latest_id="$(/usr/bin/jq -er '.id' "$latest_record" 2>/dev/null || true)"
     [[ "$release_id" =~ ^[1-9][0-9]*$ && "$latest_id" == "$release_id" ]] || \
-        v02_publication_fail "CopyLasso v0.2.0 is not GitHub's latest public release."
+        v02_publication_fail "CopyLasso v0.2.1 is not GitHub's latest public release."
 }
 
 assert_v02_appcast_contract() {
@@ -489,7 +489,7 @@ assert_v02_sparkle_signatures() {
         local verifier
 
         sparkle_verification_directory="$(/usr/bin/mktemp -d \
-            "${TMPDIR:-/private/tmp}/copylasso-g43-sparkle-verification.XXXXXX")"
+            "${TMPDIR:-/private/tmp}/copylasso-g49-sparkle-verification.XXXXXX")"
         trap '/bin/rm -rf "$sparkle_verification_directory"' EXIT
         verifier="$sparkle_verification_directory/verify-sparkle-signatures"
         /usr/bin/xcrun swiftc \

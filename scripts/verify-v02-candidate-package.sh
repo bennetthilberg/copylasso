@@ -10,7 +10,7 @@ source "$repository_root/scripts/lib/v02-publication-verification.sh"
 usage() {
     cat >&2 <<'TEXT'
 Usage: verify-v02-candidate-package.sh \
-  --candidate-dir /path/to/downloaded/G42/assets \
+  --candidate-dir /path/to/downloaded/G48/assets \
   --work-dir /path/to/new-verification-directory
 TEXT
     exit 64
@@ -37,10 +37,10 @@ done
 
 assert_v02_candidate_files "$candidate_directory"
 [[ ! -e "$work_directory" && ! -L "$work_directory" ]] || \
-    v02_publication_fail "The G43 verification work directory already exists."
+    v02_publication_fail "The G49 verification work directory already exists."
 readonly work_parent="$(/usr/bin/dirname "$work_directory")"
 [[ -d "$work_parent" && ! -L "$work_parent" ]] || \
-    v02_publication_fail "The G43 verification work parent is unavailable."
+    v02_publication_fail "The G49 verification work parent is unavailable."
 [[ "${COPYLASSO_EXPECTED_TEAM_ID:-}" =~ ^[A-Z0-9]{10}$ ]] || \
     v02_publication_fail "The approved release team is unavailable for package verification."
 
@@ -81,7 +81,7 @@ private_appcast_digest="$(
     /usr/bin/shasum -a 256 "$private_appcast" | /usr/bin/awk '{print $1}'
 )"
 [[ "$private_appcast_digest" == "$COPYLASSO_V02_CANDIDATE_APPCAST_SHA256" ]] || \
-    v02_publication_fail "The restricted candidate appcast differs from G42 evidence."
+    v02_publication_fail "The restricted candidate appcast differs from G48 evidence."
 
 for asset in \
     "$COPYLASSO_RELEASE_DMG" \
@@ -100,7 +100,6 @@ for evidence in \
 done
 
 "$repository_root/scripts/verify-release-package.sh" \
-    --pinned-v02-metadata \
     --payload-app "$application" \
     --payload-commit "$COPYLASSO_V02_CANDIDATE_COMMIT" \
     --packaging-commit "$COPYLASSO_V02_CANDIDATE_COMMIT" \
@@ -110,4 +109,4 @@ done
 committed="true"
 trap - EXIT
 
-echo "Approved G42 candidate package reverified without rebuilding."
+echo "Approved G48 candidate package reverified without rebuilding."

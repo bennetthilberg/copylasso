@@ -11,7 +11,7 @@ usage() {
     cat >&2 <<'TEXT'
 Usage: prepare-update-feed.sh \
   --appcast /path/to/appcast.xml \
-  --release-notes /path/to/0.2.0.md \
+  --release-notes /path/to/0.2.1.md \
   --output-dir /path/to/new-feed-directory
 TEXT
     exit 64

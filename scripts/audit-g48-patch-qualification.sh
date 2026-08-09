@@ -6,7 +6,7 @@ readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && /bin/pwd -
 readonly metadata="$repository_root/Configuration/ReleaseMetadata.xcconfig"
 readonly notes="$repository_root/docs/release-notes/0.2.1.md"
 readonly workflow="$repository_root/.github/workflows/release.yml"
-readonly historical_publication_workflow="$repository_root/.github/workflows/prepare-publication.yml"
+readonly publication_workflow="$repository_root/.github/workflows/prepare-publication.yml"
 readonly entitlements="$repository_root/CopyLasso/CopyLasso.entitlements"
 readonly package_resolved="$repository_root/CopyLasso.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
 
@@ -42,7 +42,9 @@ for required_file in \
     .github/workflows/release.yml \
     .github/workflows/prepare-publication.yml \
     scripts/lib/release-package-verification.sh \
+    scripts/lib/v020-release-package-metadata.sh \
     scripts/lib/v02-publication-verification.sh \
+    scripts/audit-g49-publication.sh \
     scripts/verify-release-package.sh \
     scripts/verify-v02-candidate-package.sh; do
     [[ -s "$repository_root/$required_file" ]] || \
@@ -106,19 +108,24 @@ if /usr/bin/grep -Eiq -- \
     fail "G48 candidate tooling must remain draft-only and immutable."
 fi
 
-historical_feed_step="$(/usr/bin/sed -n \
+publication_feed_step="$(/usr/bin/sed -n \
     '/- name: Prepare feed-only deployment bundle/,/- name: Create verified private final draft/p' \
-    "$historical_publication_workflow")"
-[[ "$historical_feed_step" == *'source ./scripts/lib/v02-publication-verification.sh'* ]] || \
-    fail "The historical G43 feed step must use pinned v0.2 publication metadata."
-[[ "$historical_feed_step" != *'source ./scripts/lib/release-metadata.sh'* ]] || \
-    fail "The historical G43 feed step must not use current G48 metadata."
+    "$publication_workflow")"
+[[ "$publication_feed_step" == *'source ./scripts/lib/v02-publication-verification.sh'* ]] || \
+    fail "The G49 feed step must use pinned v0.2.1 publication metadata."
+[[ "$publication_feed_step" != *'source ./scripts/lib/release-metadata.sh'* ]] || \
+    fail "The G49 feed step must not use mutable current release metadata."
 require_text scripts/lib/v02-publication-verification.sh \
+    'COPYLASSO_RELEASE_APPCAST="CopyLasso-0.2.1-appcast.xml"'
+require_text scripts/lib/v020-release-package-metadata.sh \
     'COPYLASSO_RELEASE_APPCAST="CopyLasso-0.2.0-appcast.xml"'
 require_text scripts/lib/release-package-verification.sh \
     'COPYLASSO_RELEASE_PACKAGE_METADATA_PROFILE:-current'
 require_text scripts/verify-release-package.sh '--pinned-v02-metadata'
-require_text scripts/verify-v02-candidate-package.sh '--pinned-v02-metadata'
+if /usr/bin/grep -Fq -- '--pinned-v02-metadata' \
+    "$repository_root/scripts/verify-v02-candidate-package.sh"; then
+    fail "The G49 candidate verifier must use current v0.2.1 package metadata."
+fi
 
 entitlements_json="$(/usr/bin/plutil -convert json -o - "$entitlements")" || \
     fail "CopyLasso entitlements are invalid."
@@ -160,11 +167,11 @@ done
 
 require_text docs/v0.2-release-state.md '- Final tag: signed annotated `v0.2.0`'
 require_text docs/v0.2-release-state.md '- Release commit: `43f1d0c676b08fb24b49fc628213fede90c4ed9d`'
-require_text scripts/audit-v02-publication.sh 'COPYLASSO_V02_FINAL_TAG="v0.2.0"'
+require_text scripts/audit-g49-publication.sh 'COPYLASSO_V02_FINAL_TAG="v0.2.1"'
 require_text scripts/lib/v02-publication-verification.sh \
-    'COPYLASSO_RELEASE_VERSION="0.2.0"'
+    'COPYLASSO_RELEASE_VERSION="0.2.1"'
 require_text scripts/lib/v02-publication-verification.sh \
-    'COPYLASSO_RELEASE_DMG="CopyLasso-0.2.0.dmg"'
+    'COPYLASSO_RELEASE_DMG="CopyLasso-0.2.1.dmg"'
 require_text scripts/audit-v02-release-state.sh 'expected_release_id="361797888"'
 
 echo "CopyLasso G48 patch qualification audit passed."

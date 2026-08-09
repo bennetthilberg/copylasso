@@ -11,7 +11,7 @@ usage() {
 Usage: audit-v02-publication.sh
        audit-v02-publication.sh \
          --handoff /path/to/private-handoff \
-         --candidate-dir /path/to/downloaded/G42/assets \
+         --candidate-dir /path/to/downloaded/G48/assets \
          --application /path/to/qualified/CopyLasso.app
 TEXT
     exit 64
@@ -59,7 +59,7 @@ readonly runbook="$repository_root/docs/v0.2-publication-runbook.md"
 readonly release_workflow_documentation="$repository_root/docs/release-workflow.md"
 readonly update_operations="$repository_root/docs/secure-update-operations.md"
 readonly release_checklist="$repository_root/docs/release-checklist.md"
-readonly notes="$repository_root/docs/release-notes/0.2.0.md"
+readonly notes="$repository_root/docs/release-notes/0.2.1.md"
 
 fail() {
     echo "$1" >&2
@@ -71,7 +71,7 @@ require_text() {
     local text="$2"
 
     /usr/bin/grep -Fq -- "$text" "$file" || \
-        fail "G43 publication contract text is missing: $text"
+        fail "G49 publication contract text is missing: $text"
 }
 
 for executable in \
@@ -82,7 +82,7 @@ for executable in \
     "$feed_preparer" \
     "$focused_tests"; do
     [[ -x "$executable" ]] || \
-        fail "G43 publication script is missing or not executable: $(/usr/bin/basename "$executable")"
+        fail "G49 publication script is missing or not executable: $(/usr/bin/basename "$executable")"
 done
 for readable in \
     "$workflow" \
@@ -96,36 +96,39 @@ for readable in \
     "$release_checklist" \
     "$notes"; do
     [[ -r "$readable" ]] || \
-        fail "G43 publication contract file is missing: $(/usr/bin/basename "$readable")"
+        fail "G49 publication contract file is missing: $(/usr/bin/basename "$readable")"
 done
 
 assert_v02_release_notes "$notes"
 require_text "$verifier_library" \
-    'COPYLASSO_V02_CANDIDATE_COMMIT="43f1d0c676b08fb24b49fc628213fede90c4ed9d"'
-require_text "$verifier_library" 'COPYLASSO_V02_CANDIDATE_RELEASE_ID="361203156"'
-require_text "$verifier_library" 'COPYLASSO_V02_CANDIDATE_TAG="v0.2.0-rc.1"'
-require_text "$verifier_library" 'COPYLASSO_V02_FINAL_TAG="v0.2.0"'
+    'COPYLASSO_V02_CANDIDATE_COMMIT="813de17c739097217aad55a5a35c04ea3c73d99f"'
+require_text "$verifier_library" 'COPYLASSO_V02_CANDIDATE_RELEASE_ID="367523470"'
+require_text "$verifier_library" 'COPYLASSO_V02_CANDIDATE_TAG="v0.2.1-rc.1"'
+require_text "$verifier_library" 'COPYLASSO_V02_FINAL_TAG="v0.2.1"'
 require_text "$verifier_library" \
-    'COPYLASSO_V02_DMG_SHA256="697cb008cf294b32500e2ad84e5777a51fe8b88916856c5a8e9f1ec4eb74ba19"'
+    'COPYLASSO_V02_DMG_SHA256="05180caa3600bcd282246297a9172517136e43e55c6e8fa192b55ba44af4a017"'
 require_text "$verifier_library" \
-    'COPYLASSO_V02_CHECKSUM_SHA256="6dfd44d92f6af1c14d765bc6c827ed3e9a0edd5ffe289c3e74ac6e1dd0c834b0"'
+    'COPYLASSO_V02_CHECKSUM_SHA256="b9a85f82686dce479cb41247fe9fc025ec8a0d099bbc08028c4239899359b1c9"'
 require_text "$verifier_library" \
-    'COPYLASSO_V02_DSYM_SHA256="b644da8776f857c1f42a95f903b315b7dde418000d173b48829c5ee346bc4754"'
+    'COPYLASSO_V02_DSYM_SHA256="0301eecaccb9fac76c1e25d2ae1db2edc99ff42febe55bfcf6f07ef4ffcbd368"'
 require_text "$verifier_library" \
-    'COPYLASSO_V02_VERIFICATION_SHA256="e4d424bdd9675b00ffa647bccdc3f3bc47b43b4d041535c0898f79cf79e3a073"'
+    'COPYLASSO_V02_VERIFICATION_SHA256="689aad0296e90b9aab83e198eaef0524da907d1742fbeab8078bddc823a1b108"'
 
-require_text "$workflow" 'workflow_dispatch:'
-if /usr/bin/grep -Fq 'inputs:' "$workflow"; then
-    fail "The G43 preparation workflow must not accept arbitrary dispatch inputs."
+require_text "$workflow" 'repository_dispatch:'
+require_text "$workflow" 'types: [copylasso_prepare_publication]'
+require_text "$workflow" \
+    "github.event_name == 'repository_dispatch' && github.event.action == 'copylasso_prepare_publication' && github.ref == 'refs/heads/main'"
+if /usr/bin/grep -Fq '${{ github.event.client_payload.' "$workflow"; then
+    fail "The G49 preparation workflow must not accept arbitrary dispatch inputs."
 fi
 for prohibited_trigger in \
     pull_request: \
     pull_request_target: \
     push: \
-    repository_dispatch: \
+    workflow_dispatch: \
     workflow_run:; do
     if /usr/bin/grep -Eq "^[[:space:]]*${prohibited_trigger}[[:space:]]*$" "$workflow"; then
-        fail "The G43 preparation workflow has a prohibited trigger: $prohibited_trigger"
+        fail "The G49 preparation workflow has a prohibited trigger: $prohibited_trigger"
     fi
 done
 require_text "$workflow" 'uses: ./.github/workflows/ci.yml'
@@ -138,28 +141,28 @@ require_text "$workflow" 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a8
 require_text "$workflow" 'persist-credentials: false'
 require_text "$workflow" 'fetch-depth: 0'
 require_text "$workflow" './scripts/download-v02-candidate.sh'
-require_text "$workflow" 'COPYLASSO_G43_CANDIDATE_TAG_READBACK'
-require_text "$workflow" '--tag-readback "$COPYLASSO_G43_CANDIDATE_TAG_READBACK"'
+require_text "$workflow" 'COPYLASSO_G49_CANDIDATE_TAG_READBACK'
+require_text "$workflow" '--tag-readback "$COPYLASSO_G49_CANDIDATE_TAG_READBACK"'
 require_text "$workflow" './scripts/verify-v02-candidate-package.sh'
 require_text "$workflow" './scripts/generate-release-appcast.sh'
 require_text "$workflow" './scripts/prepare-update-feed.sh'
 require_text "$workflow" './scripts/create-v02-publication-draft.sh'
 require_text "$workflow" './scripts/audit-v02-publication.sh'
-require_text "$workflow" 'COPYLASSO_G43_HANDOFF'
+require_text "$workflow" 'COPYLASSO_G49_HANDOFF'
 require_text "$workflow" 'retention-days: 30'
 
 contents_write_count="$(
     /usr/bin/grep -Ec '^[[:space:]]*contents: write[[:space:]]*$' "$workflow"
 )"
 [[ "$contents_write_count" == "1" ]] || \
-    fail "Only the protected G43 preparation job may receive contents write permission."
+    fail "Only the protected G49 preparation job may receive contents write permission."
 sparkle_secret_count="$(
     /usr/bin/grep -Fc \
         'COPYLASSO_SPARKLE_PRIVATE_KEY: ${{ secrets.COPYLASSO_SPARKLE_PRIVATE_KEY }}' \
         "$workflow"
 )"
 [[ "$sparkle_secret_count" == "1" ]] || \
-    fail "The Sparkle signing seed must enter exactly one narrow G43 step."
+    fail "The Sparkle signing seed must enter exactly one narrow G49 step."
 team_secret_count="$(
     /usr/bin/grep -Fc \
         'COPYLASSO_EXPECTED_TEAM_ID: ${{ secrets.COPYLASSO_EXPECTED_TEAM_ID }}' \
@@ -174,7 +177,7 @@ for prohibited_secret in \
     COPYLASSO_NOTARY_KEY_ID \
     COPYLASSO_NOTARY_ISSUER_ID; do
     if /usr/bin/grep -Fq "secrets.$prohibited_secret" "$workflow"; then
-        fail "G43 must not receive build, certificate, or notarization credentials."
+        fail "G49 must not receive build, certificate, or notarization credentials."
     fi
 done
 
@@ -182,7 +185,7 @@ while IFS= read -r action_target; do
     case "$action_target" in
         ./*) ;;
         *@????????????????????????????????????????) ;;
-        *) fail "The privileged G43 workflow contains a mutable action reference: $action_target" ;;
+        *) fail "The privileged G49 workflow contains a mutable action reference: $action_target" ;;
     esac
 done < <(/usr/bin/sed -nE \
     's/^[[:space:]]*uses:[[:space:]]*([^[:space:]]+).*$/\1/p' "$workflow")
@@ -190,7 +193,7 @@ done < <(/usr/bin/sed -nE \
 if /usr/bin/grep -Eq \
     'build-release-candidate|xcodebuild[[:space:]]+(archive|-exportArchive)|notarytool[[:space:]]+submit|stapler[[:space:]]+staple' \
     "$workflow"; then
-    fail "G43 must consume the approved candidate without rebuilding or renotarizing it."
+    fail "G49 must consume the approved candidate without rebuilding or renotarizing it."
 fi
 if /usr/bin/grep -Eiq \
     'release (publish|edit.+--draft=false)|make_latest=true|--method PATCH|--clobber|force=true|git push|git tag' \
@@ -205,7 +208,7 @@ fi
 if /usr/bin/grep -Eq \
     '(^|[[:space:]])(publish|make_latest|draft:[[:space:]]*false)([[:space:]]|$)' \
     "$candidate_workflow"; then
-    fail "The G42 candidate workflow must remain draft-only."
+    fail "The G48 candidate workflow must remain draft-only."
 fi
 
 for required_downloader_text in \
@@ -244,32 +247,33 @@ require_text "$verifier_library" 'verify-sparkle-signatures.swift'
 require_text "$signature_verifier_source" 'Curve25519.Signing.PublicKey'
 require_text "$signature_verifier_source" 'isValidSignature(feedSignature'
 require_text "$signature_verifier_source" 'isValidSignature(enclosureSignature'
-require_text "$workflow" '--candidate-dir "$COPYLASSO_G43_CANDIDATE"'
+require_text "$workflow" '--candidate-dir "$COPYLASSO_G49_CANDIDATE"'
 require_text "$workflow" '--application'
 if /usr/bin/grep -Eq \
     'git/refs|--method PATCH|--clobber|make_latest=true|draft=false' \
     "$draft_creator" "$transaction_library"; then
-    fail "The G43 draft helper must not create tags, publish, or replace public state."
+    fail "The G49 draft helper must not create tags, publish, or replace public state."
 fi
 
 for required_runbook_text in \
-    'Phase 1 - Protected Preparation' \
-    'Phase 2 - Signed Tag And Publication' \
-    'v0.2.0-rc.1' \
-    '43f1d0c676b08fb24b49fc628213fede90c4ed9d' \
+    '## G49 v0.2.1 Patch Publication' \
+    '### Phase 1 - Protected Preparation' \
+    '### Phase 2 - Signed Tag And Publication' \
+    'v0.2.1-rc.1' \
+    '813de17c739097217aad55a5a35c04ea3c73d99f' \
     'updates.copylasso.com' \
     'Cloudflare Pages' \
     'Spaceship' \
     'Never move either tag' \
     'Never replace a public asset' \
-    'G44'; do
+    'Release-State Closure'; do
     require_text "$runbook" "$required_runbook_text"
 done
-require_text "$release_workflow_documentation" '## G43 Publication Preparation'
+require_text "$release_workflow_documentation" '## G49 Publication Preparation'
 require_text "$update_operations" 'updates.copylasso.com'
-require_text "$release_checklist" '## G43 - Publish CopyLasso v0.2.0'
+require_text "$release_checklist" '## G49 - Publish CopyLasso v0.2.1'
 require_text "$release_checklist" \
-    '- [x] Merge the green G43 publication-control PR before dispatching the protected preparation workflow.'
+    '- [ ] Phase 1: merge the green G49 publication-control PR before dispatching the protected preparation workflow.'
 
 credential_marker='set -x|BEGIN '
 credential_marker+='([A-Z ]+ )?PRIVATE KEY|[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}'
@@ -284,12 +288,12 @@ if /usr/bin/grep -Eq \
     "$verifier_library" \
     "$transaction_library" \
     "$runbook"; then
-    fail "G43 publication controls contain unsafe tracing or credential-like material."
+    fail "G49 publication controls contain unsafe tracing or credential-like material."
 fi
 
 if [[ -n "$handoff" ]]; then
     [[ -d "$handoff" && ! -L "$handoff" ]] || \
-        fail "The private G43 publication handoff is unavailable."
+        fail "The private G49 publication handoff is unavailable."
     expected_handoff_entries="$(printf '%s\n' \
         candidate-release.json \
         candidate-tag.json \
@@ -302,7 +306,7 @@ if [[ -n "$handoff" ]]; then
             LC_ALL=C /usr/bin/sort
     })"
     [[ "$actual_handoff_entries" == "$expected_handoff_entries" ]] || \
-        fail "The private G43 handoff contains an unexpected top-level entry."
+        fail "The private G49 handoff contains an unexpected top-level entry."
     assert_v02_candidate_release_record \
         "$handoff/candidate-release.json" "$notes"
     assert_v02_candidate_tag_record "$handoff/candidate-tag.json"
@@ -346,7 +350,7 @@ if [[ -n "$handoff" ]]; then
             "final_tag"
         ]
     ' "$handoff/publication-manifest.json" >/dev/null || \
-        fail "The private G43 publication manifest differs from the reviewed contract."
+        fail "The private G49 publication manifest differs from the reviewed contract."
 fi
 
 echo "CopyLasso v0.2 publication audit passed."

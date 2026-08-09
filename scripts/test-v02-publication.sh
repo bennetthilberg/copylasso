@@ -29,7 +29,7 @@ for executable in \
     "$feed_preparer" \
     "$audit_script"; do
     [[ -x "$executable" ]] || \
-        fail "G43 publication executable is missing: $(/usr/bin/basename "$executable")"
+        fail "G49 publication executable is missing: $(/usr/bin/basename "$executable")"
 done
 
 for readable in \
@@ -40,7 +40,7 @@ for readable in \
     "$generic_package_verifier" \
     "$runbook"; do
     [[ -r "$readable" ]] || \
-        fail "G43 publication contract file is missing: $(/usr/bin/basename "$readable")"
+        fail "G49 publication contract file is missing: $(/usr/bin/basename "$readable")"
 done
 
 # shellcheck source=scripts/lib/v02-publication-verification.sh
@@ -48,25 +48,24 @@ source "$verifier_library"
 # shellcheck source=scripts/lib/v02-publication-transaction.sh
 source "$transaction_library"
 
-[[ "$COPYLASSO_RELEASE_APPCAST" == "CopyLasso-0.2.0-appcast.xml" ]] || \
-    fail "The historical v0.2 verifier must pin its restricted appcast filename."
+[[ "$COPYLASSO_RELEASE_APPCAST" == "CopyLasso-0.2.1-appcast.xml" ]] || \
+    fail "The G49 verifier must pin the approved restricted appcast filename."
 
 feed_step="$(/usr/bin/sed -n \
     '/- name: Prepare feed-only deployment bundle/,/- name: Create verified private final draft/p' \
     "$workflow")"
 [[ "$feed_step" == *'source ./scripts/lib/v02-publication-verification.sh'* ]] || \
-    fail "The G43 feed step must load pinned v0.2 publication metadata."
+    fail "The G49 feed step must load pinned v0.2.1 publication metadata."
 [[ "$feed_step" != *'source ./scripts/lib/release-metadata.sh'* ]] || \
-    fail "The G43 feed step must not load current release metadata."
+    fail "The G49 feed step must not load mutable current release metadata."
 [[ "$feed_step" == *'--release-notes "docs/release-notes/$COPYLASSO_RELEASE_VERSION.md"'* ]] || \
-    fail "The G43 feed step must derive notes from the pinned v0.2 version."
+    fail "The G49 feed step must derive notes from the pinned v0.2.1 version."
 
-require_pinned_package_flag() {
-    /usr/bin/grep -Fq -- '--pinned-v02-metadata' "$1" || \
-        fail "The historical package path must request explicit pinned v0.2 metadata: $1"
-}
-require_pinned_package_flag "$package_verifier"
-require_pinned_package_flag "$generic_package_verifier"
+if /usr/bin/grep -Fq -- '--pinned-v02-metadata' "$package_verifier"; then
+    fail "G49 package verification must use current 0.2.1 release metadata."
+fi
+/usr/bin/grep -Fq -- '--pinned-v02-metadata' "$generic_package_verifier" || \
+    fail "The generic verifier must retain explicit historical v0.2.0 support."
 
 pinned_package_metadata="$(
     COPYLASSO_RELEASE_PACKAGE_METADATA_PROFILE=v0.2.0 \
@@ -97,20 +96,20 @@ expect_failure() {
     fi
 }
 
-readonly release_notes_path="$repository_root/docs/release-notes/0.2.0.md"
+readonly release_notes_path="$repository_root/docs/release-notes/0.2.1.md"
 assert_v02_repository "bennetthilberg/copylasso"
 expect_failure "only on the reviewed CopyLasso repository" \
     assert_v02_repository "other/repository"
 assert_v02_candidate_commit "$COPYLASSO_V02_CANDIDATE_COMMIT"
-expect_failure "only the approved G42 source commit" \
+expect_failure "only the approved G48 source commit" \
     assert_v02_candidate_commit "0123456789abcdef0123456789abcdef01234567"
-assert_v02_final_tag "v0.2.0"
+assert_v02_final_tag "v0.2.1"
 expect_failure "final v0.2 release tag is invalid" \
-    assert_v02_final_tag "v0.2.0-rc.1"
+    assert_v02_final_tag "v0.2.1-rc.1"
 assert_v02_release_notes "$release_notes_path"
 
 readonly temporary_directory="$(/usr/bin/mktemp -d \
-    "${TMPDIR:-/private/tmp}/copylasso-g43-tests.XXXXXX")"
+    "${TMPDIR:-/private/tmp}/copylasso-g49-tests.XXXXXX")"
 trap '/bin/rm -rf "$temporary_directory"' EXIT
 readonly candidate_record="$temporary_directory/candidate.json"
 /usr/bin/jq -n \
@@ -137,28 +136,28 @@ readonly candidate_record="$temporary_directory/candidate.json"
       assets: [
         {
           id: 1,
-          name: "CopyLasso-0.2.0.dmg",
+          name: "CopyLasso-0.2.1.dmg",
           size: $dmg_size,
           digest: $dmg_digest,
           state: "uploaded"
         },
         {
           id: 2,
-          name: "CopyLasso-0.2.0.dmg.sha256",
+          name: "CopyLasso-0.2.1.dmg.sha256",
           size: $checksum_size,
           digest: $checksum_digest,
           state: "uploaded"
         },
         {
           id: 3,
-          name: "CopyLasso-0.2.0.dSYM.zip",
+          name: "CopyLasso-0.2.1.dSYM.zip",
           size: $dsym_size,
           digest: $dsym_digest,
           state: "uploaded"
         },
         {
           id: 4,
-          name: "CopyLasso-0.2.0-verification.zip",
+          name: "CopyLasso-0.2.1-verification.zip",
           size: $verification_size,
           digest: $verification_digest,
           state: "uploaded"
@@ -174,7 +173,7 @@ expect_failure "identity or state is invalid" \
     assert_v02_candidate_release_record \
     "$temporary_directory/published-candidate.json" "$release_notes_path"
 /usr/bin/jq \
-    '(.assets[] | select(.name == "CopyLasso-0.2.0.dmg") | .digest) =
+    '(.assets[] | select(.name == "CopyLasso-0.2.1.dmg") | .digest) =
       "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"' \
     "$candidate_record" > "$temporary_directory/mutated-candidate.json"
 expect_failure "differs from the approved bytes" \
@@ -208,14 +207,14 @@ readonly public_draft="$temporary_directory/public-draft.json"
       assets: [
         {
           id: 10,
-          name: "CopyLasso-0.2.0.dmg",
+          name: "CopyLasso-0.2.1.dmg",
           size: $dmg_size,
           digest: $dmg_digest,
           state: "uploaded"
         },
         {
           id: 11,
-          name: "CopyLasso-0.2.0.dmg.sha256",
+          name: "CopyLasso-0.2.1.dmg.sha256",
           size: $checksum_size,
           digest: $checksum_digest,
           state: "uploaded"
@@ -236,7 +235,7 @@ expect_failure "identity or state is invalid" \
     "$temporary_directory/prerelease-draft.json" "$release_notes_path"
 /usr/bin/jq '.assets += [{
     id: 12,
-    name: "CopyLasso-0.2.0.dSYM.zip",
+    name: "CopyLasso-0.2.1.dSYM.zip",
     size: 1,
     digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     state: "uploaded"
@@ -269,7 +268,7 @@ readonly previous_public_release="$temporary_directory/previous-public-release.j
     }
 ' > "$previous_public_release"
 assert_v02_prepublication_latest_record "$previous_public_release"
-/usr/bin/jq '.tag_name = "v0.1.0"' "$previous_public_release" > \
+/usr/bin/jq '.tag_name = "v0.1.1"' "$previous_public_release" > \
     "$temporary_directory/wrong-latest-release.json"
 expect_failure "no longer the latest public release" \
     assert_v02_prepublication_latest_record \
@@ -494,10 +493,10 @@ assert_fixture_draft_record() {
         .id == 900
         and .draft == true
         and .prerelease == false
-        and .tag_name == "v0.2.0"
+        and .tag_name == "v0.2.1"
         and (.assets | map(.name) | sort) == [
-          "CopyLasso-0.2.0.dmg",
-          "CopyLasso-0.2.0.dmg.sha256"
+          "CopyLasso-0.2.1.dmg",
+          "CopyLasso-0.2.1.dmg.sha256"
         ]
     ' "$record" >/dev/null 2>&1
 }

@@ -18,6 +18,7 @@ readonly v02_publication_audit_script="$repository_root/scripts/audit-v02-public
 readonly v02_release_state_audit_script="$repository_root/scripts/audit-v02-release-state.sh"
 readonly g46_product_patch_audit_script="$repository_root/scripts/audit-g46-product-patch.sh"
 readonly g48_patch_qualification_audit_script="$repository_root/scripts/audit-g48-patch-qualification.sh"
+readonly g49_publication_audit_script="$repository_root/scripts/audit-g49-publication.sh"
 readonly v02_publication_test_script="$repository_root/scripts/test-v02-publication.sh"
 readonly code_recognition_audit_script="$repository_root/scripts/audit-code-recognition.sh"
 readonly latex_feasibility_audit_script="$repository_root/scripts/audit-latex-feasibility.sh"
@@ -198,8 +199,8 @@ for required_patch_guard in \
     "expected_candidate_baseline_tree_digest='1e4844388bc872b8ac4644a13b00223af1239f431d390130346daa8e914aafa0'" \
     "expected_g48_baseline_tree_digest='e9ee74d177cbbfa5c1216f3104e231e294f593fc7f7e056937c04137ca1e7dc6'" \
     "expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'" \
-    "expected_g44_release_state_files_digest='1b052ac8d5c5ead190a0e9be230d4404faadb121c47688f6b1014808e08709a4'" \
-    "expected_approved_post_candidate_patch_digest='773703c7aea2748341b622d0e42f5277fd43c3fe45841868a4fb60fe403d4a6d'" \
+    "expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'" \
+    "expected_approved_post_candidate_patch_digest='7f0497cdb8466fa6aadd7140903f39ced69d1f301ce205b3385c5ccfce5bdaef'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
     '"$current_baseline_tree_digest" == "$expected_g48_baseline_tree_digest"' \
@@ -272,11 +273,29 @@ g48_patch_qualification_audit_invocations="$({
 if [[ "$g48_patch_qualification_audit_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/audit-g48-patch-qualification.sh exactly once."
 fi
+g49_publication_audit_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/audit-g49-publication\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$g49_publication_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-g49-publication.sh exactly once."
+fi
+for required_g49_guard in \
+    '0.2.1' \
+    'copylasso_prepare_publication' \
+    '813de17c739097217aad55a5a35c04ea3c73d99f' \
+    'Phase 1 must not publish'; do
+    if ! /usr/bin/grep -Fq -- "$required_g49_guard" \
+        "$g49_publication_audit_script"; then
+        fail "The G49 audit is missing its publication guard: $required_g49_guard"
+    fi
+done
 for required_g48_guard in \
     '0\.2\.1' \
     'release_goal=G48' \
     'No processing indicator is included.' \
-    'COPYLASSO_V02_FINAL_TAG="v0.2.0"'; do
+    'COPYLASSO_V02_FINAL_TAG="v0.2.1"'; do
     if ! /usr/bin/grep -Fq -- "$required_g48_guard" \
         "$g48_patch_qualification_audit_script"; then
         fail "The G48 audit is missing its patch-qualification guard: $required_g48_guard"

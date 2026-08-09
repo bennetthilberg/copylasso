@@ -335,3 +335,26 @@ post-publication documentation and issue-state changes.
 The immutable publication outcome and later G44 readback are recorded in
 [`v0.2-release-state.md`](v0.2-release-state.md). This closure record does not
 move either release tag, replace any asset, or alter the production feed.
+
+## G49 Publication Preparation
+
+G49 consumes only the approved G48 candidate. Its input-free
+`copylasso_prepare_publication` repository dispatch runs from protected
+`main`, reruns canonical CI, downloads private release `367523470`, verifies
+direct tag `v0.2.1-rc.1` at exact source commit
+`813de17c739097217aad55a5a35c04ea3c73d99f`, and reverifies all four pinned
+asset sizes and digests without rebuilding or notarizing again.
+
+Only the protected preparation job receives `contents: write`. The release
+team identifier enters only package verification, and the Sparkle seed enters
+only final-appcast generation after the candidate bytes and shipped public key
+match. The job prepares a feed-only bundle and a private, non-prerelease final
+draft containing exactly the DMG and checksum. It uploads a restricted handoff
+for maintainer readback but cannot publish the draft, create or move a tag,
+replace an asset, or deploy the feed.
+
+Publication is a later operator transaction after the protected handoff is
+verified. The annotated signed final tag and RC tag must peel to the same G48
+commit. The exact final draft is published before the authenticated appcast is
+deployed to the existing feed-only endpoint. Any ambiguous or failed readback
+stops publication without replacement or retry-by-mutation.
