@@ -197,15 +197,17 @@ inferred pass; see [`v0.2-release-qualification.md`](v0.2-release-qualification.
 
 ## G48 - Qualify CopyLasso v0.2.1
 
-- [ ] Phase 1: freeze current source at `0.2.1 (4)`, add reviewed maintenance notes, reconcile public-versus-candidate documentation, and pass the focused G48 qualification audit exactly once through canonical CI.
-- [ ] Phase 1: update the protected workflow from historical G42 execution paths to G48 while retaining exact-main provenance, one positive `candidate_number`, protected credentials, derived asset names, draft-only output, and no publication path.
-- [ ] Phase 1: pass local and hosted arm64/x86_64 plus maintained macOS 15 checks, Universal 2 Release verification, exact-head review, and ready-PR readback; stop for separate merge approval without dispatching the workflow.
-- [ ] Phase 2: after the reviewed head is separately merged, dispatch from exact protected main with the first unused candidate number and create one immutable private `v0.2.1-rc.N` draft with four restricted assets.
-- [ ] Phase 2: verify signatures, notarization, Gatekeeper, package layout, checksums, GitHub digests, dSYM UUIDs, authenticated candidate metadata, browser quarantine, and the compact current-host capture matrix without rebuilding.
-- [ ] Phase 2: exercise an isolated update from exact public `0.2.0 (3)` to the byte-identical candidate, record the maintainer decision, and leave the candidate unpublished.
+- [x] Phase 1: freeze current source at `0.2.1 (4)`, add reviewed maintenance notes, reconcile public-versus-candidate documentation, and pass the focused G48 qualification audit exactly once through canonical CI.
+- [x] Phase 1: update the protected workflow from historical G42 execution paths to G48 while retaining exact-main provenance, one positive `candidate_number`, protected credentials, derived asset names, draft-only output, and no publication path.
+- [x] Phase 1: pass local and hosted arm64/x86_64 plus maintained macOS 15 checks, Universal 2 Release verification, exact-head review, and ready-PR readback; stop for separate merge approval without dispatching the workflow.
+- [x] Phase 2: after the reviewed head is separately merged, dispatch from exact protected main with the first unused candidate number and create one immutable private `v0.2.1-rc.N` draft with four restricted assets.
+- [x] Phase 2: verify signatures, notarization, Gatekeeper, package layout, checksums, GitHub digests, dSYM UUIDs, authenticated candidate metadata, browser quarantine, and the compact current-host capture matrix without rebuilding.
+- [x] Phase 2: exercise an isolated update from exact public `0.2.0 (3)` to the byte-identical candidate, record the maintainer decision, and leave the candidate unpublished.
 
 ## G49 - Publish CopyLasso v0.2.1
 
-- [ ] Begin only after the exact G48 private candidate is separately approved. Revalidate immutable candidate bytes and prepare publication controls without rebuilding or moving the RC tag.
-- [ ] Publish the final signed tag, exact public DMG and checksum, and authenticated feed only through a separately approved G49 transaction.
-- [ ] Complete public-download, updater, installation, source-archive, documentation, and release-state verification before closing the patch release.
+- [x] Begin only after the exact G48 private candidate is separately approved. Revalidate immutable candidate identity before changing publication controls.
+- [ ] Phase 1: merge the green G49 publication-control PR before dispatching the protected preparation workflow.
+- [ ] Phase 2: reverify the immutable candidate without rebuilding, create the private two-asset final draft and final-URL appcast, then publish the signed final tag, exact DMG and checksum, and authenticated feed through the approved transaction.
+- [ ] Phase 2: complete unauthenticated public-download, updater, installation, source-archive, feed, and immutable-tag verification.
+- [ ] Phase 3: date and close the public release state in a separate green ready PR without changing release bytes, tags, feed, or application code.

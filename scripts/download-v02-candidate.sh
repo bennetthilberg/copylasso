@@ -90,7 +90,7 @@ trap cleanup EXIT
 if ! "$gh_binary" api \
     "repos/$repository/releases/$COPYLASSO_V02_CANDIDATE_RELEASE_ID" \
     > "$release_record"; then
-    v02_publication_fail "The approved private G42 release could not be read."
+    v02_publication_fail "The approved private G48 release could not be read."
 fi
 assert_v02_candidate_release_record \
     "$release_record" \
@@ -98,7 +98,7 @@ assert_v02_candidate_release_record \
 if ! "$gh_binary" api \
     "repos/$repository/git/ref/tags/$COPYLASSO_V02_CANDIDATE_TAG" \
     > "$tag_record"; then
-    v02_publication_fail "The approved G42 candidate tag could not be read."
+    v02_publication_fail "The approved G48 candidate tag could not be read."
 fi
 assert_v02_candidate_tag_record "$tag_record"
 
@@ -133,4 +133,4 @@ committed="true"
 cleanup
 trap - EXIT
 
-echo "Approved G42 candidate downloaded and verified."
+echo "Approved G48 candidate downloaded and verified."

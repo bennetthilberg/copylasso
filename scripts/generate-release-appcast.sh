@@ -11,8 +11,8 @@ usage() {
     cat >&2 <<'TEXT'
 Usage: generate-release-appcast.sh \
   --application /path/to/CopyLasso.app \
-  --candidate-dir /path/to/downloaded/G42/assets \
-  --release-notes /path/to/0.2.0.md \
+  --candidate-dir /path/to/downloaded/G48/assets \
+  --release-notes /path/to/0.2.1.md \
   --output /path/to/appcast.xml \
   --sparkle-tools-dir /path/to/Sparkle/bin
 TEXT
@@ -115,7 +115,7 @@ readonly sign_update="$tools_directory/sign_update"
     v02_publication_fail "The reviewed Sparkle signing tools are unavailable."
 
 readonly temporary_directory="$(/usr/bin/mktemp -d \
-    "${TMPDIR:-/private/tmp}/copylasso-g43-appcast.XXXXXX")"
+    "${TMPDIR:-/private/tmp}/copylasso-g49-appcast.XXXXXX")"
 cleanup() {
     /bin/rm -rf "$temporary_directory"
 }
@@ -190,4 +190,4 @@ fi
 cleanup
 trap - EXIT
 
-echo "Authenticated public v0.2 update metadata created and verified."
+echo "Authenticated public v0.2.1 update metadata created and verified."

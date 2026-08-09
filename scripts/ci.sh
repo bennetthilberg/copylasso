@@ -101,6 +101,9 @@ echo "Auditing the G46 product patch"
 echo "Auditing the G48 patch qualification"
 ./scripts/audit-g48-patch-qualification.sh
 
+echo "Auditing G49 publication controls"
+./scripts/audit-g49-publication.sh
+
 echo "Auditing on-screen code recognition"
 ./scripts/audit-code-recognition.sh
 

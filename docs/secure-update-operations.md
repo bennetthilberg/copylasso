@@ -214,3 +214,18 @@ and immutable GitHub enclosure passed signature, length, URL, version-ordering,
 browser-download, install, and public updater-path readback. The exact public
 identifiers and digests are retained in the
 [v0.2 release-state record](v0.2-release-state.md).
+
+## G49 v0.2.1 Publication Boundary
+
+G49 updates the production feed only after the signed final tag and exact
+two-asset GitHub release are public and independently verified. The protected
+preparation workflow consumes private `v0.2.1-rc.1` without rebuilding,
+generates a final-URL appcast with the existing protected Sparkle identity, and
+creates a private final draft. It has no publication or feed-deployment path.
+
+The operator transaction publishes the immutable draft and then deploys only
+the verified `appcast.xml` plus the existing `_headers` policy to the existing
+Cloudflare Pages project. It does not change the custom domain, apex DNS,
+nameservers, hosting scope, update key, or application trust settings. A failed
+GitHub or feed readback freezes the state for remediation; it never authorizes
+moving a tag, replacing an asset, or serving unsigned metadata.
