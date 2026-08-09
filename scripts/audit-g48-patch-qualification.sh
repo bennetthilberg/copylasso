@@ -6,6 +6,7 @@ readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && /bin/pwd -
 readonly metadata="$repository_root/Configuration/ReleaseMetadata.xcconfig"
 readonly notes="$repository_root/docs/release-notes/0.2.1.md"
 readonly workflow="$repository_root/.github/workflows/release.yml"
+readonly historical_publication_workflow="$repository_root/.github/workflows/prepare-publication.yml"
 readonly entitlements="$repository_root/CopyLasso/CopyLasso.entitlements"
 readonly package_resolved="$repository_root/CopyLasso.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
 
@@ -37,7 +38,12 @@ for required_file in \
     docs/secure-update-operations.md \
     docs/security-and-privacy-review.md \
     docs/testing.md \
-    .github/workflows/release.yml; do
+    .github/workflows/release.yml \
+    .github/workflows/prepare-publication.yml \
+    scripts/lib/release-package-verification.sh \
+    scripts/lib/v02-publication-verification.sh \
+    scripts/verify-release-package.sh \
+    scripts/verify-v02-candidate-package.sh; do
     [[ -s "$repository_root/$required_file" ]] || \
         fail "Required G48 qualification file is missing: $required_file"
 done
@@ -82,6 +88,20 @@ if /usr/bin/grep -Eiq -- \
     "$workflow" "$repository_root/scripts/create-draft-release.sh"; then
     fail "G48 candidate tooling must remain draft-only and immutable."
 fi
+
+historical_feed_step="$(/usr/bin/sed -n \
+    '/- name: Prepare feed-only deployment bundle/,/- name: Create verified private final draft/p' \
+    "$historical_publication_workflow")"
+[[ "$historical_feed_step" == *'source ./scripts/lib/v02-publication-verification.sh'* ]] || \
+    fail "The historical G43 feed step must use pinned v0.2 publication metadata."
+[[ "$historical_feed_step" != *'source ./scripts/lib/release-metadata.sh'* ]] || \
+    fail "The historical G43 feed step must not use current G48 metadata."
+require_text scripts/lib/v02-publication-verification.sh \
+    'COPYLASSO_RELEASE_APPCAST="CopyLasso-0.2.0-appcast.xml"'
+require_text scripts/lib/release-package-verification.sh \
+    'COPYLASSO_RELEASE_PACKAGE_METADATA_PROFILE:-current'
+require_text scripts/verify-release-package.sh '--pinned-v02-metadata'
+require_text scripts/verify-v02-candidate-package.sh '--pinned-v02-metadata'
 
 entitlements_json="$(/usr/bin/plutil -convert json -o - "$entitlements")" || \
     fail "CopyLasso entitlements are invalid."

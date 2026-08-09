@@ -3,12 +3,11 @@
 set -euo pipefail
 
 readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# shellcheck source=scripts/lib/release-package-verification.sh
-source "$repository_root/scripts/lib/release-package-verification.sh"
 
 usage() {
     cat >&2 <<'TEXT'
 Usage: verify-release-package.sh \
+  [--pinned-v02-metadata] \
   --payload-app /path/to/G26/<commit>/export/CopyLasso.app \
   --payload-commit <40-character-commit> \
   --packaging-commit <40-character-commit> \
@@ -21,8 +20,14 @@ payload_app=""
 expected_payload_commit=""
 expected_packaging_commit=""
 run_candidate=""
+release_metadata_profile="current"
 while [[ "$#" -gt 0 ]]; do
     case "$1" in
+        --pinned-v02-metadata)
+            [[ "$release_metadata_profile" == "current" ]] || usage
+            release_metadata_profile="v0.2.0"
+            shift
+            ;;
         --payload-app)
             [[ "$#" -ge 2 ]] || usage
             payload_app="$2"
@@ -48,6 +53,9 @@ while [[ "$#" -gt 0 ]]; do
 done
 [[ -n "$payload_app" && -n "$expected_payload_commit" && \
     -n "$expected_packaging_commit" && -n "$run_candidate" ]] || usage
+export COPYLASSO_RELEASE_PACKAGE_METADATA_PROFILE="$release_metadata_profile"
+# shellcheck source=scripts/lib/release-package-verification.sh
+source "$repository_root/scripts/lib/release-package-verification.sh"
 assert_release_commit_matches \
     "payload" "$expected_payload_commit" "$expected_payload_commit"
 assert_release_commit_matches \
