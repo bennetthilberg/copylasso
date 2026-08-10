@@ -407,7 +407,10 @@ assert_v02_final_tag_object_record() {
         --arg message "$COPYLASSO_V02_FINAL_TAG_MESSAGE" \
         --arg commit "$COPYLASSO_V02_CANDIDATE_COMMIT" '
         .tag == $tag
-        and .message == $message
+        and (.verification.signature | type) == "string"
+        and (.verification.signature | startswith("-----BEGIN SSH SIGNATURE-----\n"))
+        and (.verification.signature | endswith("-----END SSH SIGNATURE-----\n"))
+        and .message == ($message + "\n" + .verification.signature)
         and .object.type == "commit"
         and .object.sha == $commit
         and .verification.verified == true

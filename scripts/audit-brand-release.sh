@@ -167,17 +167,17 @@ for text in \
     require_text README.md "$text"
 done
 
-require_text README.md 'CopyLasso 0.2.1 is the latest public release.'
-require_text README.md 'https://github.com/bennetthilberg/copylasso/releases/tag/v0.2.1'
-require_text README.md 'https://github.com/bennetthilberg/copylasso/releases/download/v0.2.1/CopyLasso-0.2.1.dmg'
-require_text README.md 'https://github.com/bennetthilberg/copylasso/releases/download/v0.2.1/CopyLasso-0.2.1.dmg.sha256'
+require_text README.md 'CopyLasso 0.2.2 is the latest public release.'
+require_text README.md 'https://github.com/bennetthilberg/copylasso/releases/tag/v0.2.2'
+require_text README.md 'https://github.com/bennetthilberg/copylasso/releases/download/v0.2.2/CopyLasso-0.2.2.dmg'
+require_text README.md 'https://github.com/bennetthilberg/copylasso/releases/download/v0.2.2/CopyLasso-0.2.2.dmg.sha256'
 require_text CHANGELOG.md '## 0.1.1 - 2026-07-21'
 require_text CHANGELOG.md '## 0.2.0 - 2026-07-29'
 require_text CHANGELOG.md '## 0.1.0 - 2026-07-19'
 require_text CHANGELOG.md 'pasteboard clear-success followed by text-write rejection'
 require_text SECURITY.md 'CopyLasso 0.2.x is the currently supported public release line.'
-require_text CONTRIBUTING.md 'CopyLasso 0.2.1 is publicly released.'
-require_text PRIVACY.md '**Status:** Public 0.2.1 (4); candidate 0.2.2 (5) keeps these boundaries.'
+require_text CONTRIBUTING.md 'CopyLasso 0.2.2 is publicly released.'
+require_text PRIVACY.md '**Status:** Public 0.2.2 (5).'
 require_text docs/release-checklist.md '## G26 - Developer ID Signing And Notarization'
 require_text docs/release-checklist.md '## G27 - Reproducible Release Package'
 require_text docs/release-checklist.md '## G28 - Protected Release Workflow'
@@ -222,7 +222,7 @@ require_text docs/v0.1-product-contract.md \
     '**Implementation status:** Released as 0.1.0 on July 19, 2026; maintained as 0.1.1 on July 21, 2026'
 require_text docs/v0.1-product-contract.md 'clipboard may change'
 require_text docs/security-and-privacy-review.md \
-    'This review describes the public CopyLasso 0.2.1 boundary.'
+    'This review describes the public CopyLasso 0.2.2 boundary.'
 require_text docs/release-candidate-qualification.md '## Exact Candidate Smoke Matrix'
 require_text docs/release-candidate-qualification.md '## G32 v0.1.1 Maintenance Qualification'
 require_text docs/release-candidate-qualification.md 'Do not resume VirtualBuddy'

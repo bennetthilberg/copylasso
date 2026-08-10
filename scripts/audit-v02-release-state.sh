@@ -4,14 +4,16 @@ set -euo pipefail
 
 readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && /bin/pwd -P)"
 readonly release_state="$repository_root/docs/v0.2-release-state.md"
-readonly expected_release_commit="813de17c739097217aad55a5a35c04ea3c73d99f"
-readonly expected_release_date="2026-08-09"
-readonly expected_published_at="2026-08-09T19:59:13Z"
-readonly expected_release_id="367570430"
-readonly expected_dmg_sha256="05180caa3600bcd282246297a9172517136e43e55c6e8fa192b55ba44af4a017"
-readonly expected_checksum_sha256="b9a85f82686dce479cb41247fe9fc025ec8a0d099bbc08028c4239899359b1c9"
-readonly expected_appcast_sha256="c721b9396682c05082e019bdfa1297bc320f9883aabac2fd20c647f228aa8454"
-readonly expected_feed_deployment="e768eb55-98d7-4d44-9603-65e3972fd66d"
+readonly expected_release_commit="81016fe43ee617b5f251564b03904137a4447266"
+readonly expected_release_date="2026-08-10"
+readonly previous_release_date="2026-08-09"
+readonly expected_published_at="2026-08-10T15:48:33Z"
+readonly expected_release_id="368002551"
+readonly expected_final_tag_object="703af8f58a5c5587c70d9811ecdefd211cebfbfa"
+readonly expected_dmg_sha256="9ac432f956418dd37e04de014867a7fc20d1daeecc80f6fe1db1e9c53b19de2a"
+readonly expected_checksum_sha256="346605180b76d4959736267158138018b869d62b552b089fefdbe7aafa3031ca"
+readonly expected_appcast_sha256="ad10db1486d4874701905ad3be2acc05f5025377328107a0aeabe552a9500cd6"
+readonly expected_feed_deployment="83b459a7-bd14-47d4-8420-81d5320a4c86"
 
 fail() {
     echo "$1" >&2
@@ -23,7 +25,7 @@ require_text() {
     local expected="$2"
 
     /usr/bin/grep -Fq -- "$expected" "$file" || \
-        fail "G49 release-state text is missing from ${file#$repository_root/}: $expected"
+        fail "G50 release-state text is missing from ${file#$repository_root/}: $expected"
 }
 
 for required_file in \
@@ -39,62 +41,70 @@ for required_file in \
     docs/release-checklist.md \
     docs/v0.2-release-state.md; do
     [[ -r "$repository_root/$required_file" ]] || \
-        fail "Required G49 release-state file is missing: $required_file"
+        fail "Required G50 release-state file is missing: $required_file"
 done
 
-require_text "$repository_root/README.md" 'CopyLasso 0.2.1 is the latest public release.'
+require_text "$repository_root/README.md" 'CopyLasso 0.2.2 is the latest public release.'
 require_text "$repository_root/README.md" \
-    'https://github.com/bennetthilberg/copylasso/releases/tag/v0.2.1'
+    'https://github.com/bennetthilberg/copylasso/releases/tag/v0.2.2'
 require_text "$repository_root/README.md" \
-    'https://github.com/bennetthilberg/copylasso/releases/download/v0.2.1/CopyLasso-0.2.1.dmg'
+    'https://github.com/bennetthilberg/copylasso/releases/download/v0.2.2/CopyLasso-0.2.2.dmg'
 require_text "$repository_root/README.md" \
-    'https://github.com/bennetthilberg/copylasso/releases/download/v0.2.1/CopyLasso-0.2.1.dmg.sha256'
+    'https://github.com/bennetthilberg/copylasso/releases/download/v0.2.2/CopyLasso-0.2.2.dmg.sha256'
 require_text "$repository_root/CHANGELOG.md" '## Unreleased'
-require_text "$repository_root/CHANGELOG.md" '## 0.2.2 - Unreleased'
-require_text "$repository_root/CHANGELOG.md" "## 0.2.1 - $expected_release_date"
+require_text "$repository_root/CHANGELOG.md" "## 0.2.2 - $expected_release_date"
+require_text "$repository_root/CHANGELOG.md" "## 0.2.1 - $previous_release_date"
 require_text "$repository_root/CHANGELOG.md" \
     'Update offers now render authenticated release notes in a bounded, scrollable native panel'
 require_text "$repository_root/PRIVACY.md" \
-    '**Status:** Public 0.2.1 (4); candidate 0.2.2 (5) keeps these boundaries.'
-require_text "$repository_root/SECURITY.md" 'CopyLasso 0.2.1 is the latest public release.'
+    '**Status:** Public 0.2.2 (5).'
+require_text "$repository_root/SECURITY.md" 'CopyLasso 0.2.2 is the latest public release.'
 require_text "$repository_root/SECURITY.md" '| 0.2.x | Yes |'
 require_text "$repository_root/SECURITY.md" '| 0.1.x | No |'
-require_text "$repository_root/CONTRIBUTING.md" 'CopyLasso 0.2.1 is publicly released.'
+require_text "$repository_root/CONTRIBUTING.md" 'CopyLasso 0.2.2 is publicly released.'
 require_text "$repository_root/docs/v0.2-product-contract.md" \
-    '**Implementation status:** Released as 0.2.1 (4) on August 9, 2026.'
+    '**Implementation status:** Released as 0.2.2 (5) on August 10, 2026.'
 require_text "$repository_root/docs/v0.2.1-source-qualification.md" \
     '**Status:** Completed and published unchanged as 0.2.1 (4)'
 require_text "$repository_root/docs/security-and-privacy-review.md" \
-    'This review describes the public CopyLasso 0.2.1 boundary.'
+    'This review describes the public CopyLasso 0.2.2 boundary.'
 require_text "$repository_root/docs/secure-update-operations.md" \
-    'CopyLasso 0.2.1 is the current public updater-enabled release.'
+    'CopyLasso 0.2.2 is the current public updater-enabled release.'
 require_text "$repository_root/docs/secure-update-operations.md" \
     '## 0.1.x Bootstrap and Current Public Release'
 require_text "$repository_root/docs/secure-update-operations.md" \
-    'CopyLasso 0.2.1, the current updater-enabled release, from the GitHub release page'
+    'CopyLasso 0.2.2, the current updater-enabled release, from the GitHub release page'
 require_text "$repository_root/docs/release-checklist.md" \
-    '- [x] Phase 1: merge the green G49 publication-control PR before dispatching the protected preparation workflow.'
+    '- [x] Phase 3: merge the green, input-free protected preparation controls, then'
 require_text "$repository_root/docs/release-checklist.md" \
-    '- [x] Phase 2: reverify the immutable candidate without rebuilding, create the private two-asset final draft and final-URL appcast, then publish the signed final tag, exact DMG and checksum, and authenticated feed through the approved transaction.'
+    '- [x] Phase 3: publish only the exact approved candidate through a verified'
 require_text "$repository_root/docs/release-checklist.md" \
-    '- [x] Phase 2: complete unauthenticated public-download, updater, installation, source-archive, feed, and immutable-tag verification.'
-require_text "$repository_root/docs/release-checklist.md" \
-    '- [x] Phase 3: date and close the public release state in a separate green ready PR without changing release bytes, tags, feed, or application code.'
+    '- [x] Phase 3: close release-state documentation in a separate green pull'
 
 for release_record in \
-    'Release: [`v0.2.1`](https://github.com/bennetthilberg/copylasso/releases/tag/v0.2.1)' \
+    'Release: [`v0.2.2`](https://github.com/bennetthilberg/copylasso/releases/tag/v0.2.2)' \
     "Release ID: \`$expected_release_id\`" \
     "Release commit: \`$expected_release_commit\`" \
     "Published: \`$expected_published_at\`" \
-    'Final tag object: `eec528b9daf3026aa1e8c4e10acab41b91e37bc3`' \
+    "Final tag object: \`$expected_final_tag_object\`" \
     "DMG SHA-256: \`$expected_dmg_sha256\`" \
     "Checksum asset SHA-256: \`$expected_checksum_sha256\`" \
     "Appcast SHA-256: \`$expected_appcast_sha256\`" \
     "Production feed deployment: \`$expected_feed_deployment\`" \
-    'The installed public application reports `0.2.1 (4)`' \
-    'The exact public `0.2.0 (3)` application updated through the production feed to' \
-    'byte-identical public `0.2.1 (4)` after separate download and'; do
+    'The installed public application reports `0.2.2 (5)`' \
+    'The exact public `0.2.1 (4)` application updated through the production feed to' \
+    'byte-identical public `0.2.2 (5)` after separate download and'; do
     require_text "$release_state" "$release_record"
+done
+
+# Retain the immutable maintenance release evidence as history.
+for historical_record in \
+    'Release: [`v0.2.1`](https://github.com/bennetthilberg/copylasso/releases/tag/v0.2.1)' \
+    'Release ID: `367570430`' \
+    'Release commit: `813de17c739097217aad55a5a35c04ea3c73d99f`' \
+    'Release state: public, non-prerelease, and superseded by v0.2.2' \
+    'Appcast SHA-256: `c721b9396682c05082e019bdfa1297bc320f9883aabac2fd20c647f228aa8454`'; do
+    require_text "$release_state" "$historical_record"
 done
 
 # Retain the immutable first v0.2 release evidence as history.
@@ -113,15 +123,15 @@ unreleased_section="$(/usr/bin/awk '
     capture { print }
 ' "$repository_root/CHANGELOG.md")"
 [[ -z "${unreleased_section//[[:space:]]/}" ]] || \
-    fail "The current Unreleased section must remain empty while 0.2.2 is separately drafted."
+    fail "The current Unreleased section must remain empty after v0.2.2 publication."
 security_hotfix_section="$(/usr/bin/awk '
-    /^## 0\.2\.2 - Unreleased$/ { capture = 1; next }
+    /^## 0\.2\.2 - 2026-08-10$/ { capture = 1; next }
     /^## / && capture { exit }
     capture { print }
 ' "$repository_root/CHANGELOG.md")"
 [[ "$security_hotfix_section" == *'### Security'* && \
     "$security_hotfix_section" == *'GHSA-gmj2-gq3j-vqmj'* ]] || \
-    fail "The 0.2.2 section must remain an unreleased candidate until G50 publication."
+    fail "The dated 0.2.2 section must retain the Sparkle security hotfix."
 patch_section="$(/usr/bin/awk '
     /^## 0\.2\.1 - 2026-08-09$/ { capture = 1; next }
     /^## / && capture { exit }
@@ -148,10 +158,13 @@ for prohibited_phrase in \
     'patch is not yet a public download' \
     'candidate 0.2.1 (4)' \
     'Candidate source is being qualified as 0.2.1 (4)' \
-    'source for maintenance release 0.2.1 is qualified privately'; do
+    'source for maintenance release 0.2.1 is qualified privately' \
+    'candidate 0.2.2 (5)' \
+    'Candidate source `0.2.2 (5)`' \
+    'Current source is being qualified as security-only candidate `0.2.2 (5)`'; do
     if /usr/bin/grep -Fni -- "$prohibited_phrase" \
         "${current_public_files[@]/#/$repository_root/}"; then
-        fail "Current public documentation retains stale v0.2.1 candidate text: $prohibited_phrase"
+        fail "Current public documentation retains stale candidate text: $prohibited_phrase"
     fi
 done
 
@@ -162,11 +175,11 @@ if /usr/bin/grep -Fq -- \
 fi
 
 prohibited_publication_pattern='release upload|release edit.+--draft=false|make_latest=true|'
-prohibited_publication_pattern+='git push.+v0\.2\.1|git tag.+v0\.2\.1'
+prohibited_publication_pattern+='git push.+v0\.2\.2|git tag.+v0\.2\.2'
 if /usr/bin/grep -nE "$prohibited_publication_pattern" \
     "$repository_root/scripts/audit-v02-release-state.sh" | \
     /usr/bin/grep -v 'prohibited_publication_pattern'; then
-    fail "G49 release-state verification must not add a publication or tag-mutation path."
+    fail "G50 release-state verification must not add a publication or tag-mutation path."
 fi
 
-echo "CopyLasso v0.2.1 release-state audit passed."
+echo "CopyLasso v0.2.2 release-state audit passed."

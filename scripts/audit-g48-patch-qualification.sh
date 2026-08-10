@@ -59,10 +59,10 @@ done
     "$metadata" || fail "The post-G48 security hotfix must use build 5."
 
 require_text CHANGELOG.md '## 0.2.1 - 2026-08-09'
-require_text README.md 'CopyLasso 0.2.1 is the latest public release.'
-require_text README.md 'CopyLasso-0.2.1.dmg.sha256'
+require_text README.md 'CopyLasso 0.2.2 is the latest public release.'
+require_text README.md 'CopyLasso-0.2.2.dmg.sha256'
 require_text docs/v0.2-product-contract.md \
-    '**Implementation status:** Released as 0.2.1 (4) on August 9, 2026.'
+    '**Implementation status:** Released as 0.2.2 (5) on August 10, 2026.'
 require_text docs/release-notes/0.2.1.md '# CopyLasso 0.2.1'
 require_text docs/release-notes/0.2.1.md 'No processing indicator is included.'
 require_text docs/release-notes/0.2.1.md \
@@ -88,8 +88,8 @@ g48_line="$(/usr/bin/grep -nF '| G48 |' "$repository_root/docs/architecture/over
 require_text docs/release-packaging.md '## G48 exact-head qualification package'
 require_text docs/release-packaging.md 'version `0.2.1`, build `4`'
 require_text docs/release-packaging.md 'CopyLasso-0.2.1.dmg'
-require_text docs/testing.md 'binds current public documentation to v0.2.1'
-require_text docs/testing.md 'G49 Phase 3 likewise changes'
+require_text docs/testing.md 'binds current public documentation to v0.2.2'
+require_text docs/testing.md 'G49 and G50 Phase 3 likewise'
 
 require_text .github/workflows/release.yml 'release_goal=G50'
 require_text .github/workflows/release.yml 'release_subdirectory=g50'
@@ -172,6 +172,6 @@ require_text scripts/lib/v02-publication-verification.sh \
     'COPYLASSO_RELEASE_VERSION="0.2.1"'
 require_text scripts/lib/v02-publication-verification.sh \
     'COPYLASSO_RELEASE_DMG="CopyLasso-0.2.1.dmg"'
-require_text scripts/audit-v02-release-state.sh 'expected_release_id="367570430"'
+require_text docs/v0.2-release-state.md '- Release ID: `367570430`'
 
 echo "CopyLasso G48 patch qualification audit passed."

@@ -204,7 +204,7 @@ for required_patch_guard in \
     "expected_g48_baseline_tree_digest='95d7dfdf8a9545b8ce85568437ffc57d6951344c912945d86f391639a1e105be'" \
     "expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'" \
     "expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'" \
-    "expected_approved_post_candidate_patch_digest='1fc1668fc1ac48a008ffd3849d2c82f486b15be7b7ccfcedd5882c800cd41b35'" \
+    "expected_approved_post_candidate_patch_digest='a5111e14f5703a7054eb63e2ef0786b2d8c0c99cbd02d04b2a0631d70bfd824a'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
     '"$current_baseline_tree_digest" == "$expected_g48_baseline_tree_digest"' \
@@ -390,15 +390,16 @@ for required_g46_ci_guard in \
     fi
 done
 for required_release_state_guard in \
-    'expected_release_commit="813de17c739097217aad55a5a35c04ea3c73d99f"' \
-    'expected_release_id="367570430"' \
-    'expected_dmg_sha256="05180caa3600bcd282246297a9172517136e43e55c6e8fa192b55ba44af4a017"' \
-    'expected_appcast_sha256="c721b9396682c05082e019bdfa1297bc320f9883aabac2fd20c647f228aa8454"' \
+    'expected_release_commit="81016fe43ee617b5f251564b03904137a4447266"' \
+    'expected_release_id="368002551"' \
+    'expected_dmg_sha256="9ac432f956418dd37e04de014867a7fc20d1daeecc80f6fe1db1e9c53b19de2a"' \
+    'expected_appcast_sha256="ad10db1486d4874701905ad3be2acc05f5025377328107a0aeabe552a9500cd6"' \
+    'Release ID: `367570430`' \
     'Release ID: `361797888`' \
-    'The 0.2.2 section must remain an unreleased candidate until G50 publication.'; do
+    'The dated 0.2.2 section must retain the Sparkle security hotfix.'; do
     if ! /usr/bin/grep -Fq -- "$required_release_state_guard" \
         "$v02_release_state_audit_script"; then
-        fail "The release-state audit must pin current v0.2.1 and historical v0.2.0 boundaries."
+        fail "The release-state audit must pin current v0.2.2 and historical v0.2.1/v0.2.0 boundaries."
     fi
 done
 
