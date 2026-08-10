@@ -4,15 +4,12 @@
 
 CopyLasso is a free and open-source macOS utility for copying visible text from anywhere on screen. Press `⇧⌘2`, drag around text, and receive recognized plain text on the clipboard. Recognition runs locally with Apple's Vision framework, and CopyLasso does not retain a screenshot or OCR history.
 
-CopyLasso 0.2.1 is the latest public release. It includes authenticated,
+CopyLasso 0.2.2 is the latest public release. It includes authenticated,
 user-controlled updates, an optional success sound, local recognition of five
 QR and barcode formats, a focus-preserving native selector, and bounded native
-rendering for authenticated update notes.
-
-Current source is being qualified as CopyLasso 0.2.2 (5). This security-only
-hotfix updates the shipping updater framework while leaving public 0.2.1,
-capture behavior, permissions, entitlements, and the full-package-only update
-policy unchanged until a separately approved release.
+rendering for authenticated update notes. This security-only maintenance
+release updates the shipping Sparkle framework while leaving capture behavior,
+permissions, entitlements, and the full-package-only update policy unchanged.
 
 ## Requirements
 
@@ -22,20 +19,20 @@ policy unchanged until a separately approved release.
 
 ## Install CopyLasso
 
-Download CopyLasso 0.2.1 from the [release page](https://github.com/bennetthilberg/copylasso/releases/tag/v0.2.1):
+Download CopyLasso 0.2.2 from the [release page](https://github.com/bennetthilberg/copylasso/releases/tag/v0.2.2):
 
-- [CopyLasso-0.2.1.dmg](https://github.com/bennetthilberg/copylasso/releases/download/v0.2.1/CopyLasso-0.2.1.dmg)
-- [CopyLasso-0.2.1.dmg.sha256](https://github.com/bennetthilberg/copylasso/releases/download/v0.2.1/CopyLasso-0.2.1.dmg.sha256)
+- [CopyLasso-0.2.2.dmg](https://github.com/bennetthilberg/copylasso/releases/download/v0.2.2/CopyLasso-0.2.2.dmg)
+- [CopyLasso-0.2.2.dmg.sha256](https://github.com/bennetthilberg/copylasso/releases/download/v0.2.2/CopyLasso-0.2.2.dmg.sha256)
 
 Place both files in the same folder, then verify the download before opening it:
 
 ```sh
-shasum -a 256 -c CopyLasso-0.2.1.dmg.sha256
+shasum -a 256 -c CopyLasso-0.2.2.dmg.sha256
 ```
 
-The result must report `CopyLasso-0.2.1.dmg: OK`. Then:
+The result must report `CopyLasso-0.2.2.dmg: OK`. Then:
 
-1. Open `CopyLasso-0.2.1.dmg` and drag CopyLasso into Applications.
+1. Open `CopyLasso-0.2.2.dmg` and drag CopyLasso into Applications.
 2. Open CopyLasso. It runs in the menu bar and does not add a Dock icon.
 3. Complete the short first-run setup and keep the suggested `⇧⌘2` shortcut or record another one.
 4. The first capture asks macOS for Screen Recording permission. Approve CopyLasso, then choose **Quit & Reopen** if macOS offers it.
@@ -113,8 +110,8 @@ Architecture and test details are documented in [Architecture Overview](docs/arc
 
 ## Secure Updates
 
-CopyLasso 0.2.0 was the first updater-enabled public release. CopyLasso 0.2.1
-is now available through that authenticated update path:
+CopyLasso 0.2.0 was the first updater-enabled public release. CopyLasso 0.2.2
+is available through that authenticated update path:
 
 - automatic checks default on and run at most once per 24 hours;
 - **Settings > Automatically Check for Updates** disables or reenables scheduled checks;

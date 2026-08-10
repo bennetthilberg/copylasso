@@ -327,15 +327,26 @@ readonly final_tag_object="$temporary_directory/final-tag-object.json"
 /usr/bin/jq -n \
     --arg tag "$COPYLASSO_V02_FINAL_TAG" \
     --arg message "$COPYLASSO_V02_FINAL_TAG_MESSAGE" \
+    --arg signature $'-----BEGIN SSH SIGNATURE-----\nfixture-signature\n-----END SSH SIGNATURE-----\n' \
     --arg commit "$COPYLASSO_V02_CANDIDATE_COMMIT" '
     {
       tag: $tag,
-      message: $message,
+      message: ($message + "\n" + $signature),
       object: {type: "commit", sha: $commit},
-      verification: {verified: true, reason: "valid"}
+      verification: {verified: true, reason: "valid", signature: $signature}
     }
 ' > "$final_tag_object"
 assert_v02_final_tag_object_record "$final_tag_object"
+/usr/bin/jq '.message = "Unexpected release title\n" + .verification.signature' \
+    "$final_tag_object" > "$temporary_directory/wrong-final-tag-message.json"
+expect_failure "not the reviewed GitHub-verified signed tag" \
+    assert_v02_final_tag_object_record \
+    "$temporary_directory/wrong-final-tag-message.json"
+/usr/bin/jq '.message = (.message | sub("fixture-signature"; "different-signature"))' \
+    "$final_tag_object" > "$temporary_directory/mismatched-final-tag-signature.json"
+expect_failure "not the reviewed GitHub-verified signed tag" \
+    assert_v02_final_tag_object_record \
+    "$temporary_directory/mismatched-final-tag-signature.json"
 /usr/bin/jq '.verification.verified = false | .verification.reason = "unsigned"' \
     "$final_tag_object" > "$temporary_directory/unsigned-final-tag.json"
 expect_failure "not the reviewed GitHub-verified signed tag" \

@@ -3,16 +3,16 @@
 ## Supported Versions
 
 CopyLasso 0.2.x is the currently supported public release line.
-CopyLasso 0.2.1 is the latest public release. It ships the user-controlled
+CopyLasso 0.2.2 is the latest public release. It ships the user-controlled
 secure updater, configurable success sound, focus-preserving native selector, and
 unified on-screen text and code recognition. Security reports about the
 released application, updater, audio or code-recognition trust boundaries,
 source, build process, protected release workflow, or repository configuration
 are welcome.
 
-Current source is being qualified as security-only candidate `0.2.2 (5)` with
-Sparkle 2.9.5. Public 0.2.1 remains the latest download until that candidate is
-separately approved and published.
+Version `0.2.2 (5)` updates the shipping Sparkle framework to 2.9.5 for the
+upstream `GHSA-gmj2-gq3j-vqmj` fix while retaining authenticated
+full-package-only updates and the existing security boundary.
 
 | Version | Supported |
 | --- | --- |

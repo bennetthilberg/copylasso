@@ -119,7 +119,7 @@ automatically.
 ## 0.1.x Bootstrap and Current Public Release
 
 CopyLasso 0.1.x contains no updater. Its users must download and install public
-CopyLasso 0.2.1, the current updater-enabled release, from the GitHub release page
+CopyLasso 0.2.2, the current updater-enabled release, from the GitHub release page
 and verify it with the published checksum, Developer ID, notarization, and
 Gatekeeper flow. That installed version can begin automatic checks.
 
@@ -231,9 +231,9 @@ nameservers, hosting scope, update key, or application trust settings. A failed
 GitHub or feed readback freezes the state for remediation; it never authorizes
 moving a tag, replacing an asset, or serving unsigned metadata.
 
-CopyLasso 0.2.1 is the current public updater-enabled release. The signed final
-tag and direct RC tag both peel to the exact G48 candidate commit. The public
-release contains only the reviewed DMG and checksum, and production deployment
+At G49 closure, CopyLasso 0.2.1 was the current public updater-enabled release.
+The signed final tag and direct RC tag both peel to the exact G48 candidate
+commit. The public release contains only the reviewed DMG and checksum, and production deployment
 `e768eb55-98d7-4d44-9603-65e3972fd66d` serves the authenticated appcast whose
 SHA-256 is `c721b9396682c05082e019bdfa1297bc320f9883aabac2fd20c647f228aa8454`.
 An exact public 0.2.0 installation updated through that feed to byte-identical
@@ -241,10 +241,10 @@ An exact public 0.2.0 installation updated through that feed to byte-identical
 
 ## G50 Sparkle Security Hotfix
 
-G50 candidate source is `0.2.2 (5)`. It upgrades the shipping Sparkle package
+G50 release `0.2.2 (5)` upgrades the shipping Sparkle package
 from affected 2.9.4 to fixed 2.9.5 at exact upstream commit
-`79bc9e872948e47877e76f194cb0c8e0412b0b90`. Public 0.2.1 remains the latest
-download until a later, separately approved immutable publication transaction.
+`79bc9e872948e47877e76f194cb0c8e0412b0b90`. It was published from the exact
+qualified candidate through a separately approved immutable transaction.
 
 The update contract remains full-package-only: every tracked `generate_appcast`
 call fixes `--maximum-deltas 0`, candidate and public appcasts contain no delta
@@ -270,3 +270,12 @@ key, endpoint, entitlement, permission, DNS authority, apex record, nameserver,
 or application byte. Any failed or ambiguous readback freezes state for
 remediation and never authorizes tag movement, asset replacement, unsigned
 metadata, or a regenerated feed.
+
+CopyLasso 0.2.2 is the current public updater-enabled release. Signed annotated
+tag `v0.2.2` and direct candidate tag `v0.2.2-rc.1` both peel to
+`81016fe43ee617b5f251564b03904137a4447266`. Public release `368002551`
+contains only the reviewed DMG and checksum. Production deployment
+`83b459a7-bd14-47d4-8420-81d5320a4c86` serves the authenticated appcast with
+SHA-256 `ad10db1486d4874701905ad3be2acc05f5025377328107a0aeabe552a9500cd6`.
+An exact public 0.2.1 installation updated to byte-identical 0.2.2 only after
+separate download and install-and-relaunch consent.

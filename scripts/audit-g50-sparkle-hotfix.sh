@@ -87,9 +87,10 @@ require_text THIRD_PARTY_NOTICES.md \
     '24dd1c6c235ba0e0d0bf433e07d6b1ddd5a8c2425fa368a4fa16926eb016b503' ]] || \
     fail "The immutable published v0.2.1 release-note fixture changed."
 
-require_text CHANGELOG.md '## 0.2.2 - Unreleased'
-require_text README.md 'CopyLasso 0.2.1 is the latest public release.'
-require_text README.md 'Current source is being qualified as CopyLasso 0.2.2 (5).'
+require_text CHANGELOG.md '## 0.2.2 - 2026-08-10'
+require_text README.md 'CopyLasso 0.2.2 is the latest public release.'
+require_text README.md \
+    'https://github.com/bennetthilberg/copylasso/releases/tag/v0.2.2'
 require_text docs/release-notes/0.2.2.md '# CopyLasso 0.2.2'
 require_text docs/release-notes/0.2.2.md 'GHSA-gmj2-gq3j-vqmj'
 require_text docs/release-notes/0.2.2.md 'full-package updates only'

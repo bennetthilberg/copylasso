@@ -28,7 +28,7 @@ readonly expected_candidate_baseline_tree_digest='1e4844388bc872b8ac4644a13b0022
 readonly expected_g48_baseline_tree_digest='95d7dfdf8a9545b8ce85568437ffc57d6951344c912945d86f391639a1e105be'
 readonly expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'
 readonly expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'
-readonly expected_approved_post_candidate_patch_digest='1fc1668fc1ac48a008ffd3849d2c82f486b15be7b7ccfcedd5882c800cd41b35'
+readonly expected_approved_post_candidate_patch_digest='a5111e14f5703a7054eb63e2ef0786b2d8c0c99cbd02d04b2a0631d70bfd824a'
 
 fail() {
     echo "$1" >&2
@@ -99,15 +99,15 @@ done
 
 require_text CHANGELOG.md '## 0.2.0 - 2026-07-29'
 require_text CHANGELOG.md '## 0.2.1 - 2026-08-09'
-require_text README.md 'CopyLasso 0.2.1 is the latest public release.'
+require_text README.md 'CopyLasso 0.2.2 is the latest public release.'
 require_text README.md 'CopyLasso 0.2.0 was the first updater-enabled public release.'
 require_text README.md 'those older application binaries contain'
 require_text PRIVACY.md 'Update requests send no screen pixels'
 require_text SECURITY.md 'CopyLasso 0.2.x is the currently supported public release line.'
 require_text docs/v0.2-product-contract.md \
-    '**Implementation status:** Released as 0.2.1 (4) on August 9, 2026.'
+    '**Implementation status:** Released as 0.2.2 (5) on August 10, 2026.'
 require_text docs/v0.2-product-contract.md \
-    'G39 concluded no-go, so CopyLasso 0.2.1 contains no LaTeX recognition'
+    'G39 concluded no-go, so CopyLasso 0.2.2 contains no LaTeX recognition'
 require_text docs/v0.2-release-qualification.md '# CopyLasso v0.2 Source Qualification'
 require_text docs/v0.2-release-qualification.md 'Public release remains `0.1.1`.'
 require_text docs/v0.2-release-qualification.md 'G42 is a later release gate'

@@ -1,6 +1,6 @@
 # CopyLasso Privacy
 
-**Status:** Public 0.2.1 (4); candidate 0.2.2 (5) keeps these boundaries.
+**Status:** Public 0.2.2 (5).
 
 CopyLasso captures only the screen region you select, recognizes text or
 supported codes locally, and writes the result to the clipboard.

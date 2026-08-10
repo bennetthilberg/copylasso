@@ -86,7 +86,7 @@ physical capture verification. G49 later published those exact bytes.
 
 ## G50 Sparkle Security Hotfix
 
-G50 freezes security-only candidate source at `0.2.2 (5)` and replaces the
+G50 froze security-only source at `0.2.2 (5)` and replaced the
 affected Sparkle 2.9.4 dependency with exact 2.9.5 commit
 `79bc9e872948e47877e76f194cb0c8e0412b0b90`. Canonical CI invokes
 `audit-g50-sparkle-hotfix.sh` exactly once. The focused audit rejects affected
@@ -96,9 +96,9 @@ changed entitlements, and a protected workflow that does not derive private
 
 Release-workflow tests cover G50 rehearsal and candidate tags, all four derived
 assets, collision and readback handling, exact reviewed notes, cleanup, and
-draft-only output. G50 Phase 1 dispatches no protected workflow and changes no
+draft-only output. G50 Phase 1 dispatched no protected workflow and changed no
 public tag, release, asset, or feed. After separate merge and Phase-2 approval,
-the exact protected-main candidate must repeat Developer ID, notarization,
+the exact protected-main candidate repeated Developer ID, notarization,
 Gatekeeper, Universal 2, entitlement, nested-code, appcast, no-delta, tamper,
 and updater smoke verification.
 
@@ -113,6 +113,13 @@ credential expansion, rebuilding, notarization, publication, tag mutation,
 asset replacement, and feed deployment. The protected preparation output is a
 private two-asset final draft plus a restricted signed feed handoff; public
 mutation remains a separately verified operator transaction.
+
+Phase 3 published only those exact candidate bytes through GitHub release
+`368002551` and authenticated feed deployment
+`83b459a7-bd14-47d4-8420-81d5320a4c86`. Public checksum, source-archive,
+signature, notarization, Gatekeeper, updater, installation, OCR, and code
+capture readbacks then closed the release without rebuilding or changing
+application code.
 
 ## G46 Production Interactive Capture
 
@@ -479,19 +486,20 @@ those separate qualification and publication gates.
 
 ## G44 v0.2 Release-State Closure
 
-`scripts/audit-v02-release-state.sh` preserves immutable v0.2.0 history and
-binds current public documentation to v0.2.1's release commit, release and tag
-identity, two public asset digests, authenticated appcast and production feed
-deployment, dated changelog, public installation, and 0.2.0-to-0.2.1 updater
-smoke. Canonical CI invokes it exactly once, enforced by
+`scripts/audit-v02-release-state.sh` preserves immutable v0.2.0 and v0.2.1
+history and binds current public documentation to v0.2.2's release commit,
+release and signed-tag identity, two public asset digests, authenticated
+appcast and production feed deployment, dated changelog, public installation,
+and 0.2.1-to-0.2.2 updater smoke. Canonical CI invokes it exactly once, enforced by
 `scripts/test-ci-contract.sh`.
 
 The detailed live evidence, including public source-archive equality, the one
 installed production Launch Services identity, and the residual local
 command-line signing subsystem anomaly, is recorded in
 [v0.2 Release State](v0.2-release-state.md). G44 changed no release tag, asset,
-feed byte, application binary, version, or build. G49 Phase 3 likewise changes
-only documentation and audit assertions after the immutable publication.
+feed byte, application binary, version, or build. G49 and G50 Phase 3 likewise
+change only documentation and audit assertions after each immutable
+publication.
 
 ## G41 v0.2 Release Qualification
 

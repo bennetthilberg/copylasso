@@ -223,11 +223,11 @@ inferred pass; see [`v0.2-release-qualification.md`](v0.2-release-qualification.
   verification, bounded review, and ready-PR readback; stop for merge approval.
 - [x] Phase 2: after a separately approved merge, create and fully qualify one
   private exact-head `v0.2.2-rc.N` candidate without publication.
-- [ ] Phase 3: merge the green, input-free protected preparation controls, then
+- [x] Phase 3: merge the green, input-free protected preparation controls, then
   create and verify one private final draft and signed final-URL appcast without
   rebuilding, publishing, tagging, or deploying.
-- [ ] Phase 3: publish only the exact approved candidate through a verified
+- [x] Phase 3: publish only the exact approved candidate through a verified
   signed final tag, two-asset public release, and byte-identical authenticated
   feed deployment; complete public download and updater verification.
-- [ ] Phase 3: close release-state documentation in a separate green pull
+- [x] Phase 3: close release-state documentation in a separate green pull
   request without changing release bytes, tags, application code, or feed.
