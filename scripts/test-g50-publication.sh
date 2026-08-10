@@ -8,15 +8,27 @@ readonly package_verifier="$repository_root/scripts/lib/release-package-verifica
 readonly notes="$repository_root/scripts/fixtures/v0.2.2-published-release-notes.md"
 readonly reader_notes="$repository_root/docs/release-notes/0.2.2.md"
 readonly workflow="$repository_root/.github/workflows/prepare-v022-publication.yml"
+readonly publication_audit="$repository_root/scripts/audit-g50-publication.sh"
 
 fail() {
     echo "$1" >&2
     exit 1
 }
 
-for required in "$verifier" "$package_verifier" "$notes" "$reader_notes" "$workflow"; do
+for required in \
+    "$verifier" \
+    "$package_verifier" \
+    "$notes" \
+    "$reader_notes" \
+    "$workflow" \
+    "$publication_audit"; do
     [[ -s "$required" ]] || fail "The G50 publication fixture is missing: $required"
 done
+
+if /usr/bin/grep -Eq \
+    '^readonly verifier=' "$publication_audit"; then
+    fail "The G50 audit must not shadow the Sparkle signature verifier binding."
+fi
 
 v021_profile="$(COPYLASSO_V02_PUBLICATION_PROFILE=v0.2.1 /bin/bash -c '
     source "$1"

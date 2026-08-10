@@ -4,7 +4,7 @@ set -euo pipefail
 
 readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && /bin/pwd -P)"
 readonly workflow="$repository_root/.github/workflows/prepare-v022-publication.yml"
-readonly verifier="$repository_root/scripts/lib/v02-publication-verification.sh"
+readonly publication_verification_library="$repository_root/scripts/lib/v02-publication-verification.sh"
 readonly package_metadata="$repository_root/scripts/lib/v022-release-package-metadata.sh"
 readonly notes="$repository_root/scripts/fixtures/v0.2.2-published-release-notes.md"
 readonly focused_tests="$repository_root/scripts/test-g50-publication.sh"
@@ -15,7 +15,7 @@ readonly checklist="$repository_root/docs/release-checklist.md"
 
 export COPYLASSO_V02_PUBLICATION_PROFILE=v0.2.2
 # shellcheck source=scripts/lib/v02-publication-verification.sh
-source "$verifier"
+source "$publication_verification_library"
 
 usage() {
     cat >&2 <<'TEXT'
@@ -70,7 +70,7 @@ require_text() {
 
 for required_file in \
     "$workflow" \
-    "$verifier" \
+    "$publication_verification_library" \
     "$package_metadata" \
     "$notes" \
     "$focused_tests" \
@@ -87,21 +87,21 @@ for executable in "$focused_tests"; do
         fail "Required G50 publication test is not executable: $executable"
 done
 
-require_text "$verifier" 'COPYLASSO_V02_PUBLICATION_PROFILE:-v0.2.1'
-require_text "$verifier" 'v0.2.2)'
-require_text "$verifier" 'COPYLASSO_V02_CANDIDATE_COMMIT="81016fe43ee617b5f251564b03904137a4447266"'
-require_text "$verifier" 'COPYLASSO_V02_CANDIDATE_RELEASE_ID="367632598"'
-require_text "$verifier" 'COPYLASSO_V02_CANDIDATE_TAG="v0.2.2-rc.1"'
-require_text "$verifier" 'COPYLASSO_V02_FINAL_TAG="v0.2.2"'
-require_text "$verifier" 'COPYLASSO_V02_PREVIOUS_PUBLIC_TAG="v0.2.1"'
-require_text "$verifier" 'COPYLASSO_V02_DMG_SHA256="9ac432f956418dd37e04de014867a7fc20d1daeecc80f6fe1db1e9c53b19de2a"'
-require_text "$verifier" 'COPYLASSO_V02_CHECKSUM_SHA256="346605180b76d4959736267158138018b869d62b552b089fefdbe7aafa3031ca"'
-require_text "$verifier" 'COPYLASSO_V02_DSYM_SHA256="a797d0053209ab4d60a8c1d25cd9f384709c9282336c84c0d291e5c187811dd8"'
-require_text "$verifier" 'COPYLASSO_V02_VERIFICATION_SHA256="657be6e3fffb0439e82b865713269300bc1177eb49cca7d0c321be15e977991d"'
-require_text "$verifier" 'COPYLASSO_V02_CANDIDATE_APPCAST_SHA256="d929a6dc7bc70667af0072f684cfcdf6eea79b15f3614e6ed36c1f88f3d0c27b"'
-require_text "$verifier" 'COPYLASSO_V02_NOTES_SHA256="df42f13d9ba08fba153b3d7d7d52f828cf9874ea52eec930f249ac7566115af7"'
-require_text "$verifier" 'COPYLASSO_V02_RELEASE_PACKAGE_PROFILE="v0.2.2"'
-require_text "$verifier" 'scripts/fixtures/v0.2.2-published-release-notes.md'
+require_text "$publication_verification_library" 'COPYLASSO_V02_PUBLICATION_PROFILE:-v0.2.1'
+require_text "$publication_verification_library" 'v0.2.2)'
+require_text "$publication_verification_library" 'COPYLASSO_V02_CANDIDATE_COMMIT="81016fe43ee617b5f251564b03904137a4447266"'
+require_text "$publication_verification_library" 'COPYLASSO_V02_CANDIDATE_RELEASE_ID="367632598"'
+require_text "$publication_verification_library" 'COPYLASSO_V02_CANDIDATE_TAG="v0.2.2-rc.1"'
+require_text "$publication_verification_library" 'COPYLASSO_V02_FINAL_TAG="v0.2.2"'
+require_text "$publication_verification_library" 'COPYLASSO_V02_PREVIOUS_PUBLIC_TAG="v0.2.1"'
+require_text "$publication_verification_library" 'COPYLASSO_V02_DMG_SHA256="9ac432f956418dd37e04de014867a7fc20d1daeecc80f6fe1db1e9c53b19de2a"'
+require_text "$publication_verification_library" 'COPYLASSO_V02_CHECKSUM_SHA256="346605180b76d4959736267158138018b869d62b552b089fefdbe7aafa3031ca"'
+require_text "$publication_verification_library" 'COPYLASSO_V02_DSYM_SHA256="a797d0053209ab4d60a8c1d25cd9f384709c9282336c84c0d291e5c187811dd8"'
+require_text "$publication_verification_library" 'COPYLASSO_V02_VERIFICATION_SHA256="657be6e3fffb0439e82b865713269300bc1177eb49cca7d0c321be15e977991d"'
+require_text "$publication_verification_library" 'COPYLASSO_V02_CANDIDATE_APPCAST_SHA256="d929a6dc7bc70667af0072f684cfcdf6eea79b15f3614e6ed36c1f88f3d0c27b"'
+require_text "$publication_verification_library" 'COPYLASSO_V02_NOTES_SHA256="df42f13d9ba08fba153b3d7d7d52f828cf9874ea52eec930f249ac7566115af7"'
+require_text "$publication_verification_library" 'COPYLASSO_V02_RELEASE_PACKAGE_PROFILE="v0.2.2"'
+require_text "$publication_verification_library" 'scripts/fixtures/v0.2.2-published-release-notes.md'
 
 require_text "$workflow" 'types: [copylasso_prepare_v022_publication]'
 require_text "$workflow" "github.event.action == 'copylasso_prepare_v022_publication'"
@@ -165,7 +165,7 @@ require_text "$checklist" '## G50 - Patch Sparkle Security Advisory'
 credential_marker='set -x|BEGIN '
 credential_marker+='([A-Z ]+ )?PRIVATE KEY|[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}'
 if /usr/bin/grep -Eq "$credential_marker" \
-    "$workflow" "$verifier" "$runbook" "$operations"; then
+    "$workflow" "$publication_verification_library" "$runbook" "$operations"; then
     fail "G50 publication controls contain unsafe tracing or credential-like material."
 fi
 
