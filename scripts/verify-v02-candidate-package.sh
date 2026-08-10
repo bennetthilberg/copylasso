@@ -100,6 +100,7 @@ for evidence in \
 done
 
 "$repository_root/scripts/verify-release-package.sh" \
+    --release-metadata-profile v0.2.1 \
     --payload-app "$application" \
     --payload-commit "$COPYLASSO_V02_CANDIDATE_COMMIT" \
     --packaging-commit "$COPYLASSO_V02_CANDIDATE_COMMIT" \

@@ -1,14 +1,14 @@
 # CopyLasso Privacy
 
-**Status:** Public 0.2.0 (3); candidate 0.2.1 (4) keeps these boundaries.
+**Status:** Public 0.2.1 (4); candidate 0.2.2 (5) keeps these boundaries.
 
 CopyLasso captures only the screen region you select, recognizes text or
 supported codes locally, and writes the result to the clipboard.
 
 ## Capture and recognition
 
-- Public 0.2.0 uses ScreenCaptureKit. Current source uses Apple's region
-  selector, transient pointer samples, and ScreenCaptureKit. Apple Vision
+- CopyLasso uses Apple's region selector, transient pointer samples, and
+  ScreenCaptureKit. Apple Vision
   recognizes OCR plus QR, Code 128, Data Matrix, PDF417, and Aztec locally.
 - Captured images, recognition observations, complete results, and the bounded
   HUD preview remain in memory only as long as their active operation needs
@@ -23,8 +23,8 @@ It never logs or persists captured or recognized content.
 
 ## Permission and clipboard
 
-CopyLasso asks for Screen Recording access only after capture starts. Current
-source runs `/usr/sbin/screencapture` with fixed project arguments and no shell
+CopyLasso asks for Screen Recording access only after capture starts. It runs
+`/usr/sbin/screencapture` with fixed project arguments and no shell
 or user-controlled command. macOS may show a direct-access confirmation. Its
 image destination is `/dev/null`; CopyLasso receives no encoded screenshot from
 the subprocess. ScreenCaptureKit returns only the selected pixels in memory,
@@ -88,8 +88,8 @@ Links in Settings open in the default browser rather than being fetched by
 CopyLasso.
 
 CopyLasso 0.1.x has no updater or code recognition. Existing users must
-manually install public CopyLasso 0.2.0 once before authenticated update checks
-can begin.
+manually install the latest public release once before authenticated update
+checks can begin.
 
 See the public [product contract](docs/v0.1-product-contract.md) and
 [security review](docs/security-and-privacy-review.md) for the enforced

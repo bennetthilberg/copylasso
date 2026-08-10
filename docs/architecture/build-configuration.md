@@ -22,8 +22,8 @@ The application is a dockless SwiftUI menu-bar utility. Debug and Release compil
 | Warnings | Treated as errors |
 | Debug bundle identifier | `io.github.bennetthilberg.copylasso.debug` |
 | Release bundle identifier | `io.github.bennetthilberg.copylasso` |
-| Marketing version | `0.2.1` |
-| Build number | `4` |
+| Marketing version | `0.2.2` |
+| Build number | `5` |
 | Release architectures | `arm64`, `x86_64` |
 | App Sandbox | Enabled |
 | Hardened Runtime | Enabled |
@@ -43,7 +43,7 @@ KeyboardShortcuts 3.0.1 is an exact Swift Package Manager dependency used for sh
 
 The dependency is confined to the app, Settings, and SwiftUI presentation layers. Models and capture-workflow state remain independent of KeyboardShortcuts, AppKit, SwiftUI, ScreenCaptureKit, and Vision.
 
-G36 links the reviewed Sparkle 2.9.4 package into both the application and update proof tests at exact revision `b6496a74a087257ef5e6da1c5b29a447a60f5bd7`. The application ships the framework, its complete MIT notice, outbound-network entitlement, and exactly the two reviewed Sparkle installer-service names. Sparkle's downloader service remains disabled. [ADR-004](ADR-004-secure-updates.md) records the dependency decision, official artifact checksum, trust boundaries, and release gates.
+G36 originally linked the reviewed Sparkle 2.9.4 package into both the application and update proof tests. G50 updates the same dependency boundary to Sparkle 2.9.5 at exact revision `79bc9e872948e47877e76f194cb0c8e0412b0b90`. The application ships the framework, its complete license notice, outbound-network entitlement, and exactly the two reviewed Sparkle installer-service names. Sparkle's downloader service remains disabled, and release tooling continues to generate full-package updates only. [ADR-004](ADR-004-secure-updates.md) records the dependency decision, official artifact checksum, trust boundaries, and release gates.
 
 ## Signing
 

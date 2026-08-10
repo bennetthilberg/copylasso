@@ -12,7 +12,7 @@ readonly notices="$repository_root/THIRD_PARTY_NOTICES.md"
 readonly update_service="$repository_root/CopyLasso/Services/SparkleUpdateService.swift"
 readonly update_session="$repository_root/CopyLasso/Services/SecureUpdateSession.swift"
 readonly update_policy="$repository_root/CopyLasso/Models/SecureUpdatePolicy.swift"
-readonly sparkle_license="$repository_root/CopyLasso/Resources/Sparkle-2.9.4-LICENSE.txt"
+readonly sparkle_license="$repository_root/CopyLasso/Resources/Sparkle-2.9.5-LICENSE.txt"
 readonly public_key_deriver="$repository_root/scripts/lib/derive-sparkle-public-key.swift"
 
 fail() {
@@ -79,8 +79,8 @@ sparkle_package_reference="$(package_reference_block "$sparkle_repository")"
 if ! /usr/bin/grep -Fq $'\t\t\t\tkind = exactVersion;' <<< "$sparkle_package_reference"; then
     fail "Sparkle must use an exact version requirement."
 fi
-if ! /usr/bin/grep -Fq $'\t\t\t\tversion = 2.9.4;' <<< "$sparkle_package_reference"; then
-    fail "Sparkle must remain pinned to 2.9.4."
+if ! /usr/bin/grep -Fq $'\t\t\t\tversion = 2.9.5;' <<< "$sparkle_package_reference"; then
+    fail "Sparkle must remain pinned to security-fixed 2.9.5."
 fi
 sparkle_pins="$(/usr/bin/jq -c \
     '.pins | map(select(.identity == "sparkle"))' \
@@ -89,8 +89,8 @@ if ! /usr/bin/jq -e '
     length == 1 and
     .[0].kind == "remoteSourceControl" and
     .[0].location == "https://github.com/sparkle-project/Sparkle" and
-    .[0].state.revision == "b6496a74a087257ef5e6da1c5b29a447a60f5bd7" and
-    .[0].state.version == "2.9.4"
+    .[0].state.revision == "79bc9e872948e47877e76f194cb0c8e0412b0b90" and
+    .[0].state.version == "2.9.5"
     ' <<< "$sparkle_pins" >/dev/null; then
     fail "Package.resolved must lock the reviewed Sparkle identity, source, revision, and version."
 fi
@@ -210,12 +210,12 @@ if /usr/bin/grep -R -nE \
     fail "CopyLasso must not add a second network stack, custom headers, or query data."
 fi
 
-require_literal "$notices" 'Sparkle 2.9.4' \
+require_literal "$notices" 'Sparkle 2.9.5' \
     "The shipping Sparkle dependency must be acknowledged."
 [[ -f "$sparkle_license" ]] || fail "The complete shipping Sparkle license bundle is missing."
 [[ "$(/usr/bin/shasum -a 256 "$sparkle_license" | /usr/bin/awk '{print $1}')" == \
     '389a4e4e9a32f059775b13a06e25a591445ba229d2838d26dd3e7c0c45127cfe' ]] || \
-    fail "The shipped Sparkle 2.9.4 license bundle differs from the reviewed source."
+    fail "The shipped Sparkle 2.9.5 license bundle differs from the reviewed source."
 
 for application in \
     "${COPYLASSO_SECURE_UPDATE_DEBUG_APP:-}" \
@@ -235,7 +235,7 @@ for application in \
     fi
     [[ -d "$application/Contents/Frameworks/Sparkle.framework" ]] || \
         fail "The G36 application bundle is missing Sparkle.framework."
-    [[ -f "$application/Contents/Resources/Sparkle-2.9.4-LICENSE.txt" ]] || \
+    [[ -f "$application/Contents/Resources/Sparkle-2.9.5-LICENSE.txt" ]] || \
         fail "The G36 application bundle is missing the complete Sparkle license."
     if /usr/bin/strings "$link_binary" | /usr/bin/grep -Fq '127.0.0.1'; then
         fail "A private update-fixture marker leaked into an ordinary application build."
@@ -253,20 +253,20 @@ for application in \
     done
 done
 
-require_literal "$release_metadata" 'COPYLASSO_RELEASE_VERSION = 0.2.1' \
-    "G48 must freeze the maintenance candidate at 0.2.1."
-require_literal "$release_metadata" 'COPYLASSO_RELEASE_BUILD = 4' \
-    "G48 must freeze the maintenance candidate at build 4."
+require_literal "$release_metadata" 'COPYLASSO_RELEASE_VERSION = 0.2.2' \
+    "G50 must freeze the security-hotfix candidate at 0.2.2."
+require_literal "$release_metadata" 'COPYLASSO_RELEASE_BUILD = 5' \
+    "G50 must freeze the security-hotfix candidate at build 5."
 
 require_literal "$repository_root/docs/architecture/ADR-004-secure-updates.md" \
     'https://updates.copylasso.com/appcast.xml' \
     "The ADR must lock the future feed endpoint."
 require_literal "$repository_root/docs/architecture/ADR-004-secure-updates.md" \
-    'cb6fdbdc8884f15d62a616e79face92b08322410fd2d425edc6596ccbf4ba3b0' \
+    '34b9b2071f3de0012eca3faa3a9290bb94e62131e9a74f6dc91514a000097a6c' \
     "The ADR must record the official Sparkle artifact checksum."
 require_literal "$repository_root/docs/architecture/ADR-004-secure-updates.md" \
     'SUSignedFeedFailureExpirationInterval = 0' \
-    "The ADR must retain Sparkle 2.9.4's fail-closed signed-feed expiration key."
+    "The ADR must retain Sparkle 2.9.5's fail-closed signed-feed expiration key."
 require_literal "$repository_root/docs/architecture/ADR-004-secure-updates.md" \
     'no per-redirect decision hook' \
     "The ADR must retain Sparkle's actual redirect integration boundary."
@@ -290,8 +290,8 @@ require_literal "$repository_root/docs/secure-update-operations.md" \
     '0.1.x contains no updater' \
     "Operations must explain the manual 0.1.x bootstrap."
 require_literal "$repository_root/README.md" \
-    'CopyLasso 0.2.0 is the first updater-enabled public release:' \
-    "README must describe the current public updater-enabled release."
+    'CopyLasso 0.2.0 was the first updater-enabled public release.' \
+    "README must retain the manual-bootstrap origin of authenticated updates."
 require_literal "$repository_root/CHANGELOG.md" \
     'A user-controlled secure update path, with optional daily checks' \
     "The unreleased changelog must record the G36 update capability."
@@ -305,7 +305,7 @@ require_literal "$repository_root/docs/architecture/overview.md" \
     'The update graph is a sibling of the capture graph.' \
     "The architecture overview must isolate updates from capture."
 require_literal "$repository_root/docs/architecture/build-configuration.md" \
-    'G36 links the reviewed Sparkle 2.9.4 package into both the application and update proof tests' \
+    'G50 updates the same dependency boundary to Sparkle 2.9.5 at exact revision' \
     "Build configuration must describe Sparkle's current shipping integration."
 if /usr/bin/grep -Fq \
     'links it only into `CopyLassoTests`' \

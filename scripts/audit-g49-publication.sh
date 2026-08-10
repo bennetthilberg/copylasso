@@ -4,7 +4,8 @@ set -euo pipefail
 
 readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && /bin/pwd -P)"
 readonly metadata="$repository_root/Configuration/ReleaseMetadata.xcconfig"
-readonly notes="$repository_root/docs/release-notes/0.2.1.md"
+readonly notes="$repository_root/scripts/fixtures/v0.2.1-published-release-notes.md"
+readonly reader_notes="$repository_root/docs/release-notes/0.2.1.md"
 readonly workflow="$repository_root/.github/workflows/prepare-publication.yml"
 readonly verifier="$repository_root/scripts/lib/v02-publication-verification.sh"
 readonly publication_audit="$repository_root/scripts/audit-v02-publication.sh"
@@ -29,6 +30,7 @@ require_text() {
 for required_file in \
     "$metadata" \
     "$notes" \
+    "$reader_notes" \
     "$workflow" \
     "$verifier" \
     "$publication_audit" \
@@ -39,8 +41,8 @@ for required_file in \
     [[ -s "$required_file" ]] || fail "Required G49 file is unavailable: $required_file"
 done
 
-require_text "$metadata" 'COPYLASSO_RELEASE_VERSION = 0.2.1'
-require_text "$metadata" 'COPYLASSO_RELEASE_BUILD = 4'
+require_text "$metadata" 'COPYLASSO_RELEASE_VERSION = 0.2.2'
+require_text "$metadata" 'COPYLASSO_RELEASE_BUILD = 5'
 require_text "$verifier" 'COPYLASSO_RELEASE_VERSION="0.2.1"'
 require_text "$verifier" 'COPYLASSO_RELEASE_BUILD="4"'
 require_text "$verifier" \
@@ -51,6 +53,11 @@ require_text "$verifier" 'COPYLASSO_V02_FINAL_TAG="v0.2.1"'
 require_text "$verifier" 'COPYLASSO_V02_PREVIOUS_PUBLIC_TAG="v0.2.0"'
 require_text "$verifier" \
     'COPYLASSO_V02_NOTES_SHA256="24dd1c6c235ba0e0d0bf433e07d6b1ddd5a8c2425fa368a4fa16926eb016b503"'
+[[ "$(/usr/bin/shasum -a 256 "$notes" | /usr/bin/awk '{print $1}')" == \
+    '24dd1c6c235ba0e0d0bf433e07d6b1ddd5a8c2425fa368a4fa16926eb016b503' ]] || \
+    fail "The immutable published v0.2.1 notes fixture changed."
+require_text "$reader_notes" \
+    'CopyLasso 0.1.x users must install CopyLasso 0.2.1 manually once before'
 require_text "$verifier" \
     'COPYLASSO_V02_CANDIDATE_APPCAST_SHA256="ef48b25ed3527416ba2242cae4bf3975b3c61d21790e24e0b31669a1082bf779"'
 require_text "$verifier" \

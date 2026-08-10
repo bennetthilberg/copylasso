@@ -94,7 +94,7 @@ if ! "$gh_binary" api \
 fi
 assert_v02_candidate_release_record \
     "$release_record" \
-    "$repository_root/docs/release-notes/$COPYLASSO_RELEASE_VERSION.md"
+    "$repository_root/scripts/fixtures/v0.2.1-published-release-notes.md"
 if ! "$gh_binary" api \
     "repos/$repository/git/ref/tags/$COPYLASSO_V02_CANDIDATE_TAG" \
     > "$tag_record"; then

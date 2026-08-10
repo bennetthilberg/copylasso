@@ -12,7 +12,7 @@ usage() {
 Usage: create-draft-release.sh \
   --repository owner/repository \
   --commit <40-character-commit> \
-  (--tag v<version>-g48.<run> | --candidate-number <positive-integer>) \
+  (--tag v<version>-g50.<run> | --candidate-number <positive-integer>) \
   --run-dir /path/to/release-run \
   --readback /path/to/draft-release.json
 TEXT
@@ -159,7 +159,7 @@ if [[ "$release_mode" == "candidate" ]]; then
     release_name="CopyLasso $COPYLASSO_G28_VERSION release candidate $candidate_number"
 else
     printf '%s\n\n%s\n\n%s\n' \
-        "Protected G48 workflow rehearsal for CopyLasso $COPYLASSO_G28_VERSION." \
+        "Protected G50 workflow rehearsal for CopyLasso $COPYLASSO_G28_VERSION." \
         "Exact source commit: $commit" \
         'Draft only. Do not publish; use candidate mode for release qualification.' \
         > "$notes"

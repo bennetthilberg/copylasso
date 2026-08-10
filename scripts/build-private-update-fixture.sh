@@ -26,7 +26,7 @@ fail() {
   ((fixture_port >= 1024 && fixture_port <= 65535)) || \
   fail "COPYLASSO_PRIVATE_UPDATE_PORT must be a nonprivileged TCP port."
 [[ -x "$sparkle_tools/generate_appcast" ]] || \
-  fail "Set COPYLASSO_SPARKLE_TOOLS_DIR to the pinned Sparkle 2.9.4 tools."
+  fail "Set COPYLASSO_SPARKLE_TOOLS_DIR to the pinned Sparkle 2.9.5 tools."
 [[ ! -L "$fixture_root" ]] || fail "The private fixture root must not be a symbolic link."
 
 /bin/rm -rf "$fixture_root"

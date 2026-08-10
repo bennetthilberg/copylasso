@@ -4,7 +4,15 @@ All notable changes to CopyLasso will be documented in this file.
 
 ## Unreleased
 
-## 0.2.1 - Unreleased
+## 0.2.2 - Unreleased
+
+### Security
+
+- Updated the shipping Sparkle framework from 2.9.4 to 2.9.5 to incorporate
+  the upstream fix for `GHSA-gmj2-gq3j-vqmj`. CopyLasso continues to publish
+  authenticated full-package updates only and does not generate delta updates.
+
+## 0.2.1 - 2026-08-09
 
 ### Fixed
 

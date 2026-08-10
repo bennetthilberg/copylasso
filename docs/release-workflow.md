@@ -2,8 +2,8 @@
 
 The maintainer-dispatched workflow builds one signed, notarized, and verified
 CopyLasso release from the exact protected `main` commit. It creates a private
-draft prerelease and never publishes it. G48 updates this source-only trust
-boundary for maintenance version `0.2.1`; it does not dispatch the workflow. A final
+draft prerelease and never publishes it. G50 updates this source-only trust
+boundary for security-hotfix version `0.2.2`; it does not dispatch the workflow. A final
 release is published only after the draft, asset digests, checksum, signed
 application, Gatekeeper result, authenticated update metadata, and smoke test
 have been independently read back.
@@ -56,7 +56,7 @@ from the local `copylasso-notary` profile established in G26. Store its private-
 identifier, and issuer identifier only in the protected environment, then remove the downloaded key
 file. A personal Apple ID password or app-specific password is not used by this workflow.
 
-Generate the Sparkle Ed25519 identity once with the pinned Sparkle 2.9.4 tooling. Keep its private
+Generate the Sparkle Ed25519 identity once with the pinned Sparkle 2.9.5 tooling. Keep its private
 seed in the maintainer's nonsynchronized login Keychain and an encrypted offline recovery copy.
 Supply the raw 32-byte Base64 value to `COPYLASSO_SPARKLE_PRIVATE_KEY` only as a protected
 environment secret. The protected workflow injects it into one dedicated post-build metadata step,
@@ -80,10 +80,10 @@ no account identifier. Archive and export therefore use the same protected ident
 interactive Xcode account or permission to create signing assets. The local G26 automatic export
 contract remains separate.
 
-## Run a Private G48 Rehearsal
+## Run a Private G50 Rehearsal
 
-Only after the G48 source pull request is reviewed, green, and separately
-merged, and G48 Phase 2 is explicitly approved:
+Only after the G50 source pull request is reviewed, green, and separately
+merged, and G50 Phase 2 is explicitly approved:
 
 1. Dispatch `copylasso_protected_release` through GitHub's repository dispatch API without a
    `candidate_number` payload field.
@@ -100,7 +100,7 @@ complete workflow again.
 The workflow uses the established Developer ID application verifier and release
 package process. Its protected commit is both the application payload commit
 and packaging commit. A blank candidate number uses the nonrelease form
-`v0.2.1-g48.<run>` so it cannot be mistaken for G48's `v0.2.1-rc.N` candidate.
+`v0.2.2-g50.<run>` so it cannot be mistaken for G50's `v0.2.2-rc.N` candidate.
 
 ## G30 Protected Candidate Handoff
 
@@ -113,26 +113,26 @@ historical release record remains immutable. G32 later reused the same trust
 boundary for `0.1.1`; G42 uses the current version-derived names without
 altering either historical record.
 
-## G48 v0.2.1 Maintenance Candidate Handoff
+## G50 v0.2.2 Security-Hotfix Candidate Handoff
 
-G48 has two ordered phases.
+G50 has ordered source and private-candidate phases.
 
-1. Merge the reviewed G48 source-enablement pull request to protected `main`.
+1. Merge the reviewed G50 source-enablement pull request to protected `main`.
    No protected release can run from the unmerged branch because the default
    branch owns the `repository_dispatch` workflow definition.
 2. In a separately approved Phase 2 run, provide only the first unused positive
-   `candidate_number`. The workflow derives `v0.2.1-rc.N`, refuses collisions,
+   `candidate_number`. The workflow derives `v0.2.2-rc.N`, refuses collisions,
    and builds exact protected main through the complete quality gate and
    protected `release` environment.
 
-The job derives all four `0.2.1` asset names from canonical metadata, signs,
+The job derives all four `0.2.2` asset names from canonical metadata, signs,
 notarizes, staples, packages, cleans credentials, and creates one private draft
 prerelease. The restricted verification bundle contains candidate-specific
 authenticated update metadata. It never publishes, overwrites an asset, moves
 a tag, accepts an arbitrary ref, or deploys a feed.
 
 The reviewed candidate body is
-[`release-notes/0.2.1.md`](release-notes/0.2.1.md). Follow the G48 procedure in
+[`release-notes/0.2.2.md`](release-notes/0.2.2.md). Follow the G50 procedure in
 [`release-candidate-qualification.md`](release-candidate-qualification.md) and
 [`release-checklist.md`](release-checklist.md). Any tracked candidate-input
 change abandons the candidate and requires a new positive number.
@@ -237,10 +237,10 @@ boundary.
 
 The draft prerelease contains exactly:
 
-- `CopyLasso-0.2.1.dmg`;
-- `CopyLasso-0.2.1.dmg.sha256`;
-- `CopyLasso-0.2.1.dSYM.zip`; and
-- `CopyLasso-0.2.1-verification.zip`.
+- `CopyLasso-0.2.2.dmg`;
+- `CopyLasso-0.2.2.dmg.sha256`;
+- `CopyLasso-0.2.2.dSYM.zip`; and
+- `CopyLasso-0.2.2-verification.zip`.
 
 The verification bundle contains the exact stapled source application, the authenticated
 `appcast.xml` generated for that exact candidate, and the portable records
@@ -299,9 +299,10 @@ notarization, stapling, package verification, or credential cleanup prevent draf
 - **Stale draft:** delete the incomplete rehearsal through GitHub Releases. Never overwrite assets
   under an existing draft tag.
 
-G48 stops after one exact run, downloaded local re-verification, log and
-cleanup inspection, authenticated updater-path smoke, and a verified draft
-release. It does not publish; G49 is the separate publication goal.
+G50 Phase 2 stops after one exact run, downloaded local re-verification, log
+and cleanup inspection, authenticated updater-path smoke, and a verified draft
+release. It does not publish; publication requires separately approved
+protected controls and an immutable transaction.
 
 ## G43 Publication Preparation
 

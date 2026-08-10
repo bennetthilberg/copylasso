@@ -46,7 +46,7 @@ done
 
 assert_v02_repository "$repository"
 assert_v02_candidate_files "$candidate_directory"
-readonly release_notes="$repository_root/docs/release-notes/$COPYLASSO_RELEASE_VERSION.md"
+readonly release_notes="$repository_root/scripts/fixtures/v0.2.1-published-release-notes.md"
 assert_v02_release_notes "$release_notes"
 [[ -n "${GH_TOKEN:-}" ]] || \
     v02_publication_fail "The protected publication-draft token is unavailable."

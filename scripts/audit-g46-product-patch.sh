@@ -37,7 +37,7 @@ for privacy_boundary in \
     'Update requests send no screen' \
     'Success sound playback receives no captured pixels, recognized content, or clipboard text.' \
     'Code payloads are recognized locally' \
-    'manually install public CopyLasso 0.2.0 once'; do
+    'manually install the latest public release once'; do
     require_text PRIVACY.md "$privacy_boundary"
 done
 
@@ -58,11 +58,11 @@ require_text CHANGELOG.md \
 require_text README.md \
     'the app shows the authenticated version, rendered release notes, and exact download size before any download;'
 require_text README.md \
-    'Current unreleased source replaces that handoff with macOS'
+    'CopyLasso uses macOS'
 require_text PRIVACY.md \
     'transient pointer samples'
 require_text PRIVACY.md \
-    'selector, transient pointer samples, and ScreenCaptureKit.'
+    "CopyLasso uses Apple's region selector"
 require_text docs/architecture/capture-workflow.md \
     'Native interactive selection and bounded in-memory capture'
 require_text docs/architecture/overview.md \
@@ -72,7 +72,7 @@ require_text docs/security-and-privacy-review.md \
 require_text docs/testing.md \
     '## G46 Production Interactive Capture'
 require_text docs/v0.2-product-contract.md \
-    '### Unreleased native-selector amendment'
+    '### Native-selector maintenance amendment'
 require_text PRIVACY.md \
     'Control-at-mouse-up race can replace the clipboard'
 require_text README.md \

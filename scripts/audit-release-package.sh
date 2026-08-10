@@ -87,9 +87,9 @@ done
 for required_phrase in \
     'exact G26' \
     'copylasso-notary' \
-    'CopyLasso-0.2.1.dmg' \
-    'CopyLasso-0.2.1.dmg.sha256' \
-    'CopyLasso-0.2.1.dSYM.zip' \
+    'CopyLasso-0.2.2.dmg' \
+    'CopyLasso-0.2.2.dmg.sha256' \
+    'CopyLasso-0.2.2.dSYM.zip' \
     'two complete runs' \
     'payload commit' \
     'packaging commit' \

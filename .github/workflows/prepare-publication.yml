@@ -112,7 +112,7 @@ jobs:
             --application \
             "$COPYLASSO_G49_VERIFICATION/extracted/payload/$COPYLASSO_V02_CANDIDATE_COMMIT/export/CopyLasso.app" \
             --candidate-dir "$COPYLASSO_G49_CANDIDATE" \
-            --release-notes "docs/release-notes/$COPYLASSO_RELEASE_VERSION.md" \
+            --release-notes "scripts/fixtures/v0.2.1-published-release-notes.md" \
             --output "$COPYLASSO_G49_APPCAST" \
             --sparkle-tools-dir "$(/usr/bin/dirname "$sparkle_generate_appcast")"
 
@@ -121,7 +121,7 @@ jobs:
           source ./scripts/lib/v02-publication-verification.sh
           ./scripts/prepare-update-feed.sh \
             --appcast "$COPYLASSO_G49_APPCAST" \
-            --release-notes "docs/release-notes/$COPYLASSO_RELEASE_VERSION.md" \
+            --release-notes "scripts/fixtures/v0.2.1-published-release-notes.md" \
             --output-dir "$COPYLASSO_G49_FEED"
 
       - name: Create verified private final draft

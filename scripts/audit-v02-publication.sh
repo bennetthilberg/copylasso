@@ -53,13 +53,14 @@ readonly draft_creator="$repository_root/scripts/create-v02-publication-draft.sh
 readonly feed_preparer="$repository_root/scripts/prepare-update-feed.sh"
 readonly verifier_library="$repository_root/scripts/lib/v02-publication-verification.sh"
 readonly transaction_library="$repository_root/scripts/lib/v02-publication-transaction.sh"
+readonly v021_package_metadata="$repository_root/scripts/lib/v021-release-package-metadata.sh"
 readonly signature_verifier_source="$repository_root/scripts/lib/verify-sparkle-signatures.swift"
 readonly focused_tests="$repository_root/scripts/test-v02-publication.sh"
 readonly runbook="$repository_root/docs/v0.2-publication-runbook.md"
 readonly release_workflow_documentation="$repository_root/docs/release-workflow.md"
 readonly update_operations="$repository_root/docs/secure-update-operations.md"
 readonly release_checklist="$repository_root/docs/release-checklist.md"
-readonly notes="$repository_root/docs/release-notes/0.2.1.md"
+readonly notes="$repository_root/scripts/fixtures/v0.2.1-published-release-notes.md"
 
 fail() {
     echo "$1" >&2
@@ -89,6 +90,7 @@ for readable in \
     "$candidate_workflow" \
     "$verifier_library" \
     "$transaction_library" \
+    "$v021_package_metadata" \
     "$signature_verifier_source" \
     "$runbook" \
     "$release_workflow_documentation" \
@@ -220,6 +222,12 @@ for required_downloader_text in \
     'assert_v02_candidate_files'; do
     require_text "$candidate_downloader" "$required_downloader_text"
 done
+require_text "$candidate_downloader" \
+    'scripts/fixtures/v0.2.1-published-release-notes.md'
+require_text "$package_verifier" \
+    '--release-metadata-profile v0.2.1'
+require_text "$v021_package_metadata" 'readonly COPYLASSO_RELEASE_VERSION="0.2.1"'
+require_text "$v021_package_metadata" 'readonly COPYLASSO_RELEASE_BUILD="4"'
 for required_generator_text in \
     'unset COPYLASSO_SPARKLE_PRIVATE_KEY' \
     'assert_v02_candidate_files' \
@@ -273,7 +281,7 @@ require_text "$release_workflow_documentation" '## G49 Publication Preparation'
 require_text "$update_operations" 'updates.copylasso.com'
 require_text "$release_checklist" '## G49 - Publish CopyLasso v0.2.1'
 require_text "$release_checklist" \
-    '- [ ] Phase 1: merge the green G49 publication-control PR before dispatching the protected preparation workflow.'
+    '- [x] Phase 1: merge the green G49 publication-control PR before dispatching the protected preparation workflow.'
 
 credential_marker='set -x|BEGIN '
 credential_marker+='([A-Z ]+ )?PRIVATE KEY|[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}'

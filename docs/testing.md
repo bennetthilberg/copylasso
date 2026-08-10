@@ -70,8 +70,8 @@ Permission history contains only the two booleans needed for these neutral label
 
 ## G48 Patch Qualification
 
-G48 freezes the merged maintenance patch as candidate source `0.2.1 (4)` while
-public `0.2.0 (3)` remains unchanged. Canonical CI invokes
+G48 froze the merged maintenance patch as candidate source `0.2.1 (4)` while
+public `0.2.0 (3)` remained unchanged. Canonical CI invokes
 `audit-g48-patch-qualification.sh` exactly once to verify current metadata and
 notes, G43A/G45/G46 ancestry, immutable v0.2.0 records, unchanged dependencies
 and entitlements, draft-only protected-candidate behavior, and absence of the
@@ -81,8 +81,26 @@ The focused release-workflow tests derive `v0.2.1-rc.N` and all four asset names
 from canonical metadata, accept only one positive `candidate_number`, and
 reject arbitrary tag, ref, publication, overwrite, and final-feed paths. G48
 Phase 1 runs no privileged workflow. After a separately approved merge, Phase 2
-must use the exact protected-main commit for package, update, quarantine, and
-physical capture verification.
+used the exact protected-main commit for package, update, quarantine, and
+physical capture verification. G49 later published those exact bytes.
+
+## G50 Sparkle Security Hotfix
+
+G50 freezes security-only candidate source at `0.2.2 (5)` and replaces the
+affected Sparkle 2.9.4 dependency with exact 2.9.5 commit
+`79bc9e872948e47877e76f194cb0c8e0412b0b90`. Canonical CI invokes
+`audit-g50-sparkle-hotfix.sh` exactly once. The focused audit rejects affected
+or unexpected pins, stale version/build or notices, enabled delta generation,
+changed entitlements, and a protected workflow that does not derive private
+`v0.2.2-rc.N` candidates from canonical metadata.
+
+Release-workflow tests cover G50 rehearsal and candidate tags, all four derived
+assets, collision and readback handling, exact reviewed notes, cleanup, and
+draft-only output. G50 Phase 1 dispatches no protected workflow and changes no
+public tag, release, asset, or feed. After separate merge and Phase-2 approval,
+the exact protected-main candidate must repeat Developer ID, notarization,
+Gatekeeper, Universal 2, entitlement, nested-code, appcast, no-delta, tamper,
+and updater smoke verification.
 
 ## G46 Production Interactive Capture
 
@@ -449,18 +467,19 @@ those separate qualification and publication gates.
 
 ## G44 v0.2 Release-State Closure
 
-`scripts/audit-v02-release-state.sh` binds current public documentation to the
-immutable v0.2.0 release commit, release ID, two public asset digests,
-authenticated appcast digest, dated changelog, and narrowly closed
-shipped-feature issues. It also binds retained post-release G43A fixes under the
-`0.2.1 - Unreleased` draft. Canonical CI
-invokes it exactly once, enforced by `scripts/test-ci-contract.sh`.
+`scripts/audit-v02-release-state.sh` preserves immutable v0.2.0 history and
+binds current public documentation to v0.2.1's release commit, release and tag
+identity, two public asset digests, authenticated appcast and production feed
+deployment, dated changelog, public installation, and 0.2.0-to-0.2.1 updater
+smoke. Canonical CI invokes it exactly once, enforced by
+`scripts/test-ci-contract.sh`.
 
 The detailed live evidence, including public source-archive equality, the one
 installed production Launch Services identity, and the residual local
 command-line signing subsystem anomaly, is recorded in
-[v0.2 Release State](v0.2-release-state.md). G44 changes no release tag, asset,
-feed byte, application binary, version, or build.
+[v0.2 Release State](v0.2-release-state.md). G44 changed no release tag, asset,
+feed byte, application binary, version, or build. G49 Phase 3 likewise changes
+only documentation and audit assertions after the immutable publication.
 
 ## G41 v0.2 Release Qualification
 

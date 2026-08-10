@@ -128,11 +128,11 @@ fi
 require_text CopyLasso/Models/AboutMetadata.swift 'Created by Bennett Hilberg'
 require_text CopyLasso/Models/AboutMetadata.swift 'https://github.com/bennetthilberg/copylasso'
 require_text CopyLasso/Models/AboutMetadata.swift 'KeyboardShortcuts 3.0.1'
-require_text CopyLasso/Models/AboutMetadata.swift 'Sparkle 2.9.4'
+require_text CopyLasso/Models/AboutMetadata.swift 'Sparkle 2.9.5'
 require_text CopyLasso/App/CopyLassoApp.swift 'CopyLassoApplicationCommands()'
 require_text CopyLasso/App/CopyLassoApp.swift 'CommandGroup(replacing: .appInfo)'
 
-if /usr/bin/grep -R -n -F --exclude='Sparkle-2.9.4-LICENSE.txt' 'All rights reserved' \
+if /usr/bin/grep -R -n -F --exclude='Sparkle-2.9.5-LICENSE.txt' 'All rights reserved' \
     CopyLasso CopyLasso.xcodeproj/project.pbxproj; then
     fail "The application must not claim all rights reserved for MIT-licensed CopyLasso."
 fi
@@ -143,13 +143,13 @@ if [[ "$(/usr/bin/grep -c \
     fail "Every application configuration must embed the open-source creator description."
 fi
 
-if [[ "$COPYLASSO_RELEASE_VERSION" != "0.2.1" ]] || \
-    [[ "$COPYLASSO_RELEASE_BUILD" != "4" ]] || \
+if [[ "$COPYLASSO_RELEASE_VERSION" != "0.2.2" ]] || \
+    [[ "$COPYLASSO_RELEASE_BUILD" != "5" ]] || \
     /usr/bin/grep -Eq \
         '^[[:space:]]+(MARKETING_VERSION|CURRENT_PROJECT_VERSION)[[:space:]]*=' \
         CopyLasso.xcodeproj/project.pbxproj || \
     [[ "$(/usr/bin/grep -c 'PRODUCT_BUNDLE_IDENTIFIER = io.github.bennetthilberg.copylasso;' CopyLasso.xcodeproj/project.pbxproj)" != 1 ]]; then
-    fail "G48 version 0.2.1, build 4, and the production bundle identifier must remain final."
+    fail "G50 version 0.2.2, build 5, and the production bundle identifier must remain final."
 fi
 
 for text in \
@@ -167,17 +167,17 @@ for text in \
     require_text README.md "$text"
 done
 
-require_text README.md 'CopyLasso 0.2.0 is the latest public release.'
-require_text README.md 'https://github.com/bennetthilberg/copylasso/releases/tag/v0.2.0'
-require_text README.md 'https://github.com/bennetthilberg/copylasso/releases/download/v0.2.0/CopyLasso-0.2.0.dmg'
-require_text README.md 'https://github.com/bennetthilberg/copylasso/releases/download/v0.2.0/CopyLasso-0.2.0.dmg.sha256'
+require_text README.md 'CopyLasso 0.2.1 is the latest public release.'
+require_text README.md 'https://github.com/bennetthilberg/copylasso/releases/tag/v0.2.1'
+require_text README.md 'https://github.com/bennetthilberg/copylasso/releases/download/v0.2.1/CopyLasso-0.2.1.dmg'
+require_text README.md 'https://github.com/bennetthilberg/copylasso/releases/download/v0.2.1/CopyLasso-0.2.1.dmg.sha256'
 require_text CHANGELOG.md '## 0.1.1 - 2026-07-21'
 require_text CHANGELOG.md '## 0.2.0 - 2026-07-29'
 require_text CHANGELOG.md '## 0.1.0 - 2026-07-19'
 require_text CHANGELOG.md 'pasteboard clear-success followed by text-write rejection'
 require_text SECURITY.md 'CopyLasso 0.2.x is the currently supported public release line.'
-require_text CONTRIBUTING.md 'CopyLasso 0.2.0 is publicly released.'
-require_text PRIVACY.md '**Status:** Public 0.2.0 (3); candidate 0.2.1 (4) keeps these boundaries.'
+require_text CONTRIBUTING.md 'CopyLasso 0.2.1 is publicly released.'
+require_text PRIVACY.md '**Status:** Public 0.2.1 (4); candidate 0.2.2 (5) keeps these boundaries.'
 require_text docs/release-checklist.md '## G26 - Developer ID Signing And Notarization'
 require_text docs/release-checklist.md '## G27 - Reproducible Release Package'
 require_text docs/release-checklist.md '## G28 - Protected Release Workflow'
@@ -195,7 +195,7 @@ require_text docs/release-workflow.md '## G30 Protected Candidate Handoff'
 require_text docs/release-workflow.md 'In the post-merge protected run'
 require_text docs/release-workflow.md 'The G28 rehearsal draft and its assets cannot serve as G30 evidence.'
 require_text docs/release-workflow.md '## Historical G42 v0.2 Candidate Handoff'
-require_text docs/release-workflow.md '## G48 v0.2.1 Maintenance Candidate Handoff'
+require_text docs/release-workflow.md '## G50 v0.2.2 Security-Hotfix Candidate Handoff'
 require_text docs/clean-install-testing.md 'v0.1.0-g28.295914448081'
 require_text docs/clean-install-testing.md '0b38f85acd7507cbacfacb820d534ac60907c8d12bec08c3b7f41f6cf1d1952f'
 require_text docs/clean-install-testing.md 'io.github.bennetthilberg.copylasso'
@@ -222,7 +222,7 @@ require_text docs/v0.1-product-contract.md \
     '**Implementation status:** Released as 0.1.0 on July 19, 2026; maintained as 0.1.1 on July 21, 2026'
 require_text docs/v0.1-product-contract.md 'clipboard may change'
 require_text docs/security-and-privacy-review.md \
-    'This review describes the public CopyLasso 0.2.0 boundary.'
+    'This review describes the public CopyLasso 0.2.1 boundary.'
 require_text docs/release-candidate-qualification.md '## Exact Candidate Smoke Matrix'
 require_text docs/release-candidate-qualification.md '## G32 v0.1.1 Maintenance Qualification'
 require_text docs/release-candidate-qualification.md 'Do not resume VirtualBuddy'

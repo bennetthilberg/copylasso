@@ -14,6 +14,10 @@ case "${COPYLASSO_RELEASE_PACKAGE_METADATA_PROFILE:-current}" in
         # shellcheck source=scripts/lib/v020-release-package-metadata.sh
         source "$release_package_verification_library_root/scripts/lib/v020-release-package-metadata.sh"
         ;;
+    v0.2.1)
+        # shellcheck source=scripts/lib/v021-release-package-metadata.sh
+        source "$release_package_verification_library_root/scripts/lib/v021-release-package-metadata.sh"
+        ;;
     *)
         echo "The release-package metadata profile is invalid." >&2
         exit 1

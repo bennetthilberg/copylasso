@@ -104,10 +104,10 @@ readonly package_resolved='CopyLasso.xcodeproj/project.xcworkspace/xcshareddata/
 if [[ "$(/usr/bin/grep -c '"identity"' "$package_resolved")" != 2 ]] || \
     ! /usr/bin/grep -q '"version" : "3.0.1"' "$package_resolved" || \
     ! /usr/bin/grep -q '"revision" : "49c3fc04ea827f816df67843bfcc57286b47ff06"' "$package_resolved" || \
-    ! /usr/bin/grep -q '"version" : "2.9.4"' "$package_resolved" || \
-    ! /usr/bin/grep -q '"revision" : "b6496a74a087257ef5e6da1c5b29a447a60f5bd7"' "$package_resolved" || \
+    ! /usr/bin/grep -q '"version" : "2.9.5"' "$package_resolved" || \
+    ! /usr/bin/grep -q '"revision" : "79bc9e872948e47877e76f194cb0c8e0412b0b90"' "$package_resolved" || \
     ! /usr/bin/grep -q 'KeyboardShortcuts 3.0.1' THIRD_PARTY_NOTICES.md || \
-    ! /usr/bin/grep -q 'Sparkle 2.9.4' THIRD_PARTY_NOTICES.md || \
+    ! /usr/bin/grep -q 'Sparkle 2.9.5' THIRD_PARTY_NOTICES.md || \
     ! /usr/bin/grep -q 'License: MIT' THIRD_PARTY_NOTICES.md || \
     ! /usr/bin/grep -q 'Justification:' THIRD_PARTY_NOTICES.md || \
     ! /usr/bin/grep -Fq 'Sparkle imports must remain confined to the production adapter and proof test.' \

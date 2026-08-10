@@ -17,7 +17,7 @@ in the authenticated feed, and CopyLasso validates that initial URL before the
 user can authorize download: with automatic downloads disabled, the custom
 `SPUUserDriver` receives the `SUAppcastItem` before its Install reply begins
 retrieval. GitHub may return the asset directly or redirect Sparkle's internal
-`NSURLSession`. Sparkle 2.9.4 exposes the initial mutable request to its updater
+`NSURLSession`. Sparkle 2.9.5 exposes the initial mutable request to its updater
 delegate but no supported callback for accepting or rejecting each redirect.
 CopyLasso therefore does not implement or advertise a redirect allowlist that it
 cannot connect to the real downloader. It treats the final response location
@@ -116,12 +116,12 @@ authorizes Install and Relaunch. Closing, Escape, Later, or Cancel preserves the
 current application; a deferred update may be shown again without downloading
 automatically.
 
-## 0.1.x Bootstrap and Public 0.2.0
+## 0.1.x Bootstrap and Current Public Release
 
 CopyLasso 0.1.x contains no updater. Its users must download and install public
-CopyLasso 0.2.0, the first updater-enabled release, from the GitHub release page and verify it
-with the existing checksum, Developer ID, notarization, and Gatekeeper flow.
-Only that installed version can begin automatic checks.
+CopyLasso 0.2.1, the current updater-enabled release, from the GitHub release page
+and verify it with the published checksum, Developer ID, notarization, and
+Gatekeeper flow. That installed version can begin automatic checks.
 
 G35 did not create a production key, add an app entitlement, link Sparkle into
 the product, publish a feed, change release bytes, or perform an update. Its
@@ -194,8 +194,9 @@ existing release tag.
 
 ## G48 Maintenance Candidate Handoff
 
-G48 candidate source is `0.2.1 (4)`. Public `0.2.0 (3)` remains installed and
-served by the production feed until G49 is separately approved and completed.
+G48 qualified candidate source `0.2.1 (4)` while public `0.2.0 (3)` remained
+installed and served by the production feed. G49 later published that exact
+candidate without rebuilding.
 The protected workflow derives the private `v0.2.1-rc.N` tag and all four
 versioned assets from canonical metadata, accepts only one positive
 `candidate_number`, and creates a draft prerelease from exact protected main.
@@ -229,3 +230,25 @@ Cloudflare Pages project. It does not change the custom domain, apex DNS,
 nameservers, hosting scope, update key, or application trust settings. A failed
 GitHub or feed readback freezes the state for remediation; it never authorizes
 moving a tag, replacing an asset, or serving unsigned metadata.
+
+CopyLasso 0.2.1 is the current public updater-enabled release. The signed final
+tag and direct RC tag both peel to the exact G48 candidate commit. The public
+release contains only the reviewed DMG and checksum, and production deployment
+`e768eb55-98d7-4d44-9603-65e3972fd66d` serves the authenticated appcast whose
+SHA-256 is `c721b9396682c05082e019bdfa1297bc320f9883aabac2fd20c647f228aa8454`.
+An exact public 0.2.0 installation updated through that feed to byte-identical
+0.2.1 only after separate download and install-and-relaunch consent.
+
+## G50 Sparkle Security Hotfix
+
+G50 candidate source is `0.2.2 (5)`. It upgrades the shipping Sparkle package
+from affected 2.9.4 to fixed 2.9.5 at exact upstream commit
+`79bc9e872948e47877e76f194cb0c8e0412b0b90`. Public 0.2.1 remains the latest
+download until a later, separately approved immutable publication transaction.
+
+The update contract remains full-package-only: every tracked `generate_appcast`
+call fixes `--maximum-deltas 0`, candidate and public appcasts contain no delta
+items, and updater entitlements, feed origin, key identity, consent, size,
+replay, and installation boundaries do not change. Phase 1 only enables a
+private `v0.2.2-rc.N` candidate from exact protected main; it cannot publish or
+deploy a feed.

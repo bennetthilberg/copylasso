@@ -104,6 +104,9 @@ echo "Auditing the G48 patch qualification"
 echo "Auditing G49 publication controls"
 ./scripts/audit-g49-publication.sh
 
+echo "Auditing the G50 Sparkle security hotfix"
+./scripts/audit-g50-sparkle-hotfix.sh
+
 echo "Auditing on-screen code recognition"
 ./scripts/audit-code-recognition.sh
 
@@ -141,8 +144,8 @@ if [[ ! -f "$package_resolved" ]] || \
     ! /usr/bin/grep -q '"revision" : "49c3fc04ea827f816df67843bfcc57286b47ff06"' "$package_resolved" || \
     ! /usr/bin/grep -q '"version" : "3.0.1"' "$package_resolved" || \
     ! /usr/bin/grep -q '"location" : "https://github.com/sparkle-project/Sparkle"' "$package_resolved" || \
-    ! /usr/bin/grep -q '"revision" : "b6496a74a087257ef5e6da1c5b29a447a60f5bd7"' "$package_resolved" || \
-    ! /usr/bin/grep -q '"version" : "2.9.4"' "$package_resolved"; then
+    ! /usr/bin/grep -q '"revision" : "79bc9e872948e47877e76f194cb0c8e0412b0b90"' "$package_resolved" || \
+    ! /usr/bin/grep -q '"version" : "2.9.5"' "$package_resolved"; then
     echo "KeyboardShortcuts and shipping Sparkle must remain exactly resolved." >&2
     exit 1
 fi
