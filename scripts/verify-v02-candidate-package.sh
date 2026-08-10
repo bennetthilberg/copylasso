@@ -100,7 +100,7 @@ for evidence in \
 done
 
 "$repository_root/scripts/verify-release-package.sh" \
-    --release-metadata-profile v0.2.1 \
+    --release-metadata-profile "$COPYLASSO_V02_RELEASE_PACKAGE_PROFILE" \
     --payload-app "$application" \
     --payload-commit "$COPYLASSO_V02_CANDIDATE_COMMIT" \
     --packaging-commit "$COPYLASSO_V02_CANDIDATE_COMMIT" \
@@ -110,4 +110,4 @@ done
 committed="true"
 trap - EXIT
 
-echo "Approved G48 candidate package reverified without rebuilding."
+echo "Approved $COPYLASSO_RELEASE_VERSION candidate package reverified without rebuilding."

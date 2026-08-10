@@ -62,9 +62,9 @@ feed_step="$(/usr/bin/sed -n \
     fail "The G49 feed step must use the byte-exact published v0.2.1 notes fixture."
 
 /usr/bin/grep -Fq -- \
-    'scripts/fixtures/v0.2.1-published-release-notes.md' \
+    '$repository_root/$COPYLASSO_V02_RELEASE_NOTES' \
     "$candidate_downloader" || \
-    fail "The candidate downloader must validate against immutable published v0.2.1 notes."
+    fail "The candidate downloader must validate against the selected immutable notes."
 if /usr/bin/grep -Fq -- \
     'docs/release-notes/$COPYLASSO_RELEASE_VERSION.md' \
     "$candidate_downloader"; then
@@ -75,9 +75,9 @@ if /usr/bin/grep -Fq -- '--pinned-v02-metadata' "$package_verifier"; then
     fail "G49 package verification must use current 0.2.1 release metadata."
 fi
 /usr/bin/grep -Fq -- \
-    '--release-metadata-profile v0.2.1' \
+    '--release-metadata-profile "$COPYLASSO_V02_RELEASE_PACKAGE_PROFILE"' \
     "$package_verifier" || \
-    fail "The v0.2.1 candidate verifier must select immutable package metadata."
+    fail "The candidate verifier must select immutable package metadata."
 /usr/bin/grep -Fq -- '--pinned-v02-metadata' "$generic_package_verifier" || \
     fail "The generic verifier must retain explicit historical v0.2.0 support."
 

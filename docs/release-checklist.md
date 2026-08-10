@@ -214,14 +214,20 @@ inferred pass; see [`v0.2-release-qualification.md`](v0.2-release-qualification.
 
 ## G50 - Patch Sparkle Security Advisory
 
-- [ ] Phase 1: freeze source at `0.2.2 (5)`, pin Sparkle 2.9.5 at reviewed
+- [x] Phase 1: freeze source at `0.2.2 (5)`, pin Sparkle 2.9.5 at reviewed
   commit `79bc9e872948e47877e76f194cb0c8e0412b0b90`, and reject affected
   versions through 2.9.4 in canonical CI.
-- [ ] Phase 1: preserve exact current entitlements, updater-only networking,
+- [x] Phase 1: preserve exact current entitlements, updater-only networking,
   full-package-only appcast generation, and the immutable public v0.2.1 state.
-- [ ] Phase 1: pass local and hosted arm64/x86_64 checks, Universal 2 Release
+- [x] Phase 1: pass local and hosted arm64/x86_64 checks, Universal 2 Release
   verification, bounded review, and ready-PR readback; stop for merge approval.
-- [ ] Phase 2: after a separately approved merge, create and fully qualify one
+- [x] Phase 2: after a separately approved merge, create and fully qualify one
   private exact-head `v0.2.2-rc.N` candidate without publication.
-- [ ] Phase 3: prepare and execute publication only through separately approved
-  protected controls, then close release-state documentation in a separate PR.
+- [ ] Phase 3: merge the green, input-free protected preparation controls, then
+  create and verify one private final draft and signed final-URL appcast without
+  rebuilding, publishing, tagging, or deploying.
+- [ ] Phase 3: publish only the exact approved candidate through a verified
+  signed final tag, two-asset public release, and byte-identical authenticated
+  feed deployment; complete public download and updater verification.
+- [ ] Phase 3: close release-state documentation in a separate green pull
+  request without changing release bytes, tags, application code, or feed.

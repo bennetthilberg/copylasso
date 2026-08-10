@@ -107,6 +107,12 @@ echo "Auditing G49 publication controls"
 echo "Auditing the G50 Sparkle security hotfix"
 ./scripts/audit-g50-sparkle-hotfix.sh
 
+echo "Testing G50 publication controls"
+./scripts/test-g50-publication.sh
+
+echo "Auditing G50 publication controls"
+./scripts/audit-g50-publication.sh
+
 echo "Auditing on-screen code recognition"
 ./scripts/audit-code-recognition.sh
 

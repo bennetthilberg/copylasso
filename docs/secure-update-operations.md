@@ -252,3 +252,21 @@ items, and updater entitlements, feed origin, key identity, consent, size,
 replay, and installation boundaries do not change. Phase 1 only enables a
 private `v0.2.2-rc.N` candidate from exact protected main; it cannot publish or
 deploy a feed.
+
+## G50 v0.2.2 Publication Boundary
+
+The protected G50 preparation workflow consumes only approved private
+`v0.2.2-rc.1` at exact commit
+`81016fe43ee617b5f251564b03904137a4447266`. It reverifies the four immutable
+candidate assets without rebuilding, produces one final-URL full-package
+appcast with the existing Sparkle identity, and creates a private two-asset
+final draft. It has no publication, tag-creation, or feed-deployment path.
+
+The approved operator transaction publishes the immutable draft only after a
+verified annotated final tag exists at the same candidate commit. It then
+deploys only the exact signed `appcast.xml` and existing `_headers` policy to
+the established feed-only Cloudflare Pages project. The transaction changes no
+key, endpoint, entitlement, permission, DNS authority, apex record, nameserver,
+or application byte. Any failed or ambiguous readback freezes state for
+remediation and never authorizes tag movement, asset replacement, unsigned
+metadata, or a regenerated feed.

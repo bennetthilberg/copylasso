@@ -20,6 +20,8 @@ readonly g46_product_patch_audit_script="$repository_root/scripts/audit-g46-prod
 readonly g48_patch_qualification_audit_script="$repository_root/scripts/audit-g48-patch-qualification.sh"
 readonly g49_publication_audit_script="$repository_root/scripts/audit-g49-publication.sh"
 readonly g50_sparkle_hotfix_audit_script="$repository_root/scripts/audit-g50-sparkle-hotfix.sh"
+readonly g50_publication_audit_script="$repository_root/scripts/audit-g50-publication.sh"
+readonly g50_publication_test_script="$repository_root/scripts/test-g50-publication.sh"
 readonly v02_publication_test_script="$repository_root/scripts/test-v02-publication.sh"
 readonly code_recognition_audit_script="$repository_root/scripts/audit-code-recognition.sh"
 readonly latex_feasibility_audit_script="$repository_root/scripts/audit-latex-feasibility.sh"
@@ -197,11 +199,12 @@ for required_patch_guard in \
     "g46_product_patch_tree_pattern" \
     "g44_release_state_tree_pattern" \
     "g48_patch_tree_pattern" \
+    "g50_publication_tree_pattern" \
     "expected_candidate_baseline_tree_digest='1e4844388bc872b8ac4644a13b00223af1239f431d390130346daa8e914aafa0'" \
     "expected_g48_baseline_tree_digest='95d7dfdf8a9545b8ce85568437ffc57d6951344c912945d86f391639a1e105be'" \
     "expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'" \
     "expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'" \
-    "expected_approved_post_candidate_patch_digest='fd366cfdbf2edeb8561e3ed6d3184d70d93ec3f97d1017dad8c2978a11492c6e'" \
+    "expected_approved_post_candidate_patch_digest='9c52644dbf6dd76d90d1416b41a9d3cb2e0e465f03b5d6d304a6d9cf6f4180c7'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
     '"$current_baseline_tree_digest" == "$expected_g48_baseline_tree_digest"' \
@@ -217,6 +220,7 @@ for required_patch_guard in \
     '/usr/bin/grep -Ev "$g44_release_state_tree_pattern"' \
     '/usr/bin/grep -Ev "$g48_patch_tree_pattern"' \
     '/usr/bin/grep -Ev "$g50_security_hotfix_tree_pattern"' \
+    '/usr/bin/grep -Ev "$g50_publication_tree_pattern"' \
     'The approved G43A runtime patch differs from its reviewed tree digest.'; do
     if ! /usr/bin/grep -Fq "$required_patch_guard" \
         "$v02_release_qualification_audit_script"; then
@@ -292,6 +296,32 @@ g50_sparkle_hotfix_audit_invocations="$({
 if [[ "$g50_sparkle_hotfix_audit_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/audit-g50-sparkle-hotfix.sh exactly once."
 fi
+g50_publication_test_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/test-g50-publication\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$g50_publication_test_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/test-g50-publication.sh exactly once."
+fi
+g50_publication_audit_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/audit-g50-publication\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$g50_publication_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-g50-publication.sh exactly once."
+fi
+for required_g50_publication_guard in \
+    'v0.2.2-rc.1' \
+    '81016fe43ee617b5f251564b03904137a4447266' \
+    'copylasso_prepare_v022_publication' \
+    'must not publish, tag, replace, or deploy'; do
+    if ! /usr/bin/grep -Fq -- "$required_g50_publication_guard" \
+        "$g50_publication_audit_script"; then
+        fail "The G50 publication audit is missing its guard: $required_g50_publication_guard"
+    fi
+done
 for required_g50_guard in \
     '0\.2\.2' \
     '2.9.5' \

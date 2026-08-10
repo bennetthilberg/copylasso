@@ -100,9 +100,9 @@ require_text docs/security-and-privacy-review.md \
 require_text docs/security-and-privacy-review.md \
     '79bc9e872948e47877e76f194cb0c8e0412b0b90'
 require_text scripts/download-v02-candidate.sh \
-    'scripts/fixtures/v0.2.1-published-release-notes.md'
+    '$repository_root/$COPYLASSO_V02_RELEASE_NOTES'
 require_text scripts/verify-v02-candidate-package.sh \
-    '--release-metadata-profile v0.2.1'
+    '--release-metadata-profile "$COPYLASSO_V02_RELEASE_PACKAGE_PROFILE"'
 
 require_text .github/workflows/release.yml 'release_goal=G50'
 require_text .github/workflows/release.yml 'release_subdirectory=g50'

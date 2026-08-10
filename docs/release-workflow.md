@@ -359,3 +359,28 @@ verified. The annotated signed final tag and RC tag must peel to the same G48
 commit. The exact final draft is published before the authenticated appcast is
 deployed to the existing feed-only endpoint. Any ambiguous or failed readback
 stops publication without replacement or retry-by-mutation.
+
+## G50 Publication Preparation
+
+G50 consumes only approved private candidate `v0.2.2-rc.1`, release
+`367632598`, at exact commit
+`81016fe43ee617b5f251564b03904137a4447266`. The input-free
+`copylasso_prepare_v022_publication` repository dispatch runs only from
+protected `main`, reruns canonical CI, and downloads the four immutable
+candidate assets with their pinned sizes and SHA-256 digests. It reverifies the
+restricted candidate package through the immutable `v0.2.2` package profile;
+it never rebuilds, signs, notarizes, staples, or repackages the application.
+
+Only the protected preparation job receives `contents: write`. The approved
+team identifier enters only package verification, and the Sparkle seed enters
+only final-appcast generation after the shipped public key and candidate bytes
+match. The job creates a private non-prerelease final draft with exactly the
+DMG and checksum, plus a restricted handoff containing the authenticated
+final-URL appcast and content-free readbacks. It cannot publish the draft,
+create or move a tag, replace an asset, deploy the feed, or accept dispatch
+inputs.
+
+The later approved operator transaction must publish the exact prepared draft
+and deploy the exact handoff. A mismatched candidate, final draft, signature,
+digest, tag, or public readback stops the transaction; it never authorizes
+replacement bytes, tag movement, regeneration, or rebuilding.
