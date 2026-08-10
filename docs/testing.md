@@ -102,6 +102,18 @@ the exact protected-main candidate must repeat Developer ID, notarization,
 Gatekeeper, Universal 2, entitlement, nested-code, appcast, no-delta, tamper,
 and updater smoke verification.
 
+Phase 3 adds a separate exactly-once `test-g50-publication.sh` and
+`audit-g50-publication.sh` pair. They retain v0.2.1 as the default historical
+publication profile while allowing only the pinned v0.2.2 profile for the new
+input-free protected workflow. The controls bind the approved candidate
+commit, private release, RC tag, four asset sizes and digests, restricted
+appcast digest, exact notes, previous public tag, final tag, and immutable
+package profile. They reject arbitrary dispatch input, mutable actions,
+credential expansion, rebuilding, notarization, publication, tag mutation,
+asset replacement, and feed deployment. The protected preparation output is a
+private two-asset final draft plus a restricted signed feed handoff; public
+mutation remains a separately verified operator transaction.
+
 ## G46 Production Interactive Capture
 
 Normal builds synchronously start Apple's fixed interactive selector after a

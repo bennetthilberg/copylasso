@@ -22,12 +22,13 @@ readonly g44_release_state_tree_pattern=$'\t(CHANGELOG\\.md|CONTRIBUTING\\.md|PR
 readonly g48_patch_tree_pattern=$'\t(\\.github/workflows/prepare-publication\\.yml|\\.github/workflows/release\\.yml|CHANGELOG\\.md|Configuration/ReleaseMetadata\\.xcconfig|PRIVACY\\.md|README\\.md|SECURITY\\.md|docs/architecture/build-configuration\\.md|docs/architecture/overview\\.md|docs/manual-qa-and-performance\\.md|docs/release-candidate-qualification\\.md|docs/release-checklist\\.md|docs/release-notes/0\\.2\\.1\\.md|docs/release-packaging\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/security-and-privacy-review\\.md|docs/testing\\.md|docs/v0\\.2-product-contract\\.md|docs/v0\\.2\\.1-source-qualification\\.md|scripts/audit-brand-release\\.sh|scripts/audit-g48-patch-qualification\\.sh|scripts/audit-release-package\\.sh|scripts/audit-release-workflow\\.sh|scripts/audit-secure-update-architecture\\.sh|scripts/audit-v02-contract\\.sh|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/audit-v02-release-state\\.sh|scripts/ci\\.sh|scripts/create-draft-release\\.sh|scripts/lib/release-package-verification\\.sh|scripts/lib/release-workflow-verification\\.sh|scripts/lib/v02-publication-verification\\.sh|scripts/test-ci-contract\\.sh|scripts/test-developer-id-release\\.sh|scripts/test-release-metadata\\.sh|scripts/test-release-package\\.sh|scripts/test-release-workflow\\.sh|scripts/test-v02-publication\\.sh|scripts/verify-release-package\\.sh|scripts/verify-v02-candidate-package\\.sh)$'
 readonly g49_publication_tree_pattern=$'\t(\\.github/workflows/prepare-publication\\.yml|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/v0\\.2-publication-runbook\\.md|scripts/audit-g48-patch-qualification\\.sh|scripts/audit-g49-publication\\.sh|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/ci\\.sh|scripts/download-v02-candidate\\.sh|scripts/generate-release-appcast\\.sh|scripts/lib/release-package-verification\\.sh|scripts/lib/v020-release-package-metadata\\.sh|scripts/lib/v021-release-package-metadata\\.sh|scripts/lib/v02-publication-transaction\\.sh|scripts/lib/v02-publication-verification\\.sh|scripts/prepare-update-feed\\.sh|scripts/test-ci-contract\\.sh|scripts/test-v02-publication\\.sh|scripts/verify-v02-candidate-package\\.sh)$'
 readonly g50_security_hotfix_tree_pattern=$'\t(CopyLasso\\.xcodeproj/project\\.pbxproj|CopyLasso\\.xcodeproj/project\\.xcworkspace/xcshareddata/swiftpm/Package\\.resolved|CopyLasso/Models/AboutMetadata\\.swift|CopyLasso/Resources/Sparkle-2\\.9\\.(4|5)-LICENSE\\.txt|CopyLassoTests/App/MenuBarShellTests\\.swift|CopyLassoUITests/CopyLassoUITests\\.swift|THIRD_PARTY_NOTICES\\.md|docs/architecture/ADR-004-secure-updates\\.md|docs/release-notes/0\\.2\\.2\\.md|scripts/audit-g50-sparkle-hotfix\\.sh|scripts/build-private-update-fixture\\.sh|scripts/fixtures/v0\\.2\\.1-published-release-notes\\.md)$'
+readonly g50_publication_tree_pattern=$'\t(\\.github/workflows/prepare-v022-publication\\.yml|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/testing\\.md|docs/v0\\.2-publication-runbook\\.md|scripts/audit-g50-publication\\.sh|scripts/audit-g50-sparkle-hotfix\\.sh|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/ci\\.sh|scripts/create-v02-publication-draft\\.sh|scripts/download-v02-candidate\\.sh|scripts/fixtures/v0\\.2\\.2-published-release-notes\\.md|scripts/generate-release-appcast\\.sh|scripts/lib/release-package-verification\\.sh|scripts/lib/v022-release-package-metadata\\.sh|scripts/lib/v02-publication-verification\\.sh|scripts/test-ci-contract\\.sh|scripts/test-g50-publication\\.sh|scripts/test-v02-publication\\.sh|scripts/verify-release-package\\.sh|scripts/verify-v02-candidate-package\\.sh)$'
 readonly g44_release_state_commit='295ea80bdc0d51579840ef9c2bfcad5278f87099'
 readonly expected_candidate_baseline_tree_digest='1e4844388bc872b8ac4644a13b00223af1239f431d390130346daa8e914aafa0'
 readonly expected_g48_baseline_tree_digest='95d7dfdf8a9545b8ce85568437ffc57d6951344c912945d86f391639a1e105be'
 readonly expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'
 readonly expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'
-readonly expected_approved_post_candidate_patch_digest='fd366cfdbf2edeb8561e3ed6d3184d70d93ec3f97d1017dad8c2978a11492c6e'
+readonly expected_approved_post_candidate_patch_digest='9c52644dbf6dd76d90d1416b41a9d3cb2e0e465f03b5d6d304a6d9cf6f4180c7'
 
 fail() {
     echo "$1" >&2
@@ -65,7 +66,9 @@ approved_post_candidate_path() {
         printf '%s\n' "$tree_line" | \
             /usr/bin/grep -Eq "$g49_publication_tree_pattern" || \
         printf '%s\n' "$tree_line" | \
-            /usr/bin/grep -Eq "$g50_security_hotfix_tree_pattern"
+            /usr/bin/grep -Eq "$g50_security_hotfix_tree_pattern" || \
+        printf '%s\n' "$tree_line" | \
+            /usr/bin/grep -Eq "$g50_publication_tree_pattern"
 }
 
 for required_file in \
@@ -265,6 +268,7 @@ current_baseline_tree_digest="$(
         /usr/bin/grep -Ev "$g48_patch_tree_pattern" |
         /usr/bin/grep -Ev "$g49_publication_tree_pattern" |
         /usr/bin/grep -Ev "$g50_security_hotfix_tree_pattern" |
+        /usr/bin/grep -Ev "$g50_publication_tree_pattern" |
         /usr/bin/shasum -a 256 |
         /usr/bin/awk '{print $1}'
 )"

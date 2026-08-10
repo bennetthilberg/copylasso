@@ -190,4 +190,4 @@ fi
 cleanup
 trap - EXIT
 
-echo "Authenticated public v0.2.1 update metadata created and verified."
+echo "Authenticated public $COPYLASSO_RELEASE_VERSION update metadata created and verified."

@@ -223,9 +223,9 @@ for required_downloader_text in \
     require_text "$candidate_downloader" "$required_downloader_text"
 done
 require_text "$candidate_downloader" \
-    'scripts/fixtures/v0.2.1-published-release-notes.md'
+    '$repository_root/$COPYLASSO_V02_RELEASE_NOTES'
 require_text "$package_verifier" \
-    '--release-metadata-profile v0.2.1'
+    '--release-metadata-profile "$COPYLASSO_V02_RELEASE_PACKAGE_PROFILE"'
 require_text "$v021_package_metadata" 'readonly COPYLASSO_RELEASE_VERSION="0.2.1"'
 require_text "$v021_package_metadata" 'readonly COPYLASSO_RELEASE_BUILD="4"'
 for required_generator_text in \
