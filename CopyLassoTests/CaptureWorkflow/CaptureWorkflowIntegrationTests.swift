@@ -351,6 +351,25 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     XCTAssertEqual(context.feedback.presentedFeedback, [.success(preview: "assembled")])
   }
 
+  func testSystemInterruptionDuringHistoryWriteDoesNotRecreateFeedback() async throws {
+    let context = try makeContext(historyResult: .recorded)
+    context.history.shouldSuspend = true
+
+    _ = context.command.perform()
+    let work = Task { await context.scheduler.runNext() }
+    await context.history.waitUntilRecordStarts()
+    XCTAssertEqual(context.coordinator.state, .completing)
+    XCTAssertTrue(context.command.cancelActiveOperation(reason: .systemInterrupted))
+
+    context.history.resumeRecord()
+    await work.value
+
+    XCTAssertEqual(context.clipboard.writtenTexts, ["assembled"])
+    XCTAssertEqual(context.feedback.presentedFeedback, [])
+    XCTAssertEqual(context.coordinator.state, .idle)
+    XCTAssertTrue(context.command.isEnabled)
+  }
+
   func testNoTextOrEligibleCodePreservesClipboardAndRemainsSilent() async throws {
     let context = try makeContext(
       barcodeResult: .success([]),
