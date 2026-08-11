@@ -284,7 +284,7 @@ This live matrix requires an unlocked graphical session and granted Screen Recor
 2. Select a known paragraph, wait for the success HUD to disappear, and paste into both TextEdit and a browser text field. Confirm plain text, sensible line breaks, and exactly one clipboard replacement.
 3. Select a region with no visible text. Confirm the no-text HUD is distinct and the prior clipboard remains.
 4. Keep Finder, TextEdit, and a full-screen application frontmost in separate runs. For the historical G17 behavior, confirm the HUD appears without activation, key-window change, sound, notification request, or menu opening. G37 supersedes only the sound portion for current source.
-5. Confirm the menu symbol changes only for the HUD lifetime, the preview is readable with VoiceOver, long text is truncated with one ellipsis, and no preview remains after dismissal.
+5. Confirm the menu symbol changes only for the HUD lifetime, the preview is readable with VoiceOver, long text is truncated at 80 extended grapheme clusters without added punctuation, and no preview remains after dismissal.
 6. During each success, no-text, and failure HUD, invoke Capture Text again. Confirm the HUD closes
    immediately, one fresh crosshair appears, and no stale panel or overlapping selection remains.
 7. Repeat success, no-text, and cancellation three times each and confirm Capture Text returns to enabled after every result.

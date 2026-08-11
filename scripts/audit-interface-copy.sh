@@ -18,9 +18,33 @@ if [[ -n "$unicode_ellipsis_matches" ]]; then
     fail "CopyLasso-authored interface copy must not contain an ellipsis."
 fi
 
+swift_string_ellipsis_matches() {
+    /usr/bin/perl -ne '
+        while (/"(?:\\.|[^"\\])*\.\.\.(?:\\.|[^"\\])*"/g) {
+            print "$ARGV:$.:$_";
+        }
+        close ARGV if eof;
+    ' "$@"
+}
+
+readonly interpolated_copy_fixture='Text("Loading \(item)...")'
+readonly escaped_copy_fixture='Text("Loading \"item\"...")'
+fixture_match_count="$({
+    /usr/bin/printf '%s\n%s\n' \
+        "$interpolated_copy_fixture" \
+        "$escaped_copy_fixture" | \
+        swift_string_ellipsis_matches - | \
+        /usr/bin/wc -l | \
+        /usr/bin/tr -d ' '
+})"
+if [[ "$fixture_match_count" != "2" ]]; then
+    fail "The interface-copy audit must detect interpolated and escaped Swift strings."
+fi
+
 ascii_ellipsis_string_matches="$({
-    /usr/bin/grep -R -nE --include='*.swift' '"[^"\\]*\.\.\.[^"\\]*"' \
-        CopyLasso || true
+    while IFS= read -r -d '' swift_file; do
+        swift_string_ellipsis_matches "$swift_file"
+    done < <(/usr/bin/find CopyLasso -type f -name '*.swift' -print0)
 })"
 if [[ -n "$ascii_ellipsis_string_matches" ]]; then
     /usr/bin/printf '%s\n' "$ascii_ellipsis_string_matches" >&2

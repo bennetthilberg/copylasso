@@ -302,7 +302,14 @@ final class CopyLassoUITests: XCTestCase {
       XCTAssertTrue(aboutTitle.waitForExistence(timeout: 5))
       let aboutIcon = app.images["copylasso.about.icon"]
       XCTAssertTrue(aboutIcon.exists)
-      XCTAssertLessThan(aboutIcon.frame.midY, aboutTitle.frame.midY)
+      // SwiftUI's accessibility frames extend beyond the visible icon and text
+      // bounds. With the reviewed 18-point layout gap, the AX edge delta is
+      // approximately -7.25 points; collapsing that gap moves it below -8. The
+      // exact layout constant is covered by MenuBarShellTests.
+      XCTAssertGreaterThanOrEqual(
+        aboutTitle.frame.minY - aboutIcon.frame.maxY,
+        -8
+      )
       assertAccessibleText(
         app.staticTexts["copylasso.about.version"], equals: "Version 0.2.2 (5)"
       )

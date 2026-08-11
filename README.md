@@ -50,7 +50,7 @@ and does not grant a second permission category.
 3. CopyLasso captures only the selected region, recognizes text locally, and writes the assembled plain text to the clipboard.
 4. A short, nonactivating HUD reports copied text, no text found, a busy request, or a recoverable failure.
 
-Open **Settings…** from the menu to change or clear the shortcut, enable Launch at Login, review privacy information, or reopen first-run setup when it is incomplete.
+Open **Settings** from the menu to change or clear the shortcut, enable Launch at Login, review privacy information, or reopen first-run setup when it is incomplete.
 
 The brief, friendly success sound is enabled by default and can be disabled
 with **Settings > Play Sound After Copying**. It plays only after recognized
@@ -75,7 +75,7 @@ public 0.2.2 download yet.
 The unreleased source tree also adds **Save Capture History** under Settings >
 Privacy. It is off by default. When explicitly enabled, CopyLasso encrypts only
 successful text and inert code output locally for seven days, with a 100-entry
-limit and a 256 KiB per-entry ceiling. **History…** in the menu opens exact
+limit and a 256 KiB per-entry ceiling. **History** in the menu opens exact
 Copy/Delete controls; Clear All and disabling a nonempty or unreadable archive
 use destructive confirmation. Screenshots are never stored. This source feature
 is not part of the public 0.2.2 download yet.

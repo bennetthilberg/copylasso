@@ -12,7 +12,7 @@ AppKit exposes no atomic replace operation: it requires clearing before the fall
 
 ## Bounded Feedback
 
-`FeedbackPreview` collapses all whitespace to single spaces and limits success text to 80 extended grapheme clusters, including one trailing ellipsis when truncation is required. It does not interpret markup or retain the unbounded result.
+`FeedbackPreview` collapses all whitespace to single spaces and limits success text to the first 80 extended grapheme clusters without adding punctuation when truncation is required. It does not interpret markup or retain the unbounded result.
 
 `FeedbackPanelController` owns one reusable borderless `NSPanel` with the `.nonactivatingPanel` style. The panel:
 

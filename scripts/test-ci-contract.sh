@@ -208,11 +208,11 @@ for required_patch_guard in \
     "g52_capture_history_coverage_tree_pattern" \
     "g53_interface_copy_tree_pattern" \
     "expected_candidate_baseline_tree_digest='1e4844388bc872b8ac4644a13b00223af1239f431d390130346daa8e914aafa0'" \
-    "expected_g48_baseline_tree_digest='10472c87ac53a5f41fe376bec7e0b403c3b53201ad75050ce56e58e534588656'" \
+    "expected_g48_baseline_tree_digest='6a19b6d447e87870956772e7dcdaa11dedd02c0ce1f98d3ed02e766cf29cd9de'" \
     "expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'" \
     "g51_source_base_commit='5491bdc2ebf60872e0fababdc70c377e54a2e6f8'" \
     "expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'" \
-    "expected_approved_post_candidate_patch_digest='eb0f2827b27c23e468b6bd3d2844b62704d4018bd70c55d06c4a7c7e1a363285'" \
+    "expected_approved_post_candidate_patch_digest='82144807cd2784171efda1611857fbef80c75cf30c769405c30a782b0940132b'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
     'cat-file -e "$g51_source_base_commit^{tree}"' \
@@ -474,6 +474,9 @@ if [[ "$interface_copy_audit_invocations" != "1" ]]; then
 fi
 for interface_copy_guard in \
     'CopyLasso-authored interface copy must not contain an ellipsis.' \
+    'The interface-copy audit must detect interpolated and escaped Swift strings.' \
+    'interpolated_copy_fixture=' \
+    'escaped_copy_fixture=' \
     'Authenticated release notes and captured content remain unmodified.' \
     'Check for Updates'; do
     if ! /usr/bin/grep -Fq "$interface_copy_guard" "$interface_copy_audit_script"; then
