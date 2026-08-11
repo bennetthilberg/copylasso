@@ -8,9 +8,9 @@ The application target is measured from the nonparallel, timeout-bounded `CopyLa
 
 | Metric | G22 baseline | Current reviewed baseline |
 | --- | ---: | ---: |
-| Unit tests | 187 | 471 |
-| Stable application aggregate | 2,382 / 3,396 (70.14%) | 6,019 / 8,323 (72.31%) |
-| Models, CaptureWorkflow, and Settings | 922 / 1,006 (91.65%) | 2,367 / 2,518 (94.00%) |
+| Unit tests | 187 | 477 |
+| Stable application aggregate | 2,382 / 3,396 (70.14%) | 6,097 / 8,403 (72.55%) |
+| Models, CaptureWorkflow, and Settings | 922 / 1,006 (91.65%) | 2,409 / 2,558 (94.17%) |
 | `SettingsController.swift` | 144 / 168 (85.71%) | 250 / 259 (96.52%) |
 | `TextAssembler.swift` | 164 / 203 (80.78%) | 186 / 203 (91.62%) |
 
@@ -20,7 +20,7 @@ The G23 tests exercise idempotent Launch at Login state, approval/unavailable st
 
 G36 adds direct policy, streaming-byte, persistent high-water/deferral, updater-controller, session-consent, and presentation-model coverage. The first full pipeline reported 3,488/5,274 (66.13%) because the concrete 281-line modal AppKit/SwiftUI presenter was being counted even though it can execute meaningfully only in the signed application. Moving its neutral three-line model/protocol contract into a directly tested file and excluding only the concrete presenter produced 3,490/4,993 (69.89%). That still failed the unchanged 70% floor. Missing startup-failure and Debug-service tests then raised real executed behavior to 3,501/4,993 (70.11%) and `UpdateService.swift` from 34/45 to 45/45. Direct downloaded/installing resume-state regressions bring the final G36 checkpoint to 3,543/5,054 (70.10%) and `SecureUpdateSession.swift` to 194/241 (80.49%); no floor was lowered.
 
-G52 adds direct policy, controller, cryptographic archive, Keychain, filesystem, capture-integration, lifecycle, and feedback coverage for opt-in history. The final arm64 result contains 471 unit tests and reports 6,019/8,323 (72.31%) stable application coverage and 2,367/2,518 (94.00%) platform-neutral logic coverage. The history model is 36/36 (100%), its controller is 200/255 (78.43%), and its platform-facing encrypted store is 189/279 (67.74%). The remaining concrete Keychain and sandbox-file branches are owned by the signed real-store relaunch and encrypted-at-rest checks in addition to injected seam coverage; no floor was lowered.
+G52 adds direct policy, controller, cryptographic archive, Keychain, filesystem, capture-integration, lifecycle, and feedback coverage for opt-in history. The final arm64 result contains 477 unit tests and reports 6,097/8,403 (72.55%) stable application coverage and 2,409/2,558 (94.17%) platform-neutral logic coverage. The history model is 36/36 (100%), its controller is 242/295 (82.03%), and its platform-facing encrypted store is 225/307 (73.28%). The remaining concrete Keychain and sandbox-file branches are owned by the signed real-store relaunch and encrypted-at-rest checks in addition to injected seam coverage; no floor was lowered.
 
 ## Enforced Gate
 
