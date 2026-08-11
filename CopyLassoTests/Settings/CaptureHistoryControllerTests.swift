@@ -23,6 +23,19 @@ final class CaptureHistoryControllerTests: XCTestCase {
     XCTAssertEqual(prepareCallCount, 1)
   }
 
+  func testDisabledStartupBestEffortPurgesResidualArchiveAndKey() async {
+    let context = makeContext(entries: [entry(content: "residual private content")])
+
+    await context.controller.start()
+
+    XCTAssertFalse(context.controller.isEnabled)
+    XCTAssertEqual(context.controller.presentationState, .disabled)
+    let deleteAllCallCount = await context.store.deleteAllCallCount
+    XCTAssertEqual(deleteAllCallCount, 1)
+    let remaining = try? await context.store.load(now: now)
+    XCTAssertEqual(remaining, [])
+  }
+
   func testEnableFailureLeavesPreferenceOffAndShowsUnavailableState() async {
     let context = makeContext()
     await context.store.setError(.writeFailed)
@@ -233,6 +246,41 @@ final class CaptureHistoryControllerTests: XCTestCase {
     XCTAssertTrue(didDisable)
     XCTAssertFalse(controller.isEnabled)
     XCTAssertEqual(controller.presentationState, .disabled)
+  }
+
+  func testConfirmedDisableCannotOverlapClearAllOrOverrideItsKeyRotation() async {
+    let stored = entry(content: "private")
+    let preferences = StubAppSettingsStore()
+    preferences.isCaptureHistoryEnabled = true
+    let store = SuspendedFirstDeleteAllCaptureHistoryStore(entries: [stored])
+    let controller = CaptureHistoryController(
+      preferences: preferences,
+      store: store,
+      clipboardService: SpyClipboardService(),
+      successSoundPlayer: SpySuccessSoundPlayer(),
+      feedbackService: SpyFeedbackService(),
+      expirationScheduler: StubCaptureHistoryExpirationScheduler(),
+      now: { self.now }
+    )
+    let disableRequest = await controller.requestDisable()
+    XCTAssertEqual(disableRequest, .confirmationRequired)
+
+    let clearing = Task { await controller.clearAll() }
+    await store.waitUntilFirstDeleteStarts()
+
+    let didDisable = await controller.confirmDisable()
+    XCTAssertFalse(didDisable)
+    XCTAssertTrue(preferences.isCaptureHistoryEnabled)
+    let deleteCountWhileClearing = await store.deleteAllCallCount
+    XCTAssertEqual(deleteCountWhileClearing, 1)
+
+    await store.resumeFirstDelete()
+    let didClear = await clearing.value
+    XCTAssertTrue(didClear)
+    XCTAssertTrue(controller.isEnabled)
+    XCTAssertEqual(controller.presentationState, .ready)
+    let prepareCallCount = await store.prepareCallCount
+    XCTAssertEqual(prepareCallCount, 1)
   }
 
   func testExpirationSchedulerPrunesWithoutRetainingClosedWindowContent() async {

@@ -115,6 +115,7 @@ final class CaptureHistoryController: ObservableObject, CaptureHistoryRecording 
 
   func start() async {
     guard isEnabled else {
+      try? await store.deleteAll()
       setDisabledState()
       return
     }
@@ -164,6 +165,7 @@ final class CaptureHistoryController: ObservableObject, CaptureHistoryRecording 
   }
 
   func confirmDisable() async -> Bool {
+    guard isEnabled, !isDestructiveOperationInProgress else { return false }
     let wasEnabled = preferences.isCaptureHistoryEnabled
     preferences.isCaptureHistoryEnabled = false
     isDestructiveOperationInProgress = true

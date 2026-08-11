@@ -74,13 +74,13 @@ final class CaptureHistoryPolicyTests: XCTestCase {
     XCTAssertNil(CaptureHistoryPolicy.nextExpiration(for: []))
   }
 
-  func testPruningUsesTheSuppliedClockAfterForwardAndBackwardChanges() {
+  func testPruningUsesTheSuppliedClockAndRejectsFutureDatedEntries() {
     let captured = entry(secondsAgo: 60)
     let forward = now.addingTimeInterval(CaptureHistoryPolicy.retentionInterval)
     let backward = now.addingTimeInterval(-CaptureHistoryPolicy.retentionInterval)
 
     XCTAssertEqual(CaptureHistoryPolicy.retainedEntries([captured], now: forward), [])
-    XCTAssertEqual(CaptureHistoryPolicy.retainedEntries([captured], now: backward), [captured])
+    XCTAssertEqual(CaptureHistoryPolicy.retainedEntries([captured], now: backward), [])
   }
 
   private func entry(secondsAgo: TimeInterval) -> CaptureHistoryEntry {

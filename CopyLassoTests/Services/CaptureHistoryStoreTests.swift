@@ -87,7 +87,7 @@ final class CaptureHistoryStoreTests: XCTestCase {
   func testLoadPrunesExpiredEntriesAndAppendEnforcesCountAndDuplicates() async throws {
     let context = makeContext()
     try await context.store.prepare()
-    for offset in 0..<102 {
+    for offset in (0..<102).reversed() {
       _ = try await context.store.append(
         content: "duplicate",
         kind: .text,

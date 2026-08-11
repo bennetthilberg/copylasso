@@ -35,7 +35,9 @@ enum CaptureHistoryPolicy {
     let cutoff = now.addingTimeInterval(-retentionInterval)
     return Array(
       entries
-        .filter { $0.capturedAt > cutoff && canStore(content: $0.content) }
+        .filter {
+          $0.capturedAt > cutoff && $0.capturedAt <= now && canStore(content: $0.content)
+        }
         .sorted {
           if $0.capturedAt != $1.capturedAt {
             return $0.capturedAt > $1.capturedAt
