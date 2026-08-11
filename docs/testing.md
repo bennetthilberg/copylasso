@@ -316,7 +316,7 @@ Use one stably signed Debug app with Screen Recording enabled. Keep a unique sen
 6. Select a region without visible text. Confirm distinct no-text feedback, no pasteboard write, and immediate reuse after dismissal.
 7. Exercise permission, display-change, capture, recognition, clipboard, and feedback failure paths where safely injectable. Confirm one bounded recovery/failure presentation, no raw platform error or content, complete cleanup, and idle recovery.
 8. Complete 25 consecutive real successes, then 20 real attempts alternating success and Escape. Confirm no duplicate panels, stuck cursor, overlapping work, retained preview, unexpected permission, or responsiveness loss.
-9. Inspect the app container and temporary directories before and after the run. Confirm no screenshot, OCR text, preview, log, cache, or history artifact was created.
+9. For the historical G18 build, inspect the app container and temporary directories before and after the run. Confirm no screenshot, OCR text, preview, log, cache, or history artifact was created. G52 supersedes only the history portion with its explicit encrypted opt-in boundary.
 
 The unattended July 11, 2026 run completed the deterministic matrix but could not perform this signed live matrix because the workstation was locked and real G14 capture permission/display evidence was unavailable. At that historical checkpoint this was recorded as pending release-blocking G24 evidence. The final signed G24 record below supersedes that checkpoint with current per-row classifications.
 
@@ -407,7 +407,7 @@ Use one stably signed Debug app, keep Screen Recording enabled, and avoid inspec
 1. Quit CopyLasso. Record a recursive path, size, modification-time, and file-type inventory of only its Debug container plus CopyLasso-named temporary entries. Preserve a unique clipboard sentinel.
 2. Launch and complete ten real captures spanning success, no text, Escape, too-small selection, and one safely injected failure. Include long and sensitive-looking test strings, but no real secret.
 3. Quit CopyLasso and repeat the same inventories. Any new file capable of containing pixels, recognized text, clipboard text, or a feedback preview is release-blocking. Ordinary preference/window metadata must match the retained-state inventory in the security review.
-4. Search only changed/new CopyLasso files for the synthetic strings and inspect their types. Confirm no screenshot, image encoding, OCR history, preview cache, or content-bearing crash breadcrumb exists.
+4. For the historical G22 build, search only changed/new CopyLasso files for the synthetic strings and inspect their types. Confirm no screenshot, image encoding, OCR history, preview cache, or content-bearing crash breadcrumb exists. Current G52 source permits recognized output only in its explicitly enabled authenticated archive and retains every other prohibition.
 5. Inspect Console entries for the CopyLasso process across idle, selection, cancellation, sleep/lock recovery, success, no text, failure, and termination. Only the four fixed lifecycle messages may originate from CopyLasso; no app name being captured, geometry, pixels, recognized text, clipboard text, preview, or raw error may appear.
 6. Run `scripts/test-offline.sh` against a freshly canonical-built bundle. Confirm 187/187 tests pass while the deny-network profile is active. Do not disable the workstation's network or interrupt other applications.
 7. For the historical G22 build, inspect the signed app entitlement and CodeDirectory flags and confirm App Sandbox and Hardened Runtime, no network client/server, no device/file/group/temporary exception, and only development `get-task-allow`. G26 established the first Developer ID archive with `get-task-allow` absent. From G36 onward, every Developer ID candidate must instead contain exactly Boolean App Sandbox, Boolean outbound network client, and the two production-bundle Sparkle installer-service names, with no `get-task-allow`, downloader-service name, or unrelated capability.
@@ -856,3 +856,87 @@ audit confines Vision text APIs to the catalog and recognition adapters,
 requires the runtime-derived preference and capture snapshot, rejects bundled
 models and language-path networking, and pins the source/public documentation
 distinction.
+
+## G52 Privacy-Preserving Capture History
+
+G52 adds one explicit, off-by-default persistence boundary to unreleased source.
+The capture command calls it only after a successful clipboard write and the
+optional success sound. It receives the exact output plus its Text/Code type;
+it never receives pixels, recognition observations, geometry, source-app data,
+prior clipboard contents, or HUD state. Public CopyLasso 0.2.2 remains unchanged
+and has no capture history.
+
+Direct policy and store tests cover exact seven-day expiry, caller-supplied
+clock changes, 100-entry eviction, distinct duplicate events, the 256 KiB UTF-8
+boundary, stable newest-first ordering, relaunch pruning, random key creation,
+authenticated AES-256-GCM round trips, and ciphertext scans for every private
+field. Injected Keychain and filesystem seams exercise a missing or wrong key,
+tampering, truncation, unknown schema, oversized archives, atomic-replacement
+failure, interrupted-write sibling cleanup, restrictive `0600` permissions,
+backup exclusion, and scoped archive
+and key deletion without silently replacing unreadable data.
+
+Workflow and controller tests prove disabled operation creates no key or file;
+text and code success write the clipboard before sound and history; every
+cancelled, failed, ambiguous, no-result, or clipboard-failed operation makes no
+history call; and a history failure preserves the completed copy and sound but
+shows **Copied, History Not Saved**, while an oversized policy skip keeps the
+ordinary success result and existing history usable. They also cover enable, empty disable,
+confirmed and cancelled destructive disable, unreadable recovery, individual
+delete, confirmed Clear All with history remaining enabled, Debug reset,
+in-flight-record draining before destructive disable, expiration scheduling,
+locked-presentation preservation, launch/close/lock cleanup, and exact
+Copy-from-History without recursive recording.
+
+Signed UI coverage uses deterministic Debug-only disabled, populated, and
+unreadable stores. It verifies menu order, the Settings consent toggle, off,
+empty, populated, locked, and error presentation, singleton reopen behavior,
+complete scrollable content, Copy/Delete/Clear controls, confirmations,
+keyboard traversal, VoiceOver labels, focus preservation, and adaptive native
+appearance. Run the focused privacy audit with:
+
+```sh
+./scripts/audit-capture-history.sh
+```
+
+The audit is invoked exactly once by canonical CI. It pins default-off consent,
+retention limits, Keychain scope, AES-GCM authentication, file permissions and
+backup exclusion, post-write workflow ordering, required UI and test coverage,
+unchanged entitlements, and the absence of history networking, logging, or
+image APIs. The broad persistence guard excludes only the reviewed encrypted
+adapter; captured-image persistence remains prohibited globally.
+
+### Signed G52 Manual Matrix
+
+Use one Apple Development-signed Debug app and synthetic text/code values only:
+
+1. Before opt-in, confirm no Debug history Keychain item or archive exists.
+   Complete text and code captures and confirm ordinary clipboard, sound, and
+   HUD behavior without creating either object.
+2. Enable **Save Capture History** once. Capture text and a code, including two
+   identical outputs. Confirm exact newest-first rows, type and timestamp,
+   bounded previews, complete scrollable details, and separate duplicate rows.
+3. Inspect the archive as bytes. Confirm `0600`, backup exclusion, no screenshot
+   file, and no match for any synthetic captured string, identifier, timestamp,
+   or type. Confirm the Debug-scoped, nonsynchronizing, this-device-only Keychain
+   item exists without revealing its value.
+4. Quit and relaunch. Confirm the encrypted entries remain available. Exercise
+   an expiry fixture and confirm expired rows are hidden immediately and the
+   archive is pruned on the next read or launch.
+5. Copy one text and one code row. Confirm exact clipboard output, typed HUD,
+   configured sound, and no new history row. Delete one row immediately; then
+   confirm and complete Clear All, verifying history remains enabled with a new
+   empty key boundary.
+6. With populated data, turn history off and cancel once, confirming nothing
+   changes. Confirm the second attempt, verifying both active archive and key
+   are removed. Repeat with the unreadable fixture and use the destructive
+   recovery action.
+7. Keep History open, lock and unlock the session, and confirm decrypted rows
+   clear and require an explicit reload. Close and reopen the singleton window
+   and verify its decrypted state was cleared between presentations.
+8. Keep networking denied throughout. Confirm capture and history stay usable,
+   no additional permission appears, and no recognized content enters logs.
+
+App-driven deletion removes CopyLasso's active archive and Keychain item, but
+manual evidence must not claim forensic erasure from APFS snapshots or external
+system backups.

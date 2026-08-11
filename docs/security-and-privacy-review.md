@@ -19,9 +19,20 @@ of runtime-supported Vision language identifiers. It adds no model, dependency,
 entitlement, permission, or network destination, and public 0.2.2 remains the
 supported download.
 
+G52 is a second unreleased v0.3 amendment. It adds an explicitly enabled,
+bundle-scoped AES-256-GCM history of successful plain-text output. It adds no
+dependency, entitlement, permission, network destination, account, analytics,
+or screenshot persistence. Public 0.2.2 remains unchanged and has no history.
+
 ## Result
 
-The implementation remains local-first and offline-capable. Screen Recording is the only macOS privacy permission required by the core workflow. The app has no content-history store, account, telemetry, or crash-reporting SDK. Its sole network capability is the isolated, user-controlled Sparkle updater; text and code recognition, clipboard output, local success sound, Settings, onboarding, and Launch at Login remain operational with update networking unavailable.
+The implementation remains local-first and offline-capable. Screen Recording is
+the only macOS privacy permission required by the core workflow. The app has no
+account, telemetry, or crash-reporting SDK. Unreleased source contains one
+default-off encrypted history store; its sole network capability remains the
+isolated, user-controlled Sparkle updater. Capture, history, text and code
+recognition, clipboard output, local success sound, Settings, onboarding, and
+Launch at Login remain operational with update networking unavailable.
 
 The tracked `CopyLasso.entitlements` contains App Sandbox, outbound network client, and exactly Sparkle's two versioned installer-service Mach lookup names. Both app configurations use that file and keep Hardened Runtime enabled. There is no inbound server, device, file, application-group, or other temporary-exception capability. Screen Recording consent is managed by macOS TCC rather than an entitlement.
 
@@ -36,6 +47,7 @@ The tracked `CopyLasso.entitlements` contains App Sandbox, outbound network clie
 | Code recognition | String payload, supported symbology, confidence, and normalized bounds | Private async operation scope | None |
 | Assembly | One inert plain `String` | Private async operation scope | None |
 | Clipboard | Nonempty assembled text | Passed once to a write-only adapter | One system pasteboard plain-string item, controlled by macOS after the write |
+| Optional history | Exact successful text/code output, type, timestamp, and random identifier | Decrypted only while recording or the History window is open | One authenticated encrypted archive plus one bundle-scoped Keychain key; off by default |
 | Sound | Enabled state and one content-free play/stop command | Successful clipboard completion or lifecycle cleanup | One versioned Boolean preference; no content |
 | Feedback | No-text/failure copy or an at-most-80-character success preview | Approximately 2.5 seconds | None; the observable model clears on dismissal |
 | Diagnostics | Fixed lifecycle event class | Unified logging policy | No payload, application name, geometry, content, or raw error |
@@ -56,6 +68,10 @@ CopyLasso owns only these preference categories:
 - the versioned `feedback.successSoundEnabled` Boolean, defaulting on and preserving explicit opt-out;
 - the versioned ordered OCR language identifiers, defaulting to `en-US` and
   validated against the current accurate revision-3 Vision catalog;
+- the unreleased `privacy.captureHistoryEnabled` Boolean, defaulting off;
+- while that preference is on, one seven-day AES-256-GCM archive containing at
+  most 100 successful outputs of at most 256 KiB each, plus the independently
+  bundle-scoped Keychain account `archive-key-v1`;
 - Sparkle's automatic-check schedule and user preference; and
 - `updates.deferredBuild` plus `updates.highestAuthenticatedBuild`, which contain canonical build numbers only.
 
@@ -73,7 +89,10 @@ An inspected development container contained preference/window metadata, one 240
 - Screen Recording: requested only after a user Capture command. Current source may also show macOS's direct-screen-access confirmation for its native interactive selector; this is the same TCC category, not another entitlement.
 - Accessibility and Input Monitoring: not required by the shortcut, menu, selection, OCR, or output path.
 - Microphone and system-audio capture: not requested. The native selector receives no audio option, and the output-only success sound uses `NSSound` without requesting a privacy permission.
-- Files and folders: no user-selected or temporary-file entitlement; the fixed selector's unused image destination is `/dev/null`, and ScreenCaptureKit returns the selected pixels directly in memory.
+- Files and folders: no user-selected or temporary-file entitlement; the fixed
+  selector's unused image destination is `/dev/null`, ScreenCaptureKit returns
+  selected pixels directly in memory, and optional history uses only the app's
+  sandboxed Application Support directory.
 
 Settings links ask macOS to open the user's default browser. CopyLasso itself does not fetch those URLs. The shipping updater is isolated from core capture and has one fixed feed URL. Automatic checks default on at a 24-hour interval but can be disabled; manual checks remain available. Download and install never occur automatically. The user sees authenticated version, inline plain-text notes, and exact size before download, then explicitly confirms download and later install/relaunch.
 
@@ -109,6 +128,7 @@ downloader-service name, or unrelated capability.
 | Misleading or hostile visible text | OCR output is untrusted plain text. CopyLasso copies it but never executes it, interprets markup, follows a link, or invokes a shell. Users must review text before using it as a command or credential. |
 | Malicious or action-shaped code payload | Code output is untrusted inert plain text. CopyLasso never opens a URL, launches an application, joins a network, creates a contact or calendar item, invokes a shell, or otherwise interprets or acts on it. |
 | Clipboard visibility | After a successful write, macOS and other clipboard-aware software control access. CopyLasso writes one plain-string representation and never reads prior contents. |
+| Local history disclosure or corruption | History is off by default and receives only exact successful output after clipboard completion. AES-256-GCM authenticates every encrypted field with a bundle-scoped nonsynchronizing Keychain key. Missing keys, tampering, truncation, unknown versions, and write failures expose no entry and never overwrite unreadable bytes silently. Confirmed deletion cannot promise erasure from APFS snapshots or external backups. |
 | Audio content leakage or playback failure | The sound service receives no pixels, recognized text, clipboard text, preview, geometry, or application identity. It plays one fixed bundled asset after a successful write; missing, muted, unavailable, or refused playback fails silently without delaying or failing capture. |
 | Crash or forced termination during private processing | Operation values are memory-only and no in-app crash reporter receives them. Operating-system diagnostics or a privileged memory inspector remain outside the app's trust boundary. |
 | Abnormal selector termination | Geometry observed before a signal is discarded. Only normal process exit can pass a completed rectangle to ScreenCaptureKit. |
@@ -121,6 +141,31 @@ downloader-service name, or unrelated capability.
 | Shortcut collision or spoofed event | The package validates and records the configured key combination; a narrow `RegisterEventHotKey` adapter delivers it without an event tap or additional permission, and every event enters the same busy-rejecting command. Recorder focus suspends delivery only while CopyLasso is active. A shortcut cannot bypass consent or selection. |
 | Malformed OCR geometry or text | Pure formatting tests retain nonempty observations conservatively, reject invalid geometry safely, and output plain text only. |
 | Malformed, unsupported, binary-only, or ambiguous code result | The adapter exposes only the five reviewed symbologies. Pure assembly rejects missing or empty strings and invalid geometry, removes exact duplicates, and preserves the clipboard when multiple unique payloads contain line breaks. |
+
+## G52 Capture History Review
+
+The reviewed history graph is `CaptureCommand` to the main-actor recorder to one
+actor-isolated encrypted store. Clipboard output and sound happen first; storage
+failure therefore cannot undo or suppress a successful copy and produces only
+the bounded **Copied, History Not Saved** warning. All unsuccessful workflow
+paths bypass the recorder, and history Copy writes directly to the clipboard
+without recursive recording.
+
+The archive includes content, type, timestamp, and random identifier only. Its
+`CLH1` version header is AES-GCM authenticated additional data; all entry fields
+are encrypted. Policy pruning uses an exact seven-day boundary, newest-first
+100-entry cap, and 256 KiB UTF-8 ceiling on launch, read, write, and a next-expiry
+timer. Atomic replacement uses `0600` permissions and backup exclusion. The
+random 32-byte key uses Keychain service `<bundle>.capture-history`, account
+`archive-key-v1`, synchronization disabled, and
+`AfterFirstUnlockThisDeviceOnly` accessibility.
+
+Closing History, session lock, and termination clear decrypted UI state. Turning
+off nonempty or unreadable history and Clear All use destructive confirmation;
+the former disables history while the latter rotates the key and leaves it on.
+The focused audit confines AES/Keychain APIs and file persistence to the reviewed
+adapter, rejects networking, logging, image types, and entitlement changes, and
+retains the global screenshot-persistence prohibition.
 
 ## G38 Code Recognition Review
 

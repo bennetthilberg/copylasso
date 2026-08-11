@@ -17,6 +17,10 @@ flowchart LR
   Precedence -->|"Yes: code wins"| Clipboard["Write-only clipboard"]
   Precedence -->|"No: use text"| Clipboard
   Clipboard --> Sound["Content-free success sound"]
+  Sound --> History{"History enabled?"}
+  History -->|"yes"| Encrypted["Encrypted text/code history"]
+  History -->|"no"| Feedback
+  Encrypted --> Feedback
   Sound --> Feedback["Bounded feedback"]
   Feedback --> Idle["Idle"]
 ```
@@ -36,12 +40,13 @@ After selection, one private async function owns the ScreenCaptureKit `CGImage`,
 - a unified no-result or code-ambiguity value; or
 - a text/code-specific success with a whitespace-normalized preview bounded to 80 extended grapheme clusters after the full string has been written.
 
-Returning from that function ends the image, observations, and unbounded text or payload scope before the feedback service begins its 2.5-second presentation. Neither those values nor the preview enters `CaptureCoordinator`, preferences, logs, caches, analytics, or history. Integration tests hold success and failure feedback open while proving the captured image has already been released.
+Returning from that function ends the image and observation scope before the feedback service begins its 2.5-second presentation. Neither those values nor the preview enters `CaptureCoordinator`, preferences, logs, caches, or analytics. When the user has explicitly enabled G52 history, only the exact successful assembled output and its Text/Code type cross the encrypted history boundary after the clipboard write and optional sound. Integration tests hold success and failure feedback open while proving the captured image has already been released.
 
 ## Completion, Cancellation, And Failure
 
 - Success, no-text-or-code, and code-ambiguity enter `completing` only while presenting feedback, then return immediately to idle while the feedback panel owns its independent dismissal timer. A new idle capture may therefore dismiss visible feedback and begin selection without waiting for that timer.
 - Only a successful nonempty clipboard write requests one success sound. Every cancellation, no-result, ambiguity, and failure before or during the clipboard write is silent. Playback never receives private content and never blocks completion.
+- Only after that successful write and sound may the opt-in history recorder receive the exact output and its Text/Code type. Recorder failure cannot reverse the copy or suppress sound; it replaces ordinary success with bounded **Copied, History Not Saved** feedback. Disabled history, every unsuccessful workflow path, and Copy from History make no recorder call.
 - Escape status, a too-small drag, application termination, Control-modifier interruption, unsupported Shift/Option/Space adjustment, and recognition cancellation are non-error cancellation outcomes. They never call CopyLasso's clipboard service or show generic failure feedback. A selector exit without a completed rectangle is cancellation or a capture-stage failure according to its termination status.
 - Ordinary selection, capture, recognition, clipboard, and feedback errors are classified only by stage. Raw platform errors and content never enter observable state or user copy.
 - A real capture-time Screen Recording denial uses the specific permission-recovery panel rather than stacking a generic failure HUD. When the selector returns without geometry, an async `SCShareableContent.current` probe authoritatively checks access before the result is classified as Escape; the probe captures no pixels and retains no shareable-content metadata.

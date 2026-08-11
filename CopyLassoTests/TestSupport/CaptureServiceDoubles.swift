@@ -253,6 +253,42 @@ final class SpyFeedbackService: FeedbackService {
 }
 
 @MainActor
+final class SpyCaptureHistoryRecorder: CaptureHistoryRecording {
+  var result: CaptureHistoryRecordingResult = .notEnabled
+  var shouldSuspend = false
+  var onRecord: ((String, CaptureHistoryContentKind) -> Void)?
+  private(set) var requests: [(content: String, kind: CaptureHistoryContentKind)] = []
+  private var recordStarted = false
+  private var continuation: CheckedContinuation<Void, Never>?
+
+  func record(
+    content: String,
+    kind: CaptureHistoryContentKind
+  ) async -> CaptureHistoryRecordingResult {
+    requests.append((content, kind))
+    onRecord?(content, kind)
+    recordStarted = true
+    if shouldSuspend {
+      await withCheckedContinuation { continuation in
+        self.continuation = continuation
+      }
+    }
+    return result
+  }
+
+  func waitUntilRecordStarts() async {
+    while !recordStarted {
+      await Task.yield()
+    }
+  }
+
+  func resumeRecord() {
+    continuation?.resume()
+    continuation = nil
+  }
+}
+
+@MainActor
 func makeTestCaptureCommand(
   coordinator: CaptureCoordinator,
   scheduleWork: @escaping CaptureCommand.WorkScheduler,

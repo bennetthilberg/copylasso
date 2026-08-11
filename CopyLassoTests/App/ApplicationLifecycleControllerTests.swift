@@ -11,11 +11,13 @@ final class ApplicationLifecycleControllerTests: XCTestCase {
     let recovery = SpyPermissionRecoveryPresenter()
     let logger = SpyCaptureLifecycleLogger()
     var shortcutStopCount = 0
+    var sensitiveStateClearCount = 0
     let controller = ApplicationLifecycleController(
       eventSource: source,
       captureCanceller: canceller,
       recoveryPresenter: recovery,
       stopShortcutDelivery: { shortcutStopCount += 1 },
+      clearSensitiveState: { sensitiveStateClearCount += 1 },
       logger: logger
     )
     controller.start()
@@ -27,6 +29,7 @@ final class ApplicationLifecycleControllerTests: XCTestCase {
     XCTAssertEqual(recovery.dismissCallCount, 1)
     XCTAssertEqual(logger.events, [.cancelledForSystemInterruption])
     XCTAssertEqual(shortcutStopCount, 0)
+    XCTAssertEqual(sensitiveStateClearCount, 1)
 
     source.send(.systemResumed)
     XCTAssertEqual(canceller.reasons, [.systemInterrupted])
@@ -35,6 +38,7 @@ final class ApplicationLifecycleControllerTests: XCTestCase {
     source.send(.systemInterrupted)
     XCTAssertEqual(canceller.reasons, [.systemInterrupted, .systemInterrupted])
     XCTAssertEqual(recovery.dismissCallCount, 2)
+    XCTAssertEqual(sensitiveStateClearCount, 2)
   }
 
   func testIdleInterruptionAndTerminationUseSafeDiagnosticsAndStopDelivery() {
@@ -43,11 +47,13 @@ final class ApplicationLifecycleControllerTests: XCTestCase {
     let recovery = SpyPermissionRecoveryPresenter()
     let logger = SpyCaptureLifecycleLogger()
     var shortcutStopCount = 0
+    var sensitiveStateClearCount = 0
     let controller = ApplicationLifecycleController(
       eventSource: source,
       captureCanceller: canceller,
       recoveryPresenter: recovery,
       stopShortcutDelivery: { shortcutStopCount += 1 },
+      clearSensitiveState: { sensitiveStateClearCount += 1 },
       logger: logger
     )
     controller.start()
@@ -58,6 +64,7 @@ final class ApplicationLifecycleControllerTests: XCTestCase {
     XCTAssertEqual(canceller.reasons, [.systemInterrupted, .applicationTerminated])
     XCTAssertEqual(recovery.dismissCallCount, 2)
     XCTAssertEqual(shortcutStopCount, 1)
+    XCTAssertEqual(sensitiveStateClearCount, 2)
     XCTAssertEqual(
       logger.events,
       [.systemInterruptionWhileIdle, .applicationWillTerminate]

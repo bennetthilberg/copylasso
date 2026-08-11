@@ -16,6 +16,14 @@ struct MenuBarMenuView: View {
     .globalKeyboardShortcut(.captureText)
     .accessibilityIdentifier("copylasso.menu.capture")
 
+    Button("History…") {
+      commandHandler.openHistory {
+        openWindow(id: "history")
+      }
+    }
+    .accessibilityHint("Opens locally saved capture history.")
+    .accessibilityIdentifier("copylasso.menu.history")
+
     Divider()
 
     Button("Check for Updates") {

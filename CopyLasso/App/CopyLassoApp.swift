@@ -31,6 +31,11 @@ import SwiftUI
     var usesLegacyCaptureWorkflow: Bool {
       isUITesting || isLiveSelectionTesting || isLiveCaptureTesting
     }
+
+    var usesSystemCaptureHistoryStore: Bool {
+      arguments.contains("--g52-history-system-store")
+    }
+
   }
 #endif
 
@@ -44,6 +49,7 @@ struct CopyLassoApp: App {
   private let lifecycleController: ApplicationLifecycleController
   private let successSoundPlayer: SystemSuccessSoundPlayer
   private let updateController: UpdateController
+  private let historyController: CaptureHistoryController
 
   init() {
     let settingsStore = UserDefaultsSettingsStore()
@@ -55,10 +61,16 @@ struct CopyLassoApp: App {
     let interactiveCaptureService: (any InteractiveCaptureService)?
     let barcodeService: any BarcodeRecognitionService
     let updateService: any UpdateServicing
+    let historyStore: any CaptureHistoryStoring
 
     #if DEBUG
       let arguments = ProcessInfo.processInfo.arguments
       let runtimeOptions = DebugRuntimeOptions(arguments: arguments)
+      if runtimeOptions.isUITesting && !runtimeOptions.usesSystemCaptureHistoryStore {
+        historyStore = DebugCaptureHistoryStore(arguments: arguments)
+      } else {
+        historyStore = Self.systemCaptureHistoryStore()
+      }
       if runtimeOptions.isUITesting {
         launchAtLoginService = DebugLaunchAtLoginService(
           status: Self.debugLaunchAtLoginStatus(arguments: arguments)
@@ -70,11 +82,17 @@ struct CopyLassoApp: App {
         if !runtimeOptions.isUITesting {
           try? launchAtLoginService.disable()
         }
+        if runtimeOptions.usesSystemCaptureHistoryStore {
+          Self.resetSystemCaptureHistoryStorage()
+        }
         settingsStore.reset()
         shortcutStore.reset()
       }
       if arguments.contains("--g10-g11-complete-onboarding") {
         settingsStore.completedOnboardingVersion = SettingsController.currentOnboardingVersion
+      }
+      if arguments.contains("--g52-history-enabled") {
+        settingsStore.isCaptureHistoryEnabled = true
       }
       permissionService =
         runtimeOptions.isUITesting || runtimeOptions.isLiveSelectionTesting
@@ -108,6 +126,7 @@ struct CopyLassoApp: App {
       interactiveCaptureService = SystemInteractiveCaptureService()
       barcodeService = VisionBarcodeService()
       updateService = SparkleUpdateService()
+      historyStore = Self.systemCaptureHistoryStore()
     #endif
 
     let updateController = UpdateController(service: updateService)
@@ -137,6 +156,16 @@ struct CopyLassoApp: App {
     self.feedbackController = feedbackController
     let successSoundPlayer = SystemSuccessSoundPlayer(preferences: settingsStore)
     self.successSoundPlayer = successSoundPlayer
+    let clipboardService = SystemClipboardService()
+    let historyController = CaptureHistoryController(
+      preferences: settingsStore,
+      store: historyStore,
+      clipboardService: clipboardService,
+      successSoundPlayer: successSoundPlayer,
+      feedbackService: feedbackController
+    )
+    self.historyController = historyController
+    Task { await historyController.start() }
     let recoveryController = PermissionRecoveryPanelController(
       permissionService: permissionService
     )
@@ -151,8 +180,9 @@ struct CopyLassoApp: App {
         textAssembler: TextAssembler(),
         barcodeService: barcodeService,
         codePayloadAssembler: CodePayloadAssembler(),
-        clipboardService: SystemClipboardService(),
+        clipboardService: clipboardService,
         successSoundPlayer: successSoundPlayer,
+        historyRecorder: historyController,
         feedbackService: feedbackController,
         recoveryPresenter: recoveryController
       )
@@ -167,8 +197,9 @@ struct CopyLassoApp: App {
         textAssembler: TextAssembler(),
         barcodeService: barcodeService,
         codePayloadAssembler: CodePayloadAssembler(),
-        clipboardService: SystemClipboardService(),
+        clipboardService: clipboardService,
         successSoundPlayer: successSoundPlayer,
+        historyRecorder: historyController,
         feedbackService: feedbackController,
         recoveryPresenter: recoveryController
       )
@@ -191,6 +222,9 @@ struct CopyLassoApp: App {
       recoveryPresenter: recoveryController,
       stopShortcutDelivery: { [weak globalShortcutController] in
         globalShortcutController?.stop()
+      },
+      clearSensitiveState: { [weak historyController] in
+        historyController?.clearDecryptedState()
       },
       logger: SystemCaptureLifecycleLogger()
     )
@@ -220,6 +254,7 @@ struct CopyLassoApp: App {
       SettingsView(
         settingsController: settingsController,
         updateController: updateController,
+        historyController: historyController,
         metadata: AboutMetadata(bundle: .main)
       )
     }
@@ -237,7 +272,32 @@ struct CopyLassoApp: App {
       )
     }
     .windowResizability(.contentSize)
+
+    Window("Capture History", id: "history") {
+      CaptureHistoryView(controller: historyController)
+    }
+    .defaultSize(width: 620, height: 460)
   }
+
+  private static func systemCaptureHistoryStore() -> EncryptedCaptureHistoryStore {
+    let bundleIdentifier =
+      Bundle.main.bundleIdentifier ?? "io.github.bennetthilberg.copylasso"
+    return EncryptedCaptureHistoryStore(
+      keyStore: SystemCaptureHistoryKeyStore(bundleIdentifier: bundleIdentifier),
+      fileStore: SystemCaptureHistoryFileStore(bundleIdentifier: bundleIdentifier)
+    )
+  }
+
+  #if DEBUG
+    private static func resetSystemCaptureHistoryStorage() {
+      let bundleIdentifier =
+        Bundle.main.bundleIdentifier ?? "io.github.bennetthilberg.copylasso.debug"
+      let fileStore = SystemCaptureHistoryFileStore(bundleIdentifier: bundleIdentifier)
+      let keyStore = SystemCaptureHistoryKeyStore(bundleIdentifier: bundleIdentifier)
+      try? fileStore.delete()
+      try? keyStore.deleteKey()
+    }
+  #endif
 
   #if DEBUG
     private static func debugUpdateOffer(releaseNotes: String) -> SecureUpdateOffer {

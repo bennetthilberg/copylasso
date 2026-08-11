@@ -40,7 +40,13 @@ Some macOS behavior, including real privacy dialogs, global shortcut delivery, v
 
 Contributions must be original or compatible with the MIT License. Do not copy proprietary source code, private implementation details, branding, icons, screenshots, interface assets, website copy, or other protected material.
 
-CopyLasso must never log, persist, or transmit screenshots, recognized text, clipboard text, or HUD preview text. Preserve the existing clipboard on every cancellation and failure path, and keep platform APIs behind testable boundaries where practical.
+CopyLasso must never log or transmit screenshots, recognized text, clipboard
+text, or HUD preview text, and must never persist screenshots. The only reviewed
+content-persistence boundary is the off-by-default encrypted capture-history
+adapter in the unreleased v0.3 source contract; changes to it require explicit
+contract and security review. Preserve the existing clipboard on every
+cancellation and failure path, and keep platform APIs behind testable boundaries
+where practical.
 
 ## Pull Requests
 

@@ -15,11 +15,13 @@ protocol ApplicationLifecycleEventSourcing: AnyObject {
 @MainActor
 final class ApplicationLifecycleController {
   typealias ShortcutStop = @MainActor () -> Void
+  typealias SensitiveStateClear = @MainActor () -> Void
 
   private let eventSource: any ApplicationLifecycleEventSourcing
   private let captureCanceller: any ActiveCaptureCancelling
   private let recoveryPresenter: any PermissionRecoveryPresenting
   private let stopShortcutDelivery: ShortcutStop
+  private let clearSensitiveState: SensitiveStateClear
   private let logger: any CaptureLifecycleLogging
   private var isSystemInterrupted = false
 
@@ -28,12 +30,14 @@ final class ApplicationLifecycleController {
     captureCanceller: any ActiveCaptureCancelling,
     recoveryPresenter: any PermissionRecoveryPresenting,
     stopShortcutDelivery: @escaping ShortcutStop,
+    clearSensitiveState: @escaping SensitiveStateClear = {},
     logger: any CaptureLifecycleLogging
   ) {
     self.eventSource = eventSource
     self.captureCanceller = captureCanceller
     self.recoveryPresenter = recoveryPresenter
     self.stopShortcutDelivery = stopShortcutDelivery
+    self.clearSensitiveState = clearSensitiveState
     self.logger = logger
   }
 
@@ -56,6 +60,7 @@ final class ApplicationLifecycleController {
       isSystemInterrupted = true
       let cancelled = captureCanceller.cancelActiveOperation(reason: .systemInterrupted)
       recoveryPresenter.dismiss()
+      clearSensitiveState()
       logger.record(cancelled ? .cancelledForSystemInterruption : .systemInterruptionWhileIdle)
     case .systemResumed:
       guard isSystemInterrupted else { return }
@@ -64,6 +69,7 @@ final class ApplicationLifecycleController {
     case .applicationWillTerminate:
       _ = captureCanceller.cancelActiveOperation(reason: .applicationTerminated)
       recoveryPresenter.dismiss()
+      clearSensitiveState()
       stopShortcutDelivery()
       logger.record(.applicationWillTerminate)
       stop()

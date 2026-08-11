@@ -6,13 +6,18 @@ protocol OCRRecognitionPreferencesReading: Sendable {
 }
 
 @MainActor
+protocol CaptureHistoryPreferenceStoring: AnyObject {
+  var isCaptureHistoryEnabled: Bool { get set }
+}
+
+@MainActor
 struct EnglishOnlyOCRRecognitionPreferencesReader: OCRRecognitionPreferencesReading {
   let ocrRecognitionPreferences = OCRRecognitionPreferences.englishUS
 }
 
 @MainActor
 protocol AppSettingsStoring: ScreenCapturePermissionHistoryStoring,
-  SuccessSoundPreferenceReading, OCRRecognitionPreferencesReading
+  SuccessSoundPreferenceReading, OCRRecognitionPreferencesReading, CaptureHistoryPreferenceStoring
 {
   var completedOnboardingVersion: Int { get set }
   var hasConfiguredCaptureShortcut: Bool { get set }
@@ -41,6 +46,7 @@ final class UserDefaultsSettingsStore: AppSettingsStoring {
     static let successSoundPreferenceVersion = "feedback.successSoundPreferenceVersion"
     static let ocrLanguagePreferenceVersion = "recognition.languagePreferenceVersion"
     static let ocrLanguageIdentifiers = "recognition.languageIdentifiers"
+    static let captureHistoryEnabled = "privacy.captureHistoryEnabled"
   }
 
   private let userDefaults: UserDefaults
@@ -117,6 +123,15 @@ final class UserDefaultsSettingsStore: AppSettingsStoring {
     }
   }
 
+  var isCaptureHistoryEnabled: Bool {
+    get {
+      userDefaults.bool(forKey: Key.captureHistoryEnabled)
+    }
+    set {
+      userDefaults.set(newValue, forKey: Key.captureHistoryEnabled)
+    }
+  }
+
   var history: ScreenCapturePermissionHistory {
     get {
       ScreenCapturePermissionHistory(
@@ -165,6 +180,7 @@ final class UserDefaultsSettingsStore: AppSettingsStoring {
     userDefaults.removeObject(forKey: Self.successSoundEnabledKey)
     userDefaults.removeObject(forKey: Key.ocrLanguagePreferenceVersion)
     userDefaults.removeObject(forKey: Key.ocrLanguageIdentifiers)
+    userDefaults.removeObject(forKey: Key.captureHistoryEnabled)
     userDefaults.removeObject(
       forKey: UserDefaultsSecureUpdateStateStore.highestAuthenticatedBuildKey)
     userDefaults.removeObject(forKey: UserDefaultsSecureUpdateStateStore.deferredBuildKey)

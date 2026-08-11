@@ -35,8 +35,8 @@ final class CopyLassoUITests: XCTestCase {
       earlierItem, laterItem in
       laterItem.frame.minY - earlierItem.frame.maxY
     }
-    XCTAssertGreaterThan(commandGaps[0], commandGaps[1])
-    XCTAssertGreaterThan(commandGaps[3], commandGaps[2])
+    XCTAssertGreaterThan(commandGaps[1], commandGaps[0])
+    XCTAssertGreaterThan(commandGaps[4], commandGaps[3])
   }
 
   @MainActor
@@ -329,6 +329,175 @@ final class CopyLassoUITests: XCTestCase {
   }
 
   @MainActor
+  func testHistoryMenuOpensDisabledState() {
+    let app = completedApp()
+    app.launch()
+    defer { app.terminate() }
+
+    openMenu(in: app)
+    menuItem("History…", in: app).click()
+    XCTAssertTrue(app.staticTexts["Capture History Is Off"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.buttons["Open Privacy Settings"].exists)
+  }
+
+  @MainActor
+  func testHistoryMenuOpensSingletonPopulatedState() {
+    let app = completedApp(extraArguments: ["--g52-history-enabled", "--g52-history-populated"])
+    app.launch()
+    defer { app.terminate() }
+    for _ in 0..<2 {
+      openMenu(in: app)
+      menuItem("History…", in: app).click()
+      XCTAssertTrue(app.buttons["copylasso.history.copy"].waitForExistence(timeout: 5))
+      XCTAssertEqual(
+        app.windows.matching(NSPredicate(format: "title == 'Capture History'")).count,
+        1
+      )
+      XCTAssertTrue(app.buttons["copylasso.history.delete"].exists)
+      XCTAssertTrue(app.buttons["Clear All"].exists)
+      XCTAssertTrue(app.descendants(matching: .any)["copylasso.history.detail"].exists)
+      app.typeKey("w", modifierFlags: .command)
+    }
+  }
+
+  @MainActor
+  func testHistorySettingsOptInAndDestructiveDisableConfirmation() {
+    let app = completedApp(extraArguments: ["--g52-history-enabled", "--g52-history-populated"])
+    app.launch()
+    defer { app.terminate() }
+
+    openMenu(in: app)
+    menuItem("Settings…", in: app).click()
+    let toggle = app.descendants(matching: .any)["copylasso.settings.capture-history"]
+    XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+    XCTAssertTrue(switchIsOn(toggle))
+    toggle.click()
+
+    XCTAssertTrue(app.buttons["Delete History and Turn Off"].waitForExistence(timeout: 5))
+    app.sheets.buttons["Cancel"].click()
+    XCTAssertTrue(switchIsOn(toggle))
+  }
+
+  @MainActor
+  func testHistoryEmptyState() {
+    let app = completedApp(extraArguments: ["--g52-history-enabled"])
+    app.launch()
+    defer { app.terminate() }
+
+    openMenu(in: app)
+    menuItem("History…", in: app).click()
+    XCTAssertTrue(app.staticTexts["No Saved Captures"].waitForExistence(timeout: 5))
+  }
+
+  @MainActor
+  func testHistoryUnreadableStateFailsClosed() {
+    let app = completedApp(
+      extraArguments: ["--g52-history-enabled", "--g52-history-unreadable"]
+    )
+    app.launch()
+    defer { app.terminate() }
+
+    openMenu(in: app)
+    menuItem("History…", in: app).click()
+    XCTAssertTrue(app.staticTexts["History Is Unavailable"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.buttons["Delete Unreadable History"].exists)
+  }
+
+  @MainActor
+  func testHistoryCopyAndDeleteRemainNonrecursive() {
+    let app = completedApp(
+      extraArguments: ["--g52-history-enabled", "--g52-history-populated"]
+    )
+    app.launch()
+    defer { app.terminate() }
+
+    openMenu(in: app)
+    menuItem("History…", in: app).click()
+    let rows = app.descendants(matching: .any).matching(identifier: "copylasso.history.row")
+    XCTAssertEqual(rows.count, 2)
+
+    app.buttons["copylasso.history.copy"].click()
+    let feedbackHUD = app.descendants(matching: .any)["copylasso.feedback.hud"]
+    XCTAssertTrue(feedbackHUD.waitForExistence(timeout: 5))
+    assertAccessibleText(
+      feedbackHUD,
+      equals: "Copied Code: https://copylasso.com/history-fixture"
+    )
+    XCTAssertEqual(rows.count, 2)
+
+    app.buttons["copylasso.history.delete"].click()
+    let oneRemaining = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "count == 1"),
+      object: rows
+    )
+    XCTAssertEqual(XCTWaiter.wait(for: [oneRemaining], timeout: 5), .completed)
+  }
+
+  @MainActor
+  func testHistoryConfirmedClearLeavesHistoryEnabledAndEmpty() {
+    let app = completedApp(extraArguments: ["--g52-history-enabled", "--g52-history-populated"])
+    app.launch()
+    defer { app.terminate() }
+    openMenu(in: app)
+    menuItem("History…", in: app).click()
+    XCTAssertTrue(app.buttons["Clear All"].waitForExistence(timeout: 5))
+    app.buttons["Clear All"].click()
+    XCTAssertTrue(app.sheets.buttons["Clear All"].waitForExistence(timeout: 5))
+    app.sheets.buttons["Clear All"].click()
+    XCTAssertTrue(app.staticTexts["No Saved Captures"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.buttons["Clear All"].exists)
+  }
+
+  @MainActor
+  func testSystemHistoryStorePersistsSyntheticCodeAcrossRelaunch() {
+    var app = completedApp(
+      extraArguments: [
+        "--g52-history-system-store",
+        "--g38-selection=selected",
+        "--g38-code-result=success",
+      ]
+    )
+    app.launch()
+
+    openMenu(in: app)
+    menuItem("Settings…", in: app).click()
+    let toggle = app.descendants(matching: .any)["copylasso.settings.capture-history"]
+    XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+    XCTAssertFalse(switchIsOn(toggle))
+    toggle.click()
+    let enabled = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "value == 1 OR value == '1'"),
+      object: toggle
+    )
+    XCTAssertEqual(XCTWaiter.wait(for: [enabled], timeout: 5), .completed)
+    app.typeKey("w", modifierFlags: .command)
+
+    openMenu(in: app)
+    menuItem("Capture", in: app).click()
+    let feedbackHUD = app.descendants(matching: .any)["copylasso.feedback.hud"]
+    XCTAssertTrue(feedbackHUD.waitForExistence(timeout: 5))
+    assertAccessibleText(feedbackHUD, equals: "Copied Code: COPYLASSO UI CODE")
+    app.terminate()
+
+    app = XCUIApplication()
+    app.launchArguments = [
+      "--g10-g11-ui-testing",
+      "--g52-history-system-store",
+      "--g12-permission=granted",
+    ]
+    app.launch()
+    defer { app.terminate() }
+
+    openMenu(in: app)
+    menuItem("History…", in: app).click()
+    XCTAssertTrue(app.staticTexts["COPYLASSO UI CODE"].waitForExistence(timeout: 5))
+    XCTAssertEqual(
+      app.descendants(matching: .any).matching(identifier: "copylasso.history.row").count,
+      1
+    )
+  }
+
+  @MainActor
   func testSettingsOpenedFromMenuWhileFinderIsFrontmostAppearsImmediately() {
     let app = completedApp()
     app.launch()
@@ -578,6 +747,12 @@ final class CopyLassoUITests: XCTestCase {
     ]
     XCTAssertTrue(successSound.exists)
     XCTAssertTrue(switchIsOn(successSound))
+    let captureHistory = app.descendants(matching: .any)[
+      "copylasso.settings.capture-history"
+    ]
+    XCTAssertTrue(captureHistory.exists)
+    XCTAssertFalse(switchIsOn(captureHistory))
+    XCTAssertTrue(app.buttons["copylasso.settings.view-history"].exists)
     let checkForUpdates = app.buttons["copylasso.settings.check-for-updates"]
     XCTAssertTrue(checkForUpdates.isEnabled)
     XCTAssertEqual(checkForUpdates.label, "Check for Updates")
@@ -894,6 +1069,7 @@ final class CopyLassoUITests: XCTestCase {
 
   private static let requiredMenuLabels = [
     "Capture",
+    "History…",
     "Check for Updates",
     "Settings…",
     "About CopyLasso",

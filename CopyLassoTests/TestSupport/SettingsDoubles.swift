@@ -15,6 +15,7 @@ final class StubAppSettingsStore: AppSettingsStoring {
   var isSuccessSoundEnabled = true
   var ocrLanguagePreferenceVersion = 0
   var ocrRecognitionPreferences = OCRRecognitionPreferences.englishUS
+  var isCaptureHistoryEnabled = false
   var history = ScreenCapturePermissionHistory()
   private(set) var resetCallCount = 0
 
@@ -53,6 +54,7 @@ final class StubAppSettingsStore: AppSettingsStoring {
     isSuccessSoundEnabled = true
     ocrLanguagePreferenceVersion = 0
     ocrRecognitionPreferences = .englishUS
+    isCaptureHistoryEnabled = false
     history = ScreenCapturePermissionHistory()
   }
 }

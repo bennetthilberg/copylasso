@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/bennetthilberg/copylasso/actions/workflows/ci.yml/badge.svg)](https://github.com/bennetthilberg/copylasso/actions/workflows/ci.yml)
 
-CopyLasso is a free and open-source macOS utility for copying visible text from anywhere on screen. Press `⇧⌘2`, drag around text, and receive recognized plain text on the clipboard. Recognition runs locally with Apple's Vision framework, and CopyLasso does not retain a screenshot or OCR history.
+CopyLasso is a free and open-source macOS utility for copying visible text from anywhere on screen. Press `⇧⌘2`, drag around text, and receive recognized plain text on the clipboard. Recognition runs locally with Apple's Vision framework, and CopyLasso never retains screenshots.
 
 CopyLasso 0.2.2 is the latest public release. It includes authenticated,
 user-controlled updates, an optional success sound, local recognition of five
@@ -72,6 +72,14 @@ so choosing only languages you expect usually works best. This source feature
 does not download a language pack or add a cloud service. It is not part of the
 public 0.2.2 download yet.
 
+The unreleased source tree also adds **Save Capture History** under Settings >
+Privacy. It is off by default. When explicitly enabled, CopyLasso encrypts only
+successful text and inert code output locally for seven days, with a 100-entry
+limit and a 256 KiB per-entry ceiling. **History…** in the menu opens exact
+Copy/Delete controls; Clear All and disabling a nonempty or unreadable archive
+use destructive confirmation. Screenshots are never stored. This source feature
+is not part of the public 0.2.2 download yet.
+
 ## Permission and Recovery
 
 Screen Recording is the only macOS privacy permission required for core capture. CopyLasso does not require Accessibility, Input Monitoring, microphone, camera, location, contacts, or network access.
@@ -83,7 +91,8 @@ If capture access is unavailable, CopyLasso shows a recovery window with a direc
 CopyLasso's capture workflow is private, offline, and local by design:
 
 - Captured pixels and unbounded recognized text stay in memory only for the active operation.
-- Screenshots, OCR results, clipboard history, and HUD previews are never logged, persisted, or transmitted.
+- Screenshots and HUD previews are never logged, persisted, or transmitted.
+- The unreleased optional history stores only successful text/code output in an authenticated local encrypted archive. It is off by default and never syncs or sends content.
 - The application has no accounts, analytics, telemetry, cloud OCR, or content-upload service.
 - The user-controlled secure updater checks one fixed, cryptographically authenticated feed, sends no screen, OCR, clipboard, hardware-profile, or stable-identifier data, and is independent from capture.
 - The optional success sound receives no captured pixels, recognized content, or clipboard text and requests no microphone or notification permission.
@@ -143,7 +152,10 @@ Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before openin
 
 ## Complete Uninstall
 
-These steps remove only CopyLasso's production application, login registration, preferences, sandbox container, and Screen Recording entry. They are destructive for CopyLasso settings and onboarding state.
+These steps remove only CopyLasso's production application, login registration,
+preferences, sandbox container, capture-history Keychain item, and Screen
+Recording entry. They are destructive for CopyLasso settings, onboarding state,
+and any saved history.
 
 1. Open CopyLasso Settings, turn off **Launch CopyLasso at Login**, and verify that it reports disabled. Then choose **Quit CopyLasso**.
 2. If the app was already removed, disable its entry in **System Settings > General > Login Items & Extensions** before continuing.
@@ -152,6 +164,7 @@ These steps remove only CopyLasso's production application, login registration, 
 
    ```sh
    defaults delete io.github.bennetthilberg.copylasso 2>/dev/null || true
+   security delete-generic-password -s io.github.bennetthilberg.copylasso.capture-history -a archive-key-v1 2>/dev/null || true
    rm -rf "$HOME/Library/Containers/io.github.bennetthilberg.copylasso"
    tccutil reset ScreenCapture io.github.bennetthilberg.copylasso
    ```
@@ -159,6 +172,8 @@ These steps remove only CopyLasso's production application, login registration, 
 5. In **System Settings > Privacy & Security > Screen & System Audio Recording**, confirm that CopyLasso is no longer listed. A later reinstall should open first-run setup again.
 
 Do not use broad login-item resets or reset Screen Recording for every application.
+App-driven deletion removes the active archive and key but cannot promise
+forensic erasure from APFS snapshots or external system backups.
 
 ## License
 

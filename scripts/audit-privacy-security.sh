@@ -55,7 +55,12 @@ if /usr/bin/grep -nE \
 fi
 
 readonly prohibited_content_persistence_pattern='CGImageDestination|NSBitmapImageRep|representation\(using:|pngRepresentation|jpegRepresentation|CIContext.*write|Data.*write\(to:|FileManager|NSFileHandle'
-if /usr/bin/grep -R -nE "$prohibited_content_persistence_pattern" CopyLasso; then
+readonly capture_history_store='CopyLasso/Services/CaptureHistoryStore.swift'
+prohibited_content_persistence="$({
+    /usr/bin/grep -R -nE "$prohibited_content_persistence_pattern" CopyLasso || true
+} | /usr/bin/grep -Ev "^${capture_history_store}:" || true)"
+if [[ -n "$prohibited_content_persistence" ]]; then
+    /usr/bin/printf '%s\n' "$prohibited_content_persistence" >&2
     echo "The application target must not encode or persist captured content." >&2
     exit 1
 fi

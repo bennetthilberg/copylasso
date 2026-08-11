@@ -32,6 +32,11 @@ final class MenuBarCommandHandler {
     open()
   }
 
+  func openHistory(_ open: () -> Void) {
+    activateApplication()
+    open()
+  }
+
   func quit() {
     applicationTerminator.terminate()
   }

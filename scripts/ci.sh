@@ -119,6 +119,9 @@ echo "Auditing on-screen code recognition"
 echo "Auditing multilingual OCR settings"
 ./scripts/audit-multilingual-ocr.sh
 
+echo "Auditing private capture history"
+./scripts/audit-capture-history.sh
+
 echo "Testing offline LaTeX feasibility scoring"
 ./scripts/test-latex-feasibility.sh
 
@@ -226,8 +229,13 @@ if [[ "$capture_api_files" != "$expected_capture_api_files" ]] || \
     exit 1
 fi
 
+readonly capture_history_store='CopyLasso/Services/CaptureHistoryStore.swift'
 readonly prohibited_image_persistence_pattern='CGImageDestination|NSBitmapImageRep|representation\(using:|pngRepresentation|jpegRepresentation|CIContext.*write|Data.*write\(to:'
-if /usr/bin/grep -R -nE "$prohibited_image_persistence_pattern" CopyLasso; then
+prohibited_image_persistence="$({
+    /usr/bin/grep -R -nE "$prohibited_image_persistence_pattern" CopyLasso || true
+} | /usr/bin/grep -Ev "^${capture_history_store}:" || true)"
+if [[ -n "$prohibited_image_persistence" ]]; then
+    /usr/bin/printf '%s\n' "$prohibited_image_persistence" >&2
     echo "The application target must not encode or persist captured pixels." >&2
     exit 1
 fi
@@ -303,7 +311,8 @@ if [[ ! -e "$feedback_panel" ]] || \
     exit 1
 fi
 
-if ! /usr/bin/grep -q 'clipboardService: SystemClipboardService()' CopyLasso/App/CopyLassoApp.swift || \
+if ! /usr/bin/grep -q 'let clipboardService = SystemClipboardService()' CopyLasso/App/CopyLassoApp.swift || \
+    ! /usr/bin/grep -q 'clipboardService: clipboardService' CopyLasso/App/CopyLassoApp.swift || \
     ! /usr/bin/grep -q 'feedbackService: feedbackController' CopyLasso/App/CopyLassoApp.swift || \
     ! /usr/bin/grep -q 'feedbackModel: feedbackController.model' CopyLasso/App/CopyLassoApp.swift; then
     echo "The production clipboard, HUD, and temporary menu state must remain wired at the app root." >&2

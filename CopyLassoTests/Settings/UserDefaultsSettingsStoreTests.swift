@@ -16,6 +16,7 @@ final class UserDefaultsSettingsStoreTests: XCTestCase {
     XCTAssertTrue(store.isSuccessSoundEnabled)
     XCTAssertEqual(store.ocrLanguagePreferenceVersion, 0)
     XCTAssertEqual(store.ocrRecognitionPreferences, .englishUS)
+    XCTAssertFalse(store.isCaptureHistoryEnabled)
   }
 
   func testOCRLanguageMigrationDefaultsNewAndUpgradedUsersToEnglish() {
@@ -35,6 +36,7 @@ final class UserDefaultsSettingsStoreTests: XCTestCase {
     store.ocrRecognitionPreferences = OCRRecognitionPreferences(
       languageIdentifiers: ["fr-FR", "en-US"]
     )
+    store.isCaptureHistoryEnabled = true
 
     store.migrateOCRLanguagePreferencesIfNeeded()
 
@@ -231,6 +233,7 @@ final class UserDefaultsSettingsStoreTests: XCTestCase {
     XCTAssertTrue(store.isSuccessSoundEnabled)
     XCTAssertEqual(store.ocrLanguagePreferenceVersion, 0)
     XCTAssertEqual(store.ocrRecognitionPreferences, .englishUS)
+    XCTAssertFalse(store.isCaptureHistoryEnabled)
     XCTAssertEqual(store.history, ScreenCapturePermissionHistory())
     XCTAssertNil(updateStore.highestAuthenticatedBuild)
     XCTAssertNil(updateStore.deferredBuild)

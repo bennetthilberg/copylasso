@@ -304,6 +304,72 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     XCTAssertEqual(noCode.textAssembler.inputs.count, 1)
   }
 
+  func testSuccessfulTextAndCodeWriteThenPlaySoundThenRecordExactHistoryPayload() async throws {
+    let text = try makeContext(historyResult: .recorded, assembledText: "  exact text\n")
+    var textEvents: [String] = []
+    text.clipboard.onWrite = { _ in textEvents.append("clipboard") }
+    text.sound.onPlay = { textEvents.append("sound") }
+    text.history.onRecord = { _, _ in textEvents.append("history") }
+
+    await runOne(text)
+
+    XCTAssertEqual(textEvents, ["clipboard", "sound", "history"])
+    XCTAssertEqual(text.history.requests.count, 1)
+    XCTAssertEqual(text.history.requests.first?.content, "  exact text\n")
+    XCTAssertEqual(text.history.requests.first?.kind, .text)
+
+    let code = try makeContext(
+      barcodeResult: .success([codeObservation(payload: "CODE\r\nVALUE", x: 0.1)]),
+      historyResult: .recorded
+    )
+    await runOne(code)
+
+    XCTAssertEqual(code.history.requests.count, 1)
+    XCTAssertEqual(code.history.requests.first?.content, "CODE\r\nVALUE")
+    XCTAssertEqual(code.history.requests.first?.kind, .code)
+  }
+
+  func testHistoryFailureKeepsSuccessfulCopyAndSoundButReplacesSuccessFeedback() async throws {
+    let context = try makeContext(historyResult: .failed)
+
+    await runOne(context)
+
+    XCTAssertEqual(context.clipboard.writtenTexts, ["assembled"])
+    XCTAssertEqual(context.sound.playCallCount, 1)
+    XCTAssertEqual(context.history.requests.count, 1)
+    XCTAssertEqual(context.feedback.presentedFeedback, [.historySaveFailed])
+  }
+
+  func testHistoryPolicySkipKeepsOrdinarySuccessfulCopyFeedback() async throws {
+    let context = try makeContext(historyResult: .skipped)
+
+    await runOne(context)
+
+    XCTAssertEqual(context.clipboard.writtenTexts, ["assembled"])
+    XCTAssertEqual(context.sound.playCallCount, 1)
+    XCTAssertEqual(context.history.requests.count, 1)
+    XCTAssertEqual(context.feedback.presentedFeedback, [.success(preview: "assembled")])
+  }
+
+  func testSystemInterruptionDuringHistoryWriteDoesNotRecreateFeedback() async throws {
+    let context = try makeContext(historyResult: .recorded)
+    context.history.shouldSuspend = true
+
+    _ = context.command.perform()
+    let work = Task { await context.scheduler.runNext() }
+    await context.history.waitUntilRecordStarts()
+    XCTAssertEqual(context.coordinator.state, .completing)
+    XCTAssertTrue(context.command.cancelActiveOperation(reason: .systemInterrupted))
+
+    context.history.resumeRecord()
+    await work.value
+
+    XCTAssertEqual(context.clipboard.writtenTexts, ["assembled"])
+    XCTAssertEqual(context.feedback.presentedFeedback, [])
+    XCTAssertEqual(context.coordinator.state, .idle)
+    XCTAssertTrue(context.command.isEnabled)
+  }
+
   func testNoTextOrEligibleCodePreservesClipboardAndRemainsSilent() async throws {
     let context = try makeContext(
       barcodeResult: .success([]),
@@ -316,6 +382,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     XCTAssertEqual(context.feedback.presentedFeedback, [.noContent])
     XCTAssertEqual(context.clipboard.writtenTexts, [])
     XCTAssertEqual(context.sound.playCallCount, 0)
+    XCTAssertEqual(context.history.requests.count, 0)
   }
 
   func testMultilineCodeAmbiguityWinsOverTextAndPreservesClipboard() async throws {
@@ -330,6 +397,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     XCTAssertEqual(ambiguous.feedback.presentedFeedback, [.ambiguousCodes])
     XCTAssertEqual(ambiguous.clipboard.writtenTexts, [])
     XCTAssertEqual(ambiguous.sound.playCallCount, 0)
+    XCTAssertEqual(ambiguous.history.requests.count, 0)
     XCTAssertEqual(ambiguous.textAssembler.inputs, [])
   }
 
@@ -383,6 +451,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     )
     XCTAssertEqual(clipboardFailure.clipboard.writtenTexts, [])
     XCTAssertEqual(clipboardFailure.sound.playCallCount, 0)
+    XCTAssertEqual(clipboardFailure.history.requests.count, 0)
   }
 
   func testRepeatedCaptureRequestSharesOneBusyStateAndDoesNotOverlap() async throws {
@@ -543,6 +612,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     captureResult: Result<CGImage, TestServiceError>? = nil,
     ocrResult: Result<[RecognizedTextObservation], TestServiceError>? = nil,
     barcodeResult: Result<[RecognizedCodeObservation], TestServiceError>? = nil,
+    historyResult: CaptureHistoryRecordingResult = .notEnabled,
     assembledText: String = "assembled"
   ) throws -> Context {
     let coordinator = CaptureCoordinator()
@@ -570,6 +640,8 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     let clipboard = SpyClipboardService()
     let sound = SpySuccessSoundPlayer()
     let feedback = SpyFeedbackService()
+    let history = SpyCaptureHistoryRecorder()
+    history.result = historyResult
     let recovery = SpyPermissionRecoveryPresenter()
     let scheduler = IntegrationWorkScheduler()
     let command = CaptureCommand(
@@ -583,6 +655,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
       codePayloadAssembler: CodePayloadAssembler(),
       clipboardService: clipboard,
       successSoundPlayer: sound,
+      historyRecorder: history,
       feedbackService: feedback,
       recoveryPresenter: recovery,
       scheduleWork: scheduler.schedule
@@ -597,6 +670,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
       textAssembler: textAssembler,
       clipboard: clipboard,
       sound: sound,
+      history: history,
       feedback: feedback,
       recovery: recovery,
       scheduler: scheduler,
@@ -664,6 +738,7 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     let textAssembler: SpyTextAssembler
     let clipboard: SpyClipboardService
     let sound: SpySuccessSoundPlayer
+    let history: SpyCaptureHistoryRecorder
     let feedback: SpyFeedbackService
     let recovery: SpyPermissionRecoveryPresenter
     let scheduler: IntegrationWorkScheduler
