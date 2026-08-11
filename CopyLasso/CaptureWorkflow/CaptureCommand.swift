@@ -462,6 +462,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
 
     successSoundPlayer.play()
     let historyResult = await historyRecorder.record(content: content, kind: historyKind)
+    try throwIfCancellationRequested()
     if historyResult == .failed {
       return .historySaveFailed
     }

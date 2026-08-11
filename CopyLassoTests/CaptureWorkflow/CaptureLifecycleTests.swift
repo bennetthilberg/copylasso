@@ -115,6 +115,31 @@ final class CaptureLifecycleTests: XCTestCase {
     XCTAssertTrue(command.isEnabled)
   }
 
+  func testSystemInterruptionDuringHistoryWriteDoesNotRecreateFeedback() async throws {
+    let coordinator = CaptureCoordinator()
+    let history = SuspendedLifecycleHistoryRecorder()
+    let clipboard = SpyClipboardService()
+    let feedback = SpyFeedbackService()
+    let command = makeCommand(
+      coordinator: coordinator,
+      clipboard: clipboard,
+      feedback: feedback,
+      history: history
+    )
+
+    _ = command.perform()
+    await history.waitUntilStarted()
+    XCTAssertEqual(coordinator.state, .completing)
+    XCTAssertTrue(command.cancelActiveOperation(reason: .systemInterrupted))
+
+    history.resume()
+    await waitForIdle(coordinator)
+
+    XCTAssertEqual(clipboard.writtenTexts, ["assembled"])
+    XCTAssertEqual(feedback.presentedFeedback, [])
+    XCTAssertTrue(command.isEnabled)
+  }
+
   func testSystemInterruptionDismissesVisibleFeedbackWhileWorkflowIsIdle() async throws {
     let coordinator = CaptureCoordinator()
     let feedback = VisibleLifecycleFeedbackService()
@@ -172,6 +197,7 @@ final class CaptureLifecycleTests: XCTestCase {
     ocr: (any OCRService)? = nil,
     clipboard: SpyClipboardService? = nil,
     feedback: (any FeedbackService)? = nil,
+    history: (any CaptureHistoryRecording)? = nil,
     scheduleWork: CaptureCommand.WorkScheduler? = nil
   ) -> CaptureCommand {
     let resolvedSchedule = scheduleWork
@@ -187,6 +213,7 @@ final class CaptureLifecycleTests: XCTestCase {
       textAssembler: SpyTextAssembler(result: "assembled"),
       barcodeService: StubBarcodeRecognitionService(result: .success([])),
       clipboardService: clipboard ?? SpyClipboardService(),
+      historyRecorder: history ?? NoopCaptureHistoryRecorder(),
       feedbackService: feedback ?? SpyFeedbackService(),
       recoveryPresenter: SpyPermissionRecoveryPresenter(),
       scheduleWork: resolvedSchedule
@@ -236,6 +263,34 @@ final class CaptureLifecycleTests: XCTestCase {
       confidence: 0.99,
       boundingBox: CGRect(x: 0.1, y: 0.2, width: 0.4, height: 0.1)
     )
+  }
+}
+
+@MainActor
+private final class SuspendedLifecycleHistoryRecorder: CaptureHistoryRecording {
+  private var started = false
+  private var continuation: CheckedContinuation<Void, Never>?
+
+  func record(
+    content _: String,
+    kind _: CaptureHistoryContentKind
+  ) async -> CaptureHistoryRecordingResult {
+    started = true
+    await withCheckedContinuation { continuation in
+      self.continuation = continuation
+    }
+    return .recorded
+  }
+
+  func waitUntilStarted() async {
+    while !started {
+      await Task.yield()
+    }
+  }
+
+  func resume() {
+    continuation?.resume()
+    continuation = nil
   }
 }
 

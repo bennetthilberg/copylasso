@@ -262,6 +262,7 @@ final class CaptureHistoryController: ObservableObject, CaptureHistoryRecording 
   }
 
   func clearAll() async -> Bool {
+    guard isEnabled, !isDestructiveOperationInProgress else { return false }
     invalidatePendingReloads()
     isDestructiveOperationInProgress = true
     await waitForActiveRecordings()

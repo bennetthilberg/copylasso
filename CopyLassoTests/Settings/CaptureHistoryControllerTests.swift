@@ -201,6 +201,40 @@ final class CaptureHistoryControllerTests: XCTestCase {
     XCTAssertEqual(prepareCallCount, 1)
   }
 
+  func testClearAllCannotOverlapConfirmedDisableOrRecreateItsKey() async {
+    let stored = entry(content: "private")
+    let preferences = StubAppSettingsStore()
+    preferences.isCaptureHistoryEnabled = true
+    let store = SuspendedFirstDeleteAllCaptureHistoryStore(entries: [stored])
+    let controller = CaptureHistoryController(
+      preferences: preferences,
+      store: store,
+      clipboardService: SpyClipboardService(),
+      successSoundPlayer: SpySuccessSoundPlayer(),
+      feedbackService: SpyFeedbackService(),
+      expirationScheduler: StubCaptureHistoryExpirationScheduler(),
+      now: { self.now }
+    )
+    let disableRequest = await controller.requestDisable()
+    XCTAssertEqual(disableRequest, .confirmationRequired)
+
+    let disabling = Task { await controller.confirmDisable() }
+    await store.waitUntilFirstDeleteStarts()
+
+    let didClear = await controller.clearAll()
+    XCTAssertFalse(didClear)
+    let deleteCountWhileDisabling = await store.deleteAllCallCount
+    let prepareCountWhileDisabling = await store.prepareCallCount
+    XCTAssertEqual(deleteCountWhileDisabling, 1)
+    XCTAssertEqual(prepareCountWhileDisabling, 0)
+
+    await store.resumeFirstDelete()
+    let didDisable = await disabling.value
+    XCTAssertTrue(didDisable)
+    XCTAssertFalse(controller.isEnabled)
+    XCTAssertEqual(controller.presentationState, .disabled)
+  }
+
   func testExpirationSchedulerPrunesWithoutRetainingClosedWindowContent() async {
     let stored = entry(content: "expires", offset: -1)
     let scheduler = StubCaptureHistoryExpirationScheduler()
@@ -514,6 +548,62 @@ private actor SuspendedAppendCaptureHistoryStore: CaptureHistoryStoring {
   func resumeAppend() {
     appendContinuation?.resume()
     appendContinuation = nil
+  }
+}
+
+private actor SuspendedFirstDeleteAllCaptureHistoryStore: CaptureHistoryStoring {
+  private var entries: [CaptureHistoryEntry]
+  private var shouldSuspendDelete = true
+  private var firstDeleteContinuation: CheckedContinuation<Void, Never>?
+  private(set) var deleteAllCallCount = 0
+  private(set) var prepareCallCount = 0
+
+  init(entries: [CaptureHistoryEntry]) {
+    self.entries = entries
+  }
+
+  func prepare() {
+    prepareCallCount += 1
+  }
+
+  func load(now _: Date) -> [CaptureHistoryEntry] {
+    entries
+  }
+
+  func append(
+    content: String,
+    kind: CaptureHistoryContentKind,
+    at date: Date
+  ) -> CaptureHistoryEntry {
+    let entry = CaptureHistoryEntry(id: UUID(), capturedAt: date, kind: kind, content: content)
+    entries.insert(entry, at: 0)
+    return entry
+  }
+
+  func delete(id: UUID, now _: Date) {
+    entries.removeAll { $0.id == id }
+  }
+
+  func deleteAll() async {
+    deleteAllCallCount += 1
+    if shouldSuspendDelete {
+      shouldSuspendDelete = false
+      await withCheckedContinuation { continuation in
+        firstDeleteContinuation = continuation
+      }
+    }
+    entries = []
+  }
+
+  func waitUntilFirstDeleteStarts() async {
+    while firstDeleteContinuation == nil {
+      await Task.yield()
+    }
+  }
+
+  func resumeFirstDelete() {
+    firstDeleteContinuation?.resume()
+    firstDeleteContinuation = nil
   }
 }
 
