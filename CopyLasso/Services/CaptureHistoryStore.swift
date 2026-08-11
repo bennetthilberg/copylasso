@@ -1,4 +1,5 @@
 import CryptoKit
+import Darwin
 import Foundation
 import Security
 
@@ -340,15 +341,16 @@ final class SystemCaptureHistoryFileStore: CaptureHistoryFileStoring, @unchecked
         var mutableURL = temporaryURL
         try mutableURL.setResourceValues(values)
       }
-      if fileManager.fileExists(atPath: archiveURL.path) {
-        _ = try fileManager.replaceItemAt(
-          archiveURL,
-          withItemAt: temporaryURL,
-          backupItemName: nil,
-          options: [.usingNewMetadataOnly]
-        )
-      } else {
-        try fileManager.moveItem(at: temporaryURL, to: archiveURL)
+      let renameResult = temporaryURL.withUnsafeFileSystemRepresentation { sourcePath in
+        archiveURL.withUnsafeFileSystemRepresentation { destinationPath in
+          guard let sourcePath, let destinationPath else {
+            return Int32(-1)
+          }
+          return Darwin.rename(sourcePath, destinationPath)
+        }
+      }
+      guard renameResult == 0 else {
+        throw CaptureHistoryStoreError.writeFailed
       }
     } catch {
       try? fileManager.removeItem(at: temporaryURL)
