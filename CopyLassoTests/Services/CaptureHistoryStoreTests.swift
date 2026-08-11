@@ -164,8 +164,10 @@ final class CaptureHistoryStoreTests: XCTestCase {
     throws
   {
     let fileManager = FileManager.default
-    let supportURL = fileManager.temporaryDirectory
-      .appendingPathComponent("CopyLassoHistoryTests-\(UUID().uuidString)", isDirectory: true)
+    let supportURL = try XCTUnwrap(
+      fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+    )
+    .appendingPathComponent("CopyLassoHistoryTests-\(UUID().uuidString)", isDirectory: true)
     defer { try? fileManager.removeItem(at: supportURL) }
     let bundleIdentifier = "io.github.bennetthilberg.copylasso.tests"
     let store = SystemCaptureHistoryFileStore(
