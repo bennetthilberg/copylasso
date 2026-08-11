@@ -19,26 +19,35 @@ if [[ -n "$unicode_ellipsis_matches" ]]; then
 fi
 
 swift_string_ellipsis_matches() {
-    /usr/bin/perl -ne '
-        while (/"(?:\\.|[^"\\])*\.\.\.(?:\\.|[^"\\])*"/g) {
-            print "$ARGV:$.:$_";
+    /usr/bin/perl -0777 -ne '
+        while (/("""(?:(?!""")[\s\S])*"""|"(?:\\.|[^"\\])*")/g) {
+            if ($1 =~ /\.\.\./) {
+                print "$ARGV\n";
+                last;
+            }
         }
-        close ARGV if eof;
     ' "$@"
 }
 
 readonly interpolated_copy_fixture='Text("Loading \(item)...")'
 readonly escaped_copy_fixture='Text("Loading \"item\"...")'
+readonly multiline_copy_fixture=$'Text("""\nLoading...\n""")'
+readonly range_operator_fixture='let label = "Loading"; let range = 1...6'
 fixture_match_count="$({
-    /usr/bin/printf '%s\n%s\n' \
+    for fixture in \
         "$interpolated_copy_fixture" \
-        "$escaped_copy_fixture" | \
-        swift_string_ellipsis_matches - | \
+        "$escaped_copy_fixture" \
+        "$multiline_copy_fixture"; do
+        /usr/bin/printf '%s\n' "$fixture" | swift_string_ellipsis_matches -
+    done | \
         /usr/bin/wc -l | \
         /usr/bin/tr -d ' '
 })"
-if [[ "$fixture_match_count" != "2" ]]; then
-    fail "The interface-copy audit must detect interpolated and escaped Swift strings."
+if [[ "$fixture_match_count" != "3" ]]; then
+    fail "The interface-copy audit must detect interpolated, escaped, and multiline Swift strings."
+fi
+if /usr/bin/printf '%s\n' "$range_operator_fixture" | swift_string_ellipsis_matches - | /usr/bin/grep -q .; then
+    fail "The interface-copy audit must not confuse Swift range operators with interface copy."
 fi
 
 ascii_ellipsis_string_matches="$({

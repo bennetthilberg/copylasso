@@ -212,7 +212,7 @@ for required_patch_guard in \
     "expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'" \
     "g51_source_base_commit='5491bdc2ebf60872e0fababdc70c377e54a2e6f8'" \
     "expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'" \
-    "expected_approved_post_candidate_patch_digest='82144807cd2784171efda1611857fbef80c75cf30c769405c30a782b0940132b'" \
+    "expected_approved_post_candidate_patch_digest='163492321c3d43c6465dc4cacb20d293c7f6d5baee833f534d4f5a840863d070'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
     'cat-file -e "$g51_source_base_commit^{tree}"' \
@@ -474,9 +474,12 @@ if [[ "$interface_copy_audit_invocations" != "1" ]]; then
 fi
 for interface_copy_guard in \
     'CopyLasso-authored interface copy must not contain an ellipsis.' \
-    'The interface-copy audit must detect interpolated and escaped Swift strings.' \
+    'The interface-copy audit must detect interpolated, escaped, and multiline Swift strings.' \
+    'The interface-copy audit must not confuse Swift range operators with interface copy.' \
     'interpolated_copy_fixture=' \
     'escaped_copy_fixture=' \
+    'multiline_copy_fixture=' \
+    'range_operator_fixture=' \
     'Authenticated release notes and captured content remain unmodified.' \
     'Check for Updates'; do
     if ! /usr/bin/grep -Fq "$interface_copy_guard" "$interface_copy_audit_script"; then
