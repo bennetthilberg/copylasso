@@ -59,7 +59,7 @@ struct AboutView: View {
           .accessibilityIdentifier("copylasso.about.license")
       }
 
-      Button("Acknowledgements…") {
+      Button("Acknowledgements") {
         isShowingAcknowledgements = true
       }
       .accessibilityHint("Shows licenses for open-source software included with CopyLasso.")

@@ -16,12 +16,11 @@ final class FeedbackPreviewTests: XCTestCase {
     XCTAssertEqual(FeedbackPreview(text: source).text, source)
   }
 
-  func testTruncatesByExtendedGraphemeClusterAndIncludesOneEllipsis() {
+  func testTruncatesByExtendedGraphemeClusterWithoutAddingPunctuation() {
     let prefix = String(repeating: "🙂", count: FeedbackPreview.maximumCharacterCount)
     let preview = FeedbackPreview(text: prefix + "never exposed")
 
-    XCTAssertEqual(preview.text.count, FeedbackPreview.maximumCharacterCount)
-    XCTAssertEqual(preview.text.last, "…")
+    XCTAssertEqual(preview.text, prefix)
     XCTAssertFalse(preview.text.contains("never exposed"))
   }
 

@@ -50,7 +50,7 @@ final class CopyLassoUITests: XCTestCase {
     app.typeKey(XCUIKeyboardKey.escape, modifierFlags: [])
 
     openMenu(in: app)
-    menuItem("Settings…", in: app).click()
+    menuItem("Settings", in: app).click()
     let useSuggestedShortcut = app.buttons["copylasso.settings.use-suggested-shortcut"]
     XCTAssertTrue(useSuggestedShortcut.waitForExistence(timeout: 5))
     useSuggestedShortcut.click()
@@ -63,7 +63,7 @@ final class CopyLassoUITests: XCTestCase {
     app.typeKey(XCUIKeyboardKey.escape, modifierFlags: [])
 
     openMenu(in: app)
-    menuItem("Settings…", in: app).click()
+    menuItem("Settings", in: app).click()
     let shortcutRecorder = app.descendants(matching: .any)["copylasso.settings.shortcut"]
     XCTAssertTrue(shortcutRecorder.waitForExistence(timeout: 5))
     shortcutRecorder.click()
@@ -285,7 +285,7 @@ final class CopyLassoUITests: XCTestCase {
 
     for _ in 0..<3 {
       openMenu(in: app)
-      menuItem("Settings…", in: app).click()
+      menuItem("Settings", in: app).click()
       let settingsTitle = app.staticTexts["copylasso.settings.title"]
       XCTAssertTrue(settingsTitle.waitForExistence(timeout: 5))
       app.typeKey("w", modifierFlags: .command)
@@ -302,12 +302,9 @@ final class CopyLassoUITests: XCTestCase {
       XCTAssertTrue(aboutTitle.waitForExistence(timeout: 5))
       let aboutIcon = app.images["copylasso.about.icon"]
       XCTAssertTrue(aboutIcon.exists)
-      XCTAssertGreaterThanOrEqual(
-        aboutTitle.frame.minY - aboutIcon.frame.maxY,
-        16
-      )
+      XCTAssertLessThan(aboutIcon.frame.midY, aboutTitle.frame.midY)
       assertAccessibleText(
-        app.staticTexts["copylasso.about.version"], equals: "Version 0.2.0 (3)"
+        app.staticTexts["copylasso.about.version"], equals: "Version 0.2.2 (5)"
       )
       assertAccessibleText(
         app.staticTexts["copylasso.about.creator"],
@@ -316,6 +313,10 @@ final class CopyLassoUITests: XCTestCase {
       XCTAssertTrue(app.links["copylasso.about.repository"].exists)
       XCTAssertTrue(app.links["copylasso.about.license"].exists)
       XCTAssertTrue(app.buttons["copylasso.about.acknowledgements"].exists)
+      XCTAssertEqual(
+        app.buttons["copylasso.about.acknowledgements"].label,
+        "Acknowledgements"
+      )
       app.buttons["copylasso.about.acknowledgements"].click()
       XCTAssertTrue(
         app.staticTexts["copylasso.about.acknowledgements.title"].waitForExistence(timeout: 5)
@@ -335,7 +336,7 @@ final class CopyLassoUITests: XCTestCase {
     defer { app.terminate() }
 
     openMenu(in: app)
-    menuItem("History…", in: app).click()
+    menuItem("History", in: app).click()
     XCTAssertTrue(app.staticTexts["Capture History Is Off"].waitForExistence(timeout: 5))
     XCTAssertTrue(app.buttons["Open Privacy Settings"].exists)
   }
@@ -347,7 +348,7 @@ final class CopyLassoUITests: XCTestCase {
     defer { app.terminate() }
     for _ in 0..<2 {
       openMenu(in: app)
-      menuItem("History…", in: app).click()
+      menuItem("History", in: app).click()
       XCTAssertTrue(app.buttons["copylasso.history.copy"].waitForExistence(timeout: 5))
       XCTAssertEqual(
         app.windows.matching(NSPredicate(format: "title == 'Capture History'")).count,
@@ -367,7 +368,7 @@ final class CopyLassoUITests: XCTestCase {
     defer { app.terminate() }
 
     openMenu(in: app)
-    menuItem("Settings…", in: app).click()
+    menuItem("Settings", in: app).click()
     let toggle = app.descendants(matching: .any)["copylasso.settings.capture-history"]
     XCTAssertTrue(toggle.waitForExistence(timeout: 5))
     XCTAssertTrue(switchIsOn(toggle))
@@ -385,7 +386,7 @@ final class CopyLassoUITests: XCTestCase {
     defer { app.terminate() }
 
     openMenu(in: app)
-    menuItem("History…", in: app).click()
+    menuItem("History", in: app).click()
     XCTAssertTrue(app.staticTexts["No Saved Captures"].waitForExistence(timeout: 5))
   }
 
@@ -398,7 +399,7 @@ final class CopyLassoUITests: XCTestCase {
     defer { app.terminate() }
 
     openMenu(in: app)
-    menuItem("History…", in: app).click()
+    menuItem("History", in: app).click()
     XCTAssertTrue(app.staticTexts["History Is Unavailable"].waitForExistence(timeout: 5))
     XCTAssertTrue(app.buttons["Delete Unreadable History"].exists)
   }
@@ -412,7 +413,7 @@ final class CopyLassoUITests: XCTestCase {
     defer { app.terminate() }
 
     openMenu(in: app)
-    menuItem("History…", in: app).click()
+    menuItem("History", in: app).click()
     let rows = app.descendants(matching: .any).matching(identifier: "copylasso.history.row")
     XCTAssertEqual(rows.count, 2)
 
@@ -439,7 +440,7 @@ final class CopyLassoUITests: XCTestCase {
     app.launch()
     defer { app.terminate() }
     openMenu(in: app)
-    menuItem("History…", in: app).click()
+    menuItem("History", in: app).click()
     XCTAssertTrue(app.buttons["Clear All"].waitForExistence(timeout: 5))
     app.buttons["Clear All"].click()
     XCTAssertTrue(app.sheets.buttons["Clear All"].waitForExistence(timeout: 5))
@@ -460,7 +461,7 @@ final class CopyLassoUITests: XCTestCase {
     app.launch()
 
     openMenu(in: app)
-    menuItem("Settings…", in: app).click()
+    menuItem("Settings", in: app).click()
     let toggle = app.descendants(matching: .any)["copylasso.settings.capture-history"]
     XCTAssertTrue(toggle.waitForExistence(timeout: 5))
     XCTAssertFalse(switchIsOn(toggle))
@@ -489,7 +490,7 @@ final class CopyLassoUITests: XCTestCase {
     defer { app.terminate() }
 
     openMenu(in: app)
-    menuItem("History…", in: app).click()
+    menuItem("History", in: app).click()
     XCTAssertTrue(app.staticTexts["COPYLASSO UI CODE"].waitForExistence(timeout: 5))
     XCTAssertEqual(
       app.descendants(matching: .any).matching(identifier: "copylasso.history.row").count,
@@ -505,7 +506,7 @@ final class CopyLassoUITests: XCTestCase {
 
     XCUIApplication(bundleIdentifier: "com.apple.finder").activate()
     openMenu(in: app)
-    menuItem("Settings…", in: app).click()
+    menuItem("Settings", in: app).click()
 
     XCTAssertTrue(
       app.staticTexts["copylasso.settings.title"].waitForExistence(timeout: 5)
@@ -622,7 +623,7 @@ final class CopyLassoUITests: XCTestCase {
     defer { app.terminate() }
 
     openMenu(in: app)
-    menuItem("Settings…", in: app).click()
+    menuItem("Settings", in: app).click()
     let languages = app.buttons["copylasso.settings.text-languages"]
     XCTAssertTrue(languages.waitForExistence(timeout: 5))
     XCTAssertTrue(languages.label.contains("English"))
@@ -708,9 +709,10 @@ final class CopyLassoUITests: XCTestCase {
     app.typeKey("w", modifierFlags: .command)
 
     openMenu(in: app)
-    menuItem("Settings…", in: app).click()
+    menuItem("Settings", in: app).click()
     let finishSetup = app.buttons["copylasso.settings.finish-setup"]
     XCTAssertTrue(finishSetup.waitForExistence(timeout: 5))
+    XCTAssertEqual(finishSetup.label, "Finish Setup")
     finishSetup.click()
 
     XCTAssertTrue(app.staticTexts["copylasso.onboarding.title"].waitForExistence(timeout: 5))
@@ -723,7 +725,7 @@ final class CopyLassoUITests: XCTestCase {
     defer { app.terminate() }
 
     openMenu(in: app)
-    menuItem("Settings…", in: app).click()
+    menuItem("Settings", in: app).click()
 
     XCTAssertTrue(
       app.descendants(matching: .any)["copylasso.settings.shortcut"]
@@ -753,6 +755,7 @@ final class CopyLassoUITests: XCTestCase {
     XCTAssertTrue(captureHistory.exists)
     XCTAssertFalse(switchIsOn(captureHistory))
     XCTAssertTrue(app.buttons["copylasso.settings.view-history"].exists)
+    XCTAssertEqual(app.buttons["copylasso.settings.view-history"].label, "View History")
     let checkForUpdates = app.buttons["copylasso.settings.check-for-updates"]
     XCTAssertTrue(checkForUpdates.isEnabled)
     XCTAssertEqual(checkForUpdates.label, "Check for Updates")
@@ -761,7 +764,7 @@ final class CopyLassoUITests: XCTestCase {
     )
     XCTAssertTrue(app.staticTexts["Privacy"].exists)
     XCTAssertTrue(app.staticTexts["Version"].exists)
-    XCTAssertTrue(app.staticTexts["Version 0.2.0 (3)"].exists)
+    XCTAssertTrue(app.staticTexts["Version 0.2.2 (5)"].exists)
     XCTAssertTrue(app.links["Project Repository"].exists)
     XCTAssertTrue(app.links["Privacy Policy"].exists)
     XCTAssertTrue(app.links["MIT License"].exists)
@@ -810,7 +813,7 @@ final class CopyLassoUITests: XCTestCase {
     defer { app.terminate() }
 
     openMenu(in: app)
-    menuItem("Settings…", in: app).click()
+    menuItem("Settings", in: app).click()
 
     let removePending = app.buttons["copylasso.settings.remove-pending-login-item"]
     XCTAssertTrue(removePending.waitForExistence(timeout: 5))
@@ -1069,9 +1072,9 @@ final class CopyLassoUITests: XCTestCase {
 
   private static let requiredMenuLabels = [
     "Capture",
-    "History…",
+    "History",
     "Check for Updates",
-    "Settings…",
+    "Settings",
     "About CopyLasso",
     "Quit CopyLasso",
   ]

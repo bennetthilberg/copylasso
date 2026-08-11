@@ -16,7 +16,7 @@ struct MenuBarMenuView: View {
     .globalKeyboardShortcut(.captureText)
     .accessibilityIdentifier("copylasso.menu.capture")
 
-    Button("History…") {
+    Button("History") {
       commandHandler.openHistory {
         openWindow(id: "history")
       }
@@ -33,7 +33,7 @@ struct MenuBarMenuView: View {
     .accessibilityHint(AccessibilityAuditCopy.checkForUpdatesHelp)
     .accessibilityIdentifier("copylasso.menu.check-for-updates")
 
-    Button("Settings…") {
+    Button("Settings") {
       commandHandler.openSettings {
         openSettings()
       }

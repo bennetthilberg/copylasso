@@ -95,7 +95,7 @@ if (( clipboard_line >= sound_line || sound_line >= history_line )); then
 fi
 
 for ui_contract in \
-    'Button("History…")' \
+    'Button("History")' \
     'Section("Privacy")' \
     'Save Capture History' \
     'Capture History Is Off' \

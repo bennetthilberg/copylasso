@@ -25,7 +25,7 @@ struct SettingsView: View {
       if settingsController.needsOnboarding {
         Section("Setup") {
           LabeledContent("First-run setup") {
-            Button("Finish Setup…") {
+            Button("Finish Setup") {
               if settingsController.requestOnboardingFromSettings() {
                 openWindow(id: "onboarding")
               }
@@ -177,7 +177,7 @@ struct SettingsView: View {
           .foregroundStyle(.secondary)
           .fixedSize(horizontal: false, vertical: true)
 
-        Button("View History…") {
+        Button("View History") {
           openWindow(id: "history")
         }
         .accessibilityIdentifier("copylasso.settings.view-history")
@@ -197,7 +197,7 @@ struct SettingsView: View {
 
       #if DEBUG
         Section("Development") {
-          Button("Reset Local Development State…", role: .destructive) {
+          Button("Reset Local Development State", role: .destructive) {
             isShowingResetConfirmation = true
           }
           .accessibilityIdentifier("copylasso.settings.reset-development-state")

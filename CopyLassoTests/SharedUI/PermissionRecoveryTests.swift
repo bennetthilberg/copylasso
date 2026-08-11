@@ -111,7 +111,7 @@ final class PermissionRecoveryTests: XCTestCase {
     capturedActions?.tryAgain()
     XCTAssertEqual(
       controller.model.retryStatus,
-      "Checking Screen Recording access…"
+      "Checking Screen Recording access"
     )
 
     controller.present(.notGrantedAfterRequest)
