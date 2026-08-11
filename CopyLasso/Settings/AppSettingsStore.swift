@@ -149,10 +149,8 @@ final class UserDefaultsSettingsStore: AppSettingsStoring {
       return
     }
     if userDefaults.stringArray(forKey: Key.ocrLanguageIdentifiers) == nil {
-      userDefaults.set(
-        OCRRecognitionPreferences.englishUS.languageIdentifiers,
-        forKey: Key.ocrLanguageIdentifiers
-      )
+      let defaultLanguages = OCRRecognitionPreferences.englishUS.languageIdentifiers
+      userDefaults.set(defaultLanguages, forKey: Key.ocrLanguageIdentifiers)
     }
     ocrLanguagePreferenceVersion = Self.currentOCRLanguagePreferenceVersion
   }

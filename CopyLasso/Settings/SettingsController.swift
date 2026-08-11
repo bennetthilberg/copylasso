@@ -16,7 +16,7 @@ enum LaunchAtLoginIssue: Equatable, Sendable {
 
 @MainActor
 @Observable
-final class SettingsController {
+final class SettingsController: OCRRecognitionPreferencesReading {
   static let currentOnboardingVersion = 1
 
   private let settingsStore: any AppSettingsStoring
@@ -86,7 +86,7 @@ final class SettingsController {
       supportedLanguageIdentifiers = try ocrLanguageCatalog.supportedLanguageIdentifiers()
       isOCRLanguageCatalogAvailable = !supportedLanguageIdentifiers.isEmpty
     } catch {
-      supportedLanguageIdentifiers = [OCRRecognitionPreferences.englishUSIdentifier]
+      supportedLanguageIdentifiers = []
       isOCRLanguageCatalogAvailable = false
     }
     let effectiveIdentifiers =
@@ -109,7 +109,9 @@ final class SettingsController {
     launchAtLoginStatus = launchAtLoginService.status
     launchAtLoginIssue = Self.issue(for: launchAtLoginService.status)
     isSuccessSoundEnabled = settingsStore.isSuccessSoundEnabled
-    settingsStore.ocrRecognitionPreferences = ocrRecognitionPreferences
+    if isOCRLanguageCatalogAvailable {
+      settingsStore.ocrRecognitionPreferences = ocrRecognitionPreferences
+    }
   }
 
   func takeInitialOnboardingPresentationRequest() -> Bool {

@@ -71,10 +71,17 @@ done
 for required_capture_contract in \
     'activeOCRRecognitionPreferences = ocrPreferencesReader.ocrRecognitionPreferences' \
     'preferences: activeOCRRecognitionPreferences' \
-    'ocrPreferencesReader: settingsStore'; do
+    'ocrPreferencesReader: settingsController'; do
     if ! /usr/bin/grep -Fq "$required_capture_contract" "$capture_command" "$app"; then
         fail "Capture does not snapshot and apply OCR preferences: $required_capture_contract"
     fi
+done
+
+for required_fallback_contract in \
+    'final class SettingsController: OCRRecognitionPreferencesReading' \
+    'if isOCRLanguageCatalogAvailable {'; do
+    /usr/bin/grep -Fq "$required_fallback_contract" "$settings_controller" || \
+        fail "The runtime English fallback must preserve saved language preferences: $required_fallback_contract"
 done
 
 for required_ui_contract in \
