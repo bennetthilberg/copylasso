@@ -58,6 +58,7 @@ app_metrics="$(/usr/bin/jq -r '
             .name != "OnboardingView.swift"
             and .name != "LaunchAtLoginStatusView.swift"
             and .name != "MenuBarLabelView.swift"
+            and .name != "OCRLanguageEditorView.swift"
             and .name != "SecureUpdatePresentation.swift"
         )
     ]

@@ -23,12 +23,13 @@ readonly g48_patch_tree_pattern=$'\t(\\.github/workflows/prepare-publication\\.y
 readonly g49_publication_tree_pattern=$'\t(\\.github/workflows/prepare-publication\\.yml|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/v0\\.2-publication-runbook\\.md|scripts/audit-g48-patch-qualification\\.sh|scripts/audit-g49-publication\\.sh|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/ci\\.sh|scripts/download-v02-candidate\\.sh|scripts/generate-release-appcast\\.sh|scripts/lib/release-package-verification\\.sh|scripts/lib/v020-release-package-metadata\\.sh|scripts/lib/v021-release-package-metadata\\.sh|scripts/lib/v02-publication-transaction\\.sh|scripts/lib/v02-publication-verification\\.sh|scripts/prepare-update-feed\\.sh|scripts/test-ci-contract\\.sh|scripts/test-v02-publication\\.sh|scripts/verify-v02-candidate-package\\.sh)$'
 readonly g50_security_hotfix_tree_pattern=$'\t(CopyLasso\\.xcodeproj/project\\.pbxproj|CopyLasso\\.xcodeproj/project\\.xcworkspace/xcshareddata/swiftpm/Package\\.resolved|CopyLasso/Models/AboutMetadata\\.swift|CopyLasso/Resources/Sparkle-2\\.9\\.(4|5)-LICENSE\\.txt|CopyLassoTests/App/MenuBarShellTests\\.swift|CopyLassoUITests/CopyLassoUITests\\.swift|THIRD_PARTY_NOTICES\\.md|docs/architecture/ADR-004-secure-updates\\.md|docs/release-notes/0\\.2\\.2\\.md|scripts/audit-g50-sparkle-hotfix\\.sh|scripts/build-private-update-fixture\\.sh|scripts/fixtures/v0\\.2\\.1-published-release-notes\\.md)$'
 readonly g50_publication_tree_pattern=$'\t(\\.github/workflows/prepare-v022-publication\\.yml|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/testing\\.md|docs/v0\\.2-publication-runbook\\.md|scripts/audit-g50-publication\\.sh|scripts/audit-g50-sparkle-hotfix\\.sh|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/ci\\.sh|scripts/create-v02-publication-draft\\.sh|scripts/download-v02-candidate\\.sh|scripts/fixtures/v0\\.2\\.2-published-release-notes\\.md|scripts/generate-release-appcast\\.sh|scripts/lib/release-package-verification\\.sh|scripts/lib/v022-release-package-metadata\\.sh|scripts/lib/v02-publication-verification\\.sh|scripts/test-ci-contract\\.sh|scripts/test-g50-publication\\.sh|scripts/test-v02-publication\\.sh|scripts/verify-release-package\\.sh|scripts/verify-v02-candidate-package\\.sh)$'
+readonly g51_multilingual_ocr_tree_pattern=$'\t(CHANGELOG\.md|CopyLasso/App/CopyLassoApp\.swift|CopyLasso/CaptureWorkflow/CaptureCommand\.swift|CopyLasso/Models/OCRLanguageSelectionDraft\.swift|CopyLasso/Models/OCRRecognitionPreferences\.swift|CopyLasso/Services/OCRLanguageCatalog\.swift|CopyLasso/Services/OCRService\.swift|CopyLasso/Services/VisionOCRService\.swift|CopyLasso/Settings/AppSettingsStore\.swift|CopyLasso/Settings/SettingsController\.swift|CopyLasso/SharedUI/AccessibilityAppearance\.swift|CopyLasso/SharedUI/OCRLanguageEditorView\.swift|CopyLasso/SharedUI/SettingsView\.swift|CopyLassoTests/CaptureWorkflow/CaptureWorkflowIntegrationTests\.swift|CopyLassoTests/Models/OCRLanguageSelectionDraftTests\.swift|CopyLassoTests/Models/OCRRecognitionPreferencesTests\.swift|CopyLassoTests/Services/OCRLanguageCatalogTests\.swift|CopyLassoTests/Services/VisionOCRServiceTests\.swift|CopyLassoTests/Settings/SettingsControllerTests\.swift|CopyLassoTests/Settings/UserDefaultsSettingsStoreTests\.swift|CopyLassoTests/TestSupport/CaptureServiceDoubles\.swift|CopyLassoTests/TestSupport/SettingsDoubles\.swift|CopyLassoUITests/CopyLassoUITests\.swift|PRIVACY\.md|README\.md|SECURITY\.md|docs/architecture/overview\.md|docs/coverage-review\.md|docs/security-and-privacy-review\.md|docs/testing\.md|docs/v0\.3-product-contract\.md|scripts/audit-coverage\.sh|scripts/audit-multilingual-ocr\.sh|scripts/audit-v02-release-qualification\.sh|scripts/ci\.sh|scripts/test-ci-contract\.sh)$'
 readonly g44_release_state_commit='295ea80bdc0d51579840ef9c2bfcad5278f87099'
 readonly expected_candidate_baseline_tree_digest='1e4844388bc872b8ac4644a13b00223af1239f431d390130346daa8e914aafa0'
-readonly expected_g48_baseline_tree_digest='95d7dfdf8a9545b8ce85568437ffc57d6951344c912945d86f391639a1e105be'
+readonly expected_g48_baseline_tree_digest='73014648fb2a57b0364a3be4e87058ef9893d962244518d69f1c15392e19ec20'
 readonly expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'
 readonly expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'
-readonly expected_approved_post_candidate_patch_digest='a5111e14f5703a7054eb63e2ef0786b2d8c0c99cbd02d04b2a0631d70bfd824a'
+readonly expected_approved_post_candidate_patch_digest='2b3b9cbcf5b0b346d829cf51bc0794f34650cf6e71faedbb901674b08915123f'
 
 fail() {
     echo "$1" >&2
@@ -68,7 +69,9 @@ approved_post_candidate_path() {
         printf '%s\n' "$tree_line" | \
             /usr/bin/grep -Eq "$g50_security_hotfix_tree_pattern" || \
         printf '%s\n' "$tree_line" | \
-            /usr/bin/grep -Eq "$g50_publication_tree_pattern"
+            /usr/bin/grep -Eq "$g50_publication_tree_pattern" || \
+        printf '%s\n' "$tree_line" | \
+            /usr/bin/grep -Eq "$g51_multilingual_ocr_tree_pattern"
 }
 
 for required_file in \
@@ -269,6 +272,7 @@ current_baseline_tree_digest="$(
         /usr/bin/grep -Ev "$g49_publication_tree_pattern" |
         /usr/bin/grep -Ev "$g50_security_hotfix_tree_pattern" |
         /usr/bin/grep -Ev "$g50_publication_tree_pattern" |
+        /usr/bin/grep -Ev "$g51_multilingual_ocr_tree_pattern" |
         /usr/bin/shasum -a 256 |
         /usr/bin/awk '{print $1}'
 )"

@@ -14,6 +14,11 @@ Version `0.2.2 (5)` updates the shipping Sparkle framework to 2.9.5 for the
 upstream `GHSA-gmj2-gq3j-vqmj` fix while retaining authenticated
 full-package-only updates and the existing security boundary.
 
+The unreleased source tree adds local OCR language preferences backed only by
+the current Apple Vision runtime catalog. It adds no model, dependency,
+entitlement, content egress, or new permission. Reports about preference
+validation, catalog fallback, or per-capture language snapshotting are welcome.
+
 | Version | Supported |
 | --- | --- |
 | 0.2.x | Yes |

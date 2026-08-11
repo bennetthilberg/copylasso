@@ -1,3 +1,4 @@
+import AppKit
 import CoreGraphics
 import Foundation
 import ImageIO
@@ -60,12 +61,55 @@ final class VisionOCRServiceTests: XCTestCase {
     XCTAssertEqual(observations, probe.observations)
   }
 
+  func testCapturePreferencesConfigureOrderedLanguagesAndAutomaticDetection() async throws {
+    let probe = PerformerProbe(observations: [])
+    let service = VisionOCRService(performer: probe.perform)
+    let preferences = OCRRecognitionPreferences(
+      languageIdentifiers: ["ja-JP", "fr-FR", "en-US"]
+    )
+
+    _ = try await service.recognizeText(in: makeBlankImage(), preferences: preferences)
+
+    XCTAssertEqual(
+      probe.configurations,
+      [
+        VisionOCRConfiguration(
+          revision: VNRecognizeTextRequestRevision3,
+          recognitionLevel: .accurate,
+          recognitionLanguages: ["ja-JP", "fr-FR", "en-US"],
+          automaticallyDetectsLanguage: true,
+          usesLanguageCorrection: true
+        )
+      ]
+    )
+  }
+
   func testPinnedRevisionSupportsUSEnglishOnTheCurrentRuntime() throws {
     let request = VNRecognizeTextRequest()
     request.revision = VNRecognizeTextRequestRevision3
     request.recognitionLevel = .accurate
 
     XCTAssertTrue(try request.supportedRecognitionLanguages().contains("en-US"))
+  }
+
+  func testConfiguredLanguagesRecognizeRepresentativeScripts() async throws {
+    let fixtures = [
+      ("es-ES", "Texto privado y local"),
+      ("ru-RU", "Текст остается локальным"),
+      ("ja-JP", "画面の文字をコピー"),
+      ("ko-KR", "화면의 문자를 복사"),
+      ("vi-VN", "Văn bản riêng tư và cục bộ"),
+      ("ar-SA", "نص خاص ومحلي"),
+    ]
+
+    for (identifier, expected) in fixtures {
+      let observations = try await VisionOCRService().recognizeText(
+        in: try makeRenderedTextImage(expected),
+        preferences: OCRRecognitionPreferences(languageIdentifiers: [identifier])
+      )
+
+      XCTAssertEqual(normalizedText(observations), expected, "Language: \(identifier)")
+    }
   }
 
   func testPerformerExecutesAwayFromMainThread() async throws {
@@ -239,6 +283,47 @@ final class VisionOCRServiceTests: XCTestCase {
     context.setFillColor(CGColor(gray: 1, alpha: 1))
     context.fill(CGRect(x: 0, y: 0, width: width, height: height))
     guard let image = context.makeImage() else {
+      throw TestError.imageCreationFailed
+    }
+    return image
+  }
+
+  private func makeRenderedTextImage(_ text: String) throws -> CGImage {
+    let width = 1_100
+    let height = 180
+    guard
+      let representation = NSBitmapImageRep(
+        bitmapDataPlanes: nil,
+        pixelsWide: width,
+        pixelsHigh: height,
+        bitsPerSample: 8,
+        samplesPerPixel: 4,
+        hasAlpha: true,
+        isPlanar: false,
+        colorSpaceName: .deviceRGB,
+        bytesPerRow: 0,
+        bitsPerPixel: 0
+      ),
+      let context = NSGraphicsContext(bitmapImageRep: representation)
+    else {
+      throw TestError.imageCreationFailed
+    }
+
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = context
+    NSColor.white.setFill()
+    NSRect(x: 0, y: 0, width: width, height: height).fill()
+    (text as NSString).draw(
+      at: NSPoint(x: 40, y: 54),
+      withAttributes: [
+        .font: NSFont.systemFont(ofSize: 56, weight: .medium),
+        .foregroundColor: NSColor.black,
+      ]
+    )
+    context.flushGraphics()
+    NSGraphicsContext.restoreGraphicsState()
+
+    guard let image = representation.cgImage else {
       throw TestError.imageCreationFailed
     }
     return image

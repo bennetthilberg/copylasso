@@ -36,6 +36,42 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     )
   }
 
+  func testAcceptedCaptureSnapshotsRecognitionPreferencesForThatOperation() async throws {
+    let preferences = OCRRecognitionPreferences(
+      languageIdentifiers: ["ja-JP", "en-US"]
+    )
+    let reader = StubOCRRecognitionPreferencesReader(preferences)
+    let coordinator = CaptureCoordinator()
+    let scheduler = IntegrationWorkScheduler()
+    let ocr = StubOCRService(result: .success([observation()]))
+    let command = CaptureCommand(
+      coordinator: coordinator,
+      permissionService: StubScreenCapturePermissionService(
+        currentResult: .granted,
+        requestResult: .granted
+      ),
+      selectionService: StubRegionSelectionService(
+        result: .success(.selected(try makeSelection()))
+      ),
+      screenCaptureService: StubScreenCaptureService(result: .success(try makeImage())),
+      ocrService: ocr,
+      ocrPreferencesReader: reader,
+      textAssembler: SpyTextAssembler(result: "assembled"),
+      barcodeService: StubBarcodeRecognitionService(result: .success([])),
+      clipboardService: SpyClipboardService(),
+      feedbackService: SpyFeedbackService(),
+      recoveryPresenter: SpyPermissionRecoveryPresenter(),
+      scheduleWork: scheduler.schedule
+    )
+
+    XCTAssertEqual(command.perform(), .transitioned(from: .idle, to: .requestingPermission))
+    reader.ocrRecognitionPreferences = .englishUS
+    await scheduler.runNext()
+
+    let recognizedPreferences = await ocr.recognizedPreferences
+    XCTAssertEqual(recognizedPreferences, [preferences])
+  }
+
   func testTwentyAlternatingSuccessAndCancellationCyclesPreserveClipboardOnCancellation()
     async throws
   {

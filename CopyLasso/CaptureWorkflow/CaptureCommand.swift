@@ -22,6 +22,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
   private let screenCaptureService: (any ScreenCaptureService)?
   private let interactiveCaptureService: (any InteractiveCaptureService)?
   private let ocrService: any OCRService
+  private let ocrPreferencesReader: any OCRRecognitionPreferencesReading
   private let textAssembler: any TextAssembling
   private let barcodeService: any BarcodeRecognitionService
   private let codePayloadAssembler: any CodePayloadAssembling
@@ -33,6 +34,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
   private var activeTask: Task<Void, Never>?
   private var requestedCancellationReason: CaptureCancellationReason?
   private var selectionTransitionPrepared = false
+  private var activeOCRRecognitionPreferences = OCRRecognitionPreferences.englishUS
 
   var isEnabled: Bool {
     coordinator.state == .idle || coordinator.state == .completing
@@ -44,6 +46,8 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     selectionService: any RegionSelectionService,
     screenCaptureService: any ScreenCaptureService,
     ocrService: any OCRService,
+    ocrPreferencesReader: any OCRRecognitionPreferencesReading =
+      EnglishOnlyOCRRecognitionPreferencesReader(),
     textAssembler: any TextAssembling,
     barcodeService: any BarcodeRecognitionService,
     codePayloadAssembler: any CodePayloadAssembling = CodePayloadAssembler(),
@@ -59,6 +63,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     self.screenCaptureService = screenCaptureService
     interactiveCaptureService = nil
     self.ocrService = ocrService
+    self.ocrPreferencesReader = ocrPreferencesReader
     self.textAssembler = textAssembler
     self.barcodeService = barcodeService
     self.codePayloadAssembler = codePayloadAssembler
@@ -74,6 +79,8 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     permissionService: any ScreenCapturePermissionService,
     interactiveCaptureService: any InteractiveCaptureService,
     ocrService: any OCRService,
+    ocrPreferencesReader: any OCRRecognitionPreferencesReading =
+      EnglishOnlyOCRRecognitionPreferencesReader(),
     textAssembler: any TextAssembling,
     barcodeService: any BarcodeRecognitionService,
     codePayloadAssembler: any CodePayloadAssembling = CodePayloadAssembler(),
@@ -89,6 +96,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     screenCaptureService = nil
     self.interactiveCaptureService = interactiveCaptureService
     self.ocrService = ocrService
+    self.ocrPreferencesReader = ocrPreferencesReader
     self.textAssembler = textAssembler
     self.barcodeService = barcodeService
     self.codePayloadAssembler = codePayloadAssembler
@@ -116,6 +124,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     guard case .transitioned = result else {
       return result
     }
+    activeOCRRecognitionPreferences = ocrPreferencesReader.ocrRecognitionPreferences
     let beganFromIdle: Bool
     if case .transitioned(from: .idle, to: .requestingPermission) = result {
       beganFromIdle = true
@@ -193,6 +202,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
       }
       activeTask = nil
       requestedCancellationReason = nil
+      activeOCRRecognitionPreferences = .englishUS
     }
     guard !transitionToRequestedCancellationIfNeeded() else {
       resetTerminalState()
@@ -467,7 +477,12 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     in image: CGImage
   ) async -> RecognitionAttempt<[RecognizedTextObservation]> {
     do {
-      return .success(try await ocrService.recognizeText(in: image))
+      return .success(
+        try await ocrService.recognizeText(
+          in: image,
+          preferences: activeOCRRecognitionPreferences
+        )
+      )
     } catch VisionOCRError.cancelled {
       return .cancelled
     } catch {

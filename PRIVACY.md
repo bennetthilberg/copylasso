@@ -2,6 +2,10 @@
 
 **Status:** Public 0.2.2 (5).
 
+The unreleased source tree stores only an ordered list of OCR language
+identifiers. Vision remains local; no language model or content is downloaded
+or uploaded.
+
 CopyLasso captures only the screen region you select, recognizes text or
 supported codes locally, and writes the result to the clipboard.
 
@@ -24,16 +28,13 @@ It never logs or persists captured or recognized content.
 ## Permission and clipboard
 
 CopyLasso asks for Screen Recording access only after capture starts. It runs
-`/usr/sbin/screencapture` with fixed project arguments and no shell
-or user-controlled command. macOS may show a direct-access confirmation. Its
-image destination is `/dev/null`; CopyLasso receives no encoded screenshot from
-the subprocess. ScreenCaptureKit returns only the selected pixels in memory,
-and the image is released before feedback begins or when the operation cancels.
-If the selector returns without geometry, CopyLasso asks ScreenCaptureKit only
-to verify current access before deciding whether the attempt was Escape or a
-permission denial. It retains no shareable-content metadata from that check.
-The core workflow needs no Accessibility, Input Monitoring, microphone, or
-notification access.
+`/usr/sbin/screencapture` with fixed arguments, no shell, and `/dev/null` as its
+unused image destination. CopyLasso receives no subprocess image.
+ScreenCaptureKit returns only selected pixels in memory and releases them before
+feedback or on cancellation. If selection returns no geometry, a content-free
+ScreenCaptureKit check distinguishes Escape from denied access without retaining
+shareable-content metadata. Core capture needs no Accessibility, Input
+Monitoring, microphone, or notification access.
 
 Before selection, CopyLasso waits for saved-shortcut Shift, Option, and Control
 release. Control can redirect macOS's screenshot to the clipboard, so
@@ -61,7 +62,8 @@ cancellation presents no HUD.
 ## Stored settings
 
 CopyLasso stores preferences for onboarding, the shortcut, permission-request
-history, Launch at Login, sound, and updates. Update state contains its schedule,
+history, Launch at Login, sound, selected OCR languages, and updates. The OCR
+preference contains language identifiers and their priority only. Update state contains its schedule,
 preference, deferred build, and highest authenticated build.
 It stores no appcast bodies, release notes, captured content, or clipboard
 content. Launch at Login state comes from macOS. Fixed lifecycle diagnostics

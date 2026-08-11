@@ -37,6 +37,81 @@ final class SettingsControllerTests: XCTestCase {
     XCTAssertTrue(context.store.isSuccessSoundEnabled)
   }
 
+  func testRecognitionLanguagesDefaultToEnglishAndExposeLocalizedOptions() {
+    let context = makeContext(
+      supportedOCRLanguages: ["fr-FR", "en-US", "ja-JP"]
+    )
+
+    XCTAssertEqual(context.controller.ocrRecognitionPreferences, .englishUS)
+    XCTAssertEqual(
+      Set(context.controller.availableOCRLanguages.map(\.identifier)),
+      Set(["fr-FR", "en-US", "ja-JP"])
+    )
+    XCTAssertEqual(context.controller.ocrLanguageSummary, "English (United States)")
+  }
+
+  func testRecognitionLanguageSelectionIsValidatedPersistedAndObserved() {
+    let context = makeContext(
+      supportedOCRLanguages: ["en-US", "fr-FR", "ja-JP"]
+    )
+    let update = expectation(description: "Recognition languages changed")
+
+    withObservationTracking {
+      _ = context.controller.ocrRecognitionPreferences
+    } onChange: {
+      update.fulfill()
+    }
+
+    XCTAssertTrue(
+      context.controller.setOCRLanguageIdentifiers(["ja-JP", "bad", "fr-FR"])
+    )
+
+    wait(for: [update], timeout: 0.1)
+    XCTAssertEqual(
+      context.controller.ocrRecognitionPreferences.languageIdentifiers,
+      ["ja-JP", "fr-FR"]
+    )
+    XCTAssertEqual(
+      context.store.ocrRecognitionPreferences.languageIdentifiers,
+      ["ja-JP", "fr-FR"]
+    )
+    XCTAssertEqual(context.controller.ocrLanguageSummary, "Japanese (Japan) + 1 more")
+  }
+
+  func testRecognitionLanguageSelectionCannotBecomeEmpty() {
+    let context = makeContext(supportedOCRLanguages: ["en-US", "fr-FR"])
+
+    XCTAssertFalse(context.controller.setOCRLanguageIdentifiers([]))
+    XCTAssertEqual(context.controller.ocrRecognitionPreferences, .englishUS)
+    XCTAssertEqual(context.store.ocrRecognitionPreferences, .englishUS)
+  }
+
+  func testRecognitionCatalogFailureFallsBackToEnglish() {
+    let store = StubAppSettingsStore()
+    store.ocrRecognitionPreferences = OCRRecognitionPreferences(
+      languageIdentifiers: ["fr-FR"]
+    )
+    let controller = SettingsController(
+      settingsStore: store,
+      launchAtLoginService: StubLaunchAtLoginService(),
+      shortcutStore: StubGlobalShortcutStore(),
+      ocrLanguageCatalog: StubOCRLanguageCatalog(result: .failure(.unavailable))
+    )
+
+    XCTAssertEqual(controller.availableOCRLanguages.map(\.identifier), ["en-US"])
+    XCTAssertEqual(controller.ocrRecognitionPreferences, .englishUS)
+    XCTAssertEqual(store.ocrRecognitionPreferences, .englishUS)
+  }
+
+  func testResetRestoresEnglishOnlyRecognition() {
+    let context = makeContext(supportedOCRLanguages: ["en-US", "fr-FR"])
+    XCTAssertTrue(context.controller.setOCRLanguageIdentifiers(["fr-FR", "en-US"]))
+
+    XCTAssertTrue(context.controller.resetLocalDevelopmentState())
+
+    XCTAssertEqual(context.controller.ocrRecognitionPreferences, .englishUS)
+  }
+
   func testClosingOnboardingDoesNotCompleteItOrApplyDraftChoices() {
     let context = makeContext()
 
@@ -351,7 +426,8 @@ final class SettingsControllerTests: XCTestCase {
 
   private func makeContext(
     completedOnboardingVersion: Int = 0,
-    currentOnboardingVersion: Int = 1
+    currentOnboardingVersion: Int = 1,
+    supportedOCRLanguages: [String] = ["en-US"]
   ) -> Context {
     let store = StubAppSettingsStore(completedOnboardingVersion: completedOnboardingVersion)
     let login = StubLaunchAtLoginService()
@@ -360,7 +436,11 @@ final class SettingsControllerTests: XCTestCase {
       settingsStore: store,
       launchAtLoginService: login,
       shortcutStore: shortcutStore,
-      currentOnboardingVersion: currentOnboardingVersion
+      currentOnboardingVersion: currentOnboardingVersion,
+      ocrLanguageCatalog: StubOCRLanguageCatalog(
+        result: .success(supportedOCRLanguages)
+      ),
+      locale: Locale(identifier: "en_US")
     )
     return Context(
       controller: controller,

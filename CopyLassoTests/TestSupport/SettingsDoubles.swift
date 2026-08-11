@@ -13,6 +13,8 @@ final class StubAppSettingsStore: AppSettingsStoring {
   var hasConfiguredLaunchAtLogin = false
   var successSoundPreferenceVersion = 0
   var isSuccessSoundEnabled = true
+  var ocrLanguagePreferenceVersion = 0
+  var ocrRecognitionPreferences = OCRRecognitionPreferences.englishUS
   var history = ScreenCapturePermissionHistory()
   private(set) var resetCallCount = 0
 
@@ -31,6 +33,17 @@ final class StubAppSettingsStore: AppSettingsStoring {
       UserDefaultsSettingsStore.currentSuccessSoundPreferenceVersion
   }
 
+  func migrateOCRLanguagePreferencesIfNeeded() {
+    guard
+      ocrLanguagePreferenceVersion
+        < UserDefaultsSettingsStore.currentOCRLanguagePreferenceVersion
+    else {
+      return
+    }
+    ocrLanguagePreferenceVersion =
+      UserDefaultsSettingsStore.currentOCRLanguagePreferenceVersion
+  }
+
   func reset() {
     resetCallCount += 1
     completedOnboardingVersion = 0
@@ -38,7 +51,17 @@ final class StubAppSettingsStore: AppSettingsStoring {
     hasConfiguredLaunchAtLogin = false
     successSoundPreferenceVersion = 0
     isSuccessSoundEnabled = true
+    ocrLanguagePreferenceVersion = 0
+    ocrRecognitionPreferences = .englishUS
     history = ScreenCapturePermissionHistory()
+  }
+}
+
+struct StubOCRLanguageCatalog: OCRLanguageCataloging {
+  let result: Result<[String], OCRLanguageCatalogError>
+
+  func supportedLanguageIdentifiers() throws -> [String] {
+    try result.get()
   }
 }
 

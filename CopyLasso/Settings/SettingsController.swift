@@ -1,3 +1,4 @@
+import Foundation
 import KeyboardShortcuts
 import Observation
 
@@ -21,6 +22,7 @@ final class SettingsController {
   private let settingsStore: any AppSettingsStoring
   private let launchAtLoginService: any LaunchAtLoginServicing
   private let shortcutStore: any GlobalShortcutStoring
+  private let locale: Locale
   private let currentOnboardingVersion: Int
   private var presentedInitialOnboarding = false
 
@@ -28,6 +30,9 @@ final class SettingsController {
   private(set) var launchAtLoginStatus: LaunchAtLoginStatus
   private(set) var launchAtLoginIssue: LaunchAtLoginIssue?
   private(set) var isSuccessSoundEnabled: Bool
+  private(set) var availableOCRLanguages: [OCRLanguageOption]
+  private(set) var ocrRecognitionPreferences: OCRRecognitionPreferences
+  private(set) var isOCRLanguageCatalogAvailable: Bool
 
   var needsOnboarding: Bool {
     settingsStore.completedOnboardingVersion < currentOnboardingVersion
@@ -47,21 +52,64 @@ final class SettingsController {
     settingsStore.hasConfiguredLaunchAtLogin ? isLaunchAtLoginEnabled : true
   }
 
+  var ocrLanguageSummary: String {
+    let names = ocrRecognitionPreferences.languageIdentifiers.compactMap { identifier in
+      availableOCRLanguages.first(where: { $0.identifier == identifier })?.displayName
+    }
+    guard let first = names.first else {
+      return Self.displayName(
+        for: OCRRecognitionPreferences.englishUSIdentifier,
+        locale: locale
+      )
+    }
+    let additionalCount = names.count - 1
+    return additionalCount == 0 ? first : "\(first) + \(additionalCount) more"
+  }
+
   init(
     settingsStore: any AppSettingsStoring,
     launchAtLoginService: any LaunchAtLoginServicing,
     shortcutStore: any GlobalShortcutStoring,
-    currentOnboardingVersion: Int = SettingsController.currentOnboardingVersion
+    currentOnboardingVersion: Int = SettingsController.currentOnboardingVersion,
+    ocrLanguageCatalog: any OCRLanguageCataloging = VisionOCRLanguageCatalog(),
+    locale: Locale = .current
   ) {
     settingsStore.migrateSuccessSoundPreferenceIfNeeded()
+    settingsStore.migrateOCRLanguagePreferencesIfNeeded()
     self.settingsStore = settingsStore
     self.launchAtLoginService = launchAtLoginService
     self.shortcutStore = shortcutStore
     self.currentOnboardingVersion = currentOnboardingVersion
+    self.locale = locale
+    let supportedLanguageIdentifiers: [String]
+    do {
+      supportedLanguageIdentifiers = try ocrLanguageCatalog.supportedLanguageIdentifiers()
+      isOCRLanguageCatalogAvailable = !supportedLanguageIdentifiers.isEmpty
+    } catch {
+      supportedLanguageIdentifiers = [OCRRecognitionPreferences.englishUSIdentifier]
+      isOCRLanguageCatalogAvailable = false
+    }
+    let effectiveIdentifiers =
+      supportedLanguageIdentifiers.isEmpty
+      ? [OCRRecognitionPreferences.englishUSIdentifier]
+      : supportedLanguageIdentifiers
+    availableOCRLanguages = effectiveIdentifiers.map { identifier in
+      OCRLanguageOption(
+        identifier: identifier,
+        displayName: Self.displayName(for: identifier, locale: locale)
+      )
+    }.sorted { lhs, rhs in
+      lhs.displayName.localizedStandardCompare(rhs.displayName) == .orderedAscending
+    }
+    ocrRecognitionPreferences = OCRRecognitionPreferences.validated(
+      requestedLanguageIdentifiers: settingsStore.ocrRecognitionPreferences.languageIdentifiers,
+      supportedLanguageIdentifiers: effectiveIdentifiers
+    )
     captureShortcut = shortcutStore.captureShortcut
     launchAtLoginStatus = launchAtLoginService.status
     launchAtLoginIssue = Self.issue(for: launchAtLoginService.status)
     isSuccessSoundEnabled = settingsStore.isSuccessSoundEnabled
+    settingsStore.ocrRecognitionPreferences = ocrRecognitionPreferences
   }
 
   func takeInitialOnboardingPresentationRequest() -> Bool {
@@ -125,6 +173,24 @@ final class SettingsController {
     isSuccessSoundEnabled = settingsStore.isSuccessSoundEnabled
   }
 
+  @discardableResult
+  func setOCRLanguageIdentifiers(_ identifiers: [String]) -> Bool {
+    guard !identifiers.isEmpty else {
+      return false
+    }
+    let supported = Set(availableOCRLanguages.map(\.identifier))
+    guard identifiers.contains(where: supported.contains) else {
+      return false
+    }
+    let preferences = OCRRecognitionPreferences.validated(
+      requestedLanguageIdentifiers: identifiers,
+      supportedLanguageIdentifiers: availableOCRLanguages.map(\.identifier)
+    )
+    settingsStore.ocrRecognitionPreferences = preferences
+    ocrRecognitionPreferences = preferences
+    return true
+  }
+
   func useSuggestedCaptureShortcut() {
     setCaptureShortcut(CaptureShortcutDefaults.suggested)
   }
@@ -149,6 +215,7 @@ final class SettingsController {
       shortcutStore.reset()
       captureShortcut = nil
       isSuccessSoundEnabled = settingsStore.isSuccessSoundEnabled
+      ocrRecognitionPreferences = .englishUS
       presentedInitialOnboarding = false
       return true
     }
@@ -240,5 +307,9 @@ final class SettingsController {
     case .disabled, .enabled:
       nil
     }
+  }
+
+  private static func displayName(for identifier: String, locale: Locale) -> String {
+    locale.localizedString(forIdentifier: identifier) ?? identifier
   }
 }
