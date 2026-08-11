@@ -116,6 +116,9 @@ echo "Auditing G50 publication controls"
 echo "Auditing on-screen code recognition"
 ./scripts/audit-code-recognition.sh
 
+echo "Auditing multilingual OCR settings"
+./scripts/audit-multilingual-ocr.sh
+
 echo "Testing offline LaTeX feasibility scoring"
 ./scripts/test-latex-feasibility.sh
 
@@ -189,13 +192,16 @@ if /usr/bin/grep -R -nE "$prohibited_capture_runtime_pattern" CopyLasso; then
 fi
 
 readonly ocr_service='CopyLasso/Services/VisionOCRService.swift'
+readonly ocr_language_catalog='CopyLasso/Services/OCRLanguageCatalog.swift'
 ocr_api_files="$({ /usr/bin/grep -R -lE \
-    'VNRecognizeTextRequest' CopyLasso || true; })"
-if [[ "$ocr_api_files" != "$ocr_service" ]] || \
+    'VNRecognizeTextRequest' CopyLasso || true; } | LC_ALL=C /usr/bin/sort)"
+readonly expected_ocr_api_files="$ocr_language_catalog
+$ocr_service"
+if [[ "$ocr_api_files" != "$expected_ocr_api_files" ]] || \
     ! /usr/bin/grep -q 'VNRecognizeTextRequestRevision3' "$ocr_service" || \
     ! /usr/bin/grep -q 'request.recognitionLevel = .accurate' "$ocr_service" || \
-    ! /usr/bin/grep -q 'recognitionLanguages: \["en-US"\]' "$ocr_service" || \
-    ! /usr/bin/grep -q 'automaticallyDetectsLanguage: false' "$ocr_service" || \
+    ! /usr/bin/grep -q 'request.recognitionLanguages = configuration.recognitionLanguages' "$ocr_service" || \
+    ! /usr/bin/grep -q 'request.automaticallyDetectsLanguage = configuration.automaticallyDetectsLanguage' "$ocr_service" || \
     ! /usr/bin/grep -q 'usesLanguageCorrection: true' "$ocr_service"; then
     echo "Vision OCR must remain confined to the configured production service." >&2
     exit 1

@@ -14,6 +14,71 @@ final class UserDefaultsSettingsStoreTests: XCTestCase {
     XCTAssertEqual(store.history, ScreenCapturePermissionHistory())
     XCTAssertEqual(store.successSoundPreferenceVersion, 0)
     XCTAssertTrue(store.isSuccessSoundEnabled)
+    XCTAssertEqual(store.ocrLanguagePreferenceVersion, 0)
+    XCTAssertEqual(store.ocrRecognitionPreferences, .englishUS)
+  }
+
+  func testOCRLanguageMigrationDefaultsNewAndUpgradedUsersToEnglish() {
+    let store = makeStore()
+
+    store.migrateOCRLanguagePreferencesIfNeeded()
+
+    XCTAssertEqual(
+      store.ocrLanguagePreferenceVersion,
+      UserDefaultsSettingsStore.currentOCRLanguagePreferenceVersion
+    )
+    XCTAssertEqual(store.ocrRecognitionPreferences, .englishUS)
+  }
+
+  func testCurrentOCRLanguageMigrationIsIdempotent() {
+    let store = makeStore()
+    store.ocrRecognitionPreferences = OCRRecognitionPreferences(
+      languageIdentifiers: ["fr-FR", "en-US"]
+    )
+
+    store.migrateOCRLanguagePreferencesIfNeeded()
+
+    XCTAssertEqual(
+      store.ocrRecognitionPreferences.languageIdentifiers,
+      ["fr-FR", "en-US"]
+    )
+    XCTAssertEqual(
+      store.ocrLanguagePreferenceVersion,
+      UserDefaultsSettingsStore.currentOCRLanguagePreferenceVersion
+    )
+  }
+
+  func testOCRLanguageOrderPersistsAcrossStoreReconstruction() throws {
+    let defaults = try makeDefaults()
+    var store = UserDefaultsSettingsStore(userDefaults: defaults)
+    store.migrateOCRLanguagePreferencesIfNeeded()
+    store.ocrRecognitionPreferences = OCRRecognitionPreferences(
+      languageIdentifiers: ["fr-FR", "en-US", "ja-JP"]
+    )
+
+    store = UserDefaultsSettingsStore(userDefaults: defaults)
+
+    XCTAssertEqual(
+      store.ocrRecognitionPreferences.languageIdentifiers,
+      ["fr-FR", "en-US", "ja-JP"]
+    )
+  }
+
+  func testWritingOCRLanguagesBeforeMigrationAdvancesTheSchema() {
+    let store = makeStore()
+
+    store.ocrRecognitionPreferences = OCRRecognitionPreferences(
+      languageIdentifiers: ["fr-FR", "en-US"]
+    )
+
+    XCTAssertEqual(
+      store.ocrLanguagePreferenceVersion,
+      UserDefaultsSettingsStore.currentOCRLanguagePreferenceVersion
+    )
+    XCTAssertEqual(
+      store.ocrRecognitionPreferences.languageIdentifiers,
+      ["fr-FR", "en-US"]
+    )
   }
 
   func testSoundPreferenceMigrationDefaultsNewAndUpgradedUsersToEnabled() throws {
@@ -152,6 +217,10 @@ final class UserDefaultsSettingsStoreTests: XCTestCase {
     )
     updateStore.highestAuthenticatedBuild = "2"
     updateStore.deferredBuild = "3"
+    store.migrateOCRLanguagePreferencesIfNeeded()
+    store.ocrRecognitionPreferences = OCRRecognitionPreferences(
+      languageIdentifiers: ["fr-FR", "en-US"]
+    )
 
     store.reset()
 
@@ -160,6 +229,8 @@ final class UserDefaultsSettingsStoreTests: XCTestCase {
     XCTAssertFalse(store.hasConfiguredLaunchAtLogin)
     XCTAssertEqual(store.successSoundPreferenceVersion, 0)
     XCTAssertTrue(store.isSuccessSoundEnabled)
+    XCTAssertEqual(store.ocrLanguagePreferenceVersion, 0)
+    XCTAssertEqual(store.ocrRecognitionPreferences, .englishUS)
     XCTAssertEqual(store.history, ScreenCapturePermissionHistory())
     XCTAssertNil(updateStore.highestAuthenticatedBuild)
     XCTAssertNil(updateStore.deferredBuild)

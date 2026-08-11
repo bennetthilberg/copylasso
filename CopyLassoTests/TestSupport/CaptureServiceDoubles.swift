@@ -126,6 +126,7 @@ actor StubOCRService: OCRService {
   var result: Result<[RecognizedTextObservation], TestServiceError>
   private(set) var recognitionCallCount = 0
   private(set) var recognizedImageSizes: [CGSize] = []
+  private(set) var recognizedPreferences: [OCRRecognitionPreferences] = []
 
   init(result: Result<[RecognizedTextObservation], TestServiceError>) {
     self.result = result
@@ -135,6 +136,23 @@ actor StubOCRService: OCRService {
     recognitionCallCount += 1
     recognizedImageSizes.append(CGSize(width: image.width, height: image.height))
     return try result.get()
+  }
+
+  func recognizeText(
+    in image: CGImage,
+    preferences: OCRRecognitionPreferences
+  ) async throws -> [RecognizedTextObservation] {
+    recognizedPreferences.append(preferences)
+    return try await recognizeText(in: image)
+  }
+}
+
+@MainActor
+final class StubOCRRecognitionPreferencesReader: OCRRecognitionPreferencesReading {
+  var ocrRecognitionPreferences: OCRRecognitionPreferences
+
+  init(_ preferences: OCRRecognitionPreferences = .englishUS) {
+    ocrRecognitionPreferences = preferences
   }
 }
 

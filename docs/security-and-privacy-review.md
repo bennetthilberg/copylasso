@@ -14,6 +14,11 @@ G50 published exact qualified `0.2.2 (5)` bytes without rebuilding. That
 security-only release updates the shipping Sparkle dependency to 2.9.5 and
 adds no permission, entitlement, destination, feature, or delta-update path.
 
+G51 is an unreleased source amendment. It adds only an ordered local preference
+of runtime-supported Vision language identifiers. It adds no model, dependency,
+entitlement, permission, or network destination, and public 0.2.2 remains the
+supported download.
+
 ## Result
 
 The implementation remains local-first and offline-capable. Screen Recording is the only macOS privacy permission required by the core workflow. The app has no content-history store, account, telemetry, or crash-reporting SDK. Its sole network capability is the isolated, user-controlled Sparkle updater; text and code recognition, clipboard output, local success sound, Settings, onboarding, and Launch at Login remain operational with update networking unavailable.
@@ -49,6 +54,8 @@ CopyLasso owns only these preference categories:
 - `KeyboardShortcuts_captureText`, an encoded key/modifier choice maintained by the pinned shortcut package;
 - the unreleased legacy `KeyboardShortcuts_captureCode` value is cleared during migration and Debug reset rather than retained as a user-facing second shortcut;
 - the versioned `feedback.successSoundEnabled` Boolean, defaulting on and preserving explicit opt-out;
+- the versioned ordered OCR language identifiers, defaulting to `en-US` and
+  validated against the current accurate revision-3 Vision catalog;
 - Sparkle's automatic-check schedule and user preference; and
 - `updates.deferredBuild` plus `updates.highestAuthenticatedBuild`, which contain canonical build numbers only.
 

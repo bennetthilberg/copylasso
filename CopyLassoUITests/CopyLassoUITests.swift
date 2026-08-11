@@ -447,6 +447,39 @@ final class CopyLassoUITests: XCTestCase {
   }
 
   @MainActor
+  func testTextLanguageEditorSupportsSearchPriorityPersistenceAndCancel() {
+    let app = completedApp()
+    app.launch()
+    defer { app.terminate() }
+
+    openMenu(in: app)
+    menuItem("Settings…", in: app).click()
+    let languages = app.buttons["copylasso.settings.text-languages"]
+    XCTAssertTrue(languages.waitForExistence(timeout: 5))
+    XCTAssertTrue(languages.label.contains("English"))
+    languages.click()
+
+    let editor = app.staticTexts["copylasso.languages.title"]
+    XCTAssertTrue(editor.waitForExistence(timeout: 5))
+    let search = app.textFields["copylasso.languages.search"]
+    XCTAssertTrue(search.waitForExistence(timeout: 5))
+    search.click()
+    search.typeText("Japanese")
+    let addJapanese = app.buttons["copylasso.languages.add.ja-JP"]
+    XCTAssertTrue(addJapanese.waitForExistence(timeout: 5))
+    addJapanese.click()
+    app.buttons["Move Japanese (Japan) earlier"].click()
+    app.buttons["copylasso.languages.done"].click()
+
+    XCTAssertTrue(languages.label.contains("Japanese"))
+    languages.click()
+    XCTAssertTrue(editor.waitForExistence(timeout: 5))
+    app.buttons["copylasso.languages.cancel"].click()
+    XCTAssertTrue(editor.waitForNonExistence(timeout: 5))
+    XCTAssertTrue(languages.label.contains("Japanese"))
+  }
+
+  @MainActor
   func testFreshLaunchShowsOnboardingWithoutProtectedPermissionUI() {
     let app = freshApp()
     app.launch()

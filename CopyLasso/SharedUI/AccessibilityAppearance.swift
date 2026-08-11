@@ -95,6 +95,8 @@ enum AccessibilityAuditCopy {
     "Check the signed CopyLasso update feed now."
   static let successSoundHelp =
     "Play a brief sound only after CopyLasso successfully copies recognized content."
+  static let textLanguagesHelp =
+    "Choose one or more OCR languages and arrange their recognition priority."
   static let openScreenRecordingSettingsHelp =
     "Open the Screen Recording privacy pane in System Settings."
   static let retryPermissionHelp =

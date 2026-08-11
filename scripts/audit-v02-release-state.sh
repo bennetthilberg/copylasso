@@ -122,8 +122,9 @@ unreleased_section="$(/usr/bin/awk '
     /^## / && capture { exit }
     capture { print }
 ' "$repository_root/CHANGELOG.md")"
-[[ -z "${unreleased_section//[[:space:]]/}" ]] || \
-    fail "The current Unreleased section must remain empty after v0.2.2 publication."
+[[ "$unreleased_section" == *'### Added'* && \
+    "$unreleased_section" == *'Text Languages editor'* ]] || \
+    fail "The current Unreleased section must identify the post-v0.2.2 multilingual source work."
 security_hotfix_section="$(/usr/bin/awk '
     /^## 0\.2\.2 - 2026-08-10$/ { capture = 1; next }
     /^## / && capture { exit }

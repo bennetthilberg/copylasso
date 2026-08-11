@@ -47,7 +47,7 @@ and does not grant a second permission category.
 
 1. Press `⇧⌘2`, or choose **Capture** from the CopyLasso menu-bar menu.
 2. Drag around text on one display. Press `Esc` to cancel without changing the clipboard.
-3. CopyLasso captures only the selected region, recognizes English text locally, and writes the assembled plain text to the clipboard.
+3. CopyLasso captures only the selected region, recognizes text locally, and writes the assembled plain text to the clipboard.
 4. A short, nonactivating HUD reports copied text, no text found, a busy request, or a recoverable failure.
 
 Open **Settings…** from the menu to change or clear the shortcut, enable Launch at Login, review privacy information, or reopen first-run setup when it is incomplete.
@@ -63,6 +63,14 @@ concurrently after one selection; an eligible code wins when both are present,
 while selections without a supported code fall back to ordinary OCR. CopyLasso
 copies recognized payloads as inert plain text and never opens a URL or
 otherwise acts on a payload.
+
+The current source tree adds an unreleased **Settings > Text Languages** editor.
+English remains the default; users can opt into other languages supported by
+Apple Vision on their Mac and arrange recognition priority. Selecting multiple
+languages enables automatic language detection and can reduce speed or accuracy,
+so choosing only languages you expect usually works best. This source feature
+does not download a language pack or add a cloud service. It is not part of the
+public 0.2.2 download yet.
 
 ## Permission and Recovery
 
@@ -82,11 +90,11 @@ CopyLasso's capture workflow is private, offline, and local by design:
 - Supported code payloads are recognized locally with Vision, remain complete only during the active operation, and are treated only as clipboard text.
 - Clipboard access is write-only and plain-text-only. CopyLasso never reads the existing clipboard to preserve or restore its contents.
 
-See the [privacy policy](PRIVACY.md), [security and privacy review](docs/security-and-privacy-review.md), [v0.1 product contract](docs/v0.1-product-contract.md), and [v0.2 product contract](docs/v0.2-product-contract.md) for the reviewed guarantees and boundaries.
+See the [privacy policy](PRIVACY.md), [security and privacy review](docs/security-and-privacy-review.md), [v0.1 product contract](docs/v0.1-product-contract.md), [v0.2 product contract](docs/v0.2-product-contract.md), and [unreleased v0.3 source contract](docs/v0.3-product-contract.md) for the reviewed guarantees and boundaries.
 
 ## Known Limitations
 
-- Version 0.2 targets ordinary, approximately horizontal, single-column U.S. English text. Dense tables, handwriting, strongly rotated text, and complex multi-column layouts can be incomplete or reordered.
+- Public version 0.2 targets ordinary, approximately horizontal, single-column U.S. English text. The unreleased source language editor broadens language choice but does not change the limitations for dense tables, handwriting, strongly rotated text, or complex multi-column layouts.
 - CopyLasso cancels if the native selector is released on a different display rather than cropping a cross-display rectangle; start another capture on the intended display.
 - Protected or DRM-restricted content can appear blank or unavailable to screen capture. CopyLasso follows macOS capture restrictions and does not bypass them.
 - CopyLasso expects a direct region drag in the native selector. Modifier-adjusted native selection geometry is not supported.

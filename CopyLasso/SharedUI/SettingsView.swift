@@ -9,6 +9,8 @@ struct SettingsView: View {
   let updateController: UpdateController
   let metadata: AboutMetadata
 
+  @State private var isShowingOCRLanguageEditor = false
+
   #if DEBUG
     @State private var isShowingResetConfirmation = false
   #endif
@@ -54,6 +56,34 @@ struct SettingsView: View {
           .accessibilityIdentifier("copylasso.settings.use-suggested-shortcut")
         } label: {
           Text("Default")
+        }
+      }
+
+      Section("Recognition") {
+        LabeledContent("Text Languages") {
+          Button(settingsController.ocrLanguageSummary) {
+            isShowingOCRLanguageEditor = true
+          }
+          .disabled(!settingsController.isOCRLanguageCatalogAvailable)
+          .accessibilityLabel("Text languages, \(settingsController.ocrLanguageSummary)")
+          .accessibilityHint(AccessibilityAuditCopy.textLanguagesHelp)
+          .accessibilityIdentifier("copylasso.settings.text-languages")
+        }
+        Text(
+          settingsController.ocrRecognitionPreferences.automaticallyDetectsLanguage
+            ? "Language detection is automatic. Fewer choices generally improve speed and accuracy."
+            : "Add languages only when you need them; fewer choices generally improve speed and accuracy."
+        )
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .fixedSize(horizontal: false, vertical: true)
+
+        if !settingsController.isOCRLanguageCatalogAvailable {
+          Text("Language choices are temporarily unavailable. English remains selected.")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityIdentifier("copylasso.settings.text-languages-unavailable")
         }
       }
 
@@ -151,6 +181,15 @@ struct SettingsView: View {
     .padding(16)
     .frame(minWidth: 520, idealWidth: 520, minHeight: 680, idealHeight: 680)
     .accessibilityIdentifier("copylasso.settings.form")
+    .sheet(isPresented: $isShowingOCRLanguageEditor) {
+      OCRLanguageEditorView(
+        options: settingsController.availableOCRLanguages,
+        selectedLanguageIdentifiers: settingsController.ocrRecognitionPreferences
+          .languageIdentifiers
+      ) { identifiers in
+        settingsController.setOCRLanguageIdentifiers(identifiers)
+      }
+    }
     .onAppear {
       settingsController.refreshLaunchAtLoginStatus()
     }

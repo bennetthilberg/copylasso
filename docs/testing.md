@@ -820,3 +820,39 @@ architecture screens, then obtain the required base-M1 and Intel systems before
 unsealing a fresh corpus. The maintainer-approved sequential stopping rule does
 not relax any go threshold; it prevents spending the unseen corpus on a design
 that has already failed a terminal gate.
+
+## G51 Multilingual OCR Settings
+
+G51 keeps U.S. English as the migration-safe default and discovers optional
+languages from `VNRecognizeTextRequestRevision3` in accurate mode. Unit tests
+cover stable catalog filtering, unavailable-catalog fallback, versioned
+preference persistence and reset, ordered validation, search, add/remove/move,
+and the nonempty editor invariant. Vision adapter tests prove exact ordered
+configuration, automatic detection only for multiple choices, and real local
+recognition of generated Spanish, Russian, and Japanese fixtures.
+
+The capture integration test changes the preference immediately after an
+accepted request but before scheduled work runs and proves the OCR service sees
+the original snapshot. This keeps in-flight recognition deterministic while
+allowing the next request to use a Settings change. Existing unified-workflow
+tests continue to prove code precedence, clipboard preservation, cancellation,
+failure isolation, and reuse.
+
+Signed manual verification for the G51 pull request covers:
+
+1. Open Settings and confirm **Text Languages** initially reports English.
+2. Open the editor by keyboard and VoiceOver, search for a language, add it,
+   change priority, cancel once, then save and reopen to prove persistence.
+3. Confirm the last selected language cannot be removed and **Reset to English**
+   restores the default.
+4. Capture representative Latin, Cyrillic, and CJK text with the matching
+   language selected, then select visible text with a QR code and confirm the
+   code still wins.
+5. Repeat in light and dark appearance and at enlarged text, confirming the
+   editor remains bounded, scrollable, and fully keyboard reachable.
+
+Canonical CI invokes `scripts/audit-multilingual-ocr.sh` exactly once. The
+audit confines Vision text APIs to the catalog and recognition adapters,
+requires the runtime-derived preference and capture snapshot, rejects bundled
+models and language-path networking, and pins the source/public documentation
+distinction.

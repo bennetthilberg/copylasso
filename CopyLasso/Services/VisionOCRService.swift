@@ -21,6 +21,18 @@ struct VisionOCRConfiguration: Equatable, Sendable {
     automaticallyDetectsLanguage: false,
     usesLanguageCorrection: true
   )
+
+  static func recognition(
+    preferences: OCRRecognitionPreferences
+  ) -> VisionOCRConfiguration {
+    VisionOCRConfiguration(
+      revision: VNRecognizeTextRequestRevision3,
+      recognitionLevel: .accurate,
+      recognitionLanguages: preferences.languageIdentifiers,
+      automaticallyDetectsLanguage: preferences.automaticallyDetectsLanguage,
+      usesLanguageCorrection: true
+    )
+  }
 }
 
 enum VisionOCRError: Error, Equatable, Sendable {
@@ -106,7 +118,23 @@ struct VisionOCRService: OCRService {
   }
 
   func recognizeText(in image: CGImage) async throws -> [RecognizedTextObservation] {
-    let configuration = configuration
+    try await recognizeText(in: image, configuration: configuration)
+  }
+
+  func recognizeText(
+    in image: CGImage,
+    preferences: OCRRecognitionPreferences
+  ) async throws -> [RecognizedTextObservation] {
+    try await recognizeText(
+      in: image,
+      configuration: .recognition(preferences: preferences)
+    )
+  }
+
+  private func recognizeText(
+    in image: CGImage,
+    configuration: VisionOCRConfiguration
+  ) async throws -> [RecognizedTextObservation] {
     let performer = performer
     let cancellation = VisionOCRCancellation()
 

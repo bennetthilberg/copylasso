@@ -24,6 +24,7 @@ readonly g50_publication_audit_script="$repository_root/scripts/audit-g50-public
 readonly g50_publication_test_script="$repository_root/scripts/test-g50-publication.sh"
 readonly v02_publication_test_script="$repository_root/scripts/test-v02-publication.sh"
 readonly code_recognition_audit_script="$repository_root/scripts/audit-code-recognition.sh"
+readonly multilingual_ocr_audit_script="$repository_root/scripts/audit-multilingual-ocr.sh"
 readonly latex_feasibility_audit_script="$repository_root/scripts/audit-latex-feasibility.sh"
 readonly latex_feasibility_test_script="$repository_root/scripts/test-latex-feasibility.sh"
 readonly success_sound_audit_script="$repository_root/scripts/audit-success-sound.sh"
@@ -200,13 +201,17 @@ for required_patch_guard in \
     "g44_release_state_tree_pattern" \
     "g48_patch_tree_pattern" \
     "g50_publication_tree_pattern" \
+    "g51_multilingual_ocr_tree_pattern" \
     "expected_candidate_baseline_tree_digest='1e4844388bc872b8ac4644a13b00223af1239f431d390130346daa8e914aafa0'" \
-    "expected_g48_baseline_tree_digest='95d7dfdf8a9545b8ce85568437ffc57d6951344c912945d86f391639a1e105be'" \
+    "expected_g48_baseline_tree_digest='73014648fb2a57b0364a3be4e87058ef9893d962244518d69f1c15392e19ec20'" \
     "expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'" \
+    "g51_source_base_commit='5491bdc2ebf60872e0fababdc70c377e54a2e6f8'" \
     "expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'" \
-    "expected_approved_post_candidate_patch_digest='a5111e14f5703a7054eb63e2ef0786b2d8c0c99cbd02d04b2a0631d70bfd824a'" \
+    "expected_approved_post_candidate_patch_digest='b70cec2a5b9ab2ed2d907c8cbc05b8569ed073babdc426ecd3d236d65a8b8253'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
+    'cat-file -e "$g51_source_base_commit^{tree}"' \
+    'The pre-G51 source commit is unavailable.' \
     '"$current_baseline_tree_digest" == "$expected_g48_baseline_tree_digest"' \
     'approved_post_candidate_path "$approved_path"' \
     'hash-object -- "$approved_path"' \
@@ -221,6 +226,8 @@ for required_patch_guard in \
     '/usr/bin/grep -Ev "$g48_patch_tree_pattern"' \
     '/usr/bin/grep -Ev "$g50_security_hotfix_tree_pattern"' \
     '/usr/bin/grep -Ev "$g50_publication_tree_pattern"' \
+    '/usr/bin/grep -Ev "$g51_multilingual_ocr_tree_pattern"' \
+    'ls-tree -r --full-tree "$g51_source_base_commit"' \
     'The approved G43A runtime patch differs from its reviewed tree digest.'; do
     if ! /usr/bin/grep -Fq "$required_patch_guard" \
         "$v02_release_qualification_audit_script"; then
@@ -396,6 +403,7 @@ for required_release_state_guard in \
     'expected_appcast_sha256="ad10db1486d4874701905ad3be2acc05f5025377328107a0aeabe552a9500cd6"' \
     'Release ID: `367570430`' \
     'Release ID: `361797888`' \
+    'The current Unreleased section must identify the post-v0.2.2 multilingual source work.' \
     'The dated 0.2.2 section must retain the Sparkle security hotfix.'; do
     if ! /usr/bin/grep -Fq -- "$required_release_state_guard" \
         "$v02_release_state_audit_script"; then
@@ -411,6 +419,24 @@ code_recognition_audit_invocations="$({
 if [[ "$code_recognition_audit_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/audit-code-recognition.sh exactly once."
 fi
+
+multilingual_ocr_audit_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/audit-multilingual-ocr\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$multilingual_ocr_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-multilingual-ocr.sh exactly once."
+fi
+for multilingual_guard in \
+    'Vision text APIs must remain confined to the OCR service and language catalog.' \
+    'Multilingual OCR must not bundle a model or language pack.' \
+    'Multilingual OCR must not add a network path.' \
+    'public 0.2.2 download yet.'; do
+    if ! /usr/bin/grep -Fq "$multilingual_guard" "$multilingual_ocr_audit_script"; then
+        fail "The multilingual OCR audit is missing: $multilingual_guard"
+    fi
+done
 
 latex_feasibility_test_invocations="$({
     /usr/bin/grep -Ec \

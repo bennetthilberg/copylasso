@@ -4,6 +4,13 @@ All notable changes to CopyLasso will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- Added an opt-in Text Languages editor backed by the Apple Vision languages
+  available on the running Mac. U.S. English remains the default; selected
+  languages have explicit recognition priority, and automatic detection is
+  enabled only when more than one language is selected.
+
 ## 0.2.2 - 2026-08-10
 
 ### Security
