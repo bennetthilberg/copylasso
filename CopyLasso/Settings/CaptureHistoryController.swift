@@ -368,6 +368,8 @@ final class CaptureHistoryController: ObservableObject, CaptureHistoryRecording 
     guard activeRecordingCount == 0 else { return }
     let continuations = recordingDrainContinuations
     recordingDrainContinuations.removeAll()
-    continuations.forEach { $0.resume() }
+    for continuation in continuations {
+      continuation.resume()
+    }
   }
 }
