@@ -207,7 +207,7 @@ for required_patch_guard in \
     "expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'" \
     "g51_source_base_commit='5491bdc2ebf60872e0fababdc70c377e54a2e6f8'" \
     "expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'" \
-    "expected_approved_post_candidate_patch_digest='179d87a8c409996b54cd0aebf8aba3ad963c5d6d47290fe9ee914a3c8f70946a'" \
+    "expected_approved_post_candidate_patch_digest='b70cec2a5b9ab2ed2d907c8cbc05b8569ed073babdc426ecd3d236d65a8b8253'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
     'cat-file -e "$g51_source_base_commit^{tree}"' \

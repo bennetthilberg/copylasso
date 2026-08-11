@@ -30,6 +30,24 @@ final class UserDefaultsSettingsStoreTests: XCTestCase {
     XCTAssertEqual(store.ocrRecognitionPreferences, .englishUS)
   }
 
+  func testCurrentOCRLanguageMigrationIsIdempotent() {
+    let store = makeStore()
+    store.ocrRecognitionPreferences = OCRRecognitionPreferences(
+      languageIdentifiers: ["fr-FR", "en-US"]
+    )
+
+    store.migrateOCRLanguagePreferencesIfNeeded()
+
+    XCTAssertEqual(
+      store.ocrRecognitionPreferences.languageIdentifiers,
+      ["fr-FR", "en-US"]
+    )
+    XCTAssertEqual(
+      store.ocrLanguagePreferenceVersion,
+      UserDefaultsSettingsStore.currentOCRLanguagePreferenceVersion
+    )
+  }
+
   func testOCRLanguageOrderPersistsAcrossStoreReconstruction() throws {
     let defaults = try makeDefaults()
     var store = UserDefaultsSettingsStore(userDefaults: defaults)
