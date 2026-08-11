@@ -34,6 +34,7 @@ assert_ratio() {
     local covered="$2"
     local executable="$3"
     local minimum_basis_points="$4"
+    local source_path="${5:-}"
     local actual_basis_points
     actual_basis_points="$(ratio_basis_points "$covered" "$executable")"
 
@@ -45,6 +46,11 @@ assert_ratio() {
 
     if [[ "$actual_basis_points" -lt "$minimum_basis_points" ]]; then
         echo "$label must remain at or above $(format_basis_points "$minimum_basis_points")%." >&2
+        if [[ -n "$source_path" ]]; then
+            echo "Uncovered executable lines:" >&2
+            /usr/bin/xcrun xccov view --archive --file "$source_path" "$result_bundle" | \
+                /usr/bin/awk '$2 == "0" { print }' >&2 || true
+        fi
         exit 1
     fi
 }
@@ -118,7 +124,7 @@ for requirement in "${required_file_minimums[@]}"; do
             | select(.name == "CopyLasso.app")
             | .files[]
             | select((.path | split("/") | last) == $file_name)
-            | [.coveredLines, .executableLines]
+            | [.coveredLines, .executableLines, .path]
             | @tsv
         ) // empty
     ' "$report_json")"
@@ -126,8 +132,8 @@ for requirement in "${required_file_minimums[@]}"; do
         echo "Coverage is missing required production file: $file_name" >&2
         exit 1
     fi
-    read -r covered executable <<< "$metrics"
-    assert_ratio "$file_name" "$covered" "$executable" "$minimum_basis_points"
+    read -r covered executable source_path <<< "$metrics"
+    assert_ratio "$file_name" "$covered" "$executable" "$minimum_basis_points" "$source_path"
 done
 
 echo "CopyLasso coverage audit passed."
