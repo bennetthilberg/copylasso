@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 import XCTest
 
@@ -186,10 +187,13 @@ final class CaptureHistoryStoreTests: XCTestCase {
     let attributes = try fileManager.attributesOfItem(atPath: archiveURL.path)
     let permissions = try XCTUnwrap(attributes[.posixPermissions] as? NSNumber).intValue
     XCTAssertEqual(permissions & 0o777, 0o600)
-    XCTAssertEqual(
-      try archiveURL.resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup,
-      true
-    )
+    let backupExclusionAttribute = "com.apple.metadata:com_apple_backup_excludeItem"
+    let backupExclusionByteCount = archiveURL.path.withCString { path in
+      backupExclusionAttribute.withCString { attribute in
+        getxattr(path, attribute, nil, 0, 0, 0)
+      }
+    }
+    XCTAssertGreaterThan(backupExclusionByteCount, 0)
     let siblingNames = try fileManager.contentsOfDirectory(
       at: archiveURL.deletingLastPathComponent(),
       includingPropertiesForKeys: nil
