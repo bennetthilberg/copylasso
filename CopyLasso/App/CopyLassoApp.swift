@@ -36,9 +36,6 @@ import SwiftUI
       arguments.contains("--g52-history-system-store")
     }
 
-    var resetsSystemCaptureHistoryStorage: Bool {
-      usesSystemCaptureHistoryStore && arguments.contains("--g10-g11-reset-settings")
-    }
   }
 #endif
 
@@ -85,7 +82,7 @@ struct CopyLassoApp: App {
         if !runtimeOptions.isUITesting {
           try? launchAtLoginService.disable()
         }
-        if runtimeOptions.resetsSystemCaptureHistoryStorage {
+        if runtimeOptions.usesSystemCaptureHistoryStore {
           Self.resetSystemCaptureHistoryStorage()
         }
         settingsStore.reset()
