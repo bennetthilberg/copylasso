@@ -28,6 +28,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
   private let codePayloadAssembler: any CodePayloadAssembling
   private let clipboardService: any ClipboardService
   private let successSoundPlayer: any SuccessSoundPlaying
+  private let historyRecorder: any CaptureHistoryRecording
   private let feedbackService: any FeedbackService
   private let recoveryPresenter: any PermissionRecoveryPresenting
   private let scheduleWork: WorkScheduler?
@@ -53,6 +54,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     codePayloadAssembler: any CodePayloadAssembling = CodePayloadAssembler(),
     clipboardService: any ClipboardService,
     successSoundPlayer: any SuccessSoundPlaying = NoopSuccessSoundPlayer(),
+    historyRecorder: any CaptureHistoryRecording = NoopCaptureHistoryRecorder(),
     feedbackService: any FeedbackService,
     recoveryPresenter: any PermissionRecoveryPresenting,
     scheduleWork: WorkScheduler? = nil
@@ -69,6 +71,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     self.codePayloadAssembler = codePayloadAssembler
     self.clipboardService = clipboardService
     self.successSoundPlayer = successSoundPlayer
+    self.historyRecorder = historyRecorder
     self.feedbackService = feedbackService
     self.recoveryPresenter = recoveryPresenter
     self.scheduleWork = scheduleWork
@@ -86,6 +89,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     codePayloadAssembler: any CodePayloadAssembling = CodePayloadAssembler(),
     clipboardService: any ClipboardService,
     successSoundPlayer: any SuccessSoundPlaying = NoopSuccessSoundPlayer(),
+    historyRecorder: any CaptureHistoryRecording = NoopCaptureHistoryRecorder(),
     feedbackService: any FeedbackService,
     recoveryPresenter: any PermissionRecoveryPresenting,
     scheduleWork: WorkScheduler? = nil
@@ -102,6 +106,7 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     self.codePayloadAssembler = codePayloadAssembler
     self.clipboardService = clipboardService
     self.successSoundPlayer = successSoundPlayer
+    self.historyRecorder = historyRecorder
     self.feedbackService = feedbackService
     self.recoveryPresenter = recoveryPresenter
     self.scheduleWork = scheduleWork
@@ -432,13 +437,16 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
       codeAttempt: attempts.1
     )
     let content: String
+    let historyKind: CaptureHistoryContentKind
     let successFeedback: (String) -> CaptureFeedback
     switch resolution {
     case .text(let recognizedText):
       content = recognizedText
+      historyKind = .text
       successFeedback = { .success(preview: $0) }
     case .code(let payload):
       content = payload
+      historyKind = .code
       successFeedback = { .codeSuccess(preview: $0) }
     case .noContent:
       return .noContent
@@ -453,6 +461,10 @@ final class CaptureCommand: CaptureRequesting, ActiveCaptureCancelling {
     }
 
     successSoundPlayer.play()
+    let historyResult = await historyRecorder.record(content: content, kind: historyKind)
+    if historyResult == .failed {
+      return .historySaveFailed
+    }
     let preview = FeedbackPreview(text: content).text
     return successFeedback(preview)
   }

@@ -40,6 +40,24 @@ final class MenuBarShellTests: XCTestCase {
     XCTAssertEqual(terminator.terminationCallCount, 1)
   }
 
+  func testOpeningHistoryActivatesApplicationBeforeOpeningSingletonWindow() {
+    var events: [String] = []
+    let handler = MenuBarCommandHandler(
+      captureCommand: makeTestCaptureCommand(
+        coordinator: CaptureCoordinator(),
+        scheduleWork: { _ in }
+      ),
+      applicationTerminator: SpyApplicationTerminator(),
+      activateApplication: { events.append("activate") }
+    )
+
+    handler.openHistory {
+      events.append("open history")
+    }
+
+    XCTAssertEqual(events, ["activate", "open history"])
+  }
+
   func testAboutMetadataUsesBundleVersionAndBuildValues() {
     let metadata = AboutMetadata(
       infoDictionary: [

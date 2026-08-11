@@ -51,6 +51,17 @@ final class FeedbackPanelControllerTests: XCTestCase {
       FeedbackPresentationContent(feedback: .ambiguousCodes).title,
       "Capture Codes Separately"
     )
+    XCTAssertEqual(
+      FeedbackPresentationContent(feedback: .historySaveFailed),
+      FeedbackPresentationContent(
+        symbolName: "exclamationmark.triangle.fill",
+        menuBarAccessibilityLabel: "CopyLasso, copied, history not saved",
+        title: "Copied, History Not Saved",
+        message: "The content is on the clipboard, but could not be saved to local history.",
+        accessibilityLabel:
+          "Copied, History Not Saved. The content is on the clipboard, but could not be saved to local history."
+      )
+    )
   }
 
   func testEveryFailureStageUsesBoundedUserSafeGenericContent() {

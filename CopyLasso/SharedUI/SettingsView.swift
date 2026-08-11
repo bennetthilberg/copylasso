@@ -7,6 +7,7 @@ struct SettingsView: View {
 
   let settingsController: SettingsController
   let updateController: UpdateController
+  @ObservedObject var historyController: CaptureHistoryController
   let metadata: AboutMetadata
 
   @State private var isShowingOCRLanguageEditor = false
@@ -151,9 +152,38 @@ struct SettingsView: View {
       }
 
       Section("Privacy") {
+        Toggle(
+          "Save Capture History",
+          isOn: Binding(
+            get: { historyController.isEnabled },
+            set: { enabled in
+              Task {
+                if enabled {
+                  _ = await historyController.enable()
+                } else {
+                  _ = await historyController.requestDisable()
+                }
+              }
+            }
+          )
+        )
+        .accessibilityHint(
+          "Saves only successful text and code output encrypted on this Mac for seven days."
+        )
+        .accessibilityIdentifier("copylasso.settings.capture-history")
+
+        Text("Only successful text and code output is encrypted locally for seven days.")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+          .fixedSize(horizontal: false, vertical: true)
+
+        Button("View History…") {
+          openWindow(id: "history")
+        }
+        .accessibilityIdentifier("copylasso.settings.view-history")
+
         Text(
-          "Screen captures and recognized text stay local, remain in memory only as long as needed, "
-            + "and are never retained as history or sent to a cloud service."
+          "Screenshots are never saved. Recognition stays local and is never sent to a cloud service."
         )
         .fixedSize(horizontal: false, vertical: true)
       }
@@ -198,16 +228,41 @@ struct SettingsView: View {
       _ in
       settingsController.refreshLaunchAtLoginStatus()
     }
+    .alert(
+      "Turn Off Capture History?",
+      isPresented: Binding(
+        get: { historyController.requiresDisableConfirmation },
+        set: { presented in
+          if !presented { historyController.cancelDisable() }
+        }
+      )
+    ) {
+      Button("Cancel", role: .cancel) {
+        historyController.cancelDisable()
+      }
+      Button("Delete History and Turn Off", role: .destructive) {
+        Task { _ = await historyController.confirmDisable() }
+      }
+    } message: {
+      Text(
+        "This removes CopyLasso's active encrypted archive and encryption key. APFS snapshots or external backups may retain prior bytes."
+      )
+    }
     #if DEBUG
       .alert("Reset Local Development State?", isPresented: $isShowingResetConfirmation) {
         Button("Cancel", role: .cancel) {}
         Button("Reset", role: .destructive) {
-          if settingsController.resetLocalDevelopmentState() {
-            openWindow(id: "onboarding")
+          Task {
+            if settingsController.resetLocalDevelopmentState() {
+              await historyController.resetLocalDevelopmentState()
+              openWindow(id: "onboarding")
+            }
           }
         }
       } message: {
-        Text("This unregisters Launch at Login and clears CopyLasso preferences and shortcut data.")
+        Text(
+          "This unregisters Launch at Login and clears CopyLasso preferences, shortcut data, and capture history."
+        )
       }
     #endif
   }

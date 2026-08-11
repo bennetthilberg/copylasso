@@ -65,6 +65,7 @@ app_metrics="$(/usr/bin/jq -r '
             and .name != "LaunchAtLoginStatusView.swift"
             and .name != "MenuBarLabelView.swift"
             and .name != "OCRLanguageEditorView.swift"
+            and .name != "CaptureHistoryView.swift"
             and .name != "SecureUpdatePresentation.swift"
         )
     ]
@@ -96,6 +97,9 @@ required_file_minimums=(
     "AppSettingsStore.swift|10000"
     "CaptureCommand.swift|9000"
     "CaptureCoordinator.swift|10000"
+    "CaptureHistory.swift|8000"
+    "CaptureHistoryController.swift|7500"
+    "CaptureHistoryStore.swift|6500"
     "ClipboardService.swift|9500"
     "CodePayloadAssembler.swift|9500"
     "FeedbackPresentationContent.swift|10000"

@@ -10,6 +10,10 @@ All notable changes to CopyLasso will be documented in this file.
   available on the running Mac. U.S. English remains the default; selected
   languages have explicit recognition priority, and automatic detection is
   enabled only when more than one language is selected.
+- Added off-by-default encrypted capture history for successful text and code
+  output. The unreleased source keeps at most 100 entries for seven days, never
+  stores screenshots, and provides exact Copy, Delete, and confirmed Clear All
+  controls.
 
 ## 0.2.2 - 2026-08-10
 

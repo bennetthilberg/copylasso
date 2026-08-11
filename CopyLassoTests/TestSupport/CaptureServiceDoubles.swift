@@ -253,6 +253,22 @@ final class SpyFeedbackService: FeedbackService {
 }
 
 @MainActor
+final class SpyCaptureHistoryRecorder: CaptureHistoryRecording {
+  var result: CaptureHistoryRecordingResult = .notEnabled
+  var onRecord: ((String, CaptureHistoryContentKind) -> Void)?
+  private(set) var requests: [(content: String, kind: CaptureHistoryContentKind)] = []
+
+  func record(
+    content: String,
+    kind: CaptureHistoryContentKind
+  ) async -> CaptureHistoryRecordingResult {
+    requests.append((content, kind))
+    onRecord?(content, kind)
+    return result
+  }
+}
+
+@MainActor
 func makeTestCaptureCommand(
   coordinator: CaptureCoordinator,
   scheduleWork: @escaping CaptureCommand.WorkScheduler,

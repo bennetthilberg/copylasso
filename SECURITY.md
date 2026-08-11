@@ -19,6 +19,15 @@ the current Apple Vision runtime catalog. It adds no model, dependency,
 entitlement, content egress, or new permission. Reports about preference
 validation, catalog fallback, or per-capture language snapshotting are welcome.
 
+The same unreleased source line adds **Save Capture History**, off by default.
+It stores only successful text and inert code output in one AES-256-GCM archive
+for seven days, capped at 100 entries and 256 KiB per entry. The random key uses
+the bundle-scoped, nonsynchronizing Keychain account `archive-key-v1`.
+Screenshots remain memory-only. Reports about consent, authentication failure,
+retention, Keychain scope, deletion, plaintext exposure, or recursive recording
+are welcome. CopyLasso 0.2.2 remains the latest public release and has no history
+feature.
+
 | Version | Supported |
 | --- | --- |
 | 0.2.x | Yes |
