@@ -197,6 +197,37 @@ final class CaptureHistoryStoreTests: XCTestCase {
     XCTAssertEqual(siblingNames, ["CaptureHistory.clh"])
   }
 
+  func testSystemFileStoreRemovesAbandonedTemporaryArchivesOnReadWriteAndDelete() throws {
+    let fileManager = FileManager.default
+    let supportURL = try XCTUnwrap(
+      fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+    )
+    .appendingPathComponent("CopyLassoHistoryCleanupTests-\(UUID().uuidString)", isDirectory: true)
+    defer { try? fileManager.removeItem(at: supportURL) }
+    let bundleIdentifier = "io.github.bennetthilberg.copylasso.cleanup-tests"
+    let store = SystemCaptureHistoryFileStore(
+      bundleIdentifier: bundleIdentifier,
+      applicationSupportURL: supportURL
+    )
+    let directory = supportURL.appendingPathComponent(bundleIdentifier, isDirectory: true)
+    try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+
+    let readOrphan = directory.appendingPathComponent(".CaptureHistory-read")
+    try Data("read orphan".utf8).write(to: readOrphan)
+    XCTAssertNil(try store.read())
+    XCTAssertFalse(fileManager.fileExists(atPath: readOrphan.path))
+
+    let writeOrphan = directory.appendingPathComponent(".CaptureHistory-write")
+    try Data("write orphan".utf8).write(to: writeOrphan)
+    try store.replace(with: Data("archive".utf8), permissions: 0o600, excludeFromBackup: true)
+    XCTAssertFalse(fileManager.fileExists(atPath: writeOrphan.path))
+
+    let deleteOrphan = directory.appendingPathComponent(".CaptureHistory-delete")
+    try Data("delete orphan".utf8).write(to: deleteOrphan)
+    try store.delete()
+    XCTAssertFalse(fileManager.fileExists(atPath: deleteOrphan.path))
+  }
+
   private func makeContext() -> (
     store: EncryptedCaptureHistoryStore,
     keyStore: StubCaptureHistoryKeyStore,

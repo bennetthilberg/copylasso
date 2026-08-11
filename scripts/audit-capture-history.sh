@@ -78,6 +78,15 @@ for workflow_contract in \
         fail "Successful captures are missing their reviewed history ordering: $workflow_contract"
 done
 
+for lifecycle_contract in \
+    'catch CaptureHistoryStoreError.contentTooLarge' \
+    'await waitForActiveRecordings()' \
+    'presentationState = isLocked ? .locked : .ready' \
+    'removeAbandonedTemporaryFiles()'; do
+    /usr/bin/grep -Fq "$lifecycle_contract" "$controller" "$store" || \
+        fail "Capture-history lifecycle protection is missing: $lifecycle_contract"
+done
+
 clipboard_line="$(/usr/bin/grep -nF 'try clipboardService.writePlainText(content)' "$workflow" | /usr/bin/cut -d: -f1)"
 sound_line="$(/usr/bin/grep -nF 'successSoundPlayer.play()' "$workflow" | /usr/bin/tail -n 1 | /usr/bin/cut -d: -f1)"
 history_line="$(/usr/bin/grep -nF 'historyRecorder.record(content: content, kind: historyKind)' "$workflow" | /usr/bin/cut -d: -f1)"
@@ -129,9 +138,14 @@ for test_contract in \
     'testWrongKeyTamperTruncationAndUnknownVersionFailClosed' \
     'testMissingKeyDoesNotOverwriteExistingArchive' \
     'testSystemFileStoreAtomicallyReplacesWithRestrictivePermissionsAndBackupExclusion' \
+    'testSystemFileStoreRemovesAbandonedTemporaryArchivesOnReadWriteAndDelete' \
     'testSuccessfulTextAndCodeWriteThenPlaySoundThenRecordExactHistoryPayload' \
     'testHistoryFailureKeepsSuccessfulCopyAndSoundButReplacesSuccessFeedback' \
+    'testHistoryPolicySkipKeepsOrdinarySuccessfulCopyFeedback' \
     'testUnreadableHistoryAlsoRequiresDestructiveConfirmation' \
+    'testConfirmedDisableWaitsForAnAcceptedRecordThenDeletesIt' \
+    'testFailedConfirmedDisableRestoresConsentAndAcceptsLaterRecords' \
+    'testScheduledExpirationPreservesLockedPresentationUntilExplicitReload' \
     'testCopyWritesExactlyOncePlaysSoundShowsTypedFeedbackAndDoesNotRecord' \
     'testOpeningHistoryInvalidatesAnOlderLaunchLoad' \
     'testHistoryEmptyState' \

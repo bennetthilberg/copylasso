@@ -871,19 +871,22 @@ clock changes, 100-entry eviction, distinct duplicate events, the 256 KiB UTF-8
 boundary, stable newest-first ordering, relaunch pruning, random key creation,
 authenticated AES-256-GCM round trips, and ciphertext scans for every private
 field. Injected Keychain and filesystem seams exercise a missing or wrong key,
-tampering, truncation, unknown schema, oversized archives, atomic replacement
-failure, restrictive `0600` permissions, backup exclusion, and scoped archive
+tampering, truncation, unknown schema, oversized archives, atomic-replacement
+failure, interrupted-write sibling cleanup, restrictive `0600` permissions,
+backup exclusion, and scoped archive
 and key deletion without silently replacing unreadable data.
 
 Workflow and controller tests prove disabled operation creates no key or file;
 text and code success write the clipboard before sound and history; every
 cancelled, failed, ambiguous, no-result, or clipboard-failed operation makes no
 history call; and a history failure preserves the completed copy and sound but
-shows **Copied, History Not Saved**. They also cover enable, empty disable,
+shows **Copied, History Not Saved**, while an oversized policy skip keeps the
+ordinary success result and existing history usable. They also cover enable, empty disable,
 confirmed and cancelled destructive disable, unreadable recovery, individual
 delete, confirmed Clear All with history remaining enabled, Debug reset,
-expiration scheduling, launch/close/lock cleanup, and exact Copy-from-History
-without recursive recording.
+in-flight-record draining before destructive disable, expiration scheduling,
+locked-presentation preservation, launch/close/lock cleanup, and exact
+Copy-from-History without recursive recording.
 
 Signed UI coverage uses deterministic Debug-only disabled, populated, and
 unreadable stores. It verifies menu order, the Settings consent toggle, off,

@@ -38,8 +38,11 @@ disabled, and `AfterFirstUnlockThisDeviceOnly` accessibility. Production and
 Debug therefore have independent keys and archives.
 
 Missing keys, wrong keys, authentication failure, truncation, unknown versions,
-oversized archives, and failed writes expose no entry. The store never replaces
-unreadable bytes silently. A confirmed destructive recovery removes the active
+oversized archives, and failed writes expose no entry. Abandoned private
+atomic-write siblings are removed on the next read, write, or destructive
+deletion so an interrupted replacement cannot extend ciphertext retention.
+The store never replaces unreadable bytes silently. A confirmed destructive
+recovery removes the active
 archive and app-owned key. App-driven deletion cannot guarantee forensic erasure
 from APFS snapshots or external system backups.
 

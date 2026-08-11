@@ -340,6 +340,17 @@ final class CaptureWorkflowIntegrationTests: XCTestCase {
     XCTAssertEqual(context.feedback.presentedFeedback, [.historySaveFailed])
   }
 
+  func testHistoryPolicySkipKeepsOrdinarySuccessfulCopyFeedback() async throws {
+    let context = try makeContext(historyResult: .skipped)
+
+    await runOne(context)
+
+    XCTAssertEqual(context.clipboard.writtenTexts, ["assembled"])
+    XCTAssertEqual(context.sound.playCallCount, 1)
+    XCTAssertEqual(context.history.requests.count, 1)
+    XCTAssertEqual(context.feedback.presentedFeedback, [.success(preview: "assembled")])
+  }
+
   func testNoTextOrEligibleCodePreservesClipboardAndRemainsSilent() async throws {
     let context = try makeContext(
       barcodeResult: .success([]),

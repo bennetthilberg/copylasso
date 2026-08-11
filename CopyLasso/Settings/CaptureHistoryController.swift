@@ -17,6 +17,7 @@ enum CaptureHistoryDisableResult: Equatable, Sendable {
 enum CaptureHistoryRecordingResult: Equatable, Sendable {
   case recorded
   case notEnabled
+  case skipped
   case failed
 }
 
@@ -84,6 +85,9 @@ final class CaptureHistoryController: ObservableObject, CaptureHistoryRecording 
   private var isWindowOpen = false
   private var isLocked = false
   private var reloadGeneration = 0
+  private var activeRecordingCount = 0
+  private var isDestructiveOperationInProgress = false
+  private var recordingDrainContinuations: [CheckedContinuation<Void, Never>] = []
 
   var isEnabled: Bool {
     preferences.isCaptureHistoryEnabled
@@ -118,6 +122,7 @@ final class CaptureHistoryController: ObservableObject, CaptureHistoryRecording 
   }
 
   func enable() async -> Bool {
+    guard !isDestructiveOperationInProgress else { return false }
     do {
       try await store.prepare()
       preferences.isCaptureHistoryEnabled = true
@@ -159,12 +164,17 @@ final class CaptureHistoryController: ObservableObject, CaptureHistoryRecording 
   }
 
   func confirmDisable() async -> Bool {
+    let wasEnabled = preferences.isCaptureHistoryEnabled
+    preferences.isCaptureHistoryEnabled = false
+    isDestructiveOperationInProgress = true
+    await waitForActiveRecordings()
     do {
       try await store.deleteAll()
-      preferences.isCaptureHistoryEnabled = false
       setDisabledState()
       return true
     } catch {
+      preferences.isCaptureHistoryEnabled = wasEnabled
+      isDestructiveOperationInProgress = false
       requiresDisableConfirmation = false
       presentationState = .unavailable
       return false
@@ -175,11 +185,15 @@ final class CaptureHistoryController: ObservableObject, CaptureHistoryRecording 
     content: String,
     kind: CaptureHistoryContentKind
   ) async -> CaptureHistoryRecordingResult {
-    guard isEnabled else { return .notEnabled }
+    guard isEnabled, !isDestructiveOperationInProgress else { return .notEnabled }
+    activeRecordingCount += 1
+    defer { finishRecording() }
     do {
       _ = try await store.append(content: content, kind: kind, at: now())
       await reload()
       return .recorded
+    } catch CaptureHistoryStoreError.contentTooLarge {
+      return .skipped
     } catch {
       entries = []
       presentationState = .unavailable
@@ -249,6 +263,9 @@ final class CaptureHistoryController: ObservableObject, CaptureHistoryRecording 
 
   func clearAll() async -> Bool {
     invalidatePendingReloads()
+    isDestructiveOperationInProgress = true
+    await waitForActiveRecordings()
+    defer { isDestructiveOperationInProgress = false }
     do {
       try await store.deleteAll()
       try await store.prepare()
@@ -278,12 +295,17 @@ final class CaptureHistoryController: ObservableObject, CaptureHistoryRecording 
 
   private func disableImmediately() async -> CaptureHistoryDisableResult {
     invalidatePendingReloads()
+    let wasEnabled = preferences.isCaptureHistoryEnabled
+    preferences.isCaptureHistoryEnabled = false
+    isDestructiveOperationInProgress = true
+    await waitForActiveRecordings()
     do {
       try await store.deleteAll()
-      preferences.isCaptureHistoryEnabled = false
       setDisabledState()
       return .disabled
     } catch {
+      preferences.isCaptureHistoryEnabled = wasEnabled
+      isDestructiveOperationInProgress = false
       presentationState = .unavailable
       return .failed
     }
@@ -295,7 +317,7 @@ final class CaptureHistoryController: ObservableObject, CaptureHistoryRecording 
       let loaded = try await store.load(now: now())
       guard generation == reloadGeneration, isEnabled else { return }
       entries = shouldRetainDecryptedContent ? loaded : []
-      presentationState = .ready
+      presentationState = isLocked ? .locked : .ready
       scheduleExpiration(for: loaded)
     } catch {
       guard generation == reloadGeneration, isEnabled else { return }
@@ -321,6 +343,7 @@ final class CaptureHistoryController: ObservableObject, CaptureHistoryRecording 
     entries = []
     presentationState = .disabled
     isLocked = false
+    isDestructiveOperationInProgress = false
     requiresDisableConfirmation = false
     expirationScheduler.cancel()
   }
@@ -331,5 +354,20 @@ final class CaptureHistoryController: ObservableObject, CaptureHistoryRecording 
 
   private func invalidatePendingReloads() {
     reloadGeneration &+= 1
+  }
+
+  private func waitForActiveRecordings() async {
+    guard activeRecordingCount > 0 else { return }
+    await withCheckedContinuation { continuation in
+      recordingDrainContinuations.append(continuation)
+    }
+  }
+
+  private func finishRecording() {
+    activeRecordingCount -= 1
+    guard activeRecordingCount == 0 else { return }
+    let continuations = recordingDrainContinuations
+    recordingDrainContinuations.removeAll()
+    continuations.forEach { $0.resume() }
   }
 }

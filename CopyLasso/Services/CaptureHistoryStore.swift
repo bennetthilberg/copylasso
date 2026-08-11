@@ -286,6 +286,7 @@ final class SystemCaptureHistoryKeyStore: CaptureHistoryKeyStoring, @unchecked S
 
 final class SystemCaptureHistoryFileStore: CaptureHistoryFileStoring, @unchecked Sendable {
   static let maximumArchiveByteCount = 32 * 1_024 * 1_024
+  private static let temporaryFilePrefix = ".CaptureHistory-"
 
   private let fileManager: FileManager
   private let archiveURL: URL
@@ -306,10 +307,11 @@ final class SystemCaptureHistoryFileStore: CaptureHistoryFileStoring, @unchecked
   }
 
   func read() throws -> Data? {
-    guard fileManager.fileExists(atPath: archiveURL.path) else {
-      return nil
-    }
     do {
+      try removeAbandonedTemporaryFiles()
+      guard fileManager.fileExists(atPath: archiveURL.path) else {
+        return nil
+      }
       let values = try archiveURL.resourceValues(forKeys: [.fileSizeKey])
       guard let size = values.fileSize, size <= Self.maximumArchiveByteCount else {
         throw CaptureHistoryStoreError.invalidArchive
@@ -330,6 +332,7 @@ final class SystemCaptureHistoryFileStore: CaptureHistoryFileStoring, @unchecked
     let temporaryURL = directory.appendingPathComponent(".CaptureHistory-\(UUID().uuidString)")
     do {
       try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+      try removeAbandonedTemporaryFiles()
       try data.write(to: temporaryURL, options: [.withoutOverwriting])
       try fileManager.setAttributes(
         [.posixPermissions: permissions],
@@ -359,13 +362,25 @@ final class SystemCaptureHistoryFileStore: CaptureHistoryFileStoring, @unchecked
   }
 
   func delete() throws {
-    guard fileManager.fileExists(atPath: archiveURL.path) else {
-      return
-    }
     do {
-      try fileManager.removeItem(at: archiveURL)
+      try removeAbandonedTemporaryFiles()
+      if fileManager.fileExists(atPath: archiveURL.path) {
+        try fileManager.removeItem(at: archiveURL)
+      }
     } catch {
       throw CaptureHistoryStoreError.deletionFailed
+    }
+  }
+
+  private func removeAbandonedTemporaryFiles() throws {
+    let directory = archiveURL.deletingLastPathComponent()
+    guard fileManager.fileExists(atPath: directory.path) else { return }
+    let contents = try fileManager.contentsOfDirectory(
+      at: directory,
+      includingPropertiesForKeys: nil
+    )
+    for item in contents where item.lastPathComponent.hasPrefix(Self.temporaryFilePrefix) {
+      try fileManager.removeItem(at: item)
     }
   }
 }

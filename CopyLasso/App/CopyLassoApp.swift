@@ -35,6 +35,10 @@ import SwiftUI
     var usesSystemCaptureHistoryStore: Bool {
       arguments.contains("--g52-history-system-store")
     }
+
+    var resetsSystemCaptureHistoryStorage: Bool {
+      usesSystemCaptureHistoryStore && arguments.contains("--g10-g11-reset-settings")
+    }
   }
 #endif
 
@@ -80,6 +84,9 @@ struct CopyLassoApp: App {
       if arguments.contains("--g10-g11-reset-settings") {
         if !runtimeOptions.isUITesting {
           try? launchAtLoginService.disable()
+        }
+        if runtimeOptions.resetsSystemCaptureHistoryStorage {
+          Self.resetSystemCaptureHistoryStorage()
         }
         settingsStore.reset()
         shortcutStore.reset()
@@ -283,6 +290,17 @@ struct CopyLassoApp: App {
       fileStore: SystemCaptureHistoryFileStore(bundleIdentifier: bundleIdentifier)
     )
   }
+
+  #if DEBUG
+    private static func resetSystemCaptureHistoryStorage() {
+      let bundleIdentifier =
+        Bundle.main.bundleIdentifier ?? "io.github.bennetthilberg.copylasso.debug"
+      let fileStore = SystemCaptureHistoryFileStore(bundleIdentifier: bundleIdentifier)
+      let keyStore = SystemCaptureHistoryKeyStore(bundleIdentifier: bundleIdentifier)
+      try? fileStore.delete()
+      try? keyStore.deleteKey()
+    }
+  #endif
 
   #if DEBUG
     private static func debugUpdateOffer(releaseNotes: String) -> SecureUpdateOffer {

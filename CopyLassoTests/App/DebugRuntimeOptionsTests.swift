@@ -21,4 +21,20 @@ final class DebugRuntimeOptionsTests: XCTestCase {
       )
     }
   }
+
+  func testPersistentHistoryResetRequiresBothSystemStoreAndResetArguments() {
+    XCTAssertTrue(
+      DebugRuntimeOptions(arguments: [
+        "--g10-g11-reset-settings", "--g52-history-system-store",
+      ]).resetsSystemCaptureHistoryStorage
+    )
+    XCTAssertFalse(
+      DebugRuntimeOptions(arguments: ["--g10-g11-reset-settings"])
+        .resetsSystemCaptureHistoryStorage
+    )
+    XCTAssertFalse(
+      DebugRuntimeOptions(arguments: ["--g52-history-system-store"])
+        .resetsSystemCaptureHistoryStorage
+    )
+  }
 }

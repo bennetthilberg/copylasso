@@ -117,6 +117,20 @@ final class CaptureHistoryControllerTests: XCTestCase {
     XCTAssertEqual(context.controller.entries, [])
   }
 
+  func testOversizedRecordIsSkippedWithoutInvalidatingExistingHistory() async {
+    let existing = entry(content: "existing")
+    let context = makeContext(enabled: true, entries: [existing])
+    await context.controller.openHistory()
+    await context.store.setAppendError(.contentTooLarge)
+
+    let result = await context.controller.record(content: "oversized", kind: .text)
+
+    XCTAssertEqual(result, .skipped)
+    XCTAssertTrue(context.controller.isEnabled)
+    XCTAssertEqual(context.controller.presentationState, .ready)
+    XCTAssertEqual(context.controller.entries, [existing])
+  }
+
   func testOpeningLoadsNewestFirstAndClosingOrLockClearsDecryptedContent() async {
     let entries = [
       entry(content: "older", offset: -2),
@@ -200,6 +214,71 @@ final class CaptureHistoryControllerTests: XCTestCase {
     let loadCallCount = await context.store.loadCallCount
     XCTAssertEqual(loadCallCount, 2)
     XCTAssertEqual(context.controller.entries, [])
+  }
+
+  func testScheduledExpirationPreservesLockedPresentationUntilExplicitReload() async {
+    let stored = entry(content: "expires later", offset: -1)
+    let scheduler = StubCaptureHistoryExpirationScheduler()
+    let context = makeContext(enabled: true, entries: [stored], scheduler: scheduler)
+    await context.controller.openHistory()
+    context.controller.clearDecryptedState()
+
+    await scheduler.fire()
+
+    XCTAssertEqual(context.controller.entries, [])
+    XCTAssertEqual(context.controller.presentationState, .locked)
+    XCTAssertNotNil(scheduler.scheduledDate)
+  }
+
+  func testConfirmedDisableWaitsForAnAcceptedRecordThenDeletesIt() async {
+    let existing = entry(content: "existing")
+    let preferences = StubAppSettingsStore()
+    preferences.isCaptureHistoryEnabled = true
+    let store = SuspendedAppendCaptureHistoryStore(entries: [existing])
+    let controller = CaptureHistoryController(
+      preferences: preferences,
+      store: store,
+      clipboardService: SpyClipboardService(),
+      successSoundPlayer: SpySuccessSoundPlayer(),
+      feedbackService: SpyFeedbackService(),
+      expirationScheduler: StubCaptureHistoryExpirationScheduler(),
+      now: { self.now }
+    )
+    let confirmationResult = await controller.requestDisable()
+    XCTAssertEqual(confirmationResult, .confirmationRequired)
+
+    let recording = Task { await controller.record(content: "racing", kind: .text) }
+    await store.waitUntilAppendStarts()
+    let disabling = Task { await controller.confirmDisable() }
+    for _ in 0..<10 { await Task.yield() }
+
+    XCTAssertFalse(preferences.isCaptureHistoryEnabled)
+    let deleteCountBeforeResume = await store.deleteAllCallCount
+    XCTAssertEqual(deleteCountBeforeResume, 0)
+
+    await store.resumeAppend()
+    let recordingResult = await recording.value
+    let disableResult = await disabling.value
+    XCTAssertEqual(recordingResult, .recorded)
+    XCTAssertTrue(disableResult)
+    let remainingContents = await store.contents
+    XCTAssertEqual(remainingContents, [])
+    XCTAssertFalse(controller.isEnabled)
+  }
+
+  func testFailedConfirmedDisableRestoresConsentAndAcceptsLaterRecords() async {
+    let context = makeContext(enabled: true, entries: [entry(content: "existing")])
+    let confirmationResult = await context.controller.requestDisable()
+    XCTAssertEqual(confirmationResult, .confirmationRequired)
+    await context.store.setError(.deletionFailed)
+
+    let didDisable = await context.controller.confirmDisable()
+    XCTAssertFalse(didDisable)
+    XCTAssertTrue(context.controller.isEnabled)
+
+    await context.store.setError(nil)
+    let laterResult = await context.controller.record(content: "later", kind: .text)
+    XCTAssertEqual(laterResult, .recorded)
   }
 
   func testOpeningHistoryInvalidatesAnOlderLaunchLoad() async {
@@ -382,6 +461,59 @@ private actor SuspendedFirstLoadCaptureHistoryStore: CaptureHistoryStoring {
   func resumeFirstLoad() {
     firstLoadContinuation?.resume()
     firstLoadContinuation = nil
+  }
+}
+
+private actor SuspendedAppendCaptureHistoryStore: CaptureHistoryStoring {
+  private var entries: [CaptureHistoryEntry]
+  private var appendContinuation: CheckedContinuation<Void, Never>?
+  private(set) var deleteAllCallCount = 0
+
+  init(entries: [CaptureHistoryEntry]) {
+    self.entries = entries
+  }
+
+  var contents: [String] {
+    entries.map(\.content)
+  }
+
+  func prepare() {}
+
+  func load(now _: Date) -> [CaptureHistoryEntry] {
+    entries
+  }
+
+  func append(
+    content: String,
+    kind: CaptureHistoryContentKind,
+    at date: Date
+  ) async -> CaptureHistoryEntry {
+    await withCheckedContinuation { continuation in
+      appendContinuation = continuation
+    }
+    let entry = CaptureHistoryEntry(id: UUID(), capturedAt: date, kind: kind, content: content)
+    entries.insert(entry, at: 0)
+    return entry
+  }
+
+  func delete(id: UUID, now _: Date) {
+    entries.removeAll { $0.id == id }
+  }
+
+  func deleteAll() {
+    deleteAllCallCount += 1
+    entries = []
+  }
+
+  func waitUntilAppendStarts() async {
+    while appendContinuation == nil {
+      await Task.yield()
+    }
+  }
+
+  func resumeAppend() {
+    appendContinuation?.resume()
+    appendContinuation = nil
   }
 }
 
