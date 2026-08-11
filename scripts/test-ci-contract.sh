@@ -205,10 +205,13 @@ for required_patch_guard in \
     "expected_candidate_baseline_tree_digest='1e4844388bc872b8ac4644a13b00223af1239f431d390130346daa8e914aafa0'" \
     "expected_g48_baseline_tree_digest='73014648fb2a57b0364a3be4e87058ef9893d962244518d69f1c15392e19ec20'" \
     "expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'" \
+    "g51_source_base_commit='5491bdc2ebf60872e0fababdc70c377e54a2e6f8'" \
     "expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'" \
-    "expected_approved_post_candidate_patch_digest='2b3b9cbcf5b0b346d829cf51bc0794f34650cf6e71faedbb901674b08915123f'" \
+    "expected_approved_post_candidate_patch_digest='2ca0b2a6dd81bb6c1ac7e6733b289f05f373f9d29626cec7bfecad5406812bf6'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
+    'cat-file -e "$g51_source_base_commit^{tree}"' \
+    'The pre-G51 source commit is unavailable.' \
     '"$current_baseline_tree_digest" == "$expected_g48_baseline_tree_digest"' \
     'approved_post_candidate_path "$approved_path"' \
     'hash-object -- "$approved_path"' \
@@ -224,6 +227,7 @@ for required_patch_guard in \
     '/usr/bin/grep -Ev "$g50_security_hotfix_tree_pattern"' \
     '/usr/bin/grep -Ev "$g50_publication_tree_pattern"' \
     '/usr/bin/grep -Ev "$g51_multilingual_ocr_tree_pattern"' \
+    'ls-tree -r --full-tree "$g51_source_base_commit"' \
     'The approved G43A runtime patch differs from its reviewed tree digest.'; do
     if ! /usr/bin/grep -Fq "$required_patch_guard" \
         "$v02_release_qualification_audit_script"; then

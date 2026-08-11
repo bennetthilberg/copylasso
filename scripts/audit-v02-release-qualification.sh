@@ -25,11 +25,12 @@ readonly g50_security_hotfix_tree_pattern=$'\t(CopyLasso\\.xcodeproj/project\\.p
 readonly g50_publication_tree_pattern=$'\t(\\.github/workflows/prepare-v022-publication\\.yml|docs/release-checklist\\.md|docs/release-workflow\\.md|docs/secure-update-operations\\.md|docs/testing\\.md|docs/v0\\.2-publication-runbook\\.md|scripts/audit-g50-publication\\.sh|scripts/audit-g50-sparkle-hotfix\\.sh|scripts/audit-v02-publication\\.sh|scripts/audit-v02-release-qualification\\.sh|scripts/ci\\.sh|scripts/create-v02-publication-draft\\.sh|scripts/download-v02-candidate\\.sh|scripts/fixtures/v0\\.2\\.2-published-release-notes\\.md|scripts/generate-release-appcast\\.sh|scripts/lib/release-package-verification\\.sh|scripts/lib/v022-release-package-metadata\\.sh|scripts/lib/v02-publication-verification\\.sh|scripts/test-ci-contract\\.sh|scripts/test-g50-publication\\.sh|scripts/test-v02-publication\\.sh|scripts/verify-release-package\\.sh|scripts/verify-v02-candidate-package\\.sh)$'
 readonly g51_multilingual_ocr_tree_pattern=$'\t(CHANGELOG\.md|CopyLasso/App/CopyLassoApp\.swift|CopyLasso/CaptureWorkflow/CaptureCommand\.swift|CopyLasso/Models/OCRLanguageSelectionDraft\.swift|CopyLasso/Models/OCRRecognitionPreferences\.swift|CopyLasso/Services/OCRLanguageCatalog\.swift|CopyLasso/Services/OCRService\.swift|CopyLasso/Services/VisionOCRService\.swift|CopyLasso/Settings/AppSettingsStore\.swift|CopyLasso/Settings/SettingsController\.swift|CopyLasso/SharedUI/AccessibilityAppearance\.swift|CopyLasso/SharedUI/OCRLanguageEditorView\.swift|CopyLasso/SharedUI/SettingsView\.swift|CopyLassoTests/CaptureWorkflow/CaptureWorkflowIntegrationTests\.swift|CopyLassoTests/Models/OCRLanguageSelectionDraftTests\.swift|CopyLassoTests/Models/OCRRecognitionPreferencesTests\.swift|CopyLassoTests/Services/OCRLanguageCatalogTests\.swift|CopyLassoTests/Services/VisionOCRServiceTests\.swift|CopyLassoTests/Settings/SettingsControllerTests\.swift|CopyLassoTests/Settings/UserDefaultsSettingsStoreTests\.swift|CopyLassoTests/TestSupport/CaptureServiceDoubles\.swift|CopyLassoTests/TestSupport/SettingsDoubles\.swift|CopyLassoUITests/CopyLassoUITests\.swift|PRIVACY\.md|README\.md|SECURITY\.md|docs/architecture/overview\.md|docs/coverage-review\.md|docs/security-and-privacy-review\.md|docs/testing\.md|docs/v0\.3-product-contract\.md|scripts/audit-coverage\.sh|scripts/audit-multilingual-ocr\.sh|scripts/audit-v02-release-qualification\.sh|scripts/ci\.sh|scripts/test-ci-contract\.sh)$'
 readonly g44_release_state_commit='295ea80bdc0d51579840ef9c2bfcad5278f87099'
+readonly g51_source_base_commit='5491bdc2ebf60872e0fababdc70c377e54a2e6f8'
 readonly expected_candidate_baseline_tree_digest='1e4844388bc872b8ac4644a13b00223af1239f431d390130346daa8e914aafa0'
 readonly expected_g48_baseline_tree_digest='73014648fb2a57b0364a3be4e87058ef9893d962244518d69f1c15392e19ec20'
 readonly expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'
 readonly expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'
-readonly expected_approved_post_candidate_patch_digest='2b3b9cbcf5b0b346d829cf51bc0794f34650cf6e71faedbb901674b08915123f'
+readonly expected_approved_post_candidate_patch_digest='2ca0b2a6dd81bb6c1ac7e6733b289f05f373f9d29626cec7bfecad5406812bf6'
 
 fail() {
     echo "$1" >&2
@@ -191,6 +192,8 @@ require_text Configuration/CopyLasso-Info.plist \
 
 git -C "$repository_root" cat-file -e "$candidate_source_commit^{tree}" 2>/dev/null || \
     fail "The qualified candidate commit is unavailable. Fetch full history before qualification."
+git -C "$repository_root" cat-file -e "$g51_source_base_commit^{tree}" 2>/dev/null || \
+    fail "The pre-G51 source commit is unavailable. Fetch full history before qualification."
 
 while IFS= read -r approved_path; do
     approved_post_candidate_path "$approved_path" || \
@@ -280,7 +283,7 @@ current_baseline_tree_digest="$(
     fail "A tracked candidate input outside the approved post-publication patch differs from source commit $candidate_source_commit: $current_baseline_tree_digest"
 
 approved_post_publication_runtime_tree_digest="$(
-    git -C "$repository_root" ls-tree -r --full-tree HEAD |
+    git -C "$repository_root" ls-tree -r --full-tree "$g51_source_base_commit" |
         /usr/bin/grep -E "$approved_post_publication_runtime_tree_pattern" |
         /usr/bin/shasum -a 256 |
         /usr/bin/awk '{print $1}'
