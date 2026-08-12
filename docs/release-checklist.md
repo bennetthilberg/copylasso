@@ -239,10 +239,10 @@ inferred pass; see [`v0.2-release-qualification.md`](v0.2-release-qualification.
 - [x] Draft reviewed v0.3 release notes, changelog, public-versus-source copy,
   upgrade guidance, complete uninstall, retained limitations, and the G55-G57
   gates.
-- [ ] Pass focused migration/integration checks, the v0.3 qualification audit
+- [x] Pass focused migration/integration checks, the v0.3 qualification audit
   exactly once through canonical CI, arm64/x86_64, Universal 2, hosted runtime,
   signed host, exact-head review, and private qualification-package gates.
-- [ ] Stop with a ready G54 PR. Do not dispatch a protected workflow, upload an
+- [x] Stop with a ready G54 PR. Do not dispatch a protected workflow, upload an
   artifact, create a tag, publish an update feed, or merge without the separate
   checkpoint.
 

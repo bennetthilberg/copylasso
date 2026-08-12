@@ -48,6 +48,10 @@ for candidate_text in \
     'historical G36 fixture is not evidence for G55' \
     'Change only that old' \
     'installed application against the untouched candidate payload manifest' \
+    'public 0.2.2 actually supports' \
+    'U.S. English as the new' \
+    'serve it on `127.0.0.1`' \
+    'minimum supported macOS 14 must pass' \
     'Retained Gaps And Disposition' \
     'explicit maintainer approval' \
     'Do not publish'; do
@@ -63,6 +67,12 @@ for current_asset in \
 done
 require_text "$repository_root/docs/release-workflow.md" \
     'Historical G50 Draft Assets and Local Readback'
+require_text "$repository_root/docs/release-workflow.md" \
+    'Historical G50 Private Rehearsal'
+require_text "$repository_root/docs/release-checklist.md" \
+    '- [x] Pass focused migration/integration checks'
+require_text "$repository_root/docs/release-checklist.md" \
+    '- [x] Stop with a ready G54 PR.'
 
 require_text "$metadata" 'COPYLASSO_RELEASE_VERSION = 0.3.0'
 require_text "$metadata" 'COPYLASSO_RELEASE_BUILD = 6'

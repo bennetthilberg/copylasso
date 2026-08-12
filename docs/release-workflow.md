@@ -80,10 +80,12 @@ no account identifier. Archive and export therefore use the same protected ident
 interactive Xcode account or permission to create signing assets. The local G26 automatic export
 contract remains separate.
 
-## Run a Private G50 Rehearsal
+## Historical G50 Private Rehearsal
 
-Only after the G50 source pull request is reviewed, green, and separately
-merged, and G50 Phase 2 is explicitly approved:
+This procedure records the completed G50 `0.2.2` run and must not be used for
+the current generic workflow. At that historical checkpoint, only after the
+G50 source pull request was reviewed, green, and separately merged, and G50
+Phase 2 was explicitly approved:
 
 1. Dispatch `copylasso_protected_release` through GitHub's repository dispatch API without a
    `candidate_number` payload field.
