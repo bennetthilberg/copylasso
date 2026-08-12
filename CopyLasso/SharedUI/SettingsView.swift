@@ -73,7 +73,7 @@ struct SettingsView: View {
         Text(
           settingsController.ocrRecognitionPreferences.automaticallyDetectsLanguage
             ? "Language detection is automatic. Fewer choices generally improve speed and accuracy."
-            : "Add languages only when you need them; fewer choices generally improve speed and accuracy."
+            : "Only add languages when you need them. Fewer choices generally improve speed and accuracy."
         )
         .font(.caption)
         .foregroundStyle(.secondary)
