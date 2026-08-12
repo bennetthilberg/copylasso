@@ -60,7 +60,7 @@ final class PermissionRecoveryModel {
 
   func beginRetry() {
     isRetrying = true
-    retryStatus = "Checking Screen Recording access…"
+    retryStatus = "Checking Screen Recording access"
   }
 
   func recordRetryRejection() {

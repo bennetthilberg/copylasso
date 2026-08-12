@@ -10,6 +10,6 @@ struct FeedbackPreview: Equatable, Sendable {
       return
     }
 
-    self.text = String(normalized.prefix(Self.maximumCharacterCount - 1)) + "…"
+    self.text = String(normalized.prefix(Self.maximumCharacterCount))
   }
 }

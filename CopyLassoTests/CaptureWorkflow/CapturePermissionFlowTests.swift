@@ -230,7 +230,7 @@ final class CapturePermissionFlowTests: XCTestCase {
     XCTAssertEqual(context.clipboard.writtenTexts, [assembled])
     XCTAssertEqual(context.feedback.presentedFeedback, [.success(preview: expectedPreview)])
     XCTAssertEqual(expectedPreview.count, FeedbackPreview.maximumCharacterCount)
-    XCTAssertEqual(expectedPreview.last, "…")
+    XCTAssertFalse(expectedPreview.contains("…"))
     XCTAssertFalse(expectedPreview.contains(privateSuffix))
   }
 

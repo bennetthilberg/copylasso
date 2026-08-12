@@ -26,6 +26,7 @@ readonly v02_publication_test_script="$repository_root/scripts/test-v02-publicat
 readonly code_recognition_audit_script="$repository_root/scripts/audit-code-recognition.sh"
 readonly multilingual_ocr_audit_script="$repository_root/scripts/audit-multilingual-ocr.sh"
 readonly capture_history_audit_script="$repository_root/scripts/audit-capture-history.sh"
+readonly interface_copy_audit_script="$repository_root/scripts/audit-interface-copy.sh"
 readonly latex_feasibility_audit_script="$repository_root/scripts/audit-latex-feasibility.sh"
 readonly latex_feasibility_test_script="$repository_root/scripts/test-latex-feasibility.sh"
 readonly success_sound_audit_script="$repository_root/scripts/audit-success-sound.sh"
@@ -203,12 +204,15 @@ for required_patch_guard in \
     "g48_patch_tree_pattern" \
     "g50_publication_tree_pattern" \
     "g51_multilingual_ocr_tree_pattern" \
+    "g52_capture_history_tree_pattern" \
+    "g52_capture_history_coverage_tree_pattern" \
+    "g53_interface_copy_tree_pattern" \
     "expected_candidate_baseline_tree_digest='1e4844388bc872b8ac4644a13b00223af1239f431d390130346daa8e914aafa0'" \
-    "expected_g48_baseline_tree_digest='93067ddd626f9028531fedc2a1ce4240ab4d1e7a21d2a71b1444ef110a2c05ff'" \
+    "expected_g48_baseline_tree_digest='6a19b6d447e87870956772e7dcdaa11dedd02c0ce1f98d3ed02e766cf29cd9de'" \
     "expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'" \
     "g51_source_base_commit='5491bdc2ebf60872e0fababdc70c377e54a2e6f8'" \
     "expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'" \
-    "expected_approved_post_candidate_patch_digest='dc94df980cc9bee9703b295214ff48243900537ee062ca26fdb80ffbc2522e35'" \
+    "expected_approved_post_candidate_patch_digest='1507c1d61e01592ef6dd6f261c626d0556b3aa6cbb2434e90d85f77c4a0dda7f'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
     'cat-file -e "$g51_source_base_commit^{tree}"' \
@@ -228,6 +232,9 @@ for required_patch_guard in \
     '/usr/bin/grep -Ev "$g50_security_hotfix_tree_pattern"' \
     '/usr/bin/grep -Ev "$g50_publication_tree_pattern"' \
     '/usr/bin/grep -Ev "$g51_multilingual_ocr_tree_pattern"' \
+    '/usr/bin/grep -Ev "$g52_capture_history_tree_pattern"' \
+    '/usr/bin/grep -Ev "$g52_capture_history_coverage_tree_pattern"' \
+    '/usr/bin/grep -Ev "$g53_interface_copy_tree_pattern"' \
     'ls-tree -r --full-tree "$g51_source_base_commit"' \
     'The approved G43A runtime patch differs from its reviewed tree digest.'; do
     if ! /usr/bin/grep -Fq "$required_patch_guard" \
@@ -457,6 +464,29 @@ for history_guard in \
     fi
 done
 
+interface_copy_audit_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/audit-interface-copy\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$interface_copy_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-interface-copy.sh exactly once."
+fi
+for interface_copy_guard in \
+    'CopyLasso-authored interface copy must not contain an ellipsis.' \
+    'The interface-copy audit must detect interpolated, escaped, and multiline Swift strings.' \
+    'The interface-copy audit must not confuse Swift range operators with interface copy.' \
+    'interpolated_copy_fixture=' \
+    'escaped_copy_fixture=' \
+    'multiline_copy_fixture=' \
+    'range_operator_fixture=' \
+    'Authenticated release notes and captured content remain unmodified.' \
+    'Check for Updates'; do
+    if ! /usr/bin/grep -Fq "$interface_copy_guard" "$interface_copy_audit_script"; then
+        fail "The interface-copy audit is missing: $interface_copy_guard"
+    fi
+done
+
 latex_feasibility_test_invocations="$({
     /usr/bin/grep -Ec \
         '^[[:space:]]*\./scripts/test-latex-feasibility\.sh[[:space:]]*$' \
@@ -591,6 +621,10 @@ fi
 
 if [[ ! -x "$capture_history_audit_script" ]]; then
     fail "The capture-history security audit must be executable."
+fi
+
+if [[ ! -x "$interface_copy_audit_script" ]]; then
+    fail "The interface-copy audit must be executable."
 fi
 
 if [[ ! -x "$latex_feasibility_audit_script" ]] || \

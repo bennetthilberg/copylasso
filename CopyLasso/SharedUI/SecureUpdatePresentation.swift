@@ -14,7 +14,7 @@ final class SystemSecureUpdatePresenter: NSObject, SecureUpdatePresenting, NSWin
     showProgress(
       SecureUpdateProgressState(
         title: "Checking for Updates",
-        message: "Looking for a signed CopyLasso update…",
+        message: "Looking for a signed CopyLasso update",
         fraction: nil,
         canCancel: true,
         actionTitle: nil
@@ -86,7 +86,7 @@ final class SystemSecureUpdatePresenter: NSObject, SecureUpdatePresenting, NSWin
     showProgress(
       SecureUpdateProgressState(
         title: "Downloading Update",
-        message: "Downloading and verifying signed update data…",
+        message: "Downloading and verifying signed update data",
         fraction: fraction,
         canCancel: true,
         actionTitle: nil
@@ -99,7 +99,7 @@ final class SystemSecureUpdatePresenter: NSObject, SecureUpdatePresenting, NSWin
     showProgress(
       SecureUpdateProgressState(
         title: "Preparing Update",
-        message: "Verifying and preparing CopyLasso for installation…",
+        message: "Verifying and preparing CopyLasso for installation",
         fraction: min(max(progress, 0), 1),
         canCancel: false,
         actionTitle: nil
@@ -130,7 +130,7 @@ final class SystemSecureUpdatePresenter: NSObject, SecureUpdatePresenting, NSWin
       SecureUpdateProgressState(
         title: "Installing Update",
         message: applicationTerminated
-          ? "Installing the verified CopyLasso update…"
+          ? "Installing the verified CopyLasso update"
           : "CopyLasso did not quit. Close any blocking dialog, then try again.",
         fraction: nil,
         canCancel: false,

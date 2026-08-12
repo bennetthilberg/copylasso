@@ -15,6 +15,12 @@ All notable changes to CopyLasso will be documented in this file.
   stores screenshots, and provides exact Copy, Delete, and confirmed Clear All
   controls.
 
+### Changed
+
+- Removed ellipses from CopyLasso-authored menu items, buttons, progress
+  messages, and bounded HUD previews without altering captured or authenticated
+  external content.
+
 ## 0.2.2 - 2026-08-10
 
 ### Security

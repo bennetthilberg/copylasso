@@ -389,10 +389,15 @@ selection, OCR, one plain-text replacement, and success feedback. The final
 fallback was instrumented at CopyLasso's sole clipboard boundary and hit it
 exactly once. Restoring the suggested shortcut persisted `⇧⌘2`; after the
 normal relaunch registration settled, a physical shortcut again copied the
-controlled fixture. A separate 129-character two-line fixture produced the
-exact 80-character normalized HUD preview ending in `BOUNDE…`; the maintainer
+controlled fixture. During G24, a separate 129-character two-line fixture
+produced the exact then-current 80-character normalized HUD preview ending in
+`BOUNDE…`; the maintainer
 confirmed it remained nonactivating and dismissed itself after about 2.5
-seconds. Existing residue checks found no preview in logs or preferences.
+seconds. Existing residue checks found no preview in logs or preferences. G53
+later removed CopyLasso-added punctuation, making the current expected preview
+end in `BOUNDED`; that visual presentation remains pending for a fresh signed
+manual requalification while deterministic tests cover the exact 80-character
+prefix.
 
 The official ordinary-region series retained the first 30 of 32 complete
 captures and passed the one-second median/two-second p95 limits. A separate
@@ -499,7 +504,7 @@ and cleanup state where those properties apply.
 | Offline success | Core workflow succeeds with process networking denied | **Pass** — the signed app had no network entitlement throughout the coherent run, exposed zero internet sockets, and completed far more than three controlled captures including the dedicated process-denied fixture capture with normal HUD feedback |
 | Protected content | Controlled blank/unavailable/no-text behavior; no bypass or invented text | **Pass** — three valid nonshareable-fixture probes over text-free Finder/Preview surfaces produced No Text Found, preserved isolated sentinels and pasteboard change counts, and recognized or invented none of the protected text. The final two ran with a debugger breakpoint on CopyLasso's sole pasteboard-write method; neither entered it. Attempts over ordinary text-bearing backgrounds were excluded because macOS correctly exposed those shareable pixels underneath the omitted protected window |
 | Clipboard preservation sweep | Sentinel survives every cancellation and failure before replacement begins. A fault-injected clear-success/write-rejection reports clipboard failure; the prior clipboard may already be lost under the accepted write-only v0.1 boundary | **Blocked** for the remaining active-phase sweep — final-clean denial, unavailable retry, isolated Escape/click/tiny/no-text, protected-content, permission revocation, and active-selection Quit all preserved separately armed sentinels. Capture-, OCR-, and feedback-phase interruption preservation remains pending; the accepted lock-only residual remains explicitly excluded |
-| Success feedback privacy | HUD shows the correct normalized, truncated preview; preserves focus; clears on time; leaves no preview in logs/preferences | **Pass** — a controlled 129-character two-line fixture produced the exact normalized 80-character preview `COPYLASSO PREVIEW VALIDATION KEEPS EVERY RECOGNIZED WORD LOCAL WHILE THE BOUNDE…`; the maintainer confirmed the HUD remained nonactivating and dismissed itself after about 2.5 seconds. Earlier immediate-replacement runs passed, and final log/preference scans contained no preview text |
+| Success feedback privacy | HUD shows the correct normalized, truncated preview; preserves focus; clears on time; leaves no preview in logs/preferences | **Historical pass; current G53 presentation pending** — the G24 fixture produced the then-current exact preview `COPYLASSO PREVIEW VALIDATION KEEPS EVERY RECOGNIZED WORD LOCAL WHILE THE BOUNDE…`, remained nonactivating, dismissed after about 2.5 seconds, and left no preview residue. G53 changes the expected current preview to `COPYLASSO PREVIEW VALIDATION KEEPS EVERY RECOGNIZED WORD LOCAL WHILE THE BOUNDED`; deterministic tests verify that exact 80-character prefix, while a fresh signed visual pass remains pending after the host XCTest automation service timed out before test setup. |
 | Private-data residue | Before/after app-container and temporary-directory inventory contains no image/text output; unified log contains no selected content | **Blocked** for the complete delta — retained baseline/current manifests are byte-identical across four total container entries: one container-manager metadata file plus three files under `Data`. The later “three state files” readback counted only those `Data` files. Both checks found zero image/PDF or controlled-text residue, zero open image/PDF files, zero internet sockets, and only normal LaunchServices/Metal temporary caches. No comparable pre-run temporary-directory manifest was retained, so the clean final temp scan cannot establish the required before/after delta |
 | Ordinary delete and reinstall | Onboarding remains complete when preferences remain; Launch at Login state is reconciled | **Blocked with accepted G29 coverage gap** — the procedure is documented, but the physical reinstall was not executed before the maintainer ended VM testing |
 | Complete uninstall and reinstall | Login item, preferences, app-owned container data, and Screen Recording entry are removed; onboarding returns cleanly | **Blocked with accepted G29 coverage gap** — exact scoped removal instructions and automated state contracts remain, but the physical VM proof was not executed |

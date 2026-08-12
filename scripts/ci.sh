@@ -122,6 +122,9 @@ echo "Auditing multilingual OCR settings"
 echo "Auditing private capture history"
 ./scripts/audit-capture-history.sh
 
+echo "Auditing interface copy"
+./scripts/audit-interface-copy.sh
+
 echo "Testing offline LaTeX feasibility scoring"
 ./scripts/test-latex-feasibility.sh
 

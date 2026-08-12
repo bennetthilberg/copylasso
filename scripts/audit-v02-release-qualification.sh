@@ -26,13 +26,14 @@ readonly g50_publication_tree_pattern=$'\t(\\.github/workflows/prepare-v022-publ
 readonly g51_multilingual_ocr_tree_pattern=$'\t(CHANGELOG\.md|CopyLasso/App/CopyLassoApp\.swift|CopyLasso/CaptureWorkflow/CaptureCommand\.swift|CopyLasso/Models/OCRLanguageSelectionDraft\.swift|CopyLasso/Models/OCRRecognitionPreferences\.swift|CopyLasso/Services/OCRLanguageCatalog\.swift|CopyLasso/Services/OCRService\.swift|CopyLasso/Services/VisionOCRService\.swift|CopyLasso/Settings/AppSettingsStore\.swift|CopyLasso/Settings/SettingsController\.swift|CopyLasso/SharedUI/AccessibilityAppearance\.swift|CopyLasso/SharedUI/OCRLanguageEditorView\.swift|CopyLasso/SharedUI/SettingsView\.swift|CopyLassoTests/CaptureWorkflow/CaptureWorkflowIntegrationTests\.swift|CopyLassoTests/Models/OCRLanguageSelectionDraftTests\.swift|CopyLassoTests/Models/OCRRecognitionPreferencesTests\.swift|CopyLassoTests/Services/OCRLanguageCatalogTests\.swift|CopyLassoTests/Services/VisionOCRServiceTests\.swift|CopyLassoTests/Settings/SettingsControllerTests\.swift|CopyLassoTests/Settings/UserDefaultsSettingsStoreTests\.swift|CopyLassoTests/TestSupport/CaptureServiceDoubles\.swift|CopyLassoTests/TestSupport/SettingsDoubles\.swift|CopyLassoUITests/CopyLassoUITests\.swift|PRIVACY\.md|README\.md|SECURITY\.md|docs/architecture/overview\.md|docs/coverage-review\.md|docs/security-and-privacy-review\.md|docs/testing\.md|docs/v0\.3-product-contract\.md|scripts/audit-coverage\.sh|scripts/audit-multilingual-ocr\.sh|scripts/audit-v02-release-qualification\.sh|scripts/ci\.sh|scripts/test-ci-contract\.sh)$'
 readonly g52_capture_history_tree_pattern=$'\t(CHANGELOG\.md|CONTRIBUTING\.md|CopyLasso/App/ApplicationLifecycleController\.swift|CopyLasso/App/CopyLassoApp\.swift|CopyLasso/App/MenuBarCommandHandler\.swift|CopyLasso/CaptureWorkflow/CaptureCommand\.swift|CopyLasso/Models/CaptureFeedback\.swift|CopyLasso/Models/CaptureHistory\.swift|CopyLasso/Models/FeedbackPresentationContent\.swift|CopyLasso/Services/CaptureHistoryStore\.swift|CopyLasso/Services/DebugCaptureHistoryStore\.swift|CopyLasso/Settings/AppSettingsStore\.swift|CopyLasso/Settings/CaptureHistoryController\.swift|CopyLasso/SharedUI/CaptureHistoryView\.swift|CopyLasso/SharedUI/MenuBarMenuView\.swift|CopyLasso/SharedUI/SettingsView\.swift|CopyLassoTests/App/ApplicationLifecycleControllerTests\.swift|CopyLassoTests/App/MenuBarShellTests\.swift|CopyLassoTests/CaptureWorkflow/CaptureWorkflowIntegrationTests\.swift|CopyLassoTests/Models/CaptureHistoryPolicyTests\.swift|CopyLassoTests/Services/CaptureHistoryStoreTests\.swift|CopyLassoTests/Settings/CaptureHistoryControllerTests\.swift|CopyLassoTests/Settings/UserDefaultsSettingsStoreTests\.swift|CopyLassoTests/TestSupport/CaptureServiceDoubles\.swift|CopyLassoTests/TestSupport/SettingsDoubles\.swift|CopyLassoUITests/CopyLassoUITests\.swift|PRIVACY\.md|README\.md|SECURITY\.md|docs/architecture/capture-history\.md|docs/architecture/capture-workflow\.md|docs/architecture/overview\.md|docs/security-and-privacy-review\.md|docs/testing\.md|docs/v0\.3-product-contract\.md|scripts/audit-capture-history\.sh|scripts/audit-privacy-security\.sh|scripts/audit-v02-release-qualification\.sh|scripts/ci\.sh|scripts/test-ci-contract\.sh)$'
 readonly g52_capture_history_coverage_tree_pattern=$'\t(CopyLassoTests/SharedUI/FeedbackPanelControllerTests\.swift|docs/coverage-review\.md|scripts/audit-coverage\.sh)$'
+readonly g53_interface_copy_tree_pattern=$'\t(CHANGELOG\.md|CopyLasso/Models/FeedbackPreview\.swift|CopyLasso/SharedUI/AboutView\.swift|CopyLasso/SharedUI/MenuBarMenuView\.swift|CopyLasso/SharedUI/PermissionRecoveryPanel\.swift|CopyLasso/SharedUI/SecureUpdatePresentation\.swift|CopyLasso/SharedUI/SettingsView\.swift|CopyLassoTests/CaptureWorkflow/CapturePermissionFlowTests\.swift|CopyLassoTests/Models/FeedbackPreviewTests\.swift|CopyLassoTests/SharedUI/PermissionRecoveryTests\.swift|CopyLassoUITests/CopyLassoUITests\.swift|README\.md|docs/architecture/clipboard-and-feedback\.md|docs/manual-qa-and-performance\.md|docs/testing\.md|scripts/audit-capture-history\.sh|scripts/audit-interface-copy\.sh|scripts/audit-v02-release-qualification\.sh|scripts/ci\.sh|scripts/test-ci-contract\.sh)$'
 readonly g44_release_state_commit='295ea80bdc0d51579840ef9c2bfcad5278f87099'
 readonly g51_source_base_commit='5491bdc2ebf60872e0fababdc70c377e54a2e6f8'
 readonly expected_candidate_baseline_tree_digest='1e4844388bc872b8ac4644a13b00223af1239f431d390130346daa8e914aafa0'
-readonly expected_g48_baseline_tree_digest='93067ddd626f9028531fedc2a1ce4240ab4d1e7a21d2a71b1444ef110a2c05ff'
+readonly expected_g48_baseline_tree_digest='6a19b6d447e87870956772e7dcdaa11dedd02c0ce1f98d3ed02e766cf29cd9de'
 readonly expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'
 readonly expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'
-readonly expected_approved_post_candidate_patch_digest='dc94df980cc9bee9703b295214ff48243900537ee062ca26fdb80ffbc2522e35'
+readonly expected_approved_post_candidate_patch_digest='1507c1d61e01592ef6dd6f261c626d0556b3aa6cbb2434e90d85f77c4a0dda7f'
 
 fail() {
     echo "$1" >&2
@@ -78,7 +79,9 @@ approved_post_candidate_path() {
         printf '%s\n' "$tree_line" | \
             /usr/bin/grep -Eq "$g52_capture_history_tree_pattern" || \
         printf '%s\n' "$tree_line" | \
-            /usr/bin/grep -Eq "$g52_capture_history_coverage_tree_pattern"
+            /usr/bin/grep -Eq "$g52_capture_history_coverage_tree_pattern" || \
+        printf '%s\n' "$tree_line" | \
+            /usr/bin/grep -Eq "$g53_interface_copy_tree_pattern"
 }
 
 for required_file in \
@@ -284,6 +287,7 @@ current_baseline_tree_digest="$(
         /usr/bin/grep -Ev "$g51_multilingual_ocr_tree_pattern" |
         /usr/bin/grep -Ev "$g52_capture_history_tree_pattern" |
         /usr/bin/grep -Ev "$g52_capture_history_coverage_tree_pattern" |
+        /usr/bin/grep -Ev "$g53_interface_copy_tree_pattern" |
         /usr/bin/shasum -a 256 |
         /usr/bin/awk '{print $1}'
 )"
