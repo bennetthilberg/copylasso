@@ -401,6 +401,7 @@ The job remains draft-only: it contains no release publication, tag movement,
 asset replacement, or update-feed deployment path.
 
 The private G55 candidate is qualified against the reviewed 0.3.0 notes and
-the procedure in [`v0.3-release-qualification.md`](v0.3-release-qualification.md).
+the complete operator procedure in
+[`v0.3-release-candidate.md`](v0.3-release-candidate.md).
 G56 publication requires a separate immutable-candidate decision and protected
 preparation transaction.

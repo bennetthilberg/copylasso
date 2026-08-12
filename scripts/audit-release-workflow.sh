@@ -88,6 +88,11 @@ require_text "$workflow" \
 require_text "$workflow" 'assert_release_candidate_number "$COPYLASSO_CANDIDATE_NUMBER"'
 require_text "$workflow" 'release_candidate_tag "$COPYLASSO_CANDIDATE_NUMBER"'
 require_text "$workflow" 'release_tag="v${COPYLASSO_G28_VERSION}-g55.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"'
+require_text "$draft_creator" 'v<version>-g55.<run>'
+require_text "$draft_creator" 'Protected G55 workflow rehearsal'
+if /usr/bin/grep -Fq 'Protected G50 workflow rehearsal' "$draft_creator"; then
+    fail "The generic protected rehearsal helper still labels current drafts as G50."
+fi
 if [[ "$(/usr/bin/grep -Fc '${{ github.event.client_payload.' "$workflow")" != "1" ]]; then
     fail "candidate_number must be the protected workflow's sole dispatch payload field."
 fi

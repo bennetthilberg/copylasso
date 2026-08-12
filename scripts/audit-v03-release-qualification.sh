@@ -6,6 +6,7 @@ readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && /bin/pwd -
 readonly metadata="$repository_root/Configuration/ReleaseMetadata.xcconfig"
 readonly notes="$repository_root/docs/release-notes/0.3.0.md"
 readonly qualification="$repository_root/docs/v0.3-release-qualification.md"
+readonly candidate_qualification="$repository_root/docs/v0.3-release-candidate.md"
 readonly contract="$repository_root/docs/v0.3-product-contract.md"
 readonly workflow="$repository_root/.github/workflows/release.yml"
 readonly entitlements="$repository_root/CopyLasso/CopyLasso.entitlements"
@@ -27,11 +28,25 @@ for required_file in \
     "$metadata" \
     "$notes" \
     "$qualification" \
+    "$candidate_qualification" \
     "$contract" \
     "$workflow" \
     "$entitlements"; do
     [[ -r "$required_file" ]] || \
         fail "Required v0.3 qualification file is missing: ${required_file#$repository_root/}"
+done
+
+for candidate_text in \
+    '# CopyLasso v0.3 Private Candidate Qualification' \
+    'exact protected-main commit' \
+    'exactly four assets' \
+    'authenticated update metadata' \
+    'public 0.2.2' \
+    'clean install' \
+    'Retained Gaps And Disposition' \
+    'explicit maintainer approval' \
+    'Do not publish'; do
+    require_text "$candidate_qualification" "$candidate_text"
 done
 
 require_text "$metadata" 'COPYLASSO_RELEASE_VERSION = 0.3.0'
