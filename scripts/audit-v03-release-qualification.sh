@@ -43,11 +43,26 @@ for candidate_text in \
     'authenticated update metadata' \
     'public 0.2.2' \
     'clean install' \
+    'Disposable-account clean-state preflight' \
+    'io.github.bennetthilberg.copylasso.capture-history' \
+    'historical G36 fixture is not evidence for G55' \
+    'Change only that old' \
+    'installed application against the untouched candidate payload manifest' \
     'Retained Gaps And Disposition' \
     'explicit maintainer approval' \
     'Do not publish'; do
     require_text "$candidate_qualification" "$candidate_text"
 done
+
+for current_asset in \
+    'CopyLasso-0.3.0.dmg' \
+    'CopyLasso-0.3.0.dmg.sha256' \
+    'CopyLasso-0.3.0.dSYM.zip' \
+    'CopyLasso-0.3.0-verification.zip'; do
+    require_text "$repository_root/docs/release-workflow.md" "$current_asset"
+done
+require_text "$repository_root/docs/release-workflow.md" \
+    'Historical G50 Draft Assets and Local Readback'
 
 require_text "$metadata" 'COPYLASSO_RELEASE_VERSION = 0.3.0'
 require_text "$metadata" 'COPYLASSO_RELEASE_BUILD = 6'

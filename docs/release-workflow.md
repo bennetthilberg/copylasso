@@ -233,9 +233,10 @@ does not count. Follow [`release-candidate-qualification.md`](release-candidate-
 clean-account preflight, exact smoke matrix, accepted gaps, risk classification, and evidence
 boundary.
 
-## Current Draft Assets and Local Readback
+## Historical G50 Draft Assets and Local Readback
 
-The draft prerelease contains exactly:
+This section records the completed G50 `0.2.2` candidate and is not the G55
+asset list. That historical draft prerelease contains exactly:
 
 - `CopyLasso-0.2.2.dmg`;
 - `CopyLasso-0.2.2.dmg.sha256`;
@@ -261,7 +262,8 @@ closed without creating metadata. The standalone appcast is never uploaded among
 and no file is published to `updates.copylasso.com` in G36.
 
 Read back the draft through GitHub after upload. It must remain `draft: true` and `prerelease: true`,
-target the exact commit, and contain exactly the four assets above. Recompute the public checksum
+target the exact commit, and contain exactly the four historical G50 assets
+above. Recompute the public checksum
 and rerun the complete local package verifier. Preserve the downloaded dSYM and verification bundle
 as restricted maintainer evidence.
 
@@ -405,3 +407,13 @@ the complete operator procedure in
 [`v0.3-release-candidate.md`](v0.3-release-candidate.md).
 G56 publication requires a separate immutable-candidate decision and protected
 preparation transaction.
+
+The G55 private draft contains exactly these current assets:
+
+- `CopyLasso-0.3.0.dmg`;
+- `CopyLasso-0.3.0.dmg.sha256`;
+- `CopyLasso-0.3.0.dSYM.zip`; and
+- `CopyLasso-0.3.0-verification.zip`.
+
+Download those four files into one fresh commit-addressed external directory;
+the G50 names and artifacts above are historical and must never be substituted.
