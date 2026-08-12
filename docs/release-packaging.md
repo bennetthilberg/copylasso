@@ -153,3 +153,19 @@ The current derived artifact names are `CopyLasso-0.2.2.dmg`,
 `CopyLasso-0.2.2.dmg.sha256`, and `CopyLasso-0.2.2.dSYM.zip`; the restricted
 verification archive is `CopyLasso-0.2.2-verification.zip`. No G48 or public
 v0.2.1 artifact may be relabeled or reused.
+
+## G54 exact-head qualification package
+
+G54 freezes the current generic package contract at version `0.3.0`, build `6`.
+After the final tracked qualification commit, create one private package under
+`~/Library/Developer/CopyLasso/G54/<full-commit>/`. It must contain an exact-
+head archive, exported and stapled application, `CopyLasso-0.3.0.dmg`,
+`CopyLasso-0.3.0.dmg.sha256`, `CopyLasso-0.3.0.dSYM.zip`, the restricted
+verification bundle, accepted notarization records, and content-free readbacks.
+
+Verify production identity, both architectures, secure timestamp, Hardened
+Runtime, exact entitlements, nested code, Gatekeeper, DMG layout, checksums,
+dSYM UUIDs, and authenticated update metadata with key-match and tamper
+rejection. Upload and publish nothing. A later G55 workflow rebuilds from exact
+protected main; this local package is evidence and never becomes the release
+candidate.

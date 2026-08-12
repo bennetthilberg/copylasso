@@ -311,7 +311,7 @@ final class CopyLassoUITests: XCTestCase {
         -8
       )
       assertAccessibleText(
-        app.staticTexts["copylasso.about.version"], equals: "Version 0.2.2 (5)"
+        app.staticTexts["copylasso.about.version"], equals: "Version 0.3.0 (6)"
       )
       assertAccessibleText(
         app.staticTexts["copylasso.about.creator"],
@@ -771,7 +771,7 @@ final class CopyLassoUITests: XCTestCase {
     )
     XCTAssertTrue(app.staticTexts["Privacy"].exists)
     XCTAssertTrue(app.staticTexts["Version"].exists)
-    XCTAssertTrue(app.staticTexts["Version 0.2.2 (5)"].exists)
+    XCTAssertTrue(app.staticTexts["Version 0.3.0 (6)"].exists)
     XCTAssertTrue(app.links["Project Repository"].exists)
     XCTAssertTrue(app.links["Privacy Policy"].exists)
     XCTAssertTrue(app.links["MIT License"].exists)

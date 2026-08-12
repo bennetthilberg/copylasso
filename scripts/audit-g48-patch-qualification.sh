@@ -51,13 +51,6 @@ for required_file in \
         fail "Required G48 qualification file is missing: $required_file"
 done
 
-/usr/bin/grep -Eq \
-    '^COPYLASSO_RELEASE_VERSION[[:space:]]*=[[:space:]]*0\.2\.2[[:space:]]*$' \
-    "$metadata" || fail "The post-G48 security hotfix must use version 0.2.2."
-/usr/bin/grep -Eq \
-    '^COPYLASSO_RELEASE_BUILD[[:space:]]*=[[:space:]]*5[[:space:]]*$' \
-    "$metadata" || fail "The post-G48 security hotfix must use build 5."
-
 require_text CHANGELOG.md '## 0.2.1 - 2026-08-09'
 require_text README.md 'CopyLasso 0.2.2 is the latest public release.'
 require_text README.md 'CopyLasso-0.2.2.dmg.sha256'
@@ -91,10 +84,10 @@ require_text docs/release-packaging.md 'CopyLasso-0.2.1.dmg'
 require_text docs/testing.md 'binds current public documentation to v0.2.2'
 require_text docs/testing.md 'G49 and G50 Phase 3 likewise'
 
-require_text .github/workflows/release.yml 'release_goal=G50'
-require_text .github/workflows/release.yml 'release_subdirectory=g50'
+require_text .github/workflows/release.yml 'release_goal=G55'
+require_text .github/workflows/release.yml 'release_subdirectory=g55'
 require_text .github/workflows/release.yml \
-    'release_tag="v${COPYLASSO_G28_VERSION}-g50.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"'
+    'release_tag="v${COPYLASSO_G28_VERSION}-g55.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"'
 if /usr/bin/grep -Fq 'release_goal=G42' "$workflow" || \
     /usr/bin/grep -Fq 'release_subdirectory=g42' "$workflow"; then
     fail "The protected workflow still uses historical G42 execution paths."

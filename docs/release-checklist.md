@@ -231,3 +231,43 @@ inferred pass; see [`v0.2-release-qualification.md`](v0.2-release-qualification.
   feed deployment; complete public download and updater verification.
 - [x] Phase 3: close release-state documentation in a separate green pull
   request without changing release bytes, tags, application code, or feed.
+
+## G54 - Qualify CopyLasso v0.3.0
+
+- [x] Freeze merged v0.3 source at `0.3.0 (6)` while keeping public 0.2.2 and
+  every historical tag, asset, feed record, and publication workflow immutable.
+- [x] Draft reviewed v0.3 release notes, changelog, public-versus-source copy,
+  upgrade guidance, complete uninstall, retained limitations, and the G55-G57
+  gates.
+- [ ] Pass focused migration/integration checks, the v0.3 qualification audit
+  exactly once through canonical CI, arm64/x86_64, Universal 2, hosted runtime,
+  signed host, exact-head review, and private qualification-package gates.
+- [ ] Stop with a ready G54 PR. Do not dispatch a protected workflow, upload an
+  artifact, create a tag, publish an update feed, or merge without the separate
+  checkpoint.
+
+## G55 - Private v0.3.0 Release Candidate
+
+- [ ] After G54 merges, dispatch one exact protected-main candidate build and
+  derive a unique `v0.3.0-rc.N` private draft with exactly four restricted
+  assets.
+- [ ] Qualify signatures, notarization, Gatekeeper, package layout, checksums,
+  dSYM, authenticated candidate metadata, clean install, and update from exact
+  public 0.2.2 without rebuilding.
+- [ ] Obtain explicit approval of the immutable candidate before publication.
+
+## G56 - Publish CopyLasso v0.3.0
+
+- [ ] Reverify the approved candidate without rebuilding; create and verify the
+  private two-asset final draft and final-URL authenticated appcast.
+- [ ] Publish one verified signed final tag, exact DMG and checksum, and the
+  byte-identical authenticated feed. Never move the tag or replace an asset.
+- [ ] Complete unauthenticated download, quarantine, fresh-install, in-app
+  update, source-archive, feed, and public release readback.
+
+## G57 - Close The v0.3 Release State
+
+- [ ] Date and reconcile release-facing documentation in a separate green PR,
+  install the exact public build locally, and verify protected-main state.
+- [ ] Close issue #37 after public history verification. Narrow issue #39 to
+  deferred translation and text-to-speech instead of closing unshipped scope.

@@ -27,6 +27,7 @@ readonly code_recognition_audit_script="$repository_root/scripts/audit-code-reco
 readonly multilingual_ocr_audit_script="$repository_root/scripts/audit-multilingual-ocr.sh"
 readonly capture_history_audit_script="$repository_root/scripts/audit-capture-history.sh"
 readonly interface_copy_audit_script="$repository_root/scripts/audit-interface-copy.sh"
+readonly v03_release_qualification_audit_script="$repository_root/scripts/audit-v03-release-qualification.sh"
 readonly latex_feasibility_audit_script="$repository_root/scripts/audit-latex-feasibility.sh"
 readonly latex_feasibility_test_script="$repository_root/scripts/test-latex-feasibility.sh"
 readonly success_sound_audit_script="$repository_root/scripts/audit-success-sound.sh"
@@ -195,6 +196,15 @@ v02_release_qualification_audit_invocations="$({
 if [[ "$v02_release_qualification_audit_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/audit-v02-release-qualification.sh exactly once."
 fi
+
+v03_release_qualification_audit_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/audit-v03-release-qualification\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$v03_release_qualification_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-v03-release-qualification.sh exactly once."
+fi
 for required_patch_guard in \
     "approved_post_publication_patch_tree_pattern" \
     "approved_post_publication_runtime_tree_pattern" \
@@ -207,12 +217,13 @@ for required_patch_guard in \
     "g52_capture_history_tree_pattern" \
     "g52_capture_history_coverage_tree_pattern" \
     "g53_interface_copy_tree_pattern" \
+    "g54_release_qualification_tree_pattern" \
     "expected_candidate_baseline_tree_digest='1e4844388bc872b8ac4644a13b00223af1239f431d390130346daa8e914aafa0'" \
     "expected_g48_baseline_tree_digest='6a19b6d447e87870956772e7dcdaa11dedd02c0ce1f98d3ed02e766cf29cd9de'" \
     "expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'" \
     "g51_source_base_commit='5491bdc2ebf60872e0fababdc70c377e54a2e6f8'" \
     "expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'" \
-    "expected_approved_post_candidate_patch_digest='1507c1d61e01592ef6dd6f261c626d0556b3aa6cbb2434e90d85f77c4a0dda7f'" \
+    "expected_approved_post_candidate_patch_digest='1261369111cc6b1820c9a5b3bf83458fa30101669fc103b7bb31b65719198d73'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
     'cat-file -e "$g51_source_base_commit^{tree}"' \
@@ -338,7 +349,7 @@ for required_g50_publication_guard in \
     fi
 done
 for required_g50_guard in \
-    '0\.2\.2' \
+    'COPYLASSO_RELEASE_VERSION="0.2.2"' \
     '2.9.5' \
     '79bc9e872948e47877e76f194cb0c8e0412b0b90' \
     'GHSA-gmj2-gq3j-vqmj' \
@@ -360,7 +371,7 @@ for required_g49_guard in \
 done
 for required_g48_guard in \
     '0.2.1' \
-    'release_goal=G50' \
+    'release_goal=G55' \
     'No processing indicator is included.' \
     'COPYLASSO_V02_FINAL_TAG="v0.2.1"'; do
     if ! /usr/bin/grep -Fq -- "$required_g48_guard" \
@@ -411,7 +422,7 @@ for required_release_state_guard in \
     'expected_appcast_sha256="ad10db1486d4874701905ad3be2acc05f5025377328107a0aeabe552a9500cd6"' \
     'Release ID: `367570430`' \
     'Release ID: `361797888`' \
-    'The current Unreleased section must identify the post-v0.2.2 multilingual source work.' \
+    'The 0.3.0 draft must identify the post-v0.2.2 multilingual source work.' \
     'The dated 0.2.2 section must retain the Sparkle security hotfix.'; do
     if ! /usr/bin/grep -Fq -- "$required_release_state_guard" \
         "$v02_release_state_audit_script"; then
@@ -625,6 +636,10 @@ fi
 
 if [[ ! -x "$interface_copy_audit_script" ]]; then
     fail "The interface-copy audit must be executable."
+fi
+
+if [[ ! -x "$v03_release_qualification_audit_script" ]]; then
+    fail "The v0.3 release-qualification audit must be executable."
 fi
 
 if [[ ! -x "$latex_feasibility_audit_script" ]] || \

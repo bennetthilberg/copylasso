@@ -3,7 +3,7 @@
 set -euo pipefail
 
 readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && /bin/pwd -P)"
-readonly metadata="$repository_root/Configuration/ReleaseMetadata.xcconfig"
+readonly historical_metadata="$repository_root/scripts/lib/v022-release-package-metadata.sh"
 readonly project="$repository_root/CopyLasso.xcodeproj/project.pbxproj"
 readonly package_resolved="$repository_root/CopyLasso.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
 readonly workflow="$repository_root/.github/workflows/release.yml"
@@ -23,7 +23,7 @@ require_text() {
 }
 
 for required_file in \
-    Configuration/ReleaseMetadata.xcconfig \
+    scripts/lib/v022-release-package-metadata.sh \
     CHANGELOG.md \
     README.md \
     PRIVACY.md \
@@ -43,12 +43,10 @@ for required_file in \
         fail "Required G50 hotfix file is missing: $required_file"
 done
 
-/usr/bin/grep -Eq \
-    '^COPYLASSO_RELEASE_VERSION[[:space:]]*=[[:space:]]*0\.2\.2[[:space:]]*$' \
-    "$metadata" || fail "G50 must freeze CopyLasso at version 0.2.2."
-/usr/bin/grep -Eq \
-    '^COPYLASSO_RELEASE_BUILD[[:space:]]*=[[:space:]]*5[[:space:]]*$' \
-    "$metadata" || fail "G50 must freeze CopyLasso at build 5."
+require_text scripts/lib/v022-release-package-metadata.sh \
+    'COPYLASSO_RELEASE_VERSION="0.2.2"'
+require_text scripts/lib/v022-release-package-metadata.sh \
+    'COPYLASSO_RELEASE_BUILD="5"'
 
 [[ "$(/usr/bin/grep -Fc 'version = 2.9.5;' "$project")" == "1" ]] || \
     fail "The shipping Sparkle package must be pinned exactly to 2.9.5."
@@ -105,10 +103,10 @@ require_text scripts/download-v02-candidate.sh \
 require_text scripts/verify-v02-candidate-package.sh \
     '--release-metadata-profile "$COPYLASSO_V02_RELEASE_PACKAGE_PROFILE"'
 
-require_text .github/workflows/release.yml 'release_goal=G50'
-require_text .github/workflows/release.yml 'release_subdirectory=g50'
+require_text .github/workflows/release.yml 'release_goal=G55'
+require_text .github/workflows/release.yml 'release_subdirectory=g55'
 require_text .github/workflows/release.yml \
-    'release_tag="v${COPYLASSO_G28_VERSION}-g50.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"'
+    'release_tag="v${COPYLASSO_G28_VERSION}-g55.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}"'
 
 readonly delta_generators=(
     scripts/build-private-update-fixture.sh

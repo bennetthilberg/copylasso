@@ -384,3 +384,23 @@ The later approved operator transaction must publish the exact prepared draft
 and deploy the exact handoff. A mismatched candidate, final draft, signature,
 digest, tag, or public readback stops the transaction; it never authorizes
 replacement bytes, tag movement, regeneration, or rebuilding.
+
+## G55 v0.3 Release Candidate Handoff
+
+G54 updates the generic protected candidate workflow to derive current values
+from canonical `0.3.0 (6)` metadata. It does not dispatch that workflow. Only
+after the green G54 PR is separately merged may an approved G55
+`copylasso_protected_release` repository dispatch run from the exact protected
+`refs/heads/main` commit with one positive canonical `candidate_number`.
+
+Candidate mode derives `v0.3.0-rc.N`, creates the candidate tag atomically
+before draft creation, and emits exactly the versioned DMG, checksum, dSYM, and
+verification bundle. The authenticated `appcast.xml` generated for that exact
+candidate is verified locally and never uploaded among the four draft assets.
+The job remains draft-only: it contains no release publication, tag movement,
+asset replacement, or update-feed deployment path.
+
+The private G55 candidate is qualified against the reviewed 0.3.0 notes and
+the procedure in [`v0.3-release-qualification.md`](v0.3-release-qualification.md).
+G56 publication requires a separate immutable-candidate decision and protected
+preparation transaction.

@@ -3,7 +3,7 @@
 set -euo pipefail
 
 readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && /bin/pwd -P)"
-readonly metadata="$repository_root/Configuration/ReleaseMetadata.xcconfig"
+readonly historical_v022_metadata="$repository_root/scripts/lib/v022-release-package-metadata.sh"
 readonly notes="$repository_root/scripts/fixtures/v0.2.1-published-release-notes.md"
 readonly reader_notes="$repository_root/docs/release-notes/0.2.1.md"
 readonly workflow="$repository_root/.github/workflows/prepare-publication.yml"
@@ -28,7 +28,7 @@ require_text() {
 }
 
 for required_file in \
-    "$metadata" \
+    "$historical_v022_metadata" \
     "$notes" \
     "$reader_notes" \
     "$workflow" \
@@ -41,8 +41,8 @@ for required_file in \
     [[ -s "$required_file" ]] || fail "Required G49 file is unavailable: $required_file"
 done
 
-require_text "$metadata" 'COPYLASSO_RELEASE_VERSION = 0.2.2'
-require_text "$metadata" 'COPYLASSO_RELEASE_BUILD = 5'
+require_text "$historical_v022_metadata" 'COPYLASSO_RELEASE_VERSION="0.2.2"'
+require_text "$historical_v022_metadata" 'COPYLASSO_RELEASE_BUILD="5"'
 require_text "$verifier" 'COPYLASSO_RELEASE_VERSION="0.2.1"'
 require_text "$verifier" 'COPYLASSO_RELEASE_BUILD="4"'
 require_text "$verifier" \

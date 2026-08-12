@@ -261,6 +261,14 @@ Run the tracked source audit:
 
 The canonical CI entrypoint runs each audit exactly once. They validate the exact three-key entitlement contract, both build-configuration references, updater-only networking, absence of content-persistence APIs, logger confinement, tracked-secret and local-path scans, exact dependency scope, shipping notices, absence of tracked prebuilt dependency binaries, deterministic original audio and code-fixture bytes, Vision barcode confinement and configuration, inert payload handling, one bundled sound asset, content-free service wiring, the LaTeX no-go production boundary, and no microphone, camera, file-import, system-audio-capture, notification, or alternate playback API.
 
+G54 adds no entitlement, dependency, network destination, capture command, or
+content flow. Its v0.3 qualification audit binds `0.3.0 (6)` to the reviewed
+multilingual-preference and encrypted-history boundaries, keeps public 0.2.2
+evidence immutable through pinned historical metadata, and rejects publication
+or final-tag operations in candidate tooling. Release qualification repeats the
+Sparkle advisory check and all nested Developer ID, notarization, Gatekeeper,
+authenticated-update, ciphertext, Keychain-scope, and content-egress checks.
+
 The complete application unit bundle also passes when invoked directly under a process sandbox with `(deny network*)`. This exercises real Vision fixtures plus permission, selection, capture planning, formatting, clipboard, feedback, lifecycle, Settings, and end-to-end orchestration tests without disabling the workstation's network connection; the canonical verification record reports the exact current suite count.
 
 The signed manual privacy matrix in [Testing](testing.md) remains the release boundary for fresh real captures, container/temp-directory deltas, unified-log inspection, clipboard paste verification, and OS privacy-pane inspection. Static and injected tests are not substitutes for those observations.
