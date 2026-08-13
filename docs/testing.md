@@ -940,3 +940,29 @@ Use one Apple Development-signed Debug app and synthetic text/code values only:
 App-driven deletion removes CopyLasso's active archive and Keychain item, but
 manual evidence must not claim forensic erasure from APFS snapshots or external
 system backups.
+
+## G54 v0.3 Source Qualification
+
+G54 freezes the merged G51-G53 source as `0.3.0 (6)` while public 0.2.2 remains
+latest. The focused `scripts/audit-v03-release-qualification.sh` runs exactly
+once in canonical CI and binds current metadata, release notes, changelog,
+contract, entitlements, release-workflow source, and the absence of a
+publication or LaTeX-model path.
+
+Migration coverage reconstructs public-0.2.2-style preferences and proves that
+onboarding, shortcut, Launch at Login, permission history, explicit sound
+choice, updater high-water mark, and deferral remain intact. The new OCR
+preference migrates to U.S. English and capture history remains off, creating
+no key or archive until explicit opt-in. Existing focused G51 and G52 suites
+continue to cover runtime language snapshots, code precedence, encrypted
+storage, post-clipboard failure isolation, expiry, deletion, lock cleanup, and
+offline operation.
+
+The signed host matrix uses one verified Apple Development Debug build for
+representative multilingual OCR, all code formats, history consent and
+lifecycle, Settings/About accessibility, permission recovery, rapid reuse,
+appearance, and updater/sound independence. The final tracked head additionally
+requires canonical arm64 and x86_64, Universal 2 Release, maintained macOS
+runtime, and one private commit-addressed Developer ID/notarized package. Real
+macOS 14 remains an explicit manual release gate rather than an inferred hosted
+pass.

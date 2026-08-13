@@ -117,14 +117,14 @@ for historical_record in \
     require_text "$release_state" "$historical_record"
 done
 
-unreleased_section="$(/usr/bin/awk '
-    /^## Unreleased$/ { capture = 1; next }
+v03_section="$(/usr/bin/awk '
+    /^## 0\.3\.0 - Unreleased$/ { capture = 1; next }
     /^## / && capture { exit }
     capture { print }
 ' "$repository_root/CHANGELOG.md")"
-[[ "$unreleased_section" == *'### Added'* && \
-    "$unreleased_section" == *'Text Languages editor'* ]] || \
-    fail "The current Unreleased section must identify the post-v0.2.2 multilingual source work."
+[[ "$v03_section" == *'### Added'* && \
+    "$v03_section" == *'Text Languages editor'* ]] || \
+    fail "The 0.3.0 draft must identify the post-v0.2.2 multilingual source work."
 security_hotfix_section="$(/usr/bin/awk '
     /^## 0\.2\.2 - 2026-08-10$/ { capture = 1; next }
     /^## / && capture { exit }

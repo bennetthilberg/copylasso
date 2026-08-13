@@ -80,10 +80,12 @@ no account identifier. Archive and export therefore use the same protected ident
 interactive Xcode account or permission to create signing assets. The local G26 automatic export
 contract remains separate.
 
-## Run a Private G50 Rehearsal
+## Historical G50 Private Rehearsal
 
-Only after the G50 source pull request is reviewed, green, and separately
-merged, and G50 Phase 2 is explicitly approved:
+This procedure records the completed G50 `0.2.2` run and must not be used for
+the current generic workflow. At that historical checkpoint, only after the
+G50 source pull request was reviewed, green, and separately merged, and G50
+Phase 2 was explicitly approved:
 
 1. Dispatch `copylasso_protected_release` through GitHub's repository dispatch API without a
    `candidate_number` payload field.
@@ -233,9 +235,10 @@ does not count. Follow [`release-candidate-qualification.md`](release-candidate-
 clean-account preflight, exact smoke matrix, accepted gaps, risk classification, and evidence
 boundary.
 
-## Current Draft Assets and Local Readback
+## Historical G50 Draft Assets and Local Readback
 
-The draft prerelease contains exactly:
+This section records the completed G50 `0.2.2` candidate and is not the G55
+asset list. That historical draft prerelease contains exactly:
 
 - `CopyLasso-0.2.2.dmg`;
 - `CopyLasso-0.2.2.dmg.sha256`;
@@ -261,7 +264,8 @@ closed without creating metadata. The standalone appcast is never uploaded among
 and no file is published to `updates.copylasso.com` in G36.
 
 Read back the draft through GitHub after upload. It must remain `draft: true` and `prerelease: true`,
-target the exact commit, and contain exactly the four assets above. Recompute the public checksum
+target the exact commit, and contain exactly the four historical G50 assets
+above. Recompute the public checksum
 and rerun the complete local package verifier. Preserve the downloaded dSYM and verification bundle
 as restricted maintainer evidence.
 
@@ -384,3 +388,34 @@ The later approved operator transaction must publish the exact prepared draft
 and deploy the exact handoff. A mismatched candidate, final draft, signature,
 digest, tag, or public readback stops the transaction; it never authorizes
 replacement bytes, tag movement, regeneration, or rebuilding.
+
+## G55 v0.3 Release Candidate Handoff
+
+G54 updates the generic protected candidate workflow to derive current values
+from canonical `0.3.0 (6)` metadata. It does not dispatch that workflow. Only
+after the green G54 PR is separately merged may an approved G55
+`copylasso_protected_release` repository dispatch run from the exact protected
+`refs/heads/main` commit with one positive canonical `candidate_number`.
+
+Candidate mode derives `v0.3.0-rc.N`, creates the candidate tag atomically
+before draft creation, and emits exactly the versioned DMG, checksum, dSYM, and
+verification bundle. The authenticated `appcast.xml` generated for that exact
+candidate is verified locally and never uploaded among the four draft assets.
+The job remains draft-only: it contains no release publication, tag movement,
+asset replacement, or update-feed deployment path.
+
+The private G55 candidate is qualified against the reviewed 0.3.0 notes and
+the complete operator procedure in
+[`v0.3-release-candidate.md`](v0.3-release-candidate.md).
+G56 publication requires a separate immutable-candidate decision and protected
+preparation transaction.
+
+The G55 private draft contains exactly these current assets:
+
+- `CopyLasso-0.3.0.dmg`;
+- `CopyLasso-0.3.0.dmg.sha256`;
+- `CopyLasso-0.3.0.dSYM.zip`; and
+- `CopyLasso-0.3.0-verification.zip`.
+
+Download those four files into one fresh commit-addressed external directory;
+the G50 names and artifacts above are historical and must never be substituted.

@@ -17,22 +17,22 @@ fail() {
 # shellcheck source=scripts/lib/release-metadata.sh
 source "$metadata_library"
 
-[[ "$COPYLASSO_RELEASE_VERSION" == "0.2.2" ]] || \
-    fail "The G50 candidate source must use version 0.2.2."
-[[ "$COPYLASSO_RELEASE_BUILD" == "5" ]] || \
-    fail "The G50 candidate source must use build 5."
-[[ "$COPYLASSO_RELEASE_TAG" == "v0.2.2" ]] || \
-    fail "The G50 release tag must derive as v0.2.2."
-[[ "$COPYLASSO_RELEASE_DMG" == "CopyLasso-0.2.2.dmg" ]] || \
-    fail "The G50 release DMG name is incorrect."
-[[ "$COPYLASSO_RELEASE_CHECKSUM" == "CopyLasso-0.2.2.dmg.sha256" ]] || \
-    fail "The G50 release checksum name is incorrect."
-[[ "$COPYLASSO_RELEASE_DSYM" == "CopyLasso-0.2.2.dSYM.zip" ]] || \
-    fail "The G50 release dSYM name is incorrect."
-[[ "$COPYLASSO_RELEASE_VERIFICATION" == "CopyLasso-0.2.2-verification.zip" ]] || \
-    fail "The G50 release verification-bundle name is incorrect."
-[[ "$COPYLASSO_RELEASE_APPCAST" == "CopyLasso-0.2.2-appcast.xml" ]] || \
-    fail "The G50 authenticated draft appcast name is incorrect."
+[[ "$COPYLASSO_RELEASE_VERSION" == "0.3.0" ]] || \
+    fail "The G54 candidate source must use version 0.3.0."
+[[ "$COPYLASSO_RELEASE_BUILD" == "6" ]] || \
+    fail "The G54 candidate source must use build 6."
+[[ "$COPYLASSO_RELEASE_TAG" == "v0.3.0" ]] || \
+    fail "The G54 release tag must derive as v0.3.0."
+[[ "$COPYLASSO_RELEASE_DMG" == "CopyLasso-0.3.0.dmg" ]] || \
+    fail "The G54 release DMG name is incorrect."
+[[ "$COPYLASSO_RELEASE_CHECKSUM" == "CopyLasso-0.3.0.dmg.sha256" ]] || \
+    fail "The G54 release checksum name is incorrect."
+[[ "$COPYLASSO_RELEASE_DSYM" == "CopyLasso-0.3.0.dSYM.zip" ]] || \
+    fail "The G54 release dSYM name is incorrect."
+[[ "$COPYLASSO_RELEASE_VERIFICATION" == "CopyLasso-0.3.0-verification.zip" ]] || \
+    fail "The G54 release verification-bundle name is incorrect."
+[[ "$COPYLASSO_RELEASE_APPCAST" == "CopyLasso-0.3.0-appcast.xml" ]] || \
+    fail "The G54 authenticated draft appcast name is incorrect."
 
 /usr/bin/grep -Fq '#include "ReleaseMetadata.xcconfig"' \
     "$repository_root/Configuration/Shared.xcconfig" || \
@@ -52,8 +52,8 @@ fi
     fail "Reviewed 0.2.0 release notes are missing."
 [[ -r "$repository_root/docs/release-notes/0.2.1.md" ]] || \
     fail "Reviewed 0.2.1 release notes are missing."
-[[ -r "$repository_root/docs/release-notes/0.2.2.md" ]] || \
-    fail "Reviewed 0.2.2 release notes are missing."
+[[ -r "$repository_root/docs/release-notes/0.3.0.md" ]] || \
+    fail "Reviewed 0.3.0 release notes are missing."
 /usr/bin/grep -Fq '## 0.2.0 - 2026-07-29' "$repository_root/CHANGELOG.md" || \
     fail "The changelog must date the public v0.2 release from its publication timestamp."
 /usr/bin/grep -Fq '## 0.1.1 - 2026-07-21' "$repository_root/CHANGELOG.md" || \
@@ -61,29 +61,29 @@ fi
 /usr/bin/grep -Fq 'User-controlled secure updates' \
     "$repository_root/docs/release-notes/0.2.0.md" || \
     fail "The 0.2.0 notes must describe the updater."
-/usr/bin/grep -Fq '| Build number | `5` |' \
+/usr/bin/grep -Fq '| Build number | `6` |' \
     "$repository_root/docs/architecture/build-configuration.md" || \
-    fail "The build-configuration reference must identify build 5."
+    fail "The build-configuration reference must identify build 6."
 
 (
     # shellcheck source=scripts/lib/developer-id-verification.sh
     source "$repository_root/scripts/lib/developer-id-verification.sh"
-    [[ "$COPYLASSO_RELEASE_VERSION" == "0.2.2" && \
-        "$COPYLASSO_RELEASE_BUILD" == "5" ]]
+    [[ "$COPYLASSO_RELEASE_VERSION" == "0.3.0" && \
+        "$COPYLASSO_RELEASE_BUILD" == "6" ]]
 ) || fail "Developer ID verification must use the shared release metadata."
 
 (
     # shellcheck source=scripts/lib/release-package-verification.sh
     source "$repository_root/scripts/lib/release-package-verification.sh"
-    [[ "$COPYLASSO_RELEASE_VERSION" == "0.2.2" && \
-        "$COPYLASSO_RELEASE_BUILD" == "5" && \
-        "$COPYLASSO_RELEASE_DMG" == "CopyLasso-0.2.2.dmg" ]]
+    [[ "$COPYLASSO_RELEASE_VERSION" == "0.3.0" && \
+        "$COPYLASSO_RELEASE_BUILD" == "6" && \
+        "$COPYLASSO_RELEASE_DMG" == "CopyLasso-0.3.0.dmg" ]]
 ) || fail "Release-package verification must use the shared release metadata."
 
 (
     # shellcheck source=scripts/lib/release-workflow-verification.sh
     source "$repository_root/scripts/lib/release-workflow-verification.sh"
-    [[ "$(release_candidate_tag 1)" == "v0.2.2-rc.1" ]]
+    [[ "$(release_candidate_tag 1)" == "v0.3.0-rc.1" ]]
 ) || fail "The protected workflow must derive candidates from shared release metadata."
 
 echo "CopyLasso release metadata contract passed."

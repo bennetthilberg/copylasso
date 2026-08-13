@@ -180,9 +180,9 @@ for coverage_contract in \
         fail "Capture-history behavioral coverage floor is missing: $coverage_contract"
 done
 
-if ! /usr/bin/grep -Fq 'COPYLASSO_RELEASE_VERSION = 0.2.2' Configuration/ReleaseMetadata.xcconfig || \
-    ! /usr/bin/grep -Fq 'COPYLASSO_RELEASE_BUILD = 5' Configuration/ReleaseMetadata.xcconfig; then
-    fail "G52 must not change version 0.2.2 (5)."
+if ! /usr/bin/grep -Fq 'COPYLASSO_RELEASE_VERSION = 0.3.0' Configuration/ReleaseMetadata.xcconfig || \
+    ! /usr/bin/grep -Fq 'COPYLASSO_RELEASE_BUILD = 6' Configuration/ReleaseMetadata.xcconfig; then
+    fail "G54 must qualify capture history at version 0.3.0 (6)."
 fi
 
 echo "Capture-history privacy and security audit passed."

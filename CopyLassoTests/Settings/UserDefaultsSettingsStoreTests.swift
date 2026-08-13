@@ -171,6 +171,44 @@ final class UserDefaultsSettingsStoreTests: XCTestCase {
     XCTAssertEqual(updateStore.deferredBuild, "3")
   }
 
+  func testVersion022PreferencesUpgradeToVersion030WithSafeFeatureDefaults() throws {
+    let defaults = try makeDefaults()
+    var store = UserDefaultsSettingsStore(userDefaults: defaults)
+    let updateStore = UserDefaultsSecureUpdateStateStore(userDefaults: defaults)
+    store.completedOnboardingVersion = 1
+    store.hasConfiguredCaptureShortcut = true
+    store.hasConfiguredLaunchAtLogin = true
+    store.history = ScreenCapturePermissionHistory(
+      hasRequested: true,
+      hasObservedGranted: true
+    )
+    store.migrateSuccessSoundPreferenceIfNeeded()
+    store.isSuccessSoundEnabled = false
+    updateStore.highestAuthenticatedBuild = "5"
+    updateStore.deferredBuild = "6"
+
+    store = UserDefaultsSettingsStore(userDefaults: defaults)
+    store.migrateSuccessSoundPreferenceIfNeeded()
+    store.migrateOCRLanguagePreferencesIfNeeded()
+
+    XCTAssertEqual(store.completedOnboardingVersion, 1)
+    XCTAssertTrue(store.hasConfiguredCaptureShortcut)
+    XCTAssertTrue(store.hasConfiguredLaunchAtLogin)
+    XCTAssertEqual(
+      store.history,
+      ScreenCapturePermissionHistory(hasRequested: true, hasObservedGranted: true)
+    )
+    XCTAssertFalse(store.isSuccessSoundEnabled)
+    XCTAssertEqual(store.ocrRecognitionPreferences, .englishUS)
+    XCTAssertEqual(
+      store.ocrLanguagePreferenceVersion,
+      UserDefaultsSettingsStore.currentOCRLanguagePreferenceVersion
+    )
+    XCTAssertFalse(store.isCaptureHistoryEnabled)
+    XCTAssertEqual(updateStore.highestAuthenticatedBuild, "5")
+    XCTAssertEqual(updateStore.deferredBuild, "6")
+  }
+
   func testWritingSoundPreferenceBeforeMigrationAdvancesTheSchema() {
     let store = makeStore()
 

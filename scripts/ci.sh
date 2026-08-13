@@ -125,6 +125,9 @@ echo "Auditing private capture history"
 echo "Auditing interface copy"
 ./scripts/audit-interface-copy.sh
 
+echo "Auditing the qualified v0.3 release source"
+./scripts/audit-v03-release-qualification.sh
+
 echo "Testing offline LaTeX feasibility scoring"
 ./scripts/test-latex-feasibility.sh
 

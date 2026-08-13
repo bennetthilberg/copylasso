@@ -143,13 +143,13 @@ if [[ "$(/usr/bin/grep -c \
     fail "Every application configuration must embed the open-source creator description."
 fi
 
-if [[ "$COPYLASSO_RELEASE_VERSION" != "0.2.2" ]] || \
-    [[ "$COPYLASSO_RELEASE_BUILD" != "5" ]] || \
+if [[ "$COPYLASSO_RELEASE_VERSION" != "0.3.0" ]] || \
+    [[ "$COPYLASSO_RELEASE_BUILD" != "6" ]] || \
     /usr/bin/grep -Eq \
         '^[[:space:]]+(MARKETING_VERSION|CURRENT_PROJECT_VERSION)[[:space:]]*=' \
         CopyLasso.xcodeproj/project.pbxproj || \
     [[ "$(/usr/bin/grep -c 'PRODUCT_BUNDLE_IDENTIFIER = io.github.bennetthilberg.copylasso;' CopyLasso.xcodeproj/project.pbxproj)" != 1 ]]; then
-    fail "G50 version 0.2.2, build 5, and the production bundle identifier must remain final."
+    fail "G54 version 0.3.0, build 6, and the production bundle identifier must remain final."
 fi
 
 for text in \

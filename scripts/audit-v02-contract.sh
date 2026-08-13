@@ -5,7 +5,6 @@ set -euo pipefail
 readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && /bin/pwd -P)"
 readonly contract="$repository_root/docs/v0.2-product-contract.md"
 readonly baseline_contract="$repository_root/docs/v0.1-product-contract.md"
-readonly release_metadata="$repository_root/Configuration/ReleaseMetadata.xcconfig"
 readonly entitlements="$repository_root/CopyLasso/CopyLasso.entitlements"
 readonly expected_baseline_contract_digest='3426807f08168cec2aaca337b80d7657a8a2d8569d48ecaafe0ec75672f92291'
 
@@ -94,15 +93,6 @@ done
 if /usr/bin/grep -Eq '(^|[^0-9])0\.2\.0[[:space:]]*\([[:space:]]*[12][[:space:]]*\)' "$contract"; then
     fail "The planned v0.2 contract must not reuse a released build number."
 fi
-
-/usr/bin/grep -Eq \
-    '^COPYLASSO_RELEASE_VERSION[[:space:]]*=[[:space:]]*0\.2\.2[[:space:]]*$' \
-    "$release_metadata" || \
-    fail "The current security-hotfix source must remain at version 0.2.2."
-/usr/bin/grep -Eq \
-    '^COPYLASSO_RELEASE_BUILD[[:space:]]*=[[:space:]]*5[[:space:]]*$' \
-    "$release_metadata" || \
-    fail "The current security-hotfix source must remain at build 5."
 
 [[ -f "$entitlements" ]] || fail "The approved v0.2 sandbox entitlements file is missing."
 entitlements_json="$(/usr/bin/plutil -convert json -o - "$entitlements")" || \

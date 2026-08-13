@@ -4,6 +4,8 @@ All notable changes to CopyLasso will be documented in this file.
 
 ## Unreleased
 
+## 0.3.0 - Unreleased
+
 ### Added
 
 - Added an opt-in Text Languages editor backed by the Apple Vision languages

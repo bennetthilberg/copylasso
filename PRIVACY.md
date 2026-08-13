@@ -2,8 +2,11 @@
 
 **Status:** Public 0.2.2 (5).
 
-Unreleased source adds ordered OCR language choices and off-by-default encrypted
-capture history. Neither feature is in public 0.2.2.
+Release-qualified v0.3.0 (6) source has not yet been published as a release
+binary.
+
+Release-qualified v0.3 source adds ordered OCR language choices and
+off-by-default encrypted capture history. Neither feature is in public 0.2.2.
 
 CopyLasso captures only the screen region you select, recognizes text or a
 supported code locally, and writes the result to the clipboard.
@@ -52,7 +55,7 @@ schedule, deferred build, and highest authenticated build, not feed bodies or
 release notes. Fixed lifecycle diagnostics contain no content, app name,
 geometry, or user value.
 
-### Optional history in unreleased source
+### Optional history in release-qualified v0.3 source
 
 **Save Capture History** is off by default and creates no archive or key until
 enabled. It stores only exact successful text or inert code output, type,

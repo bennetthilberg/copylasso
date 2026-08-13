@@ -12,6 +12,10 @@ plan and approval.
   near updater, sound, or QR/barcode behavior. Those features ship in public
   0.2.2. G39 concluded no-go for LaTeX, so adding it requires a new contract
   and roadmap decision.
+- Read the [v0.3 product contract](docs/v0.3-product-contract.md) when working
+  near multilingual OCR or optional encrypted capture history. The source is
+  release-qualified as 0.3.0 (6), while public 0.2.2 remains the latest
+  download during G54.
 - Review the [development environment](docs/development-environment.md) and use the documented stable Xcode toolchain.
 - Open an issue before starting a large feature, architectural change, new dependency, or product-scope change.
 - Never include credentials, signing material, captured screen content, recognized private text, or other sensitive data in a commit, issue, test fixture, screenshot, or log.

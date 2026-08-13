@@ -4,7 +4,8 @@
 
 CopyLasso is a free and open-source macOS utility for copying visible text from anywhere on screen. Press `⇧⌘2`, drag around text, and receive recognized plain text on the clipboard. Recognition runs locally with Apple's Vision framework, and CopyLasso never retains screenshots.
 
-CopyLasso 0.2.2 is the latest public release. It includes authenticated,
+CopyLasso 0.2.2 is the latest public release. Source is being qualified as
+0.3.0 (6), but no v0.3 artifact is public during G54. Public 0.2.2 includes authenticated,
 user-controlled updates, an optional success sound, local recognition of five
 QR and barcode formats, a focus-preserving native selector, and bounded native
 rendering for authenticated update notes. This security-only maintenance
@@ -64,7 +65,7 @@ while selections without a supported code fall back to ordinary OCR. CopyLasso
 copies recognized payloads as inert plain text and never opens a URL or
 otherwise acts on a payload.
 
-The current source tree adds an unreleased **Settings > Text Languages** editor.
+The release-qualified v0.3 source adds a **Settings > Text Languages** editor.
 English remains the default; users can opt into other languages supported by
 Apple Vision on their Mac and arrange recognition priority. Selecting multiple
 languages enables automatic language detection and can reduce speed or accuracy,
@@ -72,7 +73,7 @@ so choosing only languages you expect usually works best. This source feature
 does not download a language pack or add a cloud service. It is not part of the
 public 0.2.2 download yet.
 
-The unreleased source tree also adds **Save Capture History** under Settings >
+The release-qualified v0.3 source also adds **Save Capture History** under Settings >
 Privacy. It is off by default. When explicitly enabled, CopyLasso encrypts only
 successful text and inert code output locally for seven days, with a 100-entry
 limit and a 256 KiB per-entry ceiling. **History** in the menu opens exact
@@ -99,7 +100,7 @@ CopyLasso's capture workflow is private, offline, and local by design:
 - Supported code payloads are recognized locally with Vision, remain complete only during the active operation, and are treated only as clipboard text.
 - Clipboard access is write-only and plain-text-only. CopyLasso never reads the existing clipboard to preserve or restore its contents.
 
-See the [privacy policy](PRIVACY.md), [security and privacy review](docs/security-and-privacy-review.md), [v0.1 product contract](docs/v0.1-product-contract.md), [v0.2 product contract](docs/v0.2-product-contract.md), and [unreleased v0.3 source contract](docs/v0.3-product-contract.md) for the reviewed guarantees and boundaries.
+See the [privacy policy](PRIVACY.md), [security and privacy review](docs/security-and-privacy-review.md), [v0.1 product contract](docs/v0.1-product-contract.md), [v0.2 product contract](docs/v0.2-product-contract.md), and [release-qualified v0.3 source contract](docs/v0.3-product-contract.md) for the reviewed guarantees and boundaries.
 
 ## Known Limitations
 

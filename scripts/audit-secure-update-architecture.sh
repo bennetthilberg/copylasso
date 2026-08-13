@@ -253,10 +253,10 @@ for application in \
     done
 done
 
-require_literal "$release_metadata" 'COPYLASSO_RELEASE_VERSION = 0.2.2' \
-    "G50 must freeze the security-hotfix candidate at 0.2.2."
-require_literal "$release_metadata" 'COPYLASSO_RELEASE_BUILD = 5' \
-    "G50 must freeze the security-hotfix candidate at build 5."
+require_literal "$release_metadata" 'COPYLASSO_RELEASE_VERSION = 0.3.0' \
+    "G54 must freeze the current release-qualified source at 0.3.0."
+require_literal "$release_metadata" 'COPYLASSO_RELEASE_BUILD = 6' \
+    "G54 must freeze the current release-qualified source at build 6."
 
 require_literal "$repository_root/docs/architecture/ADR-004-secure-updates.md" \
     'https://updates.copylasso.com/appcast.xml' \
