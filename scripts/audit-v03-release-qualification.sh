@@ -49,10 +49,14 @@ for candidate_text in \
     'exact signed public tag `v0.2.2`' \
     '81016fe43ee617b5f251564b03904137a4447266' \
     'git verify-tag v0.2.2' \
+    "git rev-parse 'v0.2.2^{commit}'" \
+    'Exact public 0.2.2 clean-install baseline' \
+    'launch the immutable public 0.2.2 app' \
     'COPYLASSO_PRIVATE_UPDATE_FIXTURE' \
     'nonshipping Apple Development-signed 0.2.2 updater fixture' \
     'production bundle identifier' \
     'CopyLasso-0.3.0.zip' \
+    'ditto -c -k --keepParent' \
     'untouched candidate application' \
     'complete file, directory' \
     'mode, and symbolic-link manifest' \
