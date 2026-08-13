@@ -72,7 +72,11 @@ for candidate_text in \
     'exact public 0.2.2 DMG enclosure' \
     'English as the new language default' \
     'serve it on `127.0.0.1`' \
-    'minimum supported macOS 14 must pass' \
+    'macOS 14 runtime row' \
+    'explicitly' \
+    'accepted gap' \
+    'must not be reported' \
+    'as passed or inferred' \
     'Retained Gaps And Disposition' \
     'explicit maintainer approval' \
     'Do not publish'; do
