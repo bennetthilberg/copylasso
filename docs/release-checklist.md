@@ -252,8 +252,12 @@ inferred pass; see [`v0.2-release-qualification.md`](v0.2-release-qualification.
   derive a unique `v0.3.0-rc.N` private draft with exactly four restricted
   assets.
 - [ ] Qualify signatures, notarization, Gatekeeper, package layout, checksums,
-  dSYM, authenticated candidate metadata, clean install, and update from exact
-  public 0.2.2 without rebuilding.
+  dSYM, authenticated candidate metadata, and a clean install of exact public
+  0.2.2 and the exact candidate without modifying either release binary.
+- [ ] Build only the nonshipping 0.2.2-source updater fixture from signed tag
+  `v0.2.2` with the existing loopback compile condition, update it with an
+  archive of the untouched candidate app, and prove the installed payload
+  matches that candidate byte-for-byte, mode-for-mode, and link-for-link.
 - [ ] Obtain explicit approval of the immutable candidate before publication.
 
 ## G56 - Publish CopyLasso v0.3.0

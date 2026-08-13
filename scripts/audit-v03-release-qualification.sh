@@ -46,10 +46,22 @@ for candidate_text in \
     'Disposable-account clean-state preflight' \
     'io.github.bennetthilberg.copylasso.capture-history' \
     'historical G36 fixture is not evidence for G55' \
-    'Change only that old' \
-    'installed application against the untouched candidate payload manifest' \
+    'exact signed public tag `v0.2.2`' \
+    '81016fe43ee617b5f251564b03904137a4447266' \
+    'git verify-tag v0.2.2' \
+    'COPYLASSO_PRIVATE_UPDATE_FIXTURE' \
+    'nonshipping Apple Development-signed 0.2.2 updater fixture' \
+    'production bundle identifier' \
+    'CopyLasso-0.3.0.zip' \
+    'untouched candidate application' \
+    'complete file, directory' \
+    'mode, and symbolic-link manifest' \
+    'create_release_payload_manifest' \
+    'assert_release_payload_manifests_match' \
+    'against the untouched candidate payload' \
+    'not release evidence' \
     'public 0.2.2 actually supports' \
-    'U.S. English as the new' \
+    'English as the new language default' \
     'serve it on `127.0.0.1`' \
     'minimum supported macOS 14 must pass' \
     'Retained Gaps And Disposition' \
@@ -57,6 +69,15 @@ for candidate_text in \
     'Do not publish'; do
     require_text "$candidate_qualification" "$candidate_text"
 done
+
+if /usr/bin/grep -Fq 'Change only that old' "$candidate_qualification" || \
+    /usr/bin/grep -Fq 're-sign that old copy' "$candidate_qualification" || \
+    /usr/bin/grep -Fq 'enclosure to be the exact candidate DMG bytes' \
+        "$candidate_qualification" || \
+    /usr/bin/grep -Fq 'Serve only that appcast and exact candidate DMG' \
+        "$candidate_qualification"; then
+    fail "The G55 updater qualification must not claim that Info.plist edits can redirect the immutable public 0.2.2 binary."
+fi
 
 for current_asset in \
     'CopyLasso-0.3.0.dmg' \
@@ -73,6 +94,12 @@ require_text "$repository_root/docs/release-checklist.md" \
     '- [x] Pass focused migration/integration checks'
 require_text "$repository_root/docs/release-checklist.md" \
     '- [x] Stop with a ready G54 PR.'
+require_text "$repository_root/docs/release-checklist.md" \
+    'Build only the nonshipping 0.2.2-source updater fixture'
+require_text "$repository_root/docs/testing.md" \
+    '## G55 public-0.2.2-to-candidate update fixture'
+require_text "$repository_root/docs/secure-update-operations.md" \
+    '## G55 exact-source update qualification fixture'
 
 require_text "$metadata" 'COPYLASSO_RELEASE_VERSION = 0.3.0'
 require_text "$metadata" 'COPYLASSO_RELEASE_BUILD = 6'

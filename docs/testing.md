@@ -635,6 +635,29 @@ Computer Use handle after each fixture relaunch; the stored onboarding value is
 not changed, and ordinary Debug, Release, and Developer ID builds omit this
 fixture-only presentation.
 
+## G55 public-0.2.2-to-candidate update fixture
+
+The immutable public 0.2.2 application cannot be redirected to a private v0.3
+candidate by editing `SUFeedURL`: its compiled production policy rejects
+loopback enclosures and requires the final-version GitHub release path. G55
+therefore builds one nonshipping Apple Development-signed 0.2.2 updater fixture
+from the clean source tree at signed tag `v0.2.2`. The build keeps version
+`0.2.2 (5)` and the production bundle identifier so the real migration path is
+exercised, but adds a loopback feed and ATS allowance together with the existing
+`COPYLASSO_PRIVATE_UPDATE_FIXTURE` compile condition. It is not public-0.2.2
+binary evidence and is destroyed after the isolated transaction.
+
+The fixture's signed enclosure is `CopyLasso-0.3.0.zip`, constructed with
+`ditto --keepParent` from the untouched candidate application extracted from
+the independently verified candidate DMG. It is temporary transport, not a
+claim that archive metadata itself proves release identity. After Sparkle
+relaunches, G55 creates the same complete file, directory-mode, and
+symbolic-link manifest from the installed app and compares it with the
+untouched candidate manifest. Strict
+signature, notarization-ticket, version/build, and architecture checks follow.
+The exact public 0.2.2 binary is still used for the clean-install qualification;
+the candidate app is never rebuilt, patched, or re-signed for this fixture.
+
 The July 13, 2026 signed run completed many functional, permission, and OCR rows
 before exposing a pre-drag sleep/wake failure. G24U subsequently passed exact
 signed pre-drag and drag-phase sleep interruption with full cleanup, clipboard
