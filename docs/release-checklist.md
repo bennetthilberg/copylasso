@@ -248,6 +248,9 @@ inferred pass; see [`v0.2-release-qualification.md`](v0.2-release-qualification.
 
 ## G55 - Private v0.3.0 Release Candidate
 
+- [x] Record the unexecuted macOS 14 runtime row as an explicit maintainer-
+  accepted residual risk after repeated VirtualBuddy black-screen failure;
+  never relabel the row as passed or infer it from the macOS 15 hosted launch.
 - [ ] After G54 merges, dispatch one exact protected-main candidate build and
   derive a unique `v0.3.0-rc.N` private draft with exactly four restricted
   assets.

@@ -999,6 +999,8 @@ representative multilingual OCR, all code formats, history consent and
 lifecycle, Settings/About accessibility, permission recovery, rapid reuse,
 appearance, and updater/sound independence. The final tracked head additionally
 requires canonical arm64 and x86_64, Universal 2 Release, maintained macOS
-runtime, and one private commit-addressed Developer ID/notarized package. Real
-macOS 14 remains an explicit manual release gate rather than an inferred hosted
-pass.
+runtime, and one private commit-addressed Developer ID/notarized package. For
+v0.3 only, the unexecuted real macOS 14 row is an explicitly accepted residual
+risk after repeated VirtualBuddy black-screen failure. It is not a pass and is
+not inferred from the maintained macOS 15 launch; deployment metadata for both
+Universal 2 slices and historical Sonoma evidence remain required.
