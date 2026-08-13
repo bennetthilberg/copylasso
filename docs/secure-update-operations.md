@@ -152,6 +152,25 @@ the marker's absence. The fixture initially serves a signature-invalid copy of
 the otherwise valid appcast, then swaps in the exact signed copy for the update.
 Its state and TCC identity cannot be mistaken for the production app.
 
+## G55 exact-source update qualification fixture
+
+G55's release transition has a different evidence boundary from historical
+G36. Production 0.2.2 accepts only the final-version GitHub enclosure path, so
+editing its plist cannot make a private RC or loopback enclosure valid. Keep the
+public binary immutable and qualify it independently.
+
+For only the private transition smoke, build the exact signed `v0.2.2` tag with
+version `0.2.2 (5)`, the production bundle identifier, Apple Development
+signing, a loopback feed and ATS allowance, and
+`COPYLASSO_PRIVATE_UPDATE_FIXTURE`. Feed that nonshipping fixture a signed
+`CopyLasso-0.3.0.zip` made directly from the untouched candidate application.
+The post-update app must reproduce the candidate's complete file, mode, and
+symbolic-link manifest and pass its original Developer ID, notarization-ticket,
+version/build, and architecture checks. Destroy the old-source fixture,
+loopback metadata, archive, and server after qualification. Neither the fixture
+nor its archive may be packaged, uploaded, published, or represented as exact
+public-release evidence.
+
 ## Historical G41 Qualification and G42 Handoff
 
 During G41, updater-enabled source froze at `0.2.0 (3)` while public CopyLasso

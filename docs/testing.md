@@ -635,6 +635,42 @@ Computer Use handle after each fixture relaunch; the stored onboarding value is
 not changed, and ordinary Debug, Release, and Developer ID builds omit this
 fixture-only presentation.
 
+## G55 public-0.2.2-to-candidate update fixture
+
+The immutable public 0.2.2 application cannot be redirected to a private v0.3
+candidate by editing `SUFeedURL`: its compiled production policy rejects
+loopback enclosures and requires the final-version GitHub release path. G55
+therefore builds one nonshipping Apple Development-signed 0.2.2 updater fixture
+from the clean source tree at signed tag `v0.2.2`. The build keeps version
+`0.2.2 (5)` and the production bundle identifier so the real migration path is
+exercised, but adds a loopback feed and ATS allowance together with the existing
+`COPYLASSO_PRIVATE_UPDATE_FIXTURE` compile condition. It is not public-0.2.2
+binary evidence and is destroyed after the isolated transaction.
+
+The fixture's signed enclosure is `CopyLasso-0.3.0.zip`, constructed with
+`ditto -c -k --keepParent` from the untouched candidate application extracted
+from the independently verified candidate DMG. It is temporary transport, not a
+claim that archive metadata itself proves release identity. After Sparkle
+relaunches, G55 creates the same complete file, directory-mode, and
+symbolic-link manifest from the installed app and compares it with the
+untouched candidate manifest. Strict
+signature, notarization-ticket, version/build, and architecture checks follow.
+The exact public 0.2.2 binary is still used for the clean-install qualification;
+that separate baseline launches the quarantined public app and exercises its
+supported onboarding, permission recovery, capture, settings, and relaunch
+behavior before returning the disposable account to a verified clean state.
+The candidate app is never rebuilt, patched, or re-signed for this fixture.
+
+The candidate clean-install state is also removed through the same narrow
+disposable-account reset before the old-source fixture runs. The fixture and
+candidate intentionally use different Apple signing classes: the valid
+Ed25519 enclosure signature against their shared public key is the archive
+trust path, the candidate's Developer ID signature is independently valid, and
+their matching Apple team authorizes Sparkle's installer services. After the
+exact candidate relaunches, its ordinary production feed presents the signed
+public 0.2.2 item as the authenticated lower-build rollback transaction; the
+candidate must remain unchanged without an offer, download, or installation.
+
 The July 13, 2026 signed run completed many functional, permission, and OCR rows
 before exposing a pre-drag sleep/wake failure. G24U subsequently passed exact
 signed pre-drag and drag-phase sleep interruption with full cleanup, clipboard
