@@ -661,6 +661,16 @@ supported onboarding, permission recovery, capture, settings, and relaunch
 behavior before returning the disposable account to a verified clean state.
 The candidate app is never rebuilt, patched, or re-signed for this fixture.
 
+The candidate clean-install state is also removed through the same narrow
+disposable-account reset before the old-source fixture runs. The fixture and
+candidate intentionally use different Apple signing classes: the valid
+Ed25519 enclosure signature against their shared public key is the archive
+trust path, the candidate's Developer ID signature is independently valid, and
+their matching Apple team authorizes Sparkle's installer services. After the
+exact candidate relaunches, its ordinary production feed presents the signed
+public 0.2.2 item as the authenticated lower-build rollback transaction; the
+candidate must remain unchanged without an offer, download, or installation.
+
 The July 13, 2026 signed run completed many functional, permission, and OCR rows
 before exposing a pre-drag sleep/wake failure. G24U subsequently passed exact
 signed pre-drag and drag-phase sleep interruption with full cleanup, clipboard

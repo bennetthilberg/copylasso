@@ -57,6 +57,8 @@ for candidate_text in \
     'production bundle identifier' \
     'CopyLasso-0.3.0.zip' \
     'ditto -c -k --keepParent' \
+    'valid Ed25519 enclosure signature is the update trust path' \
+    'same Apple team for Sparkle installer-service authorization' \
     'untouched candidate application' \
     'complete file, directory' \
     'mode, and symbolic-link manifest' \
@@ -65,6 +67,9 @@ for candidate_text in \
     'against the untouched candidate payload' \
     'not release evidence' \
     'public 0.2.2 actually supports' \
+    'Reset candidate state before migration qualification' \
+    'signed public 0.2.2 production feed' \
+    'exact public 0.2.2 DMG enclosure' \
     'English as the new language default' \
     'serve it on `127.0.0.1`' \
     'minimum supported macOS 14 must pass' \
