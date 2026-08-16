@@ -76,7 +76,7 @@ for candidate_text in \
     'updates.highestAuthenticatedBuild = 6' \
     'it is not relabeled as proof' \
     'were destroyed' \
-    'no remaining G55 or HTTP server process' \
+    'process readback found no remaining' \
     'post-dispatch PR #88 amendment' \
     'does not require rebuilding' \
     'ditto -c -k --keepParent' \
