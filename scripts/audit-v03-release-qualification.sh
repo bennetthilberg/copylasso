@@ -58,6 +58,15 @@ for candidate_text in \
     'CopyLasso-0.3.0.zip' \
     'CopyLasso-0.3.0.txt' \
     'sparkle:format="plain-text"' \
+    'G54 merge `2f503237bd5da9780743dac88450f06214c7f8c8`' \
+    'CopyLasso-0.3.0-verification.zip` | `3989070` | `a95bb561b7ff79af8badcb689b877b166ef05c420b85fcd2c091750fde60b8f9`' \
+    'CopyLasso-0.3.0.dmg.sha256` | `86` | `81a83046e2dffce11f1af88f811ba87eff13ddd8cd93fde1eaddbbb5820fecd3`' \
+    'CopyLasso-0.3.0.dSYM.zip` | `6848841` | `16498e46bef1bef9f47e3fbc39c4e70ef06fb49613713da60a172901ed9e8e0e`' \
+    'every repeated clean-state preflight assertion passed' \
+    'mutated fixture metadata' \
+    'mutated candidate ZIP bytes' \
+    'unrelated verification key' \
+    'tampered installed payload manifest' \
     'ditto -c -k --keepParent' \
     'valid Ed25519 enclosure signature is the update trust path' \
     'same Apple team for Sparkle installer-service authorization' \
