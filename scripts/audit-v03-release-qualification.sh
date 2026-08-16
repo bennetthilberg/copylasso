@@ -101,6 +101,9 @@ for candidate_text in \
     'must not be reported' \
     'as passed or inferred' \
     'Retained Gaps And Disposition' \
+    '## Candidate 1 Approval' \
+    'maintainer explicitly approved the immutable candidate' \
+    'accepted the missing direct high-water readback' \
     'explicit maintainer approval' \
     'Do not publish'; do
     require_text "$candidate_qualification" "$candidate_text"
