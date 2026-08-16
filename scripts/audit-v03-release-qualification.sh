@@ -71,6 +71,14 @@ for candidate_text in \
     'candidate metadata and mutated candidate DMG bytes' \
     'mutated candidate DMG bytes' \
     'verification key was also rejected' \
+    'dSYM UUID-manifest SHA-256' \
+    'nonempty genuine quarantine' \
+    'updates.highestAuthenticatedBuild = 6' \
+    'it is not relabeled as proof' \
+    'were destroyed' \
+    'no remaining G55 or HTTP server process' \
+    'post-dispatch PR #88 amendment' \
+    'does not require rebuilding' \
     'ditto -c -k --keepParent' \
     'valid Ed25519 enclosure signature is the update trust path' \
     'same Apple team for Sparkle installer-service authorization' \

@@ -261,6 +261,10 @@ inferred pass; see [`v0.2-release-qualification.md`](v0.2-release-qualification.
   `v0.2.2` with the existing loopback compile condition, update it with an
   archive of the untouched candidate app, and prove the installed payload
   matches that candidate byte-for-byte, mode-for-mode, and link-for-link.
+- [ ] With candidate approval, explicitly accept or reject the missing direct
+  `updates.highestAuthenticatedBuild = 6` readback. The signed rollback check
+  and persistence tests passed, but the operator guide omitted this command
+  before the disposable account was deleted; do not call the readback passed.
 - [ ] Obtain explicit approval of the immutable candidate before publication.
 
 ## G56 - Publish CopyLasso v0.3.0
