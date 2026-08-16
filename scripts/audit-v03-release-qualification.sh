@@ -67,6 +67,10 @@ for candidate_text in \
     'mutated candidate ZIP bytes' \
     'unrelated verification key' \
     'tampered installed payload manifest' \
+    'https://github.com/bennetthilberg/copylasso/releases/download/v0.3.0-rc.1/CopyLasso-0.3.0.dmg' \
+    'candidate metadata and mutated candidate DMG bytes' \
+    'mutated candidate DMG bytes' \
+    'verification key was also rejected' \
     'ditto -c -k --keepParent' \
     'valid Ed25519 enclosure signature is the update trust path' \
     'same Apple team for Sparkle installer-service authorization' \
