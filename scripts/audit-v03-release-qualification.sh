@@ -56,6 +56,8 @@ for candidate_text in \
     'nonshipping Apple Development-signed 0.2.2 updater fixture' \
     'production bundle identifier' \
     'CopyLasso-0.3.0.zip' \
+    'CopyLasso-0.3.0.txt' \
+    'sparkle:format="plain-text"' \
     'ditto -c -k --keepParent' \
     'valid Ed25519 enclosure signature is the update trust path' \
     'same Apple team for Sparkle installer-service authorization' \
