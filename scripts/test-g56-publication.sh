@@ -70,4 +70,16 @@ for prohibited in \
     fi
 done
 
+for required_recovery_guard in \
+    'COPYLASSO_G56_PUBLICATION_HANDOFF/candidate' \
+    'COPYLASSO_G56_PUBLICATION_HANDOFF/application/CopyLasso.app' \
+    '--expected-control-commit "$GITHUB_SHA"' \
+    'require that exact private draft to exist'; do
+    if ! /usr/bin/grep -Fq -- "$required_recovery_guard" \
+        "$workflow" "$publication_audit" \
+        "$repository_root/docs/v0.3-publication-runbook.md"; then
+        fail "The G56 retry and handoff contract is missing: $required_recovery_guard"
+    fi
+done
+
 echo "CopyLasso G56 publication-control tests passed."

@@ -22,15 +22,13 @@ usage() {
 Usage: audit-g56-publication.sh
        audit-g56-publication.sh \
          --handoff /path/to/private-handoff \
-         --candidate-dir /path/to/downloaded/candidate/assets \
-         --application /path/to/qualified/CopyLasso.app
+         --expected-control-commit <40-character-protected-main-commit>
 TEXT
     exit 64
 }
 
 handoff=""
-candidate_directory=""
-application=""
+expected_control_commit=""
 while [[ "$#" -gt 0 ]]; do
     case "$1" in
         --handoff)
@@ -38,21 +36,16 @@ while [[ "$#" -gt 0 ]]; do
             handoff="$2"
             shift 2
             ;;
-        --candidate-dir)
+        --expected-control-commit)
             [[ "$#" -ge 2 ]] || usage
-            candidate_directory="$2"
-            shift 2
-            ;;
-        --application)
-            [[ "$#" -ge 2 ]] || usage
-            application="$2"
+            expected_control_commit="$2"
             shift 2
             ;;
         *) usage ;;
     esac
 done
-if [[ -n "$handoff" || -n "$candidate_directory" || -n "$application" ]]; then
-    [[ -n "$handoff" && -n "$candidate_directory" && -n "$application" ]] || usage
+if [[ -n "$handoff" || -n "$expected_control_commit" ]]; then
+    [[ -n "$handoff" && "$expected_control_commit" =~ ^[0-9a-f]{40}$ ]] || usage
 fi
 
 fail() {
@@ -183,6 +176,8 @@ if [[ -n "$handoff" ]]; then
     expected_handoff_entries="$(printf '%s\n' \
         candidate-release.json \
         candidate-tag.json \
+        candidate \
+        application \
         feed \
         final-draft.json \
         publication-manifest.json | LC_ALL=C /usr/bin/sort)"
@@ -193,6 +188,9 @@ if [[ -n "$handoff" ]]; then
     })"
     [[ "$actual_handoff_entries" == "$expected_handoff_entries" ]] || \
         fail "The private G56 handoff contains an unexpected top-level entry."
+
+    candidate_directory="$handoff/candidate"
+    application="$handoff/application/CopyLasso.app"
 
     assert_v02_candidate_release_record "$handoff/candidate-release.json" "$notes"
     assert_v02_candidate_tag_record "$handoff/candidate-tag.json"
@@ -207,6 +205,7 @@ if [[ -n "$handoff" ]]; then
 
     /usr/bin/jq -e \
         --arg candidate_commit "$COPYLASSO_V02_CANDIDATE_COMMIT" \
+        --arg control_commit "$expected_control_commit" \
         --arg candidate_tag "$COPYLASSO_V02_CANDIDATE_TAG" \
         --arg final_tag "$COPYLASSO_V02_FINAL_TAG" \
         --arg dmg_sha256 "$COPYLASSO_V02_DMG_SHA256" \
@@ -215,7 +214,7 @@ if [[ -n "$handoff" ]]; then
                 /usr/bin/awk '{print $1}'
         )" \
         --argjson draft_id "$(/usr/bin/jq -er '.id' "$handoff/final-draft.json")" '
-        (.control_commit | test("^[0-9a-f]{40}$"))
+        .control_commit == $control_commit
         and .candidate_commit == $candidate_commit
         and .candidate_tag == $candidate_tag
         and .final_tag == $final_tag

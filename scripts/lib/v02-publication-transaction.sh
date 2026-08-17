@@ -19,7 +19,6 @@ create_v02_publication_draft_transaction() (
     local creation_record
     local release_listing
     local latest_release_record
-    local final_release_lookup
     local final_tag_lookup
     local final_record
     local release_identifier=""
@@ -32,7 +31,6 @@ create_v02_publication_draft_transaction() (
     creation_record="$publication_transaction_directory/created.json"
     release_listing="$publication_transaction_directory/releases.json"
     latest_release_record="$publication_transaction_directory/latest-release.json"
-    final_release_lookup="$publication_transaction_directory/final-release-lookup.txt"
     final_tag_lookup="$publication_transaction_directory/final-tag-lookup.txt"
     final_record="$publication_transaction_directory/final.json"
     COPYLASSO_G49_TRANSACTION_REPOSITORY="$repository"
@@ -86,11 +84,6 @@ create_v02_publication_draft_transaction() (
             v02_publication_fail "$lookup_message"
     }
 
-    assert_v02_publication_resource_absent \
-        "repos/$repository/releases/tags/$COPYLASSO_V02_FINAL_TAG" \
-        "$final_release_lookup" \
-        "A release already exists for the final v0.2 tag." \
-        "The final v0.2 release could not be checked."
     if ! "$transaction_gh_binary" api \
         "repos/$repository/releases/latest" > "$latest_release_record"; then
         v02_publication_fail "The latest public release could not be checked."
@@ -102,13 +95,32 @@ create_v02_publication_draft_transaction() (
         [.[][] | select(.tag_name == $tag)] | length
     ' "$release_listing" 2>/dev/null)" || \
         v02_publication_fail "The existing-release listing is invalid."
-    [[ "$existing_release_count" == "0" ]] || \
-        v02_publication_fail "A release already exists for the final v0.2 tag."
+    [[ "$existing_release_count" == "0" || "$existing_release_count" == "1" ]] || \
+        v02_publication_fail "Multiple releases exist for the final v0.2 tag."
     assert_v02_publication_resource_absent \
         "repos/$repository/git/ref/tags/$COPYLASSO_V02_FINAL_TAG" \
         "$final_tag_lookup" \
         "The final v0.2 tag already exists." \
         "The final v0.2 tag could not be checked."
+
+    if [[ "$existing_release_count" == "1" ]]; then
+        /usr/bin/jq -er \
+            --arg tag "$COPYLASSO_V02_FINAL_TAG" '
+            [.[][] | select(.tag_name == $tag)]
+            | if length == 1 then .[0] else error("ambiguous existing draft") end
+        ' "$release_listing" > "$final_record" 2>/dev/null || \
+            v02_publication_fail "The existing final v0.2 draft could not be read exactly."
+        "$final_assertion" "$final_record" "$transaction_release_notes" || \
+            v02_publication_fail \
+                "The existing final v0.2 release is not the exact resumable private draft."
+        /bin/cp "$final_record" "$readback"
+        /bin/chmod 600 "$readback"
+        draft_committed="true"
+        COPYLASSO_G49_TRANSACTION_COMMITTED="$draft_committed"
+        cleanup_v02_publication_draft_transaction
+        trap - EXIT
+        return 0
+    fi
 
     if ! "$transaction_gh_binary" api \
         --method POST \

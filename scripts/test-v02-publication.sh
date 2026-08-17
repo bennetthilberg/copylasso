@@ -594,7 +594,10 @@ if [[ "$1" == "api" && "$*" == *"/releases?per_page=100"* ]]; then
     /usr/bin/printf '%s\n' "$count" > "$FAKE_GH_LISTING_COUNT"
     if [[ "${FAKE_GH_MODE:-success}" == "invalid-listing" ]]; then
         /usr/bin/printf '{}\n'
-    elif [[ "${FAKE_GH_MODE:-success}" == "preexisting-listing" ]]; then
+    elif [[ "${FAKE_GH_MODE:-success}" == "preexisting-invalid-draft" ]]; then
+        /usr/bin/jq -n --slurpfile record "$FAKE_GH_PARTIAL_RECORD" '[ $record ]'
+    elif [[ "${FAKE_GH_MODE:-success}" == "preexisting-listing" ||
+        "${FAKE_GH_MODE:-success}" == "preexisting-exact-draft" ]]; then
         /usr/bin/jq -n --slurpfile record "$FAKE_GH_FINAL_RECORD" '[ $record ]'
     elif [[ "${FAKE_GH_MODE:-success}" == ambiguous-create* && "$count" -gt 1 ]]; then
         /usr/bin/jq -n --slurpfile record "$FAKE_GH_CREATION_RECORD" '[ $record ]'
@@ -701,6 +704,14 @@ if /usr/bin/grep -Fq -- '--method DELETE' "$fake_gh_log"; then
     fail "An exactly read-back ambiguous upload must not roll back."
 fi
 
+run_transaction preexisting-exact-draft \
+    "$temporary_directory/transaction-preexisting-exact-draft.json"
+[[ -f "$temporary_directory/transaction-preexisting-exact-draft.json" ]] || \
+    fail "An exact pre-existing publication draft must be adopted on retry."
+if /usr/bin/grep -Eq -- '--method POST|release upload|--method DELETE' "$fake_gh_log"; then
+    fail "Adopting an exact pre-existing draft must perform no mutation."
+fi
+
 expect_failure "asset upload failed" \
     run_transaction ambiguous-create-upload-fail \
     "$temporary_directory/transaction-ambiguous-create-upload-fail.json"
@@ -715,7 +726,13 @@ expect_failure "asset upload failed" \
     "$fake_gh_log" || \
     fail "An incomplete newly created publication draft must be deleted."
 
-for collision_mode in preexisting-release preexisting-listing preexisting-tag; do
+expect_failure "not the exact resumable private draft" \
+    run_transaction preexisting-invalid-draft \
+    "$temporary_directory/transaction-preexisting-invalid-draft.json"
+if /usr/bin/grep -Fq -- '--method POST' "$fake_gh_log"; then
+    fail "An invalid pre-existing final release must prevent every mutation."
+fi
+for collision_mode in preexisting-tag; do
     expect_failure "already exists" \
         run_transaction "$collision_mode" \
         "$temporary_directory/transaction-$collision_mode.json"
@@ -723,7 +740,7 @@ for collision_mode in preexisting-release preexisting-listing preexisting-tag; d
         fail "A pre-existing final release or tag must prevent every mutation."
     fi
 done
-for lookup_error_mode in release-lookup-error tag-lookup-error; do
+for lookup_error_mode in tag-lookup-error; do
     expect_failure "could not be checked" \
         run_transaction "$lookup_error_mode" \
         "$temporary_directory/transaction-$lookup_error_mode.json"

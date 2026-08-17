@@ -141,6 +141,12 @@ jobs:
           /bin/mkdir -p "$COPYLASSO_G56_PUBLICATION_HANDOFF"
           /usr/bin/ditto "$COPYLASSO_G56_PUBLICATION_FEED" \
             "$COPYLASSO_G56_PUBLICATION_HANDOFF/feed"
+          /usr/bin/ditto "$COPYLASSO_G56_PUBLICATION_CANDIDATE" \
+            "$COPYLASSO_G56_PUBLICATION_HANDOFF/candidate"
+          /bin/mkdir -p "$COPYLASSO_G56_PUBLICATION_HANDOFF/application"
+          /usr/bin/ditto \
+            "$COPYLASSO_G56_PUBLICATION_VERIFICATION/extracted/payload/$COPYLASSO_V02_CANDIDATE_COMMIT/export/CopyLasso.app" \
+            "$COPYLASSO_G56_PUBLICATION_HANDOFF/application/CopyLasso.app"
           /bin/cp "$COPYLASSO_G56_PUBLICATION_CANDIDATE_READBACK" \
             "$COPYLASSO_G56_PUBLICATION_HANDOFF/candidate-release.json"
           /bin/cp "$COPYLASSO_G56_PUBLICATION_TAG_READBACK" \
@@ -171,9 +177,7 @@ jobs:
             }' > "$COPYLASSO_G56_PUBLICATION_HANDOFF/publication-manifest.json"
           ./scripts/audit-g56-publication.sh \
             --handoff "$COPYLASSO_G56_PUBLICATION_HANDOFF" \
-            --candidate-dir "$COPYLASSO_G56_PUBLICATION_CANDIDATE" \
-            --application \
-            "$COPYLASSO_G56_PUBLICATION_VERIFICATION/extracted/payload/$COPYLASSO_V02_CANDIDATE_COMMIT/export/CopyLasso.app"
+            --expected-control-commit "$GITHUB_SHA"
 
       - name: Upload private publication handoff
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
