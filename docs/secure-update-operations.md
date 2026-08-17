@@ -298,3 +298,18 @@ contains only the reviewed DMG and checksum. Production deployment
 SHA-256 `ad10db1486d4874701905ad3be2acc05f5025377328107a0aeabe552a9500cd6`.
 An exact public 0.2.1 installation updated to byte-identical 0.2.2 only after
 separate download and install-and-relaunch consent.
+
+## G56 v0.3.0 Publication Boundary
+
+G56 reuses the G55-approved `v0.3.0-rc.1` bytes. Protected preparation may
+read the four private candidate assets, verify them, use the existing Sparkle
+secret in one narrow step to create final-URL metadata, and create one private
+two-asset final draft. It cannot build, notarize, publish, tag, replace assets,
+or deploy the feed. Developer ID and notarization credentials are deliberately
+absent from this workflow.
+
+The final transaction signs an annotated tag on the candidate commit, publishes
+only the exact DMG and checksum, and deploys only `appcast.xml` plus the reviewed
+headers after the enclosure URL is public. Ambiguous mutations require exact
+readback before any retry. Existing RC assets remain private and unchanged;
+the final and RC tags are immutable.

@@ -8,7 +8,7 @@ usage() {
     cat >&2 <<'TEXT'
 Usage: verify-release-package.sh \
   [--pinned-v02-metadata] \
-  [--release-metadata-profile current|v0.2.0|v0.2.1|v0.2.2] \
+  [--release-metadata-profile current|v0.2.0|v0.2.1|v0.2.2|v0.3.0] \
   --payload-app /path/to/G26/<commit>/export/CopyLasso.app \
   --payload-commit <40-character-commit> \
   --packaging-commit <40-character-commit> \
@@ -34,7 +34,7 @@ while [[ "$#" -gt 0 ]]; do
         --release-metadata-profile)
             [[ "$#" -ge 2 && "$release_metadata_profile_was_set" == "false" ]] || usage
             case "$2" in
-                current|v0.2.0|v0.2.1|v0.2.2) release_metadata_profile="$2" ;;
+                current|v0.2.0|v0.2.1|v0.2.2|v0.3.0) release_metadata_profile="$2" ;;
                 *) usage ;;
             esac
             release_metadata_profile_was_set="true"

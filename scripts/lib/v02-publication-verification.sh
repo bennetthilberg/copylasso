@@ -67,8 +67,36 @@ case "$COPYLASSO_V02_PUBLICATION_PROFILE" in
         readonly COPYLASSO_V02_RELEASE_NOTES="scripts/fixtures/v0.2.2-published-release-notes.md"
         readonly COPYLASSO_V02_RELEASE_PACKAGE_PROFILE="v0.2.2"
         ;;
+    v0.3.0)
+        readonly COPYLASSO_RELEASE_VERSION="0.3.0"
+        readonly COPYLASSO_RELEASE_BUILD="6"
+        readonly COPYLASSO_RELEASE_DMG="CopyLasso-0.3.0.dmg"
+        readonly COPYLASSO_RELEASE_CHECKSUM="CopyLasso-0.3.0.dmg.sha256"
+        readonly COPYLASSO_RELEASE_DSYM="CopyLasso-0.3.0.dSYM.zip"
+        readonly COPYLASSO_RELEASE_VERIFICATION="CopyLasso-0.3.0-verification.zip"
+        readonly COPYLASSO_RELEASE_APPCAST="CopyLasso-0.3.0-appcast.xml"
+        readonly COPYLASSO_V02_CANDIDATE_COMMIT="c99bec65be187c02b920b6519152ba935ec44253"
+        readonly COPYLASSO_V02_CANDIDATE_RELEASE_ID="370037259"
+        readonly COPYLASSO_V02_CANDIDATE_TAG="v0.3.0-rc.1"
+        readonly COPYLASSO_V02_FINAL_TAG="v0.3.0"
+        readonly COPYLASSO_V02_PREVIOUS_PUBLIC_TAG="v0.2.2"
+        readonly COPYLASSO_V02_FINAL_TAG_MESSAGE="CopyLasso 0.3.0"
+        readonly COPYLASSO_V02_RELEASE_NAME="CopyLasso 0.3.0"
+        readonly COPYLASSO_V02_NOTES_SHA256="a8aa4e68c60cb001cadbdbeaf99966a331280eaff1acfc0becc28922f1dd28d0"
+        readonly COPYLASSO_V02_CANDIDATE_APPCAST_SHA256="949b82f0c8168386f86ca149b302f3ab32df33ee856e4805de168e4f4faf5060"
+        readonly COPYLASSO_V02_DMG_SIZE="3915202"
+        readonly COPYLASSO_V02_DMG_SHA256="96f07eff7719f6c5b4b819af846d9ac825e13d4959d6f45d14d19fffa943bb96"
+        readonly COPYLASSO_V02_CHECKSUM_SIZE="86"
+        readonly COPYLASSO_V02_CHECKSUM_SHA256="81a83046e2dffce11f1af88f811ba87eff13ddd8cd93fde1eaddbbb5820fecd3"
+        readonly COPYLASSO_V02_DSYM_SIZE="6848841"
+        readonly COPYLASSO_V02_DSYM_SHA256="16498e46bef1bef9f47e3fbc39c4e70ef06fb49613713da60a172901ed9e8e0e"
+        readonly COPYLASSO_V02_VERIFICATION_SIZE="3989070"
+        readonly COPYLASSO_V02_VERIFICATION_SHA256="a95bb561b7ff79af8badcb689b877b166ef05c420b85fcd2c091750fde60b8f9"
+        readonly COPYLASSO_V02_RELEASE_NOTES="docs/release-notes/0.3.0.md"
+        readonly COPYLASSO_V02_RELEASE_PACKAGE_PROFILE="v0.3.0"
+        ;;
     *)
-        echo "The v0.2 publication profile is invalid." >&2
+        echo "The publication profile is invalid." >&2
         return 1 2>/dev/null || exit 1
         ;;
 esac
@@ -346,6 +374,43 @@ assert_v02_publication_release_record() {
 
 assert_v02_publication_draft_record() {
     assert_v02_publication_release_record "$1" "$2" true false
+}
+
+assert_v02_resumable_publication_draft_record() {
+    local record="$1"
+    local v02_release_notes_file="$2"
+    local asset_name
+    local asset_count
+
+    assert_v02_publication_release_identity \
+        "$record" "$v02_release_notes_file" true false
+    /usr/bin/jq -e \
+        --arg dmg "$COPYLASSO_RELEASE_DMG" \
+        --arg checksum "$COPYLASSO_RELEASE_CHECKSUM" '
+        (.assets | type) == "array"
+        and (.assets | length) <= 2
+        and ([.assets[].name] | length) == ([.assets[].name] | unique | length)
+        and all(.assets[]; .name == $dmg or .name == $checksum)
+    ' "$record" >/dev/null 2>&1 || \
+        v02_publication_fail \
+            "The existing final v0.2 draft has unsupported or duplicate assets."
+
+    for asset_name in "$COPYLASSO_RELEASE_DMG" "$COPYLASSO_RELEASE_CHECKSUM"; do
+        asset_count="$(/usr/bin/jq -er --arg name "$asset_name" \
+            '[.assets[] | select(.name == $name)] | length' "$record" 2>/dev/null)" || \
+            v02_publication_fail "The existing final v0.2 draft asset list is invalid."
+        if [[ "$asset_count" == "1" ]]; then
+            if [[ "$asset_name" == "$COPYLASSO_RELEASE_DMG" ]]; then
+                assert_v02_asset_record \
+                    "$record" "$asset_name" \
+                    "$COPYLASSO_V02_DMG_SIZE" "$COPYLASSO_V02_DMG_SHA256"
+            else
+                assert_v02_asset_record \
+                    "$record" "$asset_name" \
+                    "$COPYLASSO_V02_CHECKSUM_SIZE" "$COPYLASSO_V02_CHECKSUM_SHA256"
+            fi
+        fi
+    done
 }
 
 assert_v02_public_release_record() {

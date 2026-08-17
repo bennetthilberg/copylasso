@@ -537,6 +537,10 @@ readonly empty_creation="$temporary_directory/empty-creation.json"
 /usr/bin/jq '.assets = []' "$public_draft" > "$empty_creation"
 readonly partial_draft="$temporary_directory/partial-draft.json"
 /usr/bin/jq '.assets = [.assets[0]]' "$public_draft" > "$partial_draft"
+readonly invalid_partial_draft="$temporary_directory/invalid-partial-draft.json"
+/usr/bin/jq '.assets = [.assets[0]] | .assets[0].digest =
+    "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"' \
+    "$public_draft" > "$invalid_partial_draft"
 
 assert_fixture_draft_record() {
     local record="$1"
@@ -594,7 +598,12 @@ if [[ "$1" == "api" && "$*" == *"/releases?per_page=100"* ]]; then
     /usr/bin/printf '%s\n' "$count" > "$FAKE_GH_LISTING_COUNT"
     if [[ "${FAKE_GH_MODE:-success}" == "invalid-listing" ]]; then
         /usr/bin/printf '{}\n'
-    elif [[ "${FAKE_GH_MODE:-success}" == "preexisting-listing" ]]; then
+    elif [[ "${FAKE_GH_MODE:-success}" == "preexisting-invalid-draft" ]]; then
+        /usr/bin/jq -n --slurpfile record "$FAKE_GH_INVALID_PARTIAL_RECORD" '[ $record ]'
+    elif [[ "${FAKE_GH_MODE:-success}" == "preexisting-partial-draft" ]]; then
+        /usr/bin/jq -n --slurpfile record "$FAKE_GH_PARTIAL_RECORD" '[ $record ]'
+    elif [[ "${FAKE_GH_MODE:-success}" == "preexisting-listing" ||
+        "${FAKE_GH_MODE:-success}" == "preexisting-exact-draft" ]]; then
         /usr/bin/jq -n --slurpfile record "$FAKE_GH_FINAL_RECORD" '[ $record ]'
     elif [[ "${FAKE_GH_MODE:-success}" == ambiguous-create* && "$count" -gt 1 ]]; then
         /usr/bin/jq -n --slurpfile record "$FAKE_GH_CREATION_RECORD" '[ $record ]'
@@ -651,6 +660,7 @@ export FAKE_GH_LISTING_COUNT="$fake_listing_count"
 export FAKE_GH_CREATION_RECORD="$empty_creation"
 export FAKE_GH_FINAL_RECORD="$public_draft"
 export FAKE_GH_PARTIAL_RECORD="$partial_draft"
+export FAKE_GH_INVALID_PARTIAL_RECORD="$invalid_partial_draft"
 export FAKE_GH_LATEST_RECORD="$previous_public_release"
 export FAKE_GH_WRONG_LATEST_RECORD="$temporary_directory/wrong-latest-release.json"
 
@@ -701,6 +711,27 @@ if /usr/bin/grep -Fq -- '--method DELETE' "$fake_gh_log"; then
     fail "An exactly read-back ambiguous upload must not roll back."
 fi
 
+run_transaction preexisting-exact-draft \
+    "$temporary_directory/transaction-preexisting-exact-draft.json"
+[[ -f "$temporary_directory/transaction-preexisting-exact-draft.json" ]] || \
+    fail "An exact pre-existing publication draft must be adopted on retry."
+if /usr/bin/grep -Eq -- '--method POST|release upload|--method DELETE' "$fake_gh_log"; then
+    fail "Adopting an exact pre-existing draft must perform no mutation."
+fi
+
+run_transaction preexisting-partial-draft \
+    "$temporary_directory/transaction-preexisting-partial-draft.json"
+[[ -f "$temporary_directory/transaction-preexisting-partial-draft.json" ]] || \
+    fail "An exact partial pre-existing draft must resume to complete readback."
+if /usr/bin/grep -Fq -- '--method POST' "$fake_gh_log" ||
+    /usr/bin/grep -Fq -- '--method DELETE' "$fake_gh_log"; then
+    fail "Resuming an exact partial draft must not create or delete a release."
+fi
+/usr/bin/grep -Fq -- \
+    "release upload $COPYLASSO_V02_FINAL_TAG $transaction_candidate/$COPYLASSO_RELEASE_CHECKSUM" \
+    "$fake_gh_log" || \
+    fail "Resuming an exact partial draft must upload only the missing approved asset."
+
 expect_failure "asset upload failed" \
     run_transaction ambiguous-create-upload-fail \
     "$temporary_directory/transaction-ambiguous-create-upload-fail.json"
@@ -715,7 +746,13 @@ expect_failure "asset upload failed" \
     "$fake_gh_log" || \
     fail "An incomplete newly created publication draft must be deleted."
 
-for collision_mode in preexisting-release preexisting-listing preexisting-tag; do
+expect_failure "differs from the approved bytes" \
+    run_transaction preexisting-invalid-draft \
+    "$temporary_directory/transaction-preexisting-invalid-draft.json"
+if /usr/bin/grep -Fq -- '--method POST' "$fake_gh_log"; then
+    fail "An invalid pre-existing final release must prevent every mutation."
+fi
+for collision_mode in preexisting-tag; do
     expect_failure "already exists" \
         run_transaction "$collision_mode" \
         "$temporary_directory/transaction-$collision_mode.json"
@@ -723,7 +760,7 @@ for collision_mode in preexisting-release preexisting-listing preexisting-tag; d
         fail "A pre-existing final release or tag must prevent every mutation."
     fi
 done
-for lookup_error_mode in release-lookup-error tag-lookup-error; do
+for lookup_error_mode in tag-lookup-error; do
     expect_failure "could not be checked" \
         run_transaction "$lookup_error_mode" \
         "$temporary_directory/transaction-$lookup_error_mode.json"
@@ -746,6 +783,7 @@ fi
 
 unset FAKE_GH_MODE FAKE_GH_LOG FAKE_GH_LISTING_COUNT \
     FAKE_GH_CREATION_RECORD FAKE_GH_FINAL_RECORD FAKE_GH_PARTIAL_RECORD \
+    FAKE_GH_INVALID_PARTIAL_RECORD \
     FAKE_GH_LATEST_RECORD FAKE_GH_WRONG_LATEST_RECORD
 
 echo "CopyLasso v0.2 publication tests passed."

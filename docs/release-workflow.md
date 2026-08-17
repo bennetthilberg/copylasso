@@ -419,3 +419,15 @@ The G55 private draft contains exactly these current assets:
 
 Download those four files into one fresh commit-addressed external directory;
 the G50 names and artifacts above are historical and must never be substituted.
+
+## G56 Publication Preparation
+
+The input-free `copylasso_prepare_v030_publication` repository dispatch runs
+only from protected `main`, after canonical CI, and behind the existing
+protected `release` environment. It downloads and reverifies the approved
+`v0.3.0-rc.1` candidate without rebuilding, produces final-URL authenticated
+metadata, creates a private two-asset final draft, and uploads a private
+publication handoff. The preparation workflow has no tag, publication, asset
+replacement, or feed-deployment path. The irreversible signed-tag, release,
+and feed transaction is performed only after exact handoff readback under
+[`v0.3-publication-runbook.md`](v0.3-publication-runbook.md).
