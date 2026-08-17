@@ -82,4 +82,8 @@ for required_recovery_guard in \
     fi
 done
 
+[[ "$(/usr/bin/grep -Ec '^## G56 - Publish CopyLasso v0\.3\.0$' \
+    "$repository_root/docs/release-checklist.md")" == "1" ]] || \
+    fail "The release checklist must contain exactly one authoritative G56 section."
+
 echo "CopyLasso G56 publication-control tests passed."
