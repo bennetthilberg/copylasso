@@ -1,0 +1,973 @@
+---
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import { compatibilityFacts, features, privacyFacts, site } from "../../data/site";
+
+const featureGroups = [
+  {
+    id: "capture",
+    label: "Capture",
+    items: features.slice(0, 3),
+  },
+  {
+    id: "settings",
+    label: "Settings",
+    items: [features[3], features[5]],
+  },
+  {
+    id: "privacy",
+    label: "Privacy",
+    items: [
+      features[4],
+      {
+        title: "No account required",
+        body: "There is no account, cloud OCR, analytics, or telemetry in the capture path.",
+      },
+    ],
+  },
+];
+---
+
+<SiteLayout
+  optionNumber={5}
+  optionName="Shortcut Console"
+  description="CopyLasso turns screen selections into clipboard text with one shortcut, using local Apple Vision OCR on macOS."
+  previousHref="/design-options/option-4/"
+  nextHref="/design-options/option-6/"
+>
+  <div class="option-five-shell">
+    <header class="console-site-header">
+      <a class="console-brand" href="#main-content" aria-label="CopyLasso home">
+        <span class="console-brand-mark" aria-hidden="true"></span>
+        <span>{site.name}</span>
+      </a>
+      <nav class="console-header-nav" aria-label="Page sections">
+        <a href="#features">Features</a>
+        <a href="#privacy">Privacy</a>
+        <a href={site.githubUrl}>GitHub</a>
+      </nav>
+    </header>
+
+    <main id="main-content" class="console-main">
+      <section class="console-hero" aria-labelledby="hero-heading">
+        <div class="hero-copy">
+          <h1 id="hero-heading">Copy what you can see.</h1>
+          <p class="hero-lede">
+            CopyLasso turns a region of your Mac screen into clean, paste-ready text. It is a small
+            local utility for the moments when selecting is faster than retyping.
+          </p>
+
+          <div class="shortcut-callout">
+            <span class="shortcut-keys">
+              <span aria-hidden="true">{site.shortcut}</span>
+              <span class="sr-only">Shift Command 2</span>
+            </span>
+            <span>press to select a region</span>
+          </div>
+
+          <div class="hero-actions">
+            <a class="primary-action" href={site.downloadHref}>
+              <span>{site.downloadLabel}</span>
+              <span class="action-arrow" aria-hidden="true">↗</span>
+            </a>
+            <div class="release-meta">
+              <span>{site.versionLabel}</span>
+              <span>{site.requirements}</span>
+            </div>
+          </div>
+        </div>
+
+        <figure class="console-demo" aria-labelledby="demo-caption">
+          <div class="console-window">
+            <div class="console-titlebar">
+              <span>CopyLasso / capture</span>
+              <span class="console-titlebar-meta">on-device</span>
+            </div>
+            <div class="console-screen">
+              <div class="transcript-panel">
+                <p class="console-column-label">command transcript</p>
+                <ol class="state-list">
+                  <li class="state-row">
+                    <span class="state-time">00:00</span>
+                    <div>
+                      <strong>READY</strong>
+                      <p>waiting for <span class="mono">⇧⌘2</span></p>
+                    </div>
+                  </li>
+                  <li class="state-row">
+                    <span class="state-time">00:01</span>
+                    <div>
+                      <strong>SELECTING</strong>
+                      <p>region selected on screen</p>
+                    </div>
+                  </li>
+                  <li class="state-row state-row-final">
+                    <span class="state-time">00:02</span>
+                    <div>
+                      <strong>COPIED</strong>
+                      <p>plain text on clipboard</p>
+                    </div>
+                  </li>
+                </ol>
+              </div>
+
+              <div class="clipboard-panel">
+                <p class="console-column-label">clipboard state</p>
+                <div class="clipboard-result">
+                  <span class="result-label">PLAIN TEXT</span>
+                  <p>Copy text from any<br />capturable screen.</p>
+                  <span class="result-status">ready to paste</span>
+                </div>
+                <p class="clipboard-note">Recognized locally by Apple Vision.</p>
+              </div>
+            </div>
+          </div>
+          <figcaption id="demo-caption">
+            One shortcut moves a selection from the screen into the clipboard.
+          </figcaption>
+        </figure>
+      </section>
+
+      <section id="workflow" class="console-section workflow-section" aria-labelledby="workflow-heading">
+        <div class="section-heading">
+          <h2 id="workflow-heading">A repeatable three-second routine.</h2>
+          <p>
+            Keep your hands where the work is. CopyLasso handles the screen boundary and recognition,
+            then leaves the result in the clipboard you already use.
+          </p>
+        </div>
+
+        <ol class="workflow-list">
+          <li class="workflow-step">
+            <span class="step-number">01</span>
+            <h3>Press the shortcut</h3>
+            <p>Use <span class="mono">⇧⌘2</span>, or choose your own shortcut in settings.</p>
+          </li>
+          <li class="workflow-step">
+            <span class="step-number">02</span>
+            <h3>Select the region</h3>
+            <p>Drag across text, a QR code, or a barcode on the capturable screen.</p>
+          </li>
+          <li class="workflow-step">
+            <span class="step-number">03</span>
+            <h3>Paste the result</h3>
+            <p>Recognized content arrives as plain text on your clipboard, ready for the next app.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section id="features" class="console-section features-section" aria-labelledby="features-heading">
+        <div class="section-heading">
+          <h2 id="features-heading">The utility stays small. The details are solid.</h2>
+          <p>
+            Every control earns its place in the capture loop, from on-device recognition to the few
+            choices worth keeping close.
+          </p>
+        </div>
+
+        <div class="feature-groups">
+          {featureGroups.map((group) => (
+            <section class="feature-group" aria-labelledby={`feature-${group.id}-heading`}>
+              <h3 id={`feature-${group.id}-heading`}>{group.label}</h3>
+              <ul>
+                {group.items.map((feature) => (
+                  <li>
+                    <strong>{feature.title}</strong>
+                    <p>{feature.body}</p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+      </section>
+
+      <section id="privacy" class="console-section privacy-section" aria-labelledby="privacy-heading">
+        <div class="privacy-layout">
+          <div class="section-heading">
+            <h2 id="privacy-heading">Nothing leaves the Mac.</h2>
+            <p>
+              Capture and recognition happen locally. CopyLasso keeps the boundary clear: no account,
+              no cloud OCR, and no background collection.
+            </p>
+          </div>
+
+          <ol class="privacy-list">
+            {privacyFacts.map((fact, index) => (
+              <li>
+                <span class="privacy-index">{String(index + 1).padStart(2, "0")}</span>
+                <span>{fact}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section id="compatibility" class="console-section compatibility-section" aria-labelledby="compatibility-heading">
+        <div class="compatibility-layout">
+          <div class="section-heading">
+            <h2 id="compatibility-heading">Made for the Mac you already use.</h2>
+            <p>
+              CopyLasso is a free, open-source macOS utility. Grant Screen Recording permission once
+              so region capture can see the pixels you choose.
+            </p>
+          </div>
+
+          <ul class="compatibility-list">
+            {compatibilityFacts.map((fact) => (
+              <li>{fact}</li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section id="download" class="download-section" aria-labelledby="download-heading">
+        <div>
+          <h2 id="download-heading">Keep the next capture close.</h2>
+          <p>One shortcut, local recognition, and a clipboard that is ready before the thought moves on.</p>
+        </div>
+        <div class="download-actions">
+          <a class="primary-action" href={site.downloadHref}>
+            <span>{site.downloadLabel}</span>
+            <span class="action-arrow" aria-hidden="true">↗</span>
+          </a>
+          <div class="release-meta release-meta-dark">
+            <span>{site.versionLabel}</span>
+            <span>{site.requirements}</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="console-footer">
+      <p>Created by <a href={`mailto:${site.email}`}>Bennett Hilberg</a>.</p>
+      <nav aria-label="Footer links">
+        <a href={site.githubUrl}>View source on GitHub</a>
+        <span>MIT licensed</span>
+      </nav>
+    </footer>
+  </div>
+</SiteLayout>
+
+<style>
+  .option-five-shell {
+    --console-bg: oklch(15% 0.035 250);
+    --console-surface: oklch(19% 0.038 250);
+    --console-surface-high: oklch(23% 0.043 250);
+    --console-line: oklch(36% 0.045 250);
+    --console-line-soft: oklch(29% 0.04 250);
+    --console-text: oklch(95% 0.012 245);
+    --console-muted: oklch(73% 0.035 250);
+    --console-faint: oklch(59% 0.04 250);
+    --console-blue: oklch(68% 0.17 255);
+    --console-blue-light: oklch(83% 0.105 255);
+    --console-blue-dark: oklch(22% 0.1 255);
+    --console-success: oklch(78% 0.12 155);
+    --console-focus: oklch(83% 0.14 255);
+    min-height: 100vh;
+    overflow-x: clip;
+    background: var(--console-bg);
+    color: var(--console-text);
+  }
+
+  :global(body.option-5) {
+    background: var(--console-bg, oklch(15% 0.035 250));
+  }
+
+  :global(body.option-5 .lab-nav) {
+    border-color: oklch(43% 0.045 250);
+    background: oklch(18% 0.04 250);
+    box-shadow: none;
+    color: oklch(93% 0.014 245);
+    backdrop-filter: none;
+  }
+
+  :global(body.option-5 .lab-nav a) {
+    color: oklch(82% 0.1 255);
+  }
+
+  :global(body.option-5 .lab-nav a:hover) {
+    color: oklch(92% 0.08 255);
+  }
+
+  :global(body.option-5 .lab-nav summary) {
+    color: oklch(74% 0.035 250);
+  }
+
+  :global(body.option-5 .lab-nav .lab-nav-controls) {
+    border-top-color: oklch(31% 0.04 250);
+  }
+
+  .option-five-shell :focus-visible {
+    outline: 3px solid var(--console-focus);
+    outline-offset: 4px;
+  }
+
+  .console-site-header,
+  .console-main,
+  .console-footer {
+    width: min(calc(100% - 2rem), 72rem);
+    margin-inline: auto;
+  }
+
+  .console-site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding-block: clamp(5.5rem, 8vw, 7rem) 1.5rem;
+    border-bottom: 1px solid var(--console-line);
+  }
+
+  .console-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    color: var(--console-text);
+    font-size: 1.08rem;
+    font-weight: 800;
+    letter-spacing: -0.045em;
+    text-decoration: none;
+  }
+
+  .console-brand:hover {
+    color: var(--console-text);
+  }
+
+  .console-brand-mark {
+    position: relative;
+    display: block;
+    width: 1.4rem;
+    height: 1.4rem;
+    border: 2px solid var(--console-blue);
+    border-radius: 50%;
+  }
+
+  .console-brand-mark::after {
+    position: absolute;
+    right: -0.28rem;
+    bottom: -0.16rem;
+    width: 0.5rem;
+    height: 2px;
+    background: var(--console-blue);
+    content: "";
+    transform: rotate(45deg);
+    transform-origin: left center;
+  }
+
+  .console-header-nav,
+  .console-footer nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.35rem;
+    color: var(--console-muted);
+    font-size: 0.86rem;
+  }
+
+  .console-header-nav a,
+  .console-footer a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .console-header-nav a:hover,
+  .console-footer a:hover {
+    color: var(--console-blue-light);
+  }
+
+  .console-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+    gap: clamp(2.75rem, 7vw, 6.5rem);
+    align-items: center;
+    padding-block: clamp(4.5rem, 9vw, 8rem) clamp(5rem, 10vw, 9rem);
+  }
+
+  .hero-copy h1 {
+    max-width: 8ch;
+    margin: 0;
+    color: var(--console-text);
+    font-size: clamp(3.2rem, 7vw, 6.35rem);
+    letter-spacing: -0.09em;
+    line-height: 0.91;
+  }
+
+  .hero-lede {
+    max-width: 31rem;
+    margin: 1.65rem 0 0;
+    color: var(--console-muted);
+    font-size: clamp(1.05rem, 1.8vw, 1.2rem);
+    line-height: 1.55;
+  }
+
+  .shortcut-callout {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin-top: 2rem;
+    color: var(--console-text);
+    font-size: 0.92rem;
+  }
+
+  .shortcut-keys {
+    display: inline-flex;
+    min-height: 3rem;
+    align-items: center;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--console-blue);
+    border-radius: 8px;
+    background: var(--console-surface-high);
+    color: var(--console-blue-light);
+    font-family: var(--mono);
+    font-size: 1.18rem;
+    font-weight: 700;
+    letter-spacing: -0.08em;
+    line-height: 1;
+  }
+
+  .hero-actions,
+  .download-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.25rem;
+    margin-top: 2.25rem;
+  }
+
+  .primary-action {
+    display: inline-flex;
+    min-height: 3.25rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem 0.85rem 1.15rem;
+    border: 1px solid var(--console-blue);
+    border-radius: 8px;
+    background: var(--console-blue);
+    color: var(--console-bg);
+    font-weight: 800;
+    line-height: 1.1;
+    text-decoration: none;
+    transition: background var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+  }
+
+  .primary-action:hover {
+    border-color: var(--console-blue-light);
+    background: var(--console-blue-light);
+    color: var(--console-bg);
+    transform: translateY(-2px);
+  }
+
+  .action-arrow {
+    font-size: 1.2rem;
+    font-weight: 500;
+    line-height: 0.8;
+  }
+
+  .release-meta {
+    display: grid;
+    gap: 0.2rem;
+    color: var(--console-muted);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    line-height: 1.45;
+  }
+
+  .release-meta span:first-child {
+    color: var(--console-text);
+  }
+
+  .console-demo {
+    min-width: 0;
+    margin: 0;
+  }
+
+  .console-window {
+    overflow: hidden;
+    border: 1px solid var(--console-line);
+    border-radius: 14px;
+    background: var(--console-surface);
+  }
+
+  .console-titlebar {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid var(--console-line);
+    color: var(--console-text);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: -0.02em;
+  }
+
+  .console-titlebar-meta {
+    color: var(--console-blue-light);
+  }
+
+  .console-screen {
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  }
+
+  .transcript-panel,
+  .clipboard-panel {
+    min-width: 0;
+    padding: clamp(1rem, 3vw, 1.5rem);
+  }
+
+  .transcript-panel {
+    border-right: 1px solid var(--console-line);
+  }
+
+  .clipboard-panel {
+    background: var(--console-surface-high);
+  }
+
+  .console-column-label {
+    margin: 0;
+    color: var(--console-blue-light);
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    line-height: 1.3;
+    text-transform: uppercase;
+  }
+
+  .state-list {
+    display: grid;
+    margin: 1rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .state-row {
+    display: grid;
+    grid-template-columns: 3.1rem minmax(0, 1fr);
+    gap: 0.55rem;
+    padding: 0.95rem 0;
+    border-top: 1px solid var(--console-line-soft);
+  }
+
+  .state-row strong {
+    display: block;
+    color: var(--console-text);
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    letter-spacing: 0.04em;
+  }
+
+  .state-row-final strong {
+    color: var(--console-success);
+  }
+
+  .state-row p,
+  .clipboard-note,
+  .clipboard-result p {
+    margin: 0;
+  }
+
+  .state-row p {
+    margin-top: 0.25rem;
+    color: var(--console-muted);
+    font-size: 0.79rem;
+    line-height: 1.4;
+  }
+
+  .state-time {
+    color: var(--console-faint);
+    font-family: var(--mono);
+    font-size: 0.68rem;
+  }
+
+  .mono {
+    font-family: var(--mono);
+    letter-spacing: -0.05em;
+  }
+
+  .clipboard-result {
+    margin-top: 1rem;
+    padding: 1.1rem;
+    border: 1px solid var(--console-line);
+    background: var(--console-bg);
+  }
+
+  .result-label,
+  .result-status {
+    color: var(--console-faint);
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+  }
+
+  .clipboard-result p {
+    margin-top: 1.2rem;
+    color: var(--console-text);
+    font-family: var(--mono);
+    font-size: clamp(0.9rem, 1.7vw, 1.04rem);
+    line-height: 1.6;
+  }
+
+  .result-status {
+    display: block;
+    margin-top: 1.4rem;
+    color: var(--console-success);
+    letter-spacing: 0;
+  }
+
+  .clipboard-note {
+    margin-top: 1rem;
+    color: var(--console-muted);
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+
+  .console-demo figcaption {
+    margin-top: 0.85rem;
+    color: var(--console-faint);
+    font-size: 0.76rem;
+  }
+
+  .console-section {
+    padding-block: clamp(4.5rem, 9vw, 8rem);
+    border-top: 1px solid var(--console-line);
+  }
+
+  .section-heading {
+    max-width: 39rem;
+    margin-bottom: 2.75rem;
+  }
+
+  .section-heading h2,
+  .download-section h2 {
+    max-width: 15ch;
+    margin: 0.85rem 0 1rem;
+    color: var(--console-text);
+    font-size: clamp(2rem, 4.5vw, 3.65rem);
+    letter-spacing: -0.075em;
+    line-height: 0.96;
+  }
+
+  .section-heading p,
+  .download-section p {
+    max-width: 39rem;
+    margin: 0;
+    color: var(--console-muted);
+    font-size: 1rem;
+  }
+
+  .workflow-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--console-line);
+  }
+
+  .workflow-step {
+    min-width: 0;
+    padding: 1.25rem clamp(1rem, 3vw, 2rem) 0 0;
+  }
+
+  .workflow-step + .workflow-step {
+    padding-left: clamp(1rem, 3vw, 2rem);
+    border-left: 1px solid var(--console-line);
+  }
+
+  .step-number,
+  .privacy-index {
+    color: var(--console-blue-light);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+  }
+
+  .workflow-step h3 {
+    margin: 2rem 0 0.6rem;
+    color: var(--console-text);
+    font-size: 1.18rem;
+    letter-spacing: -0.035em;
+  }
+
+  .workflow-step p {
+    margin: 0;
+    color: var(--console-muted);
+    font-size: 0.92rem;
+  }
+
+  .feature-groups {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(1.5rem, 4vw, 3.5rem);
+  }
+
+  .feature-group {
+    min-width: 0;
+    border-top: 2px solid var(--console-blue);
+  }
+
+  .feature-group h3 {
+    margin: 1rem 0 1.2rem;
+    color: var(--console-text);
+    font-size: 1.2rem;
+    letter-spacing: -0.04em;
+  }
+
+  .feature-group ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .feature-group li {
+    padding-block: 1rem;
+    border-top: 1px solid var(--console-line);
+  }
+
+  .feature-group strong {
+    color: var(--console-text);
+    font-size: 0.95rem;
+  }
+
+  .feature-group li p {
+    margin: 0.35rem 0 0;
+    color: var(--console-muted);
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  .privacy-section {
+    background: var(--console-surface);
+  }
+
+  .privacy-layout,
+  .compatibility-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(2rem, 8vw, 7rem);
+    align-items: start;
+  }
+
+  .privacy-layout .section-heading,
+  .compatibility-layout .section-heading {
+    margin-bottom: 0;
+  }
+
+  .privacy-list,
+  .compatibility-list {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--console-line);
+  }
+
+  .privacy-list li {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr);
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--console-line);
+    color: var(--console-text);
+    font-size: 0.95rem;
+  }
+
+  .privacy-index {
+    padding-top: 0.15rem;
+  }
+
+  .compatibility-list li {
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--console-line);
+    color: var(--console-text);
+    font-size: 1rem;
+  }
+
+  .compatibility-list li::before {
+    display: inline-block;
+    width: 1.5rem;
+    margin-right: 0.75rem;
+    color: var(--console-blue-light);
+    content: "—";
+  }
+
+  .download-section {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 2rem;
+    padding-block: clamp(4rem, 7vw, 6rem);
+    border-top: 1px solid var(--console-blue);
+  }
+
+  .download-section h2 {
+    margin-top: 0;
+    margin-bottom: 0.8rem;
+  }
+
+  .download-actions {
+    flex-shrink: 0;
+    margin-top: 0;
+  }
+
+  .release-meta-dark {
+    color: var(--console-muted);
+  }
+
+  .console-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    padding-block: 1.5rem 2.5rem;
+    border-top: 1px solid var(--console-line);
+    color: var(--console-muted);
+    font-size: 0.84rem;
+  }
+
+  .console-footer p {
+    margin: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .state-row {
+      opacity: 0;
+      transform: translateY(0.45rem);
+      animation: state-arrive 520ms var(--ease-out) forwards;
+    }
+
+    .state-row:nth-child(2) {
+      animation-delay: 140ms;
+    }
+
+    .state-row:nth-child(3) {
+      animation-delay: 280ms;
+    }
+
+    .clipboard-result {
+      opacity: 0;
+      transform: translateY(0.45rem);
+      animation: state-arrive 520ms 420ms var(--ease-out) forwards;
+    }
+  }
+
+  @keyframes state-arrive {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 54rem) {
+    .console-hero {
+      grid-template-columns: 1fr;
+    }
+
+    .hero-copy h1 {
+      max-width: 10ch;
+    }
+
+    .console-demo {
+      max-width: 44rem;
+    }
+
+    .privacy-layout,
+    .compatibility-layout {
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      gap: 2.5rem;
+    }
+
+    .download-section {
+      align-items: start;
+      flex-direction: column;
+    }
+
+    .download-actions {
+      margin-top: 0.5rem;
+    }
+  }
+
+  @media (max-width: 42rem) {
+    .console-site-header {
+      align-items: flex-start;
+    }
+
+    .console-header-nav {
+      justify-content: flex-end;
+      gap: 0.6rem 0.9rem;
+      font-size: 0.78rem;
+    }
+
+    .workflow-list,
+    .feature-groups,
+    .privacy-layout,
+    .compatibility-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .workflow-step,
+    .workflow-step + .workflow-step {
+      padding: 1.25rem 0;
+      border-top: 1px solid var(--console-line);
+      border-left: 0;
+    }
+
+    .workflow-step:first-child {
+      border-top: 0;
+    }
+
+    .workflow-step h3 {
+      margin-top: 1.25rem;
+    }
+
+    .feature-group + .feature-group {
+      margin-top: 1.5rem;
+    }
+
+    .privacy-layout .section-heading,
+    .compatibility-layout .section-heading {
+      margin-bottom: 1.25rem;
+    }
+  }
+
+  @media (max-width: 34rem) {
+    .console-site-header {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .console-header-nav {
+      justify-content: flex-start;
+    }
+
+    .console-screen {
+      grid-template-columns: 1fr;
+    }
+
+    .transcript-panel {
+      border-right: 0;
+      border-bottom: 1px solid var(--console-line);
+    }
+
+    .hero-actions,
+    .download-actions {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .primary-action {
+      width: 100%;
+    }
+
+    .release-meta {
+      padding-inline: 0.15rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .primary-action {
+      transition: none;
+    }
+  }
+</style>

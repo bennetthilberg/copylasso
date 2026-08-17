@@ -1,0 +1,1043 @@
+---
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import {
+  compatibilityFacts,
+  features,
+  privacyFacts,
+  site,
+} from "../../data/site";
+
+const receiptRows = [
+  {
+    number: "01",
+    label: "Capture",
+    detail: privacyFacts[0],
+    note: "screen image / transient",
+  },
+  {
+    number: "02",
+    label: "OCR",
+    detail: `${privacyFacts[1]} Apple Vision does the reading on this Mac.`,
+    note: "local Apple Vision",
+  },
+  {
+    number: "03",
+    label: "Clipboard",
+    detail: "The recognized result becomes plain text on your clipboard.",
+    note: "your clipboard",
+  },
+  {
+    number: "04",
+    label: "Storage",
+    detail: privacyFacts[3],
+    note: "opt in",
+  },
+  {
+    number: "05",
+    label: "Updates",
+    detail: privacyFacts[2],
+    note: "no telemetry",
+  },
+];
+
+const compatibilityRows = [
+  { label: "System", detail: compatibilityFacts[0] },
+  { label: "Architecture", detail: compatibilityFacts[1] },
+  { label: "Permission", detail: compatibilityFacts[2] },
+  { label: "License", detail: compatibilityFacts[3] },
+];
+---
+
+<SiteLayout
+  title="Privacy Receipt · CopyLasso"
+  description="CopyLasso turns selected screen text into clipboard text with local Apple Vision OCR and clear privacy boundaries."
+  optionNumber={4}
+  optionName="Privacy Receipt"
+  previousHref="/design-options/option-3/"
+  nextHref="/design-options/option-5/"
+>
+  <div class="option-four">
+    <header class="site-header option-header">
+      <a class="brand" href="/design-options/">
+        <span class="brand-mark" aria-hidden="true">⌁</span>
+        <span>{site.name}</span>
+      </a>
+      <nav class="header-nav" aria-label="Page sections">
+        <a href="#privacy">Privacy</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#features">Features</a>
+        <a class="button button-secondary" href="#download">Get CopyLasso</a>
+      </nav>
+    </header>
+
+    <main id="main-content">
+      <section class="receipt-hero site-width" aria-labelledby="hero-title">
+        <aside class="hero-index" aria-label="Direction details">
+          <span class="hero-index-number mono">04 / 06</span>
+          <span class="hero-index-name">Privacy Receipt</span>
+          <span class="hero-index-rule" aria-hidden="true"></span>
+          <dl class="hero-facts">
+            <div>
+              <dt>Version</dt>
+              <dd>{site.versionLabel}</dd>
+            </div>
+            <div>
+              <dt>For</dt>
+              <dd>macOS 14+</dd>
+            </div>
+            <div>
+              <dt>By</dt>
+              <dd>Apple Vision</dd>
+            </div>
+          </dl>
+        </aside>
+
+        <div class="hero-copy">
+          <h1 id="hero-title">Copy what you can see. Know what stays here.</h1>
+          <p class="hero-lede">
+            CopyLasso turns a selected region of your Mac’s screen into plain clipboard text. The receipt is simple: the capture happens here, and the boundary stays clear.
+          </p>
+          <div class="hero-action-row">
+            <a class="button" href={site.downloadHref}>{site.downloadLabel}</a>
+            <p class="version-meta">
+              <strong>{site.versionLabel}</strong>
+              <span>{site.requirements}</span>
+            </p>
+          </div>
+          <p class="hero-permission">Screen Recording permission is required for region capture.</p>
+        </div>
+
+        <figure class="capture-demo" aria-labelledby="demo-caption">
+          <div class="demo-topline">
+            <span>screen selection</span>
+            <span class="mono">⇧⌘2</span>
+          </div>
+          <div class="demo-screen" aria-hidden="true">
+            <div class="demo-window-bar">
+              <strong>Reading list</strong>
+            </div>
+            <div class="demo-lines">
+              <span class="demo-line demo-line-long"></span>
+              <span class="demo-line demo-line-medium"></span>
+              <span class="demo-line demo-line-short"></span>
+              <span class="demo-line demo-line-long"></span>
+              <span class="demo-line demo-line-medium"></span>
+            </div>
+            <div class="selection-frame">
+              <span class="selection-corner selection-corner-top"></span>
+              <span class="selection-corner selection-corner-bottom"></span>
+            </div>
+          </div>
+          <div class="demo-output">
+            <span class="demo-output-label">clipboard</span>
+            <p>“A small utility for text that lives on screen.”</p>
+          </div>
+          <figcaption id="demo-caption">Select pixels in. Plain text out.</figcaption>
+        </figure>
+      </section>
+
+      <section id="privacy" class="section privacy-section" aria-labelledby="privacy-heading">
+        <div class="section-layout site-width">
+          <aside class="section-index" aria-label="Section one">
+            <span class="section-number mono">01</span>
+            <span class="section-index-rule" aria-hidden="true"></span>
+            <span>Privacy</span>
+          </aside>
+          <div class="section-content">
+            <div class="section-heading">
+              <h2 id="privacy-heading">The useful part is also the quiet part.</h2>
+              <p>
+                A capture moves through five small steps. Each one has a plain-language boundary, so you never have to guess what CopyLasso keeps or where recognition happens.
+              </p>
+            </div>
+
+            <div class="receipt-layout">
+              <aside class="receipt-index">
+                <span class="mono">LOCAL / 01—05</span>
+                <p>From selected pixels to a clean clipboard.</p>
+              </aside>
+              <ol class="receipt-rows">
+                {receiptRows.map((row) => (
+                  <li class="receipt-row">
+                    <span class="receipt-number mono">{row.number}</span>
+                    <div class="receipt-copy">
+                      <h3>{row.label}</h3>
+                      <p>{row.detail}</p>
+                    </div>
+                    <span class="receipt-note mono">{row.note}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="how-it-works" class="section process-section" aria-labelledby="process-heading">
+        <div class="section-layout site-width">
+          <aside class="section-index" aria-label="Section two">
+            <span class="section-number mono">02</span>
+            <span class="section-index-rule" aria-hidden="true"></span>
+            <span>How it works</span>
+          </aside>
+          <div class="section-content">
+            <div class="section-heading">
+              <h2 id="process-heading">Three steps between looking and pasting.</h2>
+              <p>Keep the same gesture for a paragraph, a receipt, a code, or a line trapped inside an image.</p>
+            </div>
+
+            <ol class="process-list">
+              <li>
+                <span class="process-number mono">01</span>
+                <div>
+                  <h3>Press the shortcut</h3>
+                  <p>Use <kbd>⇧⌘2</kbd>, or choose CopyLasso from the menu bar.</p>
+                </div>
+              </li>
+              <li>
+                <span class="process-number mono">02</span>
+                <div>
+                  <h3>Select a region</h3>
+                  <p>Drag around the text or code you want to carry forward.</p>
+                </div>
+              </li>
+              <li>
+                <span class="process-number mono">03</span>
+                <div>
+                  <h3>Use the result</h3>
+                  <p>CopyLasso recognizes it locally and leaves plain text on your clipboard.</p>
+                </div>
+              </li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <section id="features" class="section features-section" aria-labelledby="features-heading">
+        <div class="section-layout site-width">
+          <aside class="section-index" aria-label="Section three">
+            <span class="section-number mono">03</span>
+            <span class="section-index-rule" aria-hidden="true"></span>
+            <span>Features</span>
+          </aside>
+          <div class="section-content">
+            <div class="section-heading">
+              <h2 id="features-heading">Small surface. Useful edges.</h2>
+              <p>Everything needed to make screen text portable, without turning a menu-bar utility into another place to manage.</p>
+            </div>
+
+            <ul class="feature-list">
+              {features.map((feature) => (
+                <li>
+                  <h3>{feature.title}</h3>
+                  <p>{feature.body}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="compatibility" class="section compatibility-section" aria-labelledby="compatibility-heading">
+        <div class="section-layout site-width">
+          <aside class="section-index" aria-label="Section four">
+            <span class="section-number mono">04</span>
+            <span class="section-index-rule" aria-hidden="true"></span>
+            <span>Compatibility</span>
+          </aside>
+          <div class="section-content">
+            <div class="section-heading">
+              <h2 id="compatibility-heading">Made for the Mac you already use.</h2>
+              <p>No account to set up. Give region capture one permission, then keep the rest local.</p>
+            </div>
+
+            <dl class="compatibility-list">
+              {compatibilityRows.map((row) => (
+                <div>
+                  <dt>{row.label}</dt>
+                  <dd>{row.detail}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      <section id="download" class="download-section section site-width" aria-labelledby="download-heading">
+        <div class="download-copy">
+          <h2 id="download-heading">Keep the next useful sentence.</h2>
+          <p>CopyLasso is ready when the text is visible but not selectable.</p>
+        </div>
+        <div class="download-actions">
+          <a class="button" href={site.downloadHref}>{site.downloadLabel}</a>
+          <p class="download-meta">
+            <strong>{site.versionLabel}</strong>
+            <span>{site.requirements}</span>
+          </p>
+          <a class="text-link source-link" href={site.githubUrl}>View source on GitHub <span aria-hidden="true">→</span></a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer option-footer">
+      <div class="footer-row">
+        <p>Created by Bennett Hilberg.</p>
+        <div class="footer-links">
+          <a href={`mailto:${site.email}`}>{site.email}</a>
+          <a href={site.githubUrl}>MIT source on GitHub</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+</SiteLayout>
+
+<style>
+  .option-four {
+    position: relative;
+    overflow: clip;
+    padding-bottom: 1rem;
+  }
+
+  .option-four::before {
+    position: absolute;
+    z-index: 0;
+    top: 5.5rem;
+    bottom: 2rem;
+    left: clamp(0.55rem, 4vw, 3.5rem);
+    width: 1px;
+    background: var(--blue);
+    content: "";
+    opacity: 0.35;
+    pointer-events: none;
+  }
+
+  .option-four :is(.option-header, main, .option-footer) {
+    position: relative;
+    z-index: 1;
+  }
+
+  .option-four .option-header {
+    padding-block: 1.25rem;
+  }
+
+  .option-four .header-nav {
+    gap: clamp(0.7rem, 1.8vw, 1.35rem);
+  }
+
+  .option-four .header-nav a:not(.button) {
+    color: var(--ink-soft);
+  }
+
+  .option-four .header-nav a:not(.button):hover {
+    color: var(--blue);
+  }
+
+  .receipt-hero {
+    display: grid;
+    grid-template-columns: minmax(7rem, 0.25fr) minmax(0, 1fr) minmax(17rem, 0.82fr);
+    gap: clamp(1.5rem, 4.5vw, 5rem);
+    align-items: start;
+    padding-top: clamp(5.5rem, 11vw, 9.5rem);
+    padding-bottom: clamp(5rem, 10vw, 8rem);
+  }
+
+  .hero-index {
+    display: grid;
+    align-content: start;
+    gap: 0.65rem;
+    border-top: 2px solid var(--blue);
+    padding-top: 0.75rem;
+  }
+
+  .hero-index-number,
+  .section-number,
+  .receipt-number,
+  .process-number {
+    color: var(--blue-ink);
+    font-size: 0.78rem;
+  }
+
+  .hero-index-name {
+    max-width: 8ch;
+    font-size: 1.05rem;
+    font-weight: 750;
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+  }
+
+  .hero-index-rule,
+  .section-index-rule {
+    display: block;
+    width: 2.5rem;
+    height: 1px;
+    background: var(--line-strong);
+  }
+
+  .hero-facts {
+    display: grid;
+    gap: 0.85rem;
+    margin: 1.1rem 0 0;
+  }
+
+  .hero-facts div {
+    display: grid;
+    gap: 0.1rem;
+  }
+
+  .hero-facts dt,
+  .hero-facts dd {
+    margin: 0;
+  }
+
+  .hero-facts dt {
+    color: var(--muted);
+    font-size: 0.72rem;
+  }
+
+  .hero-facts dd {
+    color: var(--ink-soft);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: -0.04em;
+  }
+
+  .hero-copy {
+    max-width: 34rem;
+    padding-top: 0.1rem;
+  }
+
+  .hero-copy h1 {
+    max-width: 10ch;
+    margin: 0;
+    font-size: clamp(3rem, 6vw, 5.9rem);
+    letter-spacing: -0.09em;
+    line-height: 0.89;
+  }
+
+  .hero-lede {
+    max-width: 34rem;
+    margin: 1.75rem 0 0;
+    color: var(--ink-soft);
+    font-size: clamp(1.05rem, 1.8vw, 1.28rem);
+    line-height: 1.45;
+  }
+
+  .hero-action-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.25rem;
+    margin-top: 2rem;
+  }
+
+  .version-meta,
+  .download-meta {
+    display: grid;
+    gap: 0.12rem;
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+
+  .version-meta strong,
+  .download-meta strong {
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    letter-spacing: -0.04em;
+  }
+
+  .hero-permission {
+    margin: 1rem 0 0;
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+
+  .capture-demo {
+    min-width: 0;
+    margin: 0;
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+    background: var(--paper-deep);
+  }
+
+  .demo-topline,
+  .demo-output,
+  .capture-demo figcaption {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.8rem 1rem;
+    color: var(--muted);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .demo-topline {
+    border-bottom: 1px solid var(--line-strong);
+  }
+
+  .demo-topline .mono {
+    color: var(--blue-ink);
+    letter-spacing: -0.05em;
+    text-transform: none;
+  }
+
+  .demo-screen {
+    position: relative;
+    min-height: 12rem;
+    overflow: hidden;
+    padding: 1rem;
+    background: var(--blue-white);
+    border-bottom: 1px solid var(--line-strong);
+  }
+
+  .demo-window-bar {
+    display: flex;
+    align-items: center;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: -0.04em;
+  }
+
+  .demo-window-bar strong {
+    font-weight: 500;
+  }
+
+  .demo-lines {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1.6rem;
+  }
+
+  .demo-line {
+    display: block;
+    height: 0.42rem;
+    border-radius: 0.1rem;
+    background: var(--line);
+  }
+
+  .demo-line-long {
+    width: 88%;
+  }
+
+  .demo-line-medium {
+    width: 68%;
+  }
+
+  .demo-line-short {
+    width: 43%;
+  }
+
+  .selection-frame {
+    position: absolute;
+    top: 3.1rem;
+    right: 13%;
+    bottom: 1.55rem;
+    left: 8%;
+    border: 2px solid var(--blue);
+    background: rgb(68 106 222 / 0.06);
+  }
+
+  .selection-corner {
+    position: absolute;
+    width: 0.55rem;
+    height: 0.55rem;
+    border-color: var(--blue-deep);
+    border-style: solid;
+  }
+
+  .selection-corner-top {
+    top: -0.35rem;
+    left: -0.35rem;
+    border-width: 2px 0 0 2px;
+  }
+
+  .selection-corner-bottom {
+    right: -0.35rem;
+    bottom: -0.35rem;
+    border-width: 0 2px 2px 0;
+  }
+
+  .demo-output {
+    display: grid;
+    justify-items: start;
+    gap: 0.4rem;
+    padding-block: 1rem;
+    text-transform: none;
+  }
+
+  .demo-output-label {
+    color: var(--blue-ink);
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: -0.04em;
+  }
+
+  .demo-output p {
+    max-width: 28ch;
+    margin: 0;
+    color: var(--ink);
+    font-size: 1rem;
+    line-height: 1.25;
+  }
+
+  .capture-demo figcaption {
+    justify-content: flex-start;
+    border-top: 1px solid var(--line-strong);
+    color: var(--ink-soft);
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .section {
+    padding-block: clamp(4.5rem, 9vw, 8rem);
+  }
+
+  .privacy-section {
+    background: var(--paper-deep);
+  }
+
+  .section-layout {
+    display: grid;
+    grid-template-columns: minmax(7rem, 0.23fr) minmax(0, 1fr);
+    gap: clamp(2rem, 6vw, 7rem);
+    align-items: start;
+  }
+
+  .section-index {
+    display: grid;
+    align-content: start;
+    justify-items: start;
+    gap: 0.65rem;
+    padding-top: 0.25rem;
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+  }
+
+  .section-index-rule {
+    width: 2.5rem;
+    background: var(--line-strong);
+  }
+
+  .section-content {
+    min-width: 0;
+  }
+
+  .section-heading {
+    max-width: 42rem;
+    margin-bottom: clamp(2.5rem, 5vw, 4rem);
+  }
+
+  .section-heading h2 {
+    max-width: 15ch;
+    margin: 0 0 1rem;
+    font-size: clamp(2rem, 4.4vw, 4.1rem);
+    letter-spacing: -0.08em;
+    line-height: 0.94;
+  }
+
+  .section-heading p {
+    max-width: 58ch;
+    margin: 0;
+    color: var(--ink-soft);
+  }
+
+  .receipt-layout {
+    display: grid;
+    grid-template-columns: minmax(8rem, 0.3fr) minmax(0, 1fr);
+    gap: clamp(1.5rem, 5vw, 5rem);
+    align-items: start;
+  }
+
+  .receipt-index {
+    position: sticky;
+    top: 1.5rem;
+    padding-top: 0.8rem;
+    border-top: 2px solid var(--blue);
+    color: var(--blue-ink);
+  }
+
+  .receipt-index .mono {
+    font-size: 0.74rem;
+    letter-spacing: -0.05em;
+  }
+
+  .receipt-index p {
+    max-width: 14ch;
+    margin: 0.75rem 0 0;
+    color: var(--ink-soft);
+    font-size: 0.85rem;
+    line-height: 1.35;
+  }
+
+  .receipt-rows,
+  .process-list,
+  .feature-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .receipt-rows {
+    border-top: 1px solid var(--ink);
+  }
+
+  .receipt-row {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr) minmax(8rem, 0.32fr);
+    gap: 1rem;
+    align-items: start;
+    padding: 1.25rem 0 1.45rem;
+    border-bottom: 1px solid var(--line-strong);
+  }
+
+  .receipt-number {
+    padding-top: 0.15rem;
+  }
+
+  .receipt-copy h3,
+  .process-list h3,
+  .feature-list h3 {
+    margin: 0;
+    color: var(--ink);
+    font-size: 1.05rem;
+    letter-spacing: -0.035em;
+    line-height: 1.1;
+  }
+
+  .receipt-copy p,
+  .process-list p,
+  .feature-list p {
+    max-width: 48ch;
+    margin: 0.45rem 0 0;
+    color: var(--ink-soft);
+    font-size: 0.94rem;
+  }
+
+  .receipt-note {
+    padding-top: 0.15rem;
+    color: var(--muted);
+    font-size: 0.7rem;
+    letter-spacing: -0.05em;
+    line-height: 1.3;
+    text-align: right;
+  }
+
+  .process-section {
+    background: var(--paper);
+  }
+
+  .process-list {
+    border-top: 1px solid var(--ink);
+  }
+
+  .process-list li {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr);
+    gap: 1rem;
+    padding: 1.45rem 0 1.6rem;
+    border-bottom: 1px solid var(--line-strong);
+  }
+
+  .process-number {
+    padding-top: 0.15rem;
+  }
+
+  kbd {
+    display: inline-block;
+    padding: 0.1rem 0.32rem;
+    border: 1px solid var(--line-strong);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    background: var(--blue-white);
+    color: var(--blue-ink);
+    font-family: var(--mono);
+    font-size: 0.78em;
+    line-height: 1.2;
+  }
+
+  .features-section {
+    background: var(--paper-deep);
+  }
+
+  .feature-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: clamp(1.5rem, 5vw, 5rem);
+    border-top: 1px solid var(--ink);
+  }
+
+  .feature-list li {
+    min-width: 0;
+    padding: 1.3rem 0 1.5rem;
+    border-bottom: 1px solid var(--line-strong);
+  }
+
+  .compatibility-section {
+    background: var(--paper);
+  }
+
+  .compatibility-list {
+    display: grid;
+    margin: 0;
+    border-top: 1px solid var(--ink);
+  }
+
+  .compatibility-list div {
+    display: grid;
+    grid-template-columns: minmax(8rem, 0.45fr) minmax(0, 1fr);
+    gap: 1.5rem;
+    padding: 1.1rem 0 1.2rem;
+    border-bottom: 1px solid var(--line-strong);
+  }
+
+  .compatibility-list dt,
+  .compatibility-list dd {
+    margin: 0;
+  }
+
+  .compatibility-list dt {
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: -0.05em;
+  }
+
+  .compatibility-list dd {
+    color: var(--ink-soft);
+  }
+
+  .download-section {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.75fr);
+    gap: clamp(1.5rem, 5vw, 5rem);
+    align-items: start;
+    margin-top: clamp(2rem, 5vw, 4rem);
+    margin-bottom: clamp(3rem, 7vw, 6rem);
+    padding: clamp(2rem, 5vw, 4rem) clamp(1rem, 3vw, 2.5rem);
+    background: var(--blue-deep);
+    color: var(--blue-white);
+  }
+
+  .download-copy h2 {
+    max-width: 11ch;
+    margin: 0 0 0.8rem;
+    color: var(--blue-white);
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    letter-spacing: -0.08em;
+    line-height: 0.94;
+  }
+
+  .download-copy p {
+    max-width: 32ch;
+    margin: 0;
+    color: oklch(89% 0.03 245);
+  }
+
+  .download-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.2rem;
+    padding-top: 0.2rem;
+  }
+
+  .download-actions .button {
+    background: var(--blue-white);
+    color: var(--blue-deep);
+  }
+
+  .download-actions .button:hover {
+    background: var(--blue-pale);
+    color: var(--blue-deep);
+  }
+
+  .download-meta {
+    color: oklch(84% 0.03 245);
+  }
+
+  .download-meta strong {
+    color: var(--blue-white);
+  }
+
+  .source-link {
+    width: 100%;
+    margin-top: 0.35rem;
+    color: var(--blue-white);
+  }
+
+  .source-link:hover {
+    color: var(--blue-pale);
+  }
+
+  .option-footer {
+    padding-bottom: 2rem;
+  }
+
+  @media (max-width: 66rem) {
+    .receipt-hero {
+      grid-template-columns: minmax(6rem, 0.22fr) minmax(0, 1fr);
+    }
+
+    .capture-demo {
+      grid-column: 2;
+      max-width: 36rem;
+      margin-top: 1rem;
+    }
+
+    .download-section {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .download-actions {
+      padding-top: 0;
+    }
+  }
+
+  @media (max-width: 48rem) {
+    .receipt-hero,
+    .section-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .receipt-hero {
+      gap: 2rem;
+      padding-top: 5rem;
+    }
+
+    .hero-index {
+      grid-template-columns: auto minmax(0, 1fr);
+      column-gap: 0.8rem;
+      align-items: center;
+      width: 100%;
+    }
+
+    .hero-index-number {
+      grid-row: span 2;
+    }
+
+    .hero-index-name {
+      max-width: none;
+    }
+
+    .hero-index-rule {
+      grid-column: 2;
+    }
+
+    .hero-facts {
+      grid-column: 1 / -1;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 0.5rem;
+    }
+
+    .hero-copy h1 {
+      max-width: 12ch;
+    }
+
+    .capture-demo {
+      grid-column: 1;
+      max-width: none;
+      margin-top: 0;
+    }
+
+    .section-index {
+      grid-template-columns: auto minmax(0, 1fr);
+      column-gap: 0.8rem;
+      align-items: center;
+      width: 100%;
+    }
+
+    .section-index-rule {
+      grid-column: 1 / -1;
+      width: 100%;
+    }
+
+    .receipt-layout {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    .receipt-index {
+      position: static;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.5rem 1rem;
+      padding-top: 0.7rem;
+    }
+
+    .receipt-index p {
+      max-width: none;
+      margin: 0;
+    }
+
+    .feature-list {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 34rem) {
+    .option-four .option-header {
+      padding-top: 1rem;
+    }
+
+    .receipt-hero {
+      padding-top: 4rem;
+    }
+
+    .hero-copy h1 {
+      font-size: clamp(2.8rem, 15vw, 4.1rem);
+    }
+
+    .hero-facts {
+      grid-template-columns: 1fr;
+      gap: 0.55rem;
+    }
+
+    .hero-action-row {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .receipt-row {
+      grid-template-columns: 2.4rem minmax(0, 1fr);
+      gap: 0.75rem;
+    }
+
+    .receipt-note {
+      grid-column: 2;
+      padding-top: 0;
+      text-align: left;
+    }
+
+    .compatibility-list div {
+      grid-template-columns: 1fr;
+      gap: 0.35rem;
+    }
+
+    .download-section {
+      grid-template-columns: minmax(0, 1fr);
+      padding-inline: 1rem;
+    }
+
+    .download-copy h2 {
+      font-size: 2.4rem;
+    }
+
+    .download-actions {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .option-four .button:hover {
+      transform: none;
+    }
+  }
+</style>

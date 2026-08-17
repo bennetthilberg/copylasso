@@ -1,0 +1,825 @@
+---
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import { compatibilityFacts, features, privacyFacts, site } from "../../data/site";
+
+const pageDescription =
+  "Copy Sheet is a quiet before-and-after direction for CopyLasso, the local-first screen OCR utility for macOS.";
+const formatIndex = (index: number) => String(index + 1).padStart(2, "0");
+---
+
+<SiteLayout
+  title="Copy Sheet · CopyLasso"
+  description={pageDescription}
+  optionNumber={6}
+  optionName="Copy Sheet"
+  previousHref="/design-options/option-5/"
+  nextHref="/design-options/"
+>
+  <div class="copy-sheet-page">
+    <header class="copy-sheet-header">
+      <div class="copy-sheet-width copy-sheet-header-inner">
+        <a class="copy-sheet-brand" href="/" aria-label="CopyLasso home">
+          <span class="copy-sheet-brand-word">Copy</span><span>Lasso</span>
+        </a>
+        <nav class="copy-sheet-header-nav" aria-label="Page links">
+          <a href="#how-it-works">How it works</a>
+          <a href={site.githubUrl} target="_blank" rel="noreferrer">
+            GitHub <span aria-hidden="true">↗</span>
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <section class="copy-sheet-hero copy-sheet-width" aria-labelledby="copy-sheet-title">
+        <div class="copy-sheet-hero-intro">
+          <div class="copy-sheet-hero-copy">
+            <h1 id="copy-sheet-title">Copy what you can see.</h1>
+            <p class="copy-sheet-hero-lede">
+              CopyLasso turns a selected piece of your screen into clean text on the clipboard. No detour,
+              no account, no cloud.
+            </p>
+          </div>
+          <p class="copy-sheet-shortcut">
+            <span>Press</span>
+            <kbd>⇧⌘2</kbd>
+            <span>then select.</span>
+          </p>
+        </div>
+
+        <figure class="copy-sheet-demo" aria-labelledby="copy-sheet-demo-caption">
+          <div class="copy-sheet-demo-topline" aria-hidden="true">
+            <span>visible text</span>
+            <span>copy sheet / 01</span>
+          </div>
+
+          <div class="copy-sheet-demo-row copy-sheet-source-row">
+            <div class="copy-sheet-row-label">
+              <span class="copy-sheet-row-number">01</span>
+              <span>source fragment</span>
+            </div>
+            <div class="copy-sheet-row-content">
+              <p class="copy-sheet-context">meeting-notes / currently visible</p>
+              <p class="copy-sheet-source-copy">
+                <span class="copy-sheet-muted">... so you can </span><span class="copy-sheet-lasso-phrase">copy text from any app, image, or video.</span><span
+                  class="copy-sheet-muted"
+                > ...</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="copy-sheet-demo-bridge" aria-hidden="true">
+            <span class="copy-sheet-bridge-line"></span>
+            <span>select → recognize → copy</span>
+            <span class="copy-sheet-bridge-line"></span>
+          </div>
+
+          <div class="copy-sheet-demo-row copy-sheet-output-row">
+            <div class="copy-sheet-row-label">
+              <span class="copy-sheet-row-number">02</span>
+              <span>clipboard</span>
+            </div>
+            <div class="copy-sheet-row-content">
+              <p class="copy-sheet-context">plain text / ready to paste</p>
+              <p class="copy-sheet-output-copy">
+                <span class="copy-sheet-lasso-phrase copy-sheet-output-phrase">Copy text from any app, image, or video.</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="copy-sheet-demo-footnote">
+            <span class="copy-sheet-footnote-line" aria-hidden="true"></span>
+            <span>Apple Vision OCR stays on this Mac.</span>
+          </div>
+          <figcaption id="copy-sheet-demo-caption">
+            The useful change is small: visible pixels become plain text you can paste anywhere.
+          </figcaption>
+        </figure>
+
+        <div class="copy-sheet-download" id="download">
+          <p>One shortcut. No account.</p>
+          <div class="copy-sheet-download-action">
+            <a class="button copy-sheet-primary" href={site.downloadHref}>{site.downloadLabel}<span aria-hidden="true">↓</span></a>
+            <span class="copy-sheet-download-meta">{site.versionLabel} <span aria-hidden="true">·</span> {site.requirements}</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="how-it-works" class="copy-sheet-section copy-sheet-width" aria-labelledby="how-it-works-title">
+        <div class="copy-sheet-section-heading">
+          <h2 id="how-it-works-title">How it works</h2>
+          <p>There is one small path from selection to paste. The page follows it so you can understand the utility at a glance.</p>
+        </div>
+        <ol class="copy-sheet-reading-list">
+          <li class="copy-sheet-reading-row">
+            <span class="copy-sheet-reading-label">01 / select</span>
+            <div>
+              <h3>Press the shortcut</h3>
+              <p>Use <kbd>⇧⌘2</kbd> to start a capture, then drag across the text or code you can see.</p>
+            </div>
+          </li>
+          <li class="copy-sheet-reading-row">
+            <span class="copy-sheet-reading-label">02 / recognize</span>
+            <div>
+              <h3>Let Apple Vision read the pixels</h3>
+              <p>Recognition happens locally on your Mac, with no upload or account in the middle.</p>
+            </div>
+          </li>
+          <li class="copy-sheet-reading-row">
+            <span class="copy-sheet-reading-label">03 / copy</span>
+            <div>
+              <h3>Paste the clean result</h3>
+              <p>CopyLasso places plain text on the clipboard, ready for the app you were already using.</p>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <section id="features" class="copy-sheet-section copy-sheet-width" aria-labelledby="features-title">
+        <div class="copy-sheet-section-heading">
+          <h2 id="features-title">Features</h2>
+          <p>A small menu-bar utility with enough range for the places text tends to hide.</p>
+        </div>
+        <ul class="copy-sheet-reading-list copy-sheet-feature-list">
+          {features.map((feature, index) => (
+            <li class="copy-sheet-reading-row copy-sheet-feature-row">
+              <span class="copy-sheet-reading-label">{formatIndex(index)}</span>
+              <div>
+                <h3>{feature.title}</h3>
+                <p>{feature.body}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section id="privacy" class="copy-sheet-privacy" aria-labelledby="privacy-title">
+        <div class="copy-sheet-width copy-sheet-section copy-sheet-privacy-inner">
+          <div class="copy-sheet-section-heading">
+            <h2 id="privacy-title">Privacy stays plain.</h2>
+            <p>CopyLasso has a narrow job and a narrow data boundary. The pixels leave your screen only as the text you choose to copy.</p>
+          </div>
+          <ul class="copy-sheet-privacy-list">
+            {privacyFacts.map((fact, index) => (
+              <li>
+                <span class="copy-sheet-privacy-index">{formatIndex(index)}</span>
+                <span>{fact}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section id="compatibility" class="copy-sheet-section copy-sheet-width" aria-labelledby="compatibility-title">
+        <div class="copy-sheet-section-heading copy-sheet-compatibility-heading">
+          <h2 id="compatibility-title">Made for your Mac.</h2>
+          <p>Made for the Mac you use: a free, open-source utility that keeps the capture workflow close to macOS.</p>
+        </div>
+        <ul class="copy-sheet-compatibility-list">
+          {compatibilityFacts.map((fact, index) => (
+            <li>
+              <span class="copy-sheet-reading-label">{formatIndex(index)}</span>
+              <span>{fact}</span>
+            </li>
+          ))}
+        </ul>
+        <p class="copy-sheet-permission-note">
+          Region capture needs Screen Recording permission. CopyLasso asks for it when the feature needs it, and does not need an account to run.
+        </p>
+      </section>
+    </main>
+
+    <footer class="copy-sheet-footer">
+      <div class="copy-sheet-width copy-sheet-footer-inner">
+        <p>Created by <a href={`mailto:${site.email}`}>Bennett Hilberg</a>.</p>
+        <div class="copy-sheet-footer-links">
+          <a href={`mailto:${site.email}`}>{site.email}</a>
+          <a href={site.githubUrl} target="_blank" rel="noreferrer">View source on GitHub <span aria-hidden="true">↗</span></a>
+          <span>MIT licensed.</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+</SiteLayout>
+
+<style>
+  .copy-sheet-page {
+    --copy-sheet-rule: var(--line-strong);
+    --copy-sheet-soft-rule: var(--line);
+    --copy-sheet-width: var(--measure);
+    min-width: 0;
+    overflow-x: clip;
+    padding-bottom: 4rem;
+  }
+
+  .copy-sheet-width {
+    width: min(calc(100% - 2rem), var(--copy-sheet-width));
+    margin-inline: auto;
+  }
+
+  .copy-sheet-header {
+    padding-top: 1.35rem;
+  }
+
+  .copy-sheet-header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--copy-sheet-rule);
+  }
+
+  .copy-sheet-brand {
+    position: relative;
+    display: inline-flex;
+    align-items: baseline;
+    color: var(--ink);
+    font-size: 1.08rem;
+    font-weight: 800;
+    letter-spacing: -0.055em;
+    text-decoration: none;
+  }
+
+  .copy-sheet-brand-word {
+    position: relative;
+  }
+
+  .copy-sheet-brand-word::after {
+    position: absolute;
+    right: -0.05em;
+    bottom: -0.18em;
+    left: -0.05em;
+    height: 0.24em;
+    border-bottom: 2px solid var(--blue);
+    border-radius: 0 0 65% 40%;
+    content: "";
+    transform: rotate(-2deg);
+  }
+
+  .copy-sheet-header-nav,
+  .copy-sheet-footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1.35rem;
+    color: var(--ink-soft);
+    font-size: 0.88rem;
+  }
+
+  .copy-sheet-header-nav a,
+  .copy-sheet-footer a {
+    color: var(--blue-ink);
+    font-weight: 750;
+    text-decoration: none;
+  }
+
+  .copy-sheet-header-nav a:hover,
+  .copy-sheet-footer a:hover {
+    color: var(--blue);
+  }
+
+  .copy-sheet-hero {
+    padding-top: clamp(5rem, 11vw, 9rem);
+  }
+
+  .copy-sheet-hero-intro {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(12rem, 0.85fr);
+    gap: clamp(2rem, 8vw, 8rem);
+    align-items: end;
+  }
+
+  .copy-sheet-hero-copy h1 {
+    max-width: 9ch;
+    margin: 0;
+    color: var(--ink);
+    font-size: clamp(3.25rem, 8.5vw, 7.25rem);
+    font-weight: 800;
+    letter-spacing: -0.095em;
+    line-height: 0.86;
+    overflow-wrap: anywhere;
+  }
+
+  .copy-sheet-hero-lede {
+    max-width: 39rem;
+    margin: clamp(1.6rem, 3vw, 2.5rem) 0 0;
+    color: var(--ink-soft);
+    font-size: clamp(1.12rem, 2vw, 1.4rem);
+    letter-spacing: -0.02em;
+    line-height: 1.4;
+  }
+
+  .copy-sheet-shortcut {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem;
+    max-width: 17rem;
+    margin: 0 0 0.25rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--copy-sheet-rule);
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+  }
+
+  .copy-sheet-shortcut kbd,
+  .copy-sheet-reading-row kbd {
+    display: inline-block;
+    padding: 0.18rem 0.42rem 0.22rem;
+    border: 1px solid var(--line-strong);
+    border-bottom-width: 2px;
+    border-radius: var(--r-control);
+    background: var(--paper-deep);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 0.83em;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .copy-sheet-demo {
+    margin: clamp(3.5rem, 8vw, 7.5rem) 0 0;
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+    background: var(--paper-deep);
+  }
+
+  .copy-sheet-demo-topline,
+  .copy-sheet-demo-footnote,
+  .copy-sheet-demo figcaption {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+    padding: 0.85rem clamp(1rem, 3vw, 2.25rem);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.035em;
+    text-transform: lowercase;
+  }
+
+  .copy-sheet-demo-row {
+    display: grid;
+    grid-template-columns: minmax(7rem, 0.28fr) minmax(0, 1fr);
+    gap: clamp(1.25rem, 4vw, 4.5rem);
+    padding: clamp(2.15rem, 5vw, 4.5rem) clamp(1rem, 3vw, 2.25rem);
+    border-top: 1px solid var(--copy-sheet-rule);
+  }
+
+  .copy-sheet-output-row {
+    background: var(--paper);
+  }
+
+  .copy-sheet-row-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    color: var(--blue-ink);
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    letter-spacing: 0.03em;
+    line-height: 1.3;
+    text-transform: lowercase;
+  }
+
+  .copy-sheet-row-number {
+    color: var(--blue);
+  }
+
+  .copy-sheet-row-content {
+    min-width: 0;
+  }
+
+  .copy-sheet-context {
+    margin: 0 0 1.1rem;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.73rem;
+    letter-spacing: 0.02em;
+    overflow-wrap: anywhere;
+  }
+
+  .copy-sheet-source-copy,
+  .copy-sheet-output-copy {
+    max-width: 52rem;
+    margin: 0;
+    color: var(--ink);
+    font-size: clamp(1.65rem, 4.5vw, 4rem);
+    font-weight: 700;
+    letter-spacing: -0.075em;
+    line-height: 1.02;
+    overflow-wrap: anywhere;
+  }
+
+  .copy-sheet-source-copy {
+    font-weight: 600;
+  }
+
+  .copy-sheet-muted {
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .copy-sheet-lasso-phrase {
+    position: relative;
+    isolation: isolate;
+    display: inline;
+    color: var(--ink);
+  }
+
+  .copy-sheet-lasso-phrase::before,
+  .copy-sheet-lasso-phrase::after {
+    position: absolute;
+    right: -0.06em;
+    left: -0.06em;
+    z-index: -1;
+    height: 0.26em;
+    border-bottom: 0.1em solid var(--blue);
+    border-radius: 0 0 68% 34%;
+    content: "";
+    pointer-events: none;
+  }
+
+  .copy-sheet-lasso-phrase::before {
+    bottom: -0.12em;
+    opacity: 0.98;
+    transform: rotate(-1.35deg);
+  }
+
+  .copy-sheet-lasso-phrase::after {
+    right: 0.05em;
+    bottom: -0.23em;
+    left: 0.12em;
+    border-bottom-width: 0.045em;
+    opacity: 0.72;
+    transform: rotate(0.75deg);
+  }
+
+  .copy-sheet-output-phrase::before {
+    right: -0.03em;
+    left: -0.08em;
+    transform: rotate(1.2deg);
+  }
+
+  .copy-sheet-output-phrase::after {
+    right: 0.14em;
+    left: 0.02em;
+    transform: rotate(-0.65deg);
+  }
+
+  .copy-sheet-demo-bridge {
+    display: grid;
+    grid-template-columns: minmax(2rem, 1fr) auto minmax(2rem, 1fr);
+    gap: 0.9rem;
+    align-items: center;
+    padding: 0 clamp(1rem, 3vw, 2.25rem);
+    color: var(--blue-ink);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.03em;
+    text-align: center;
+    text-transform: lowercase;
+  }
+
+  .copy-sheet-bridge-line {
+    height: 1px;
+    background: var(--copy-sheet-rule);
+  }
+
+  .copy-sheet-demo-footnote {
+    justify-content: flex-start;
+    border-top: 1px solid var(--copy-sheet-rule);
+    text-transform: none;
+  }
+
+  .copy-sheet-footnote-line {
+    display: inline-block;
+    width: 2.4rem;
+    height: 0.25rem;
+    border-bottom: 2px solid var(--blue);
+    border-radius: 0 0 70% 40%;
+    transform: rotate(-1deg);
+  }
+
+  .copy-sheet-demo figcaption {
+    justify-content: flex-start;
+    border-top: 1px solid var(--copy-sheet-soft-rule);
+    color: var(--ink-soft);
+    font-family: var(--sans);
+    font-size: 0.88rem;
+    letter-spacing: 0;
+    line-height: 1.45;
+    text-transform: none;
+  }
+
+  .copy-sheet-download {
+    display: grid;
+    grid-template-columns: minmax(9rem, 0.42fr) minmax(0, 1fr);
+    gap: 1rem 2rem;
+    align-items: center;
+    padding-block: 1.6rem;
+    border-bottom: 1px solid var(--copy-sheet-rule);
+  }
+
+  .copy-sheet-download > p {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 0.96rem;
+  }
+
+  .copy-sheet-download-action {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.9rem 1.2rem;
+  }
+
+  .copy-sheet-primary {
+    white-space: nowrap;
+  }
+
+  .copy-sheet-download-meta {
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    line-height: 1.45;
+  }
+
+  .copy-sheet-section {
+    padding-block: clamp(4.5rem, 10vw, 9rem);
+  }
+
+  .copy-sheet-section-heading {
+    display: grid;
+    grid-template-columns: minmax(12rem, 0.42fr) minmax(0, 0.58fr);
+    gap: clamp(2rem, 8vw, 8rem);
+    align-items: start;
+    margin-bottom: clamp(2rem, 4vw, 3.5rem);
+    padding-top: 1rem;
+    border-top: 1px solid var(--copy-sheet-rule);
+  }
+
+  .copy-sheet-section-heading h2 {
+    max-width: 12ch;
+    margin: 0;
+    color: var(--ink);
+    font-size: clamp(2.35rem, 5.2vw, 4.6rem);
+    font-weight: 800;
+    letter-spacing: -0.085em;
+    line-height: 0.91;
+    overflow-wrap: anywhere;
+  }
+
+  .copy-sheet-compatibility-heading h2 {
+    max-width: none;
+  }
+
+  .copy-sheet-section-heading p {
+    max-width: 39rem;
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: clamp(1rem, 1.5vw, 1.15rem);
+    line-height: 1.55;
+  }
+
+  .copy-sheet-reading-list,
+  .copy-sheet-privacy-list,
+  .copy-sheet-compatibility-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .copy-sheet-reading-list {
+    border-top: 1px solid var(--ink);
+  }
+
+  .copy-sheet-reading-row {
+    display: grid;
+    grid-template-columns: minmax(8rem, 0.25fr) minmax(0, 1fr) auto;
+    gap: clamp(1rem, 5vw, 5rem);
+    align-items: start;
+    padding-block: clamp(1.5rem, 3vw, 2.4rem);
+    border-bottom: 1px solid var(--copy-sheet-rule);
+  }
+
+  .copy-sheet-reading-label {
+    color: var(--blue-ink);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+    line-height: 1.4;
+    text-transform: lowercase;
+  }
+
+  .copy-sheet-reading-row h3 {
+    margin: 0 0 0.35rem;
+    color: var(--ink);
+    font-size: clamp(1.35rem, 2.5vw, 2.15rem);
+    font-weight: 750;
+    letter-spacing: -0.055em;
+    line-height: 1.05;
+  }
+
+  .copy-sheet-reading-row p {
+    max-width: 44rem;
+    margin: 0;
+    color: var(--ink-soft);
+  }
+
+  .copy-sheet-reading-row kbd {
+    margin-top: 0.1rem;
+  }
+
+  .copy-sheet-feature-list {
+    border-top-color: var(--copy-sheet-rule);
+  }
+
+  .copy-sheet-feature-row {
+    grid-template-columns: minmax(8rem, 0.25fr) minmax(0, 1fr);
+  }
+
+  .copy-sheet-privacy {
+    background: var(--blue-deep);
+    color: var(--blue-white);
+  }
+
+  .copy-sheet-privacy-inner {
+    padding-block: clamp(4.5rem, 10vw, 9rem);
+  }
+
+  .copy-sheet-privacy .copy-sheet-section-heading {
+    border-top-color: rgb(255 255 255 / 0.32);
+  }
+
+  .copy-sheet-privacy .copy-sheet-section-heading h2,
+  .copy-sheet-privacy .copy-sheet-section-heading p {
+    color: var(--blue-white);
+  }
+
+  .copy-sheet-privacy .copy-sheet-section-heading p {
+    color: rgb(244 248 255 / 0.78);
+  }
+
+  .copy-sheet-privacy-list {
+    border-top: 1px solid rgb(255 255 255 / 0.32);
+  }
+
+  .copy-sheet-privacy-list li {
+    display: grid;
+    grid-template-columns: minmax(8rem, 0.25fr) minmax(0, 1fr);
+    gap: clamp(1rem, 5vw, 5rem);
+    padding-block: clamp(1.5rem, 3vw, 2.4rem);
+    border-bottom: 1px solid rgb(255 255 255 / 0.22);
+    color: var(--blue-white);
+    font-size: clamp(1.05rem, 1.8vw, 1.3rem);
+    line-height: 1.42;
+  }
+
+  .copy-sheet-privacy-index {
+    color: rgb(210 226 255 / 0.7);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+  }
+
+  .copy-sheet-compatibility-list {
+    border-top: 1px solid var(--ink);
+  }
+
+  .copy-sheet-compatibility-list li {
+    display: grid;
+    grid-template-columns: minmax(8rem, 0.25fr) minmax(0, 1fr);
+    gap: clamp(1rem, 5vw, 5rem);
+    padding-block: 1.3rem;
+    border-bottom: 1px solid var(--copy-sheet-rule);
+    color: var(--ink);
+    font-size: clamp(1.05rem, 1.8vw, 1.28rem);
+  }
+
+  .copy-sheet-permission-note {
+    max-width: 46rem;
+    margin: 1.75rem 0 0;
+    color: var(--ink-soft);
+    font-size: 0.94rem;
+  }
+
+  .copy-sheet-footer {
+    padding-block: 2.75rem 1.5rem;
+    border-top: 1px solid var(--copy-sheet-rule);
+    color: var(--ink-soft);
+    font-size: 0.88rem;
+  }
+
+  .copy-sheet-footer-inner {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+  }
+
+  .copy-sheet-footer p {
+    margin: 0;
+  }
+
+  @media (max-width: 44rem) {
+    .copy-sheet-header-inner {
+      align-items: flex-start;
+    }
+
+    .copy-sheet-header-nav {
+      justify-content: flex-end;
+      gap: 0.7rem;
+      font-size: 0.8rem;
+    }
+
+    .copy-sheet-header-nav a:first-child {
+      display: none;
+    }
+
+    .copy-sheet-hero-intro,
+    .copy-sheet-section-heading,
+    .copy-sheet-download {
+      display: block;
+    }
+
+    .copy-sheet-shortcut {
+      max-width: none;
+      margin-top: 2rem;
+    }
+
+    .copy-sheet-demo-row {
+      display: block;
+    }
+
+    .copy-sheet-row-label {
+      margin-bottom: 1.25rem;
+    }
+
+    .copy-sheet-download > p {
+      margin-bottom: 1rem;
+    }
+
+    .copy-sheet-section-heading h2 {
+      max-width: 9ch;
+      margin-bottom: 1.25rem;
+    }
+
+    .copy-sheet-reading-row {
+      grid-template-columns: minmax(6rem, 0.3fr) minmax(0, 1fr);
+      gap: 0.8rem 1.25rem;
+    }
+
+    .copy-sheet-reading-row kbd {
+      grid-column: 2;
+      justify-self: start;
+    }
+
+    .copy-sheet-feature-row,
+    .copy-sheet-privacy-list li,
+    .copy-sheet-compatibility-list li {
+      grid-template-columns: minmax(4rem, 0.3fr) minmax(0, 1fr);
+      gap: 0.8rem 1.25rem;
+    }
+  }
+
+  @media (max-width: 22rem) {
+    .copy-sheet-header-nav a {
+      font-size: 0.75rem;
+    }
+
+    .copy-sheet-hero-copy h1 {
+      font-size: clamp(3rem, 15vw, 4.2rem);
+    }
+
+    .copy-sheet-demo-bridge {
+      grid-template-columns: minmax(1rem, 1fr) auto minmax(1rem, 1fr);
+      gap: 0.45rem;
+      font-size: 0.61rem;
+    }
+
+    .copy-sheet-download-action {
+      display: block;
+    }
+
+    .copy-sheet-primary {
+      white-space: normal;
+    }
+
+    .copy-sheet-download-meta {
+      display: block;
+      margin-top: 0.85rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .copy-sheet-brand-word::after,
+    .copy-sheet-lasso-phrase::before,
+    .copy-sheet-lasso-phrase::after,
+    .copy-sheet-footnote-line {
+      transform: none;
+    }
+  }
+</style>

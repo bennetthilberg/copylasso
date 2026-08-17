@@ -1,0 +1,1008 @@
+---
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import { compatibilityFacts, features, privacyFacts, site } from "../../data/site";
+
+const compatibilityLabels = ["System", "Architecture", "Permission", "License"];
+---
+
+<SiteLayout
+  title="Three-Beat Rail · CopyLasso"
+  description="A three-step CopyLasso landing page direction for selecting screen text, recognizing it locally, and copying the result."
+  optionNumber={2}
+  optionName="Three-Beat Rail"
+  previousHref="/design-options/option-1/"
+  nextHref="/design-options/option-3/"
+>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="CopyLasso home">
+      <span class="brand-mark" aria-hidden="true">+</span>
+      <span>{site.name}</span>
+    </a>
+    <nav class="header-nav" aria-label="Page navigation">
+      <a href="#how-it-works">How it works</a>
+      <a href="#privacy">Privacy</a>
+      <a class="button button-secondary" href={site.githubUrl}>
+        GitHub <span aria-hidden="true">↗</span>
+      </a>
+    </nav>
+  </header>
+
+  <main id="main-content" class="option-two">
+    <section class="hero section" aria-labelledby="hero-title">
+      <div class="site-width">
+        <div class="hero-copy">
+          <h1 id="hero-title">Copy text from the screen. Keep it on your Mac.</h1>
+          <p class="hero-intro">
+            CopyLasso turns a quick screen selection into clean clipboard text, using local Apple Vision OCR with no
+            account and no cloud handoff.
+          </p>
+          <div class="hero-actions">
+            <a class="button hero-button" href={site.downloadHref}>
+              {site.downloadLabel} <span aria-hidden="true">↘</span>
+            </a>
+            <div class="download-meta">
+              <strong>{site.versionLabel}</strong>
+              <span>{site.requirements}</span>
+            </div>
+          </div>
+          <p class="hero-note">
+            <span class="note-rule" aria-hidden="true"></span>
+            One shortcut. One selection. Nothing to upload.
+          </p>
+        </div>
+
+        <figure class="storyboard" aria-labelledby="storyboard-caption">
+          <div class="storyboard-header">
+            <p class="storyboard-title">From visible pixels to plain text</p>
+            <p class="storyboard-shortcut"><kbd>{site.shortcut}</kbd> to start</p>
+          </div>
+          <div class="storyboard-track" aria-hidden="true"></div>
+          <div class="storyboard-grid">
+            <article class="story-state">
+              <div class="state-heading">
+                <span class="state-number">01</span>
+                <h2>Ready</h2>
+              </div>
+              <div class="state-scene scene-ready" aria-hidden="true">
+                <div class="screen-window">
+                  <div class="window-bar">
+                    <span class="window-title">A page on your screen</span>
+                    <span class="window-action">view</span>
+                  </div>
+                  <div class="screen-copy">
+                    <span class="screen-line line-wide"></span>
+                    <span class="screen-line line-medium"></span>
+                    <span class="screen-line line-short"></span>
+                    <span class="screen-line line-wide"></span>
+                    <span class="screen-line line-medium"></span>
+                  </div>
+                  <span class="crosshair" aria-hidden="true"></span>
+                </div>
+              </div>
+              <p class="state-copy">Text is already in view. Press <kbd>{site.shortcut}</kbd> when you are ready.</p>
+            </article>
+
+            <article class="story-state">
+              <div class="state-heading">
+                <span class="state-number">02</span>
+                <h2>Selected</h2>
+              </div>
+              <div class="state-scene scene-selected" aria-hidden="true">
+                <div class="screen-window">
+                  <div class="window-bar">
+                    <span class="window-title">A page on your screen</span>
+                    <span class="window-action">view</span>
+                  </div>
+                  <div class="screen-copy">
+                    <span class="screen-line line-wide"></span>
+                    <span class="screen-line line-medium"></span>
+                    <span class="screen-line line-short"></span>
+                    <span class="screen-line line-wide"></span>
+                    <span class="screen-line line-medium"></span>
+                  </div>
+                  <span class="selection-box"><span>selected region</span></span>
+                </div>
+              </div>
+              <p class="state-copy">Drag across the words or code you need. The selection stays on your Mac.</p>
+            </article>
+
+            <article class="story-state">
+              <div class="state-heading">
+                <span class="state-number">03</span>
+                <h2>Copied</h2>
+              </div>
+              <div class="state-scene scene-copied" aria-hidden="true">
+                <div class="clipboard-sheet">
+                  <div class="clipboard-topline">
+                    <span>Clipboard text</span>
+                    <span class="checkmark">✓</span>
+                  </div>
+                  <p>Selected words become plain text, ready for the app already in front.</p>
+                  <div class="clipboard-status">Copied locally</div>
+                </div>
+              </div>
+              <p class="state-copy">Release. Clean text lands in the clipboard, ready to paste anywhere.</p>
+            </article>
+          </div>
+          <figcaption id="storyboard-caption">Select a region. Recognize what is there. Copy the result.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="how-it-works" class="section workflow-section" aria-labelledby="workflow-title">
+      <div class="site-width">
+        <div class="section-heading">
+          <h2 id="workflow-title">Three beats from pixels to clipboard.</h2>
+          <p>
+            The workflow has one job at each step: choose the visible region, let the Mac read it, then get back to
+            the work in front of you.
+          </p>
+        </div>
+
+        <div class="workflow-layout">
+          <div class="workflow-aside">
+            <p class="workflow-statement">A screen selection should feel like a gesture, not a destination.</p>
+            <p>
+              CopyLasso stays in the menu bar and gives the shortcut back to the app you were using after the result is
+              copied.
+            </p>
+          </div>
+
+          <div class="workflow-rail">
+            <article class="workflow-step">
+              <div class="step-number" aria-hidden="true">01</div>
+              <div class="step-detail">
+                <h3>Select</h3>
+                <p>Press <kbd>{site.shortcut}</kbd>, then drag over the text or code that is already visible.</p>
+                <p class="step-note">Screen Recording permission lets CopyLasso capture only the region you choose.</p>
+              </div>
+            </article>
+            <article class="workflow-step">
+              <div class="step-number" aria-hidden="true">02</div>
+              <div class="step-detail">
+                <h3>Recognize</h3>
+                <p>Apple Vision reads the selected pixels locally. OCR and supported QR or barcode recognition happen
+                  in the same pass.</p>
+                <p class="step-note">No account, cloud OCR, analytics, or telemetry.</p>
+              </div>
+            </article>
+            <article class="workflow-step">
+              <div class="step-number" aria-hidden="true">03</div>
+              <div class="step-detail">
+                <h3>Copy</h3>
+                <p>Plain text lands on the clipboard, ready for the app that was in front before the capture began.</p>
+                <p class="step-note">History is optional, encrypted locally, and never includes screenshots.</p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="privacy" class="section privacy-section" aria-labelledby="privacy-title">
+      <div class="site-width privacy-layout">
+        <div class="section-heading">
+          <h2 id="privacy-title">The capture is a boundary, not a handoff.</h2>
+          <p>
+            CopyLasso treats your screen as short-lived input. The useful result stays with you; the source image does
+            not become a record.
+          </p>
+        </div>
+
+        <ul class="privacy-list">
+          {privacyFacts.map((fact, index) => (
+            <li>
+              <span class="list-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+              <span>{fact}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+
+    <section id="features" class="section features-section" aria-labelledby="features-title">
+      <div class="site-width">
+        <div class="section-heading">
+          <h2 id="features-title">Small utility. Serious range.</h2>
+          <p>
+            Everything useful about the workflow, including multiple languages and supported code recognition, without
+            turning a quick capture into another app to manage.
+          </p>
+        </div>
+
+        <div class="feature-grid">
+          {features.map((feature, index) => (
+            <article class="feature-item">
+              <span class="feature-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+              <h3>{feature.title}</h3>
+              <p>{feature.body}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section id="compatibility" class="section compatibility-section" aria-labelledby="compatibility-title">
+      <div class="site-width">
+        <div class="compatibility-layout">
+          <div class="section-heading">
+            <h2 id="compatibility-title">Ready for the Mac you already use.</h2>
+            <p>
+              CopyLasso is a free, open-source macOS utility. Give it one permission for region capture, then keep the
+              rest of the workflow local.
+            </p>
+          </div>
+
+          <dl class="compatibility-list">
+            {compatibilityFacts.map((fact, index) => (
+              <div>
+                <dt>{compatibilityLabels[index]}</dt>
+                <dd>{fact}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+
+        <section id="download" class="download-cta" aria-labelledby="download-title">
+          <div class="download-copy">
+            <h3 id="download-title">Make the shortcut part of your day.</h3>
+            <p>Start with a local, focused way to move text from any capturable screen into the next thing you do.</p>
+          </div>
+          <div class="download-action">
+            <a class="button cta-button" href={site.downloadHref}>
+              {site.downloadLabel} <span aria-hidden="true">↘</span>
+            </a>
+            <p class="cta-meta"><strong>{site.versionLabel}</strong><span>{site.requirements}</span></p>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer option-two-footer">
+    <div class="footer-row">
+      <p>Created by Bennett Hilberg</p>
+      <div class="footer-links">
+        <a href={`mailto:${site.email}`}>{site.email}</a>
+        <a href={site.githubUrl}>MIT source on GitHub <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </footer>
+</SiteLayout>
+
+<style>
+  .option-two {
+    overflow: hidden;
+  }
+
+  .option-two h1,
+  .option-two h2,
+  .option-two h3,
+  .option-two p {
+    text-wrap: balance;
+  }
+
+  .hero {
+    padding-top: clamp(4.5rem, 10vw, 8rem);
+  }
+
+  .hero-copy {
+    max-width: 54rem;
+  }
+
+  .hero h1 {
+    max-width: 10ch;
+    margin: 0;
+    color: var(--ink);
+    font-size: clamp(3.35rem, 9vw, 8rem);
+    letter-spacing: -0.1em;
+    line-height: 0.87;
+  }
+
+  .hero-intro {
+    max-width: 44rem;
+    margin: 2rem 0 0;
+    color: var(--ink-soft);
+    font-size: clamp(1.1rem, 2vw, 1.35rem);
+    line-height: 1.45;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.5rem;
+    margin-top: 2rem;
+  }
+
+  .hero-button {
+    min-height: 3.6rem;
+    padding-inline: 1.35rem;
+    font-size: 1.02rem;
+  }
+
+  .download-meta {
+    display: grid;
+    gap: 0.1rem;
+    max-width: 16rem;
+    color: var(--muted);
+    font-size: 0.82rem;
+    line-height: 1.35;
+  }
+
+  .download-meta strong {
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    letter-spacing: -0.04em;
+  }
+
+  .hero-note {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1.5rem 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .note-rule {
+    display: inline-block;
+    width: 2.75rem;
+    height: 2px;
+    flex: 0 0 auto;
+    background: var(--blue);
+  }
+
+  .storyboard {
+    position: relative;
+    isolation: isolate;
+    margin: clamp(3.5rem, 8vw, 6.5rem) 0 0;
+    overflow: hidden;
+    border-radius: var(--r-surface);
+    background: var(--ink);
+    color: var(--blue-white);
+  }
+
+  .storyboard-header,
+  .storyboard figcaption {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.1rem clamp(1rem, 3vw, 2.5rem);
+    color: rgb(235 242 252 / 0.76);
+    font-size: 0.78rem;
+  }
+
+  .storyboard-header {
+    border-bottom: 1px solid rgb(235 242 252 / 0.16);
+  }
+
+  .storyboard figcaption {
+    border-top: 1px solid rgb(235 242 252 / 0.16);
+    color: rgb(235 242 252 / 0.9);
+  }
+
+  .storyboard-title,
+  .storyboard-shortcut {
+    margin: 0;
+  }
+
+  .storyboard-title {
+    color: var(--blue-white);
+    font-weight: 700;
+  }
+
+  .storyboard-shortcut {
+    white-space: nowrap;
+  }
+
+  .storyboard kbd,
+  .workflow-section kbd {
+    display: inline-block;
+    padding: 0.12rem 0.38rem;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 0.82em;
+    line-height: 1.2;
+  }
+
+  .storyboard-track {
+    position: absolute;
+    z-index: 0;
+    top: 5.1rem;
+    right: 9%;
+    left: 9%;
+    height: 2px;
+    background: var(--blue);
+  }
+
+  .storyboard-grid {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .story-state {
+    display: grid;
+    min-width: 0;
+    grid-template-rows: auto minmax(12rem, 1fr) auto;
+    padding: 2rem clamp(1rem, 2.8vw, 2.5rem) 2.25rem;
+  }
+
+  .state-heading {
+    display: flex;
+    position: relative;
+    z-index: 2;
+    align-items: baseline;
+    gap: 0.7rem;
+    width: fit-content;
+  }
+
+  .state-number {
+    display: inline-block;
+    padding: 0 0.2rem;
+    background: var(--ink);
+    color: var(--focus);
+    font-family: var(--mono);
+    font-size: clamp(2.5rem, 4.5vw, 4.4rem);
+    letter-spacing: -0.1em;
+    line-height: 0.82;
+  }
+
+  .state-heading h2 {
+    margin: 0;
+    color: var(--blue-white);
+    font-size: clamp(1.05rem, 1.5vw, 1.35rem);
+    letter-spacing: -0.04em;
+  }
+
+  .state-scene {
+    display: grid;
+    min-width: 0;
+    align-items: center;
+    margin: 1.75rem 0 1.5rem;
+  }
+
+  .screen-window,
+  .clipboard-sheet {
+    position: relative;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid rgb(235 242 252 / 0.3);
+    border-radius: 8px;
+    background: rgb(235 242 252 / 0.08);
+  }
+
+  .screen-window {
+    min-height: 12rem;
+  }
+
+  .window-bar,
+  .clipboard-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-width: 0;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid rgb(235 242 252 / 0.16);
+    color: rgb(235 242 252 / 0.74);
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: -0.04em;
+  }
+
+  .window-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .window-action {
+    flex: 0 0 auto;
+    color: var(--blue-white);
+  }
+
+  .screen-copy {
+    display: grid;
+    gap: 0.7rem;
+    padding: 1.25rem 0.9rem;
+  }
+
+  .screen-line {
+    display: block;
+    height: 0.38rem;
+    border-radius: 2px;
+    background: rgb(235 242 252 / 0.42);
+  }
+
+  .line-wide {
+    width: 88%;
+  }
+
+  .line-medium {
+    width: 68%;
+  }
+
+  .line-short {
+    width: 42%;
+  }
+
+  .crosshair {
+    position: absolute;
+    right: 16%;
+    bottom: 17%;
+    width: 2.35rem;
+    height: 2.35rem;
+    border: 1px solid var(--blue);
+    border-radius: 50%;
+  }
+
+  .crosshair::before,
+  .crosshair::after {
+    content: "";
+    position: absolute;
+    background: var(--blue);
+  }
+
+  .crosshair::before {
+    top: 50%;
+    right: -0.55rem;
+    left: -0.55rem;
+    height: 1px;
+  }
+
+  .crosshair::after {
+    top: -0.55rem;
+    bottom: -0.55rem;
+    left: 50%;
+    width: 1px;
+  }
+
+  .selection-box {
+    position: absolute;
+    top: 34%;
+    right: 10%;
+    left: 15%;
+    height: 34%;
+    border: 2px solid var(--blue);
+    background: rgb(87 136 255 / 0.12);
+    color: var(--blue-white);
+  }
+
+  .selection-box span {
+    position: absolute;
+    top: -1.5rem;
+    left: -2px;
+    padding: 0.2rem 0.3rem;
+    background: var(--blue);
+    color: var(--blue-white);
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    white-space: nowrap;
+  }
+
+  .clipboard-sheet {
+    min-height: 12rem;
+    padding-bottom: 0.8rem;
+    background: var(--blue-white);
+    color: var(--ink);
+  }
+
+  .clipboard-topline {
+    border-bottom-color: var(--line);
+    color: var(--ink-soft);
+  }
+
+  .checkmark {
+    color: var(--green);
+    font-size: 0.9rem;
+    font-weight: 800;
+  }
+
+  .clipboard-sheet p {
+    margin: 1.2rem 0.9rem;
+    color: var(--ink-soft);
+    font-size: 0.82rem;
+    line-height: 1.45;
+  }
+
+  .clipboard-status {
+    margin: 0 0.9rem;
+    padding-top: 0.7rem;
+    border-top: 1px solid var(--line);
+    color: var(--green);
+    font-family: var(--mono);
+    font-size: 0.62rem;
+  }
+
+  .state-copy {
+    max-width: 23ch;
+    margin: 0;
+    color: rgb(235 242 252 / 0.74);
+    font-size: 0.85rem;
+  }
+
+  .workflow-section {
+    padding-top: clamp(5rem, 10vw, 9rem);
+  }
+
+  .workflow-layout {
+    display: grid;
+    grid-template-columns: minmax(12rem, 0.7fr) minmax(0, 1.5fr);
+    gap: clamp(2.5rem, 8vw, 8rem);
+    align-items: start;
+  }
+
+  .workflow-aside {
+    max-width: 23rem;
+    color: var(--ink-soft);
+  }
+
+  .workflow-aside p {
+    margin: 0;
+  }
+
+  .workflow-aside p + p {
+    margin-top: 1.25rem;
+    font-size: 0.92rem;
+  }
+
+  .workflow-statement {
+    color: var(--ink);
+    font-size: clamp(1.35rem, 2.5vw, 2rem);
+    letter-spacing: -0.06em;
+    line-height: 1.05;
+  }
+
+  .workflow-rail {
+    position: relative;
+  }
+
+  .workflow-rail::before {
+    content: "";
+    position: absolute;
+    top: 1.35rem;
+    bottom: 1.35rem;
+    left: 3.1rem;
+    width: 2px;
+    background: var(--blue);
+  }
+
+  .workflow-step {
+    position: relative;
+    display: grid;
+    grid-template-columns: 6.2rem minmax(0, 1fr);
+    gap: 1.5rem;
+    min-width: 0;
+    padding: 2rem 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .workflow-step:first-child {
+    padding-top: 1.35rem;
+    border-top-color: var(--ink);
+  }
+
+  .step-number {
+    position: relative;
+    z-index: 1;
+    width: fit-content;
+    padding-right: 0.55rem;
+    background: var(--paper);
+    color: var(--focus);
+    font-family: var(--mono);
+    font-size: clamp(2.8rem, 5vw, 5rem);
+    letter-spacing: -0.11em;
+    line-height: 0.85;
+  }
+
+  .step-detail {
+    min-width: 0;
+  }
+
+  .step-detail h3 {
+    margin: 0 0 0.55rem;
+    font-size: clamp(1.6rem, 3vw, 2.55rem);
+    letter-spacing: -0.07em;
+    line-height: 0.95;
+  }
+
+  .step-detail p {
+    max-width: 42rem;
+    margin: 0;
+    color: var(--ink-soft);
+  }
+
+  .step-note {
+    margin-top: 0.8rem !important;
+    color: var(--blue-ink) !important;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: -0.04em;
+  }
+
+  .privacy-section {
+    background: var(--blue-pale);
+  }
+
+  .privacy-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: clamp(2.5rem, 8vw, 8rem);
+    align-items: start;
+  }
+
+  .privacy-list {
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--line-strong);
+    list-style: none;
+  }
+
+  .privacy-list li {
+    display: grid;
+    grid-template-columns: 2.4rem minmax(0, 1fr);
+    gap: 1rem;
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--line-strong);
+    color: var(--ink-soft);
+  }
+
+  .list-number,
+  .feature-number {
+    color: var(--blue-ink);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: -0.04em;
+  }
+
+  .features-section {
+    background: var(--paper);
+  }
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0 2rem;
+  }
+
+  .feature-item {
+    min-width: 0;
+    padding: 1.5rem 0 1.75rem;
+    border-top: 1px solid var(--line-strong);
+  }
+
+  .feature-item h3 {
+    margin: 1.15rem 0 0.5rem;
+    font-size: 1.2rem;
+    letter-spacing: -0.05em;
+    line-height: 1.05;
+  }
+
+  .feature-item p {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 0.92rem;
+  }
+
+  .compatibility-section {
+    padding-top: clamp(4.5rem, 9vw, 8rem);
+  }
+
+  .compatibility-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: clamp(2.5rem, 8vw, 8rem);
+    align-items: start;
+  }
+
+  .compatibility-list {
+    margin: 0;
+    border-top: 1px solid var(--ink);
+  }
+
+  .compatibility-list div {
+    display: grid;
+    grid-template-columns: minmax(6rem, 0.65fr) minmax(0, 1.35fr);
+    gap: 1rem;
+    padding: 1.15rem 0;
+    border-bottom: 1px solid var(--line-strong);
+  }
+
+  .compatibility-list dt {
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: -0.04em;
+  }
+
+  .compatibility-list dd {
+    margin: 0;
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  .download-cta {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(13rem, 0.8fr);
+    gap: 2rem;
+    align-items: center;
+    margin-top: clamp(4rem, 8vw, 7rem);
+    padding: clamp(1.5rem, 4vw, 3rem);
+    border-radius: var(--r-surface);
+    background: var(--blue-deep);
+    color: var(--blue-white);
+  }
+
+  .download-copy h3 {
+    max-width: 13ch;
+    margin: 0 0 0.75rem;
+    color: var(--blue-white);
+    font-size: clamp(2rem, 4vw, 3.6rem);
+    letter-spacing: -0.08em;
+    line-height: 0.95;
+  }
+
+  .download-copy p {
+    max-width: 38rem;
+    margin: 0;
+    color: rgb(235 242 252 / 0.75);
+  }
+
+  .download-action {
+    display: grid;
+    justify-items: start;
+    gap: 0.8rem;
+    min-width: 0;
+  }
+
+  .cta-button {
+    max-width: 100%;
+    min-height: 3.7rem;
+    padding-inline: 1.25rem;
+    background: var(--blue-white);
+    color: var(--blue-deep);
+  }
+
+  .cta-button:hover {
+    background: var(--paper-deep);
+    color: var(--blue-deep);
+  }
+
+  .cta-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.7rem;
+    margin: 0;
+    color: rgb(235 242 252 / 0.75);
+    font-size: 0.78rem;
+  }
+
+  .cta-meta strong {
+    color: var(--blue-white);
+    font-family: var(--mono);
+    letter-spacing: -0.04em;
+  }
+
+  .option-two-footer {
+    margin-top: 0;
+  }
+
+  @media (max-width: 58rem) {
+    .workflow-layout,
+    .privacy-layout,
+    .compatibility-layout {
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+    }
+
+    .workflow-aside {
+      max-width: 34rem;
+    }
+
+    .feature-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 44rem) {
+    .hero h1 {
+      max-width: 9.5ch;
+      font-size: clamp(3rem, 15vw, 5.25rem);
+    }
+
+    .storyboard-header,
+    .storyboard figcaption {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .storyboard-track {
+      top: 6.6rem;
+      right: auto;
+      bottom: 4.7rem;
+      left: 2.55rem;
+      width: 2px;
+      height: auto;
+    }
+
+    .storyboard-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .story-state {
+      grid-template-rows: auto auto;
+      grid-template-columns: 3.75rem minmax(0, 1fr);
+      gap: 0.75rem 1rem;
+      padding: 1.75rem 1rem;
+    }
+
+    .state-heading {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.25rem;
+      padding-top: 0.15rem;
+    }
+
+    .state-number {
+      font-size: clamp(2.25rem, 12vw, 3.5rem);
+    }
+
+    .state-scene {
+      grid-column: 2;
+      grid-row: 1;
+      margin: 0;
+    }
+
+    .state-copy {
+      grid-column: 2;
+      grid-row: 2;
+      max-width: none;
+    }
+
+    .feature-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .download-cta {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 22rem) {
+    .hero-actions {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .hero-button,
+    .download-meta {
+      width: 100%;
+      max-width: none;
+    }
+
+    .compatibility-list div {
+      grid-template-columns: 1fr;
+      gap: 0.3rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .option-two * {
+      animation: none !important;
+      scroll-behavior: auto !important;
+      transition: none !important;
+    }
+  }
+</style>

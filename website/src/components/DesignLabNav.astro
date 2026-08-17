@@ -1,0 +1,33 @@
+---
+import { directions } from "../data/site";
+
+interface Props {
+  current?: number;
+  previousHref?: string;
+  nextHref?: string;
+}
+
+const { current, previousHref, nextHref } = Astro.props;
+const currentDirection = directions.find((direction) => direction.number === current);
+---
+
+<aside class="lab-nav" aria-label="Design direction navigator">
+  <div>
+    <strong>{currentDirection ? `${currentDirection.number} / ${directions.length}` : "Six directions"}</strong>
+    <span>{currentDirection?.name ?? "CopyLasso website lab"}</span>
+  </div>
+  <details>
+    <summary>Open a direction</summary>
+    <ol>
+      {directions.map((direction) => (
+        <li><a href={direction.href}>{direction.name}</a></li>
+      ))}
+    </ol>
+  </details>
+  {current && previousHref && nextHref ? (
+    <div class="lab-nav-controls">
+      <a href={previousHref} rel="prev">← Previous</a>
+      <a href={nextHref} rel="next">Next →</a>
+    </div>
+  ) : null}
+</aside>

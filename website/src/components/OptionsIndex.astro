@@ -1,0 +1,39 @@
+---
+import { directions, site } from "../data/site";
+---
+
+<header class="lab-index-header">
+  <a class="brand" href="/design-options/">
+    <span class="brand-mark" aria-hidden="true">⌁</span>
+    <span>{site.name}</span>
+  </a>
+  <h1>Six ways to make the screen copyable.</h1>
+  <p>
+    A small design lab for the first CopyLasso landing page. Each direction keeps the same fast, local-first product story and tests a different visual hierarchy.
+  </p>
+</header>
+
+<main id="main-content">
+  <div class="direction-list">
+    {directions.map((direction) => (
+      <article class="direction-row">
+        <span class="direction-number">{String(direction.number).padStart(2, "0")}</span>
+        <div>
+          <h2>{direction.name}</h2>
+          <p>{direction.thesis}</p>
+        </div>
+        <a class="direction-link" href={direction.href}>View direction →</a>
+      </article>
+    ))}
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="footer-row">
+    <p>Created by Bennett Hilberg.</p>
+    <div class="footer-links">
+      <a href={`mailto:${site.email}`}>{site.email}</a>
+      <a href={site.githubUrl}>View source on GitHub</a>
+    </div>
+  </div>
+</footer>
