@@ -376,6 +376,43 @@ assert_v02_publication_draft_record() {
     assert_v02_publication_release_record "$1" "$2" true false
 }
 
+assert_v02_resumable_publication_draft_record() {
+    local record="$1"
+    local v02_release_notes_file="$2"
+    local asset_name
+    local asset_count
+
+    assert_v02_publication_release_identity \
+        "$record" "$v02_release_notes_file" true false
+    /usr/bin/jq -e \
+        --arg dmg "$COPYLASSO_RELEASE_DMG" \
+        --arg checksum "$COPYLASSO_RELEASE_CHECKSUM" '
+        (.assets | type) == "array"
+        and (.assets | length) <= 2
+        and ([.assets[].name] | length) == ([.assets[].name] | unique | length)
+        and all(.assets[]; .name == $dmg or .name == $checksum)
+    ' "$record" >/dev/null 2>&1 || \
+        v02_publication_fail \
+            "The existing final v0.2 draft has unsupported or duplicate assets."
+
+    for asset_name in "$COPYLASSO_RELEASE_DMG" "$COPYLASSO_RELEASE_CHECKSUM"; do
+        asset_count="$(/usr/bin/jq -er --arg name "$asset_name" \
+            '[.assets[] | select(.name == $name)] | length' "$record" 2>/dev/null)" || \
+            v02_publication_fail "The existing final v0.2 draft asset list is invalid."
+        if [[ "$asset_count" == "1" ]]; then
+            if [[ "$asset_name" == "$COPYLASSO_RELEASE_DMG" ]]; then
+                assert_v02_asset_record \
+                    "$record" "$asset_name" \
+                    "$COPYLASSO_V02_DMG_SIZE" "$COPYLASSO_V02_DMG_SHA256"
+            else
+                assert_v02_asset_record \
+                    "$record" "$asset_name" \
+                    "$COPYLASSO_V02_CHECKSUM_SIZE" "$COPYLASSO_V02_CHECKSUM_SHA256"
+            fi
+        fi
+    done
+}
+
 assert_v02_public_release_record() {
     assert_v02_publication_release_record "$1" "$2" false true
 }

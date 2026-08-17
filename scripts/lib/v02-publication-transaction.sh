@@ -25,6 +25,7 @@ create_v02_publication_draft_transaction() (
     local draft_committed="false"
     local existing_release_count
     local upload_succeeded
+    local -a upload_paths=()
 
     publication_transaction_directory="$(/usr/bin/mktemp -d \
         "${TMPDIR:-/private/tmp}/copylasso-g49-draft.XXXXXX")"
@@ -110,52 +111,59 @@ create_v02_publication_draft_transaction() (
             | if length == 1 then .[0] else error("ambiguous existing draft") end
         ' "$release_listing" > "$final_record" 2>/dev/null || \
             v02_publication_fail "The existing final v0.2 draft could not be read exactly."
-        "$final_assertion" "$final_record" "$transaction_release_notes" || \
+        if ("$final_assertion" "$final_record" "$transaction_release_notes" \
+            >/dev/null 2>&1); then
+            /bin/cp "$final_record" "$readback"
+            /bin/chmod 600 "$readback"
+            draft_committed="true"
+            COPYLASSO_G49_TRANSACTION_COMMITTED="$draft_committed"
+            cleanup_v02_publication_draft_transaction
+            trap - EXIT
+            return 0
+        fi
+        assert_v02_resumable_publication_draft_record \
+            "$final_record" "$transaction_release_notes" || \
             v02_publication_fail \
-                "The existing final v0.2 release is not the exact resumable private draft."
-        /bin/cp "$final_record" "$readback"
-        /bin/chmod 600 "$readback"
-        draft_committed="true"
-        COPYLASSO_G49_TRANSACTION_COMMITTED="$draft_committed"
-        cleanup_v02_publication_draft_transaction
-        trap - EXIT
-        return 0
+                "The existing final v0.2 release is not a resumable private draft."
+        /bin/cp "$final_record" "$creation_record"
     fi
 
-    if ! "$transaction_gh_binary" api \
-        --method POST \
-        "repos/$repository/releases" \
-        -f "tag_name=$COPYLASSO_V02_FINAL_TAG" \
-        -f "target_commitish=$COPYLASSO_V02_CANDIDATE_COMMIT" \
-        -f "name=$COPYLASSO_V02_RELEASE_NAME" \
-        -F draft=true \
-        -F prerelease=false \
-        -f make_latest=false \
-        -F "body=@$transaction_release_notes" \
-        > "$creation_record"; then
-        read_all_v02_publication_releases
-        if ! /usr/bin/jq -er \
-            --arg tag "$COPYLASSO_V02_FINAL_TAG" \
-            --arg commit "$COPYLASSO_V02_CANDIDATE_COMMIT" \
-            --arg name "$COPYLASSO_V02_RELEASE_NAME" \
-            --rawfile body "$transaction_release_notes" '
-            [.[][] | select(
-                .tag_name == $tag
-                and .target_commitish == $commit
-                and .name == $name
-                and .body == $body
-                and .draft == true
-                and .prerelease == false
-                and .published_at == null
-                and (.assets | length) == 0
-            )]
-            | if length == 1 then .[0] else error("ambiguous draft creation") end
-        ' "$release_listing" > "$creation_record" 2>/dev/null; then
-            v02_publication_fail \
-                "The final v0.2 draft could not be created or identified through exact readback."
+    if [[ "$existing_release_count" == "0" ]]; then
+        if ! "$transaction_gh_binary" api \
+            --method POST \
+            "repos/$repository/releases" \
+            -f "tag_name=$COPYLASSO_V02_FINAL_TAG" \
+            -f "target_commitish=$COPYLASSO_V02_CANDIDATE_COMMIT" \
+            -f "name=$COPYLASSO_V02_RELEASE_NAME" \
+            -F draft=true \
+            -F prerelease=false \
+            -f make_latest=false \
+            -F "body=@$transaction_release_notes" \
+            > "$creation_record"; then
+            read_all_v02_publication_releases
+            if ! /usr/bin/jq -er \
+                --arg tag "$COPYLASSO_V02_FINAL_TAG" \
+                --arg commit "$COPYLASSO_V02_CANDIDATE_COMMIT" \
+                --arg name "$COPYLASSO_V02_RELEASE_NAME" \
+                --rawfile body "$transaction_release_notes" '
+                [.[][] | select(
+                    .tag_name == $tag
+                    and .target_commitish == $commit
+                    and .name == $name
+                    and .body == $body
+                    and .draft == true
+                    and .prerelease == false
+                    and .published_at == null
+                    and (.assets | length) == 0
+                )]
+                | if length == 1 then .[0] else error("ambiguous draft creation") end
+            ' "$release_listing" > "$creation_record" 2>/dev/null; then
+                v02_publication_fail \
+                    "The final v0.2 draft could not be created or identified through exact readback."
+            fi
+        else
+            COPYLASSO_G49_TRANSACTION_OWNS_DRAFT="true"
         fi
-    else
-        COPYLASSO_G49_TRANSACTION_OWNS_DRAFT="true"
     fi
 
     release_identifier="$(/usr/bin/jq -er '
@@ -163,16 +171,25 @@ create_v02_publication_draft_transaction() (
     ' "$creation_record" 2>/dev/null)" || \
         v02_publication_fail "The final v0.2 draft has no valid identifier."
     COPYLASSO_G49_TRANSACTION_RELEASE_IDENTIFIER="$release_identifier"
-    assert_v02_publication_release_identity \
-        "$creation_record" "$transaction_release_notes" true false
-    [[ "$(/usr/bin/jq -er '.assets | length' \
-        "$creation_record" 2>/dev/null || true)" == "0" ]] || \
-        v02_publication_fail "The newly created final v0.2 draft was not empty."
+    assert_v02_resumable_publication_draft_record \
+        "$creation_record" "$transaction_release_notes"
+
+    if [[ "$(/usr/bin/jq -er --arg name "$COPYLASSO_RELEASE_DMG" \
+        '[.assets[] | select(.name == $name)] | length' \
+        "$creation_record" 2>/dev/null)" == "0" ]]; then
+        upload_paths+=("$candidate_directory/$COPYLASSO_RELEASE_DMG")
+    fi
+    if [[ "$(/usr/bin/jq -er --arg name "$COPYLASSO_RELEASE_CHECKSUM" \
+        '[.assets[] | select(.name == $name)] | length' \
+        "$creation_record" 2>/dev/null)" == "0" ]]; then
+        upload_paths+=("$candidate_directory/$COPYLASSO_RELEASE_CHECKSUM")
+    fi
+    [[ "${#upload_paths[@]}" -gt 0 ]] || \
+        v02_publication_fail "The resumable final v0.2 draft has no missing approved asset."
 
     upload_succeeded="true"
     if ! "$transaction_gh_binary" release upload "$COPYLASSO_V02_FINAL_TAG" \
-        "$candidate_directory/$COPYLASSO_RELEASE_DMG" \
-        "$candidate_directory/$COPYLASSO_RELEASE_CHECKSUM" \
+        "${upload_paths[@]}" \
         --repo "$repository"; then
         upload_succeeded="false"
     fi
@@ -180,7 +197,7 @@ create_v02_publication_draft_transaction() (
         "repos/$repository/releases/$release_identifier" > "$final_record"; then
         v02_publication_fail "The final v0.2 draft could not be read back."
     fi
-    if ! "$final_assertion" "$final_record" "$transaction_release_notes"; then
+    if ! ("$final_assertion" "$final_record" "$transaction_release_notes"); then
         if [[ "$upload_succeeded" == "false" ]]; then
             v02_publication_fail \
                 "The final v0.2 asset upload failed and exact readback did not prove completion."
