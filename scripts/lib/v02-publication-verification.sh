@@ -593,17 +593,17 @@ assert_v02_sparkle_signatures() {
     if ! (
         set -euo pipefail
         local sparkle_verification_directory
-        local verifier
+        local sparkle_signature_verifier
 
         sparkle_verification_directory="$(/usr/bin/mktemp -d \
             "${TMPDIR:-/private/tmp}/copylasso-g49-sparkle-verification.XXXXXX")"
         trap '/bin/rm -rf "$sparkle_verification_directory"' EXIT
-        verifier="$sparkle_verification_directory/verify-sparkle-signatures"
+        sparkle_signature_verifier="$sparkle_verification_directory/verify-sparkle-signatures"
         /usr/bin/xcrun swiftc \
             "$copylasso_v02_publication_root/scripts/lib/verify-sparkle-signatures.swift" \
-            -o "$verifier" \
+            -o "$sparkle_signature_verifier" \
             > "$sparkle_verification_directory/build.log" 2>&1
-        "$verifier" \
+        "$sparkle_signature_verifier" \
             "$public_key" \
             "$appcast" \
             "$archive" \

@@ -512,6 +512,22 @@ assert_v02_sparkle_signatures \
     "$sparkle_fixture_appcast" \
     "$sparkle_fixture_archive" \
     "$sparkle_fixture_application"
+readonly sparkle_collision_output="$temporary_directory/sparkle-collision-output.txt"
+/bin/bash -c '
+    set -euo pipefail
+    readonly verifier="caller-owned-verifier"
+    source "$1"
+    assert_v02_sparkle_signatures "$2" "$3" "$4"
+' _ \
+    "$verifier_library" \
+    "$sparkle_fixture_appcast" \
+    "$sparkle_fixture_archive" \
+    "$sparkle_fixture_application" \
+    > "$sparkle_collision_output" 2>&1 || \
+    fail "Sparkle verification must work when the caller owns a readonly verifier variable."
+if /usr/bin/grep -Fq 'readonly variable' "$sparkle_collision_output"; then
+    fail "Sparkle verification must not collide with caller-owned shell variables."
+fi
 /usr/bin/perl -0pe 's/CopyLasso/CopyLassp/' \
     "$sparkle_fixture_appcast" > "$temporary_directory/tampered-appcast.xml"
 expect_failure "Sparkle signature verification failed" \
