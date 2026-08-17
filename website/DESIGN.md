@@ -72,7 +72,7 @@
 
 - Duration: 160ms for interaction feedback. The explanatory capture loop is seven seconds with a long static read state.
 - Easing: `cubic-bezier(0.23, 1, 0.32, 1)` for draws and reveals; linear only for opacity timing.
-- Only transform and opacity animate. The four pre-sized selection edges scale from their physical drawing origins.
+- The selection rectangle grows from its starting corner while a fixed-size crosshair travels with the drag endpoint. The loop leaves a long static read state.
 - Reduced motion shows the completed selection and clipboard result without movement.
 
 ## Iconography
@@ -82,11 +82,11 @@
 
 ## Imagery and illustration
 
-- Mode: CSS-built product demonstration, not stock photography.
-- Rules: cool flat architectural shapes, crisp borders, no people, and enough detail to read as a street corner without becoming a decorative illustration.
-- The storefront uses text only, not a copied logo or brand asset.
-- Avoid corporate-Memphis figures, 3D blobs, AI-generated photography, glossy device frames, and decorative images that do not explain the product.
-- Text-over-image contrast is fixed because all demonstration surfaces are controlled CSS colors.
+- Mode: one purpose-generated photorealistic street image with a lightweight SVG interface overlay.
+- The source image is locally served as a 1440px WebP and lazy-loaded below the primary hero actions; it adds no client JavaScript or remote request.
+- The visible scene places the `7th Street` sign above the `STARBUCKS COFFEE` fascia so the selection can capture `7th Street` and `STARBUCKS` while clearly leaving `COFFEE` outside its right edge.
+- The SVG overlay uses a lightly tinted rectangle and an outlined crosshair, echoing a native screen-region drag rather than adding ornamental animation.
+- Avoid unrelated decorative imagery, glossy device frames, gradients, or text overlays that compete with the source text being demonstrated.
 
 ## Accessibility
 
@@ -109,4 +109,5 @@ The source of truth is the global token block in `src/styles/global.css`; the pa
 
 ## Changelog
 
+- 2026-08-17: replaced the synthetic street scene with a purpose-generated photograph and rebuilt the capture loop as a crosshair-led region drag that deliberately excludes `COFFEE`.
 - 2026-08-17: committed the selected landing-page direction from the ten-option lab, including the street-corner proof, centered hero actions, three-step workflow, continuous feature field, and simple close.

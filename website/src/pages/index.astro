@@ -63,28 +63,29 @@ const qrPath = qrCells
             </div>
 
             <div class="street-scene">
-              <div class="sky-line"></div>
-              <div class="building building-back"></div>
-              <div class="building building-side"></div>
-              <div class="street-post"></div>
-              <div class="street-sign">7th Street</div>
-              <div class="storefront">
-                <div class="storefront-glass"></div>
-                <div class="storefront-name">STARBUCKS COFFEE</div>
-                <div class="awning">
-                  <span></span><span></span><span></span><span></span><span></span>
-                </div>
-                <div class="storefront-door"></div>
-              </div>
-              <div class="sidewalk"></div>
-
-              <div class="selection-frame">
-                <span class="selection-edge selection-top"></span>
-                <span class="selection-edge selection-right"></span>
-                <span class="selection-edge selection-bottom"></span>
-                <span class="selection-edge selection-left"></span>
-                <span class="selection-crosshair"></span>
-              </div>
+              <img
+                src="/images/copylasso-street-capture.webp"
+                width="1440"
+                height="811"
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
+              <svg class="capture-overlay" viewBox="0 0 1440 811" preserveAspectRatio="xMidYMid meet">
+                <g class="selection-box">
+                  <rect
+                    x="140"
+                    y="90"
+                    width="985"
+                    height="430"
+                    fill="rgb(0 105 210 / 0.08)"
+                    stroke="#0069d2"
+                    stroke-width="4"
+                    vector-effect="non-scaling-stroke"
+                  ></rect>
+                </g>
+              </svg>
+              <span class="capture-crosshair"></span>
             </div>
           </div>
 
@@ -406,159 +407,57 @@ const qrPath = qrCells
     aspect-ratio: 16 / 9;
     overflow: hidden;
     border-radius: 8px;
-    background: #bcd8ed;
+    background: #c7d0d7;
   }
 
-  .sky-line { position: absolute; inset: 52% 0 0; background: #c7d0d7; }
-
-  .building {
+  .street-scene img,
+  .capture-overlay {
     position: absolute;
-    background: #dce3e8;
-    border: 1px solid rgb(22 45 69 / 0.14);
+    inset: 0;
+    width: 100%;
+    height: 100%;
   }
 
-  .building-back { inset: 11% 57% 43% 4%; }
-  .building-side { inset: 22% 2% 43% 75%; background: #c5d1d9; }
+  .street-scene img {
+    display: block;
+    object-fit: cover;
+  }
 
-  .building-back::before,
-  .building-back::after,
-  .building-side::before,
-  .building-side::after {
+  .capture-overlay { z-index: 2; overflow: visible; }
+
+  .selection-box {
+    transform: scale(1);
+    transform-box: fill-box;
+    transform-origin: top left;
+  }
+
+  .capture-crosshair {
     position: absolute;
-    width: 15%;
-    height: 22%;
-    background: #92afc2;
+    top: 64.12%;
+    left: 78.13%;
+    z-index: 3;
+    width: 1.6rem;
+    height: 1.6rem;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+  }
+
+  .capture-crosshair::before,
+  .capture-crosshair::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    box-sizing: border-box;
+    border: 1px solid white;
+    border-radius: 2px;
+    background: #101b27;
+    box-shadow: 0 0 0 1px rgb(16 27 39 / 0.25);
     content: "";
+    transform: translate(-50%, -50%);
   }
 
-  .building-back::before { inset: 16% auto auto 15%; }
-  .building-back::after { inset: 16% 15% auto auto; }
-  .building-side::before { inset: 18% auto auto 14%; }
-  .building-side::after { inset: 18% 14% auto auto; }
-
-  .street-post {
-    position: absolute;
-    z-index: 3;
-    top: 12%;
-    bottom: 22%;
-    left: 18%;
-    width: 0.5%;
-    min-width: 3px;
-    background: #273f54;
-  }
-
-  .street-sign {
-    position: absolute;
-    z-index: 4;
-    top: 14%;
-    left: 9%;
-    min-width: 25%;
-    padding: 1.4% 2.2%;
-    border: 2px solid #e5f1fb;
-    border-radius: 5px;
-    background: #244b70;
-    color: white;
-    font-size: clamp(0.72rem, 1.85vw, 1.25rem);
-    font-weight: 600;
-    line-height: 1;
-    text-align: center;
-  }
-
-  .storefront {
-    position: absolute;
-    z-index: 2;
-    inset: 36% 7% 12% 29%;
-    border: 1px solid rgb(22 45 69 / 0.18);
-    background: #e7ecef;
-  }
-
-  .storefront-name {
-    position: absolute;
-    z-index: 3;
-    inset: 8% 7% auto;
-    color: #223b50;
-    font-size: clamp(0.67rem, 1.8vw, 1.28rem);
-    font-weight: 600;
-    letter-spacing: 0.025em;
-    line-height: 1;
-    text-align: center;
-    white-space: nowrap;
-  }
-
-  .storefront-glass { position: absolute; inset: 36% 4% 5%; background: #7899ae; }
-
-  .storefront-glass::after {
-    position: absolute;
-    inset: 0 48% 0 auto;
-    width: 1px;
-    background: rgb(234 245 252 / 0.7);
-    content: "";
-  }
-
-  .awning {
-    position: absolute;
-    z-index: 2;
-    top: 28%;
-    right: 0;
-    left: 0;
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    height: 12%;
-    overflow: hidden;
-    border-block: 1px solid rgb(22 45 69 / 0.2);
-  }
-
-  .awning span:nth-child(odd) { background: #f5f7f8; }
-  .awning span:nth-child(even) { background: #4e7391; }
-
-  .storefront-door {
-    position: absolute;
-    z-index: 3;
-    right: 10%;
-    bottom: 5%;
-    width: 17%;
-    height: 50%;
-    border: 1px solid #d9e8f1;
-    background: #49697f;
-  }
-
-  .sidewalk {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    height: 14%;
-    border-top: 2px solid #8b9aa5;
-    background: #aeb8bf;
-  }
-
-  .selection-frame { position: absolute; z-index: 8; inset: 9% 5% 29% 6%; }
-  .selection-edge { position: absolute; background: #0877df; opacity: 0; }
-
-  .selection-top,
-  .selection-bottom { right: 0; left: 0; height: 3px; transform: scaleX(0); }
-
-  .selection-right,
-  .selection-left { top: 0; bottom: 0; width: 3px; transform: scaleY(0); }
-
-  .selection-top { top: 0; transform-origin: left center; }
-  .selection-right { right: 0; transform-origin: center top; }
-  .selection-bottom { bottom: 0; transform-origin: right center; }
-  .selection-left { left: 0; transform-origin: center bottom; }
-
-  .selection-crosshair {
-    position: absolute;
-    right: -0.45rem;
-    bottom: -0.45rem;
-    width: 1rem;
-    height: 1rem;
-    opacity: 0;
-  }
-
-  .selection-crosshair::before,
-  .selection-crosshair::after { position: absolute; background: #0877df; content: ""; }
-  .selection-crosshair::before { inset: 0 7px; }
-  .selection-crosshair::after { inset: 7px 0; }
+  .capture-crosshair::before { width: 100%; height: 3px; }
+  .capture-crosshair::after { width: 3px; height: 100%; }
 
   .result-body {
     display: flex;
@@ -594,33 +493,24 @@ const qrPath = qrCells
   .result-status svg { width: 1.3rem; height: 1.3rem; }
 
   @media (prefers-reduced-motion: no-preference) {
-    .selection-top { animation: draw-horizontal 7s cubic-bezier(0.23, 1, 0.32, 1) infinite; }
-    .selection-right { animation: draw-vertical 7s cubic-bezier(0.23, 1, 0.32, 1) 0.32s infinite; }
-    .selection-bottom { animation: draw-horizontal 7s cubic-bezier(0.23, 1, 0.32, 1) 0.64s infinite; }
-    .selection-left { animation: draw-vertical 7s cubic-bezier(0.23, 1, 0.32, 1) 0.96s infinite; }
-    .selection-crosshair { animation: show-crosshair 7s linear infinite; }
+    .selection-box { animation: drag-selection 7s cubic-bezier(0.23, 1, 0.32, 1) infinite; }
+    .capture-crosshair { animation: drag-crosshair 7s cubic-bezier(0.23, 1, 0.32, 1) infinite; }
     .result-copy { animation: show-result 7s cubic-bezier(0.23, 1, 0.32, 1) infinite; }
     .result-status { animation: show-status 7s linear infinite; }
   }
 
-  @keyframes draw-horizontal {
-    0%, 8% { opacity: 0; transform: scaleX(0); }
-    10% { opacity: 1; transform: scaleX(0); }
-    18%, 83% { opacity: 1; transform: scaleX(1); }
-    92%, 100% { opacity: 0; transform: scaleX(1); }
+  @keyframes drag-selection {
+    0%, 8% { opacity: 0; transform: scale(0.01); }
+    12% { opacity: 1; transform: scale(0.01); }
+    32%, 82% { opacity: 1; transform: scale(1); }
+    91%, 100% { opacity: 0; transform: scale(1); }
   }
 
-  @keyframes draw-vertical {
-    0%, 8% { opacity: 0; transform: scaleY(0); }
-    10% { opacity: 1; transform: scaleY(0); }
-    18%, 83% { opacity: 1; transform: scaleY(1); }
-    92%, 100% { opacity: 0; transform: scaleY(1); }
-  }
-
-  @keyframes show-crosshair {
-    0%, 27% { opacity: 0; }
-    31%, 79% { opacity: 1; }
-    88%, 100% { opacity: 0; }
+  @keyframes drag-crosshair {
+    0%, 8% { top: 11.1%; left: 9.72%; opacity: 0; }
+    12% { top: 11.1%; left: 9.72%; opacity: 1; }
+    32%, 82% { top: 64.12%; left: 78.13%; opacity: 1; }
+    91%, 100% { top: 64.12%; left: 78.13%; opacity: 0; }
   }
 
   @keyframes show-result {
@@ -858,15 +748,13 @@ const qrPath = qrCells
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .selection-edge,
-    .selection-crosshair,
+    .selection-box,
+    .capture-crosshair,
     .result-copy,
     .result-status { animation: none; opacity: 1; }
 
-    .selection-top,
-    .selection-bottom { transform: scaleX(1); }
-    .selection-left,
-    .selection-right { transform: scaleY(1); }
+    .selection-box { transform: scale(1); }
+    .capture-crosshair { top: 64.12%; left: 78.13%; }
     .result-copy { transform: none; }
   }
 
@@ -893,10 +781,6 @@ const qrPath = qrCells
     .capture-demo { margin-top: 3.5rem; }
     .demo-heading { align-items: flex-start; flex-direction: column; gap: 0.15rem; }
     .result-body { min-height: 9rem; padding-top: 1rem; }
-    .street-scene { aspect-ratio: 4 / 3; }
-    .street-sign { font-size: 0.72rem; }
-    .storefront-name { font-size: 0.65rem; }
-    .selection-frame { inset: 9% 4% 33% 5%; }
     .workflow { gap: 2.5rem; }
     .feature-specimen { padding: 1.5rem 0; }
     .feature-specimens { border-top: 1px solid #a8c0d3; }
