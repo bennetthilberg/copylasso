@@ -671,6 +671,19 @@ exact candidate relaunches, its ordinary production feed presents the signed
 public 0.2.2 item as the authenticated lower-build rollback transaction; the
 candidate must remain unchanged without an offer, download, or installation.
 
+The August 16, 2026 G55 disposable-account run passed the exact public 0.2.2
+clean-install baseline, the complete candidate functional matrix, and the
+0.2.2-source-fixture transition through Later, separate download/install
+consent, relaunch, preference retention, history default-off, offline failure
+isolation, and authenticated rollback rejection. A first transition attempt
+was rejected because its otherwise valid signed fixture appcast embedded
+Markdown notes; regenerating only that temporary appcast from
+`CopyLasso-0.3.0.txt` produced the required inline `plain-text` format and
+passed feed, enclosure, URL, and length verification before the successful
+retry. The post-update payload manifest matched the untouched candidate and a
+read-only authorized reconstruction passed strict deep signature verification.
+No candidate or release asset changed.
+
 The July 13, 2026 signed run completed many functional, permission, and OCR rows
 before exposing a pre-drag sleep/wake failure. G24U subsequently passed exact
 signed pre-drag and drag-phase sleep interruption with full cleanup, clipboard
