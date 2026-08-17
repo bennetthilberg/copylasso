@@ -22,6 +22,7 @@ readonly g49_publication_audit_script="$repository_root/scripts/audit-g49-public
 readonly g50_sparkle_hotfix_audit_script="$repository_root/scripts/audit-g50-sparkle-hotfix.sh"
 readonly g50_publication_audit_script="$repository_root/scripts/audit-g50-publication.sh"
 readonly g50_publication_test_script="$repository_root/scripts/test-g50-publication.sh"
+readonly g56_publication_audit_script="$repository_root/scripts/audit-g56-publication.sh"
 readonly v02_publication_test_script="$repository_root/scripts/test-v02-publication.sh"
 readonly code_recognition_audit_script="$repository_root/scripts/audit-code-recognition.sh"
 readonly multilingual_ocr_audit_script="$repository_root/scripts/audit-multilingual-ocr.sh"
@@ -218,12 +219,13 @@ for required_patch_guard in \
     "g52_capture_history_coverage_tree_pattern" \
     "g53_interface_copy_tree_pattern" \
     "g54_release_qualification_tree_pattern" \
+    "g56_publication_tree_pattern" \
     "expected_candidate_baseline_tree_digest='1e4844388bc872b8ac4644a13b00223af1239f431d390130346daa8e914aafa0'" \
     "expected_g48_baseline_tree_digest='6a19b6d447e87870956772e7dcdaa11dedd02c0ce1f98d3ed02e766cf29cd9de'" \
     "expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'" \
     "g51_source_base_commit='5491bdc2ebf60872e0fababdc70c377e54a2e6f8'" \
     "expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'" \
-    "expected_approved_post_candidate_patch_digest='50478f3484300bae1372b6f3b4cc1ffdc065361c05056708b9f913fb73aa0e31'" \
+    "expected_approved_post_candidate_patch_digest='3e726ab75c666a0b5a23b9a517d192155b43d5b05e44da55a92c70dd17190774'" \
     'cat-file -e "$candidate_source_commit^{tree}"' \
     'The qualified candidate commit is unavailable.' \
     'cat-file -e "$g51_source_base_commit^{tree}"' \
@@ -246,6 +248,7 @@ for required_patch_guard in \
     '/usr/bin/grep -Ev "$g52_capture_history_tree_pattern"' \
     '/usr/bin/grep -Ev "$g52_capture_history_coverage_tree_pattern"' \
     '/usr/bin/grep -Ev "$g53_interface_copy_tree_pattern"' \
+    '/usr/bin/grep -Ev "$g56_publication_tree_pattern"' \
     'ls-tree -r --full-tree "$g51_source_base_commit"' \
     'The approved G43A runtime patch differs from its reviewed tree digest.'; do
     if ! /usr/bin/grep -Fq "$required_patch_guard" \
@@ -338,6 +341,32 @@ g50_publication_audit_invocations="$({
 if [[ "$g50_publication_audit_invocations" != "1" ]]; then
     fail "Canonical CI must invoke scripts/audit-g50-publication.sh exactly once."
 fi
+g56_publication_test_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/test-g56-publication\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$g56_publication_test_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/test-g56-publication.sh exactly once."
+fi
+g56_publication_audit_invocations="$({
+    /usr/bin/grep -Ec \
+        '^[[:space:]]*\./scripts/audit-g56-publication\.sh[[:space:]]*$' \
+        "$ci_script" || true
+})"
+if [[ "$g56_publication_audit_invocations" != "1" ]]; then
+    fail "Canonical CI must invoke scripts/audit-g56-publication.sh exactly once."
+fi
+for required_g56_publication_guard in \
+    'v0.3.0-rc.1' \
+    'c99bec65be187c02b920b6519152ba935ec44253' \
+    'copylasso_prepare_v030_publication' \
+    'Phase 1 must not publish, tag, replace, or deploy'; do
+    if ! /usr/bin/grep -Fq -- "$required_g56_publication_guard" \
+        "$g56_publication_audit_script"; then
+        fail "The G56 publication audit is missing its guard: $required_g56_publication_guard"
+    fi
+done
 for required_g50_publication_guard in \
     'v0.2.2-rc.1' \
     '81016fe43ee617b5f251564b03904137a4447266' \

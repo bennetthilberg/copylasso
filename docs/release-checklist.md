@@ -282,3 +282,15 @@ inferred pass; see [`v0.2-release-qualification.md`](v0.2-release-qualification.
   install the exact public build locally, and verify protected-main state.
 - [ ] Close issue #37 after public history verification. Narrow issue #39 to
   deferred translation and text-to-speech instead of closing unshipped scope.
+
+## G56 - Publish CopyLasso v0.3.0
+
+- [ ] Merge the reviewed G56 preparation controls before dispatching from exact protected `main`.
+- [ ] Reverify immutable `v0.3.0-rc.1` candidate commit `c99bec65be187c02b920b6519152ba935ec44253` and DMG SHA-256 `96f07eff7719f6c5b4b819af846d9ac825e13d4959d6f45d14d19fffa943bb96` without rebuilding.
+- [ ] Create and read back one private non-prerelease final draft containing only the approved DMG and checksum plus one final-URL authenticated feed handoff.
+- [ ] Create and verify one signed annotated `v0.3.0` tag on the approved candidate commit; never move the final or RC tag.
+- [ ] Publish the exact draft by release ID as public, non-prerelease, and latest; never replace an uploaded asset.
+- [ ] Deploy only the verified `appcast.xml` and headers after the public enclosure URL succeeds.
+- [ ] Complete unauthenticated release, source-archive, genuine-quarantine download, install, and public `0.2.2` to `0.3.0` updater verification.
+- [ ] Preserve the accepted macOS 14 and direct high-water readback gaps as accepted gaps rather than inferred passes.
+- [ ] Stop before G57 release-state documentation, local final installation, or issue closure.

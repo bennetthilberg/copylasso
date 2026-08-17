@@ -28,13 +28,14 @@ readonly g52_capture_history_tree_pattern=$'\t(CHANGELOG\.md|CONTRIBUTING\.md|Co
 readonly g52_capture_history_coverage_tree_pattern=$'\t(CopyLassoTests/SharedUI/FeedbackPanelControllerTests\.swift|docs/coverage-review\.md|scripts/audit-coverage\.sh)$'
 readonly g53_interface_copy_tree_pattern=$'\t(CHANGELOG\.md|CopyLasso/Models/FeedbackPreview\.swift|CopyLasso/SharedUI/AboutView\.swift|CopyLasso/SharedUI/MenuBarMenuView\.swift|CopyLasso/SharedUI/PermissionRecoveryPanel\.swift|CopyLasso/SharedUI/SecureUpdatePresentation\.swift|CopyLasso/SharedUI/SettingsView\.swift|CopyLassoTests/CaptureWorkflow/CapturePermissionFlowTests\.swift|CopyLassoTests/Models/FeedbackPreviewTests\.swift|CopyLassoTests/SharedUI/PermissionRecoveryTests\.swift|CopyLassoUITests/CopyLassoUITests\.swift|README\.md|docs/architecture/clipboard-and-feedback\.md|docs/manual-qa-and-performance\.md|docs/testing\.md|scripts/audit-capture-history\.sh|scripts/audit-interface-copy\.sh|scripts/audit-v02-release-qualification\.sh|scripts/ci\.sh|scripts/test-ci-contract\.sh)$'
 readonly g54_release_qualification_tree_pattern=$'\t(\.github/workflows/release\.yml|CHANGELOG\.md|Configuration/ReleaseMetadata\.xcconfig|CONTRIBUTING\.md|PRIVACY\.md|README\.md|SECURITY\.md|CopyLassoTests/Settings/UserDefaultsSettingsStoreTests\.swift|docs/architecture/build-configuration\.md|docs/architecture/overview\.md|docs/release-checklist\.md|docs/release-notes/0\.3\.0\.md|docs/release-packaging\.md|docs/release-workflow\.md|docs/security-and-privacy-review\.md|docs/testing\.md|docs/v0\.3-product-contract\.md|docs/v0\.3-release-candidate\.md|docs/v0\.3-release-qualification\.md|scripts/audit-capture-history\.sh|scripts/audit-g48-patch-qualification\.sh|scripts/audit-g49-publication\.sh|scripts/audit-g50-sparkle-hotfix\.sh|scripts/audit-release-workflow\.sh|scripts/audit-v02-contract\.sh|scripts/audit-v02-release-qualification\.sh|scripts/audit-v03-release-qualification\.sh|scripts/ci\.sh|scripts/lib/release-workflow-verification\.sh|scripts/test-ci-contract\.sh|scripts/test-developer-id-release\.sh|scripts/test-release-metadata\.sh|scripts/test-release-package\.sh|scripts/test-release-workflow\.sh)$'
+readonly g56_publication_tree_pattern=$'\t(\.github/workflows/prepare-v030-publication\.yml|docs/release-checklist\.md|docs/release-workflow\.md|docs/secure-update-operations\.md|docs/v0\.3-publication-runbook\.md|scripts/audit-g56-publication\.sh|scripts/audit-v02-release-qualification\.sh|scripts/ci\.sh|scripts/lib/release-package-verification\.sh|scripts/lib/v02-publication-verification\.sh|scripts/lib/v030-release-package-metadata\.sh|scripts/test-ci-contract\.sh|scripts/test-g56-publication\.sh|scripts/verify-release-package\.sh)$'
 readonly g44_release_state_commit='295ea80bdc0d51579840ef9c2bfcad5278f87099'
 readonly g51_source_base_commit='5491bdc2ebf60872e0fababdc70c377e54a2e6f8'
 readonly expected_candidate_baseline_tree_digest='1e4844388bc872b8ac4644a13b00223af1239f431d390130346daa8e914aafa0'
 readonly expected_g48_baseline_tree_digest='6a19b6d447e87870956772e7dcdaa11dedd02c0ce1f98d3ed02e766cf29cd9de'
 readonly expected_approved_post_publication_runtime_tree_digest='4269c2cc3177b938de424c53b42de94c63528f1a66ec79b97fea0de76ec095c0'
 readonly expected_g44_release_state_files_digest='8fefcac6d46e3ec19d11786ab3d5836c3c34fc476a1cad31efbfacc95d977039'
-readonly expected_approved_post_candidate_patch_digest='50478f3484300bae1372b6f3b4cc1ffdc065361c05056708b9f913fb73aa0e31'
+readonly expected_approved_post_candidate_patch_digest='3e726ab75c666a0b5a23b9a517d192155b43d5b05e44da55a92c70dd17190774'
 
 fail() {
     echo "$1" >&2
@@ -84,7 +85,9 @@ approved_post_candidate_path() {
         printf '%s\n' "$tree_line" | \
             /usr/bin/grep -Eq "$g53_interface_copy_tree_pattern" || \
         printf '%s\n' "$tree_line" | \
-            /usr/bin/grep -Eq "$g54_release_qualification_tree_pattern"
+            /usr/bin/grep -Eq "$g54_release_qualification_tree_pattern" || \
+        printf '%s\n' "$tree_line" | \
+            /usr/bin/grep -Eq "$g56_publication_tree_pattern"
 }
 
 for required_file in \
@@ -285,6 +288,7 @@ current_baseline_tree_digest="$(
         /usr/bin/grep -Ev "$g52_capture_history_coverage_tree_pattern" |
         /usr/bin/grep -Ev "$g53_interface_copy_tree_pattern" |
         /usr/bin/grep -Ev "$g54_release_qualification_tree_pattern" |
+        /usr/bin/grep -Ev "$g56_publication_tree_pattern" |
         /usr/bin/shasum -a 256 |
         /usr/bin/awk '{print $1}'
 )"

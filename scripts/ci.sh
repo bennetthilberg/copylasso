@@ -113,6 +113,12 @@ echo "Testing G50 publication controls"
 echo "Auditing G50 publication controls"
 ./scripts/audit-g50-publication.sh
 
+echo "Testing G56 publication controls"
+./scripts/test-g56-publication.sh
+
+echo "Auditing G56 publication controls"
+./scripts/audit-g56-publication.sh
+
 echo "Auditing on-screen code recognition"
 ./scripts/audit-code-recognition.sh
 
