@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /design-options/
 
 Sitemap: https://copylasso.com/sitemap.xml

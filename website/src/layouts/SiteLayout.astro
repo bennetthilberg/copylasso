@@ -23,6 +23,7 @@ const {
 
 const siteUrl = new URL("/", Astro.site ?? Astro.url).toString();
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toString();
+const isDesignLab = Astro.url.pathname.startsWith("/design-options");
 const fullTitle = optionName ? `${optionName} · CopyLasso` : title;
 const structuredData = {
   "@context": "https://schema.org",
@@ -56,6 +57,7 @@ const structuredData = {
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
+    {isDesignLab && <meta name="robots" content="noindex, nofollow" />}
     <meta name="application-name" content={site.name} />
     <meta name="theme-color" content="#0069d2" />
     <link rel="canonical" href={canonicalUrl} />
@@ -70,9 +72,9 @@ const structuredData = {
     <script type="application/ld+json" set:html={JSON.stringify(structuredData)}></script>
     <title>{fullTitle}</title>
   </head>
-  <body class:list={[optionNumber ? `option-${optionNumber}` : "lab-index"]}>
+  <body class:list={[isDesignLab ? (optionNumber ? `option-${optionNumber}` : "lab-index") : "site-index"]}>
     <a class="skip-link" href="#main-content">Skip to content</a>
-    <DesignLabNav current={optionNumber} previousHref={previousHref} nextHref={nextHref} />
+    {isDesignLab && <DesignLabNav current={optionNumber} previousHref={previousHref} nextHref={nextHref} />}
     <slot />
   </body>
 </html>

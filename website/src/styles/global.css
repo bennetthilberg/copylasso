@@ -6,7 +6,7 @@
   --muted: oklch(50% 0.035 250);
   --line: oklch(86% 0.025 250);
   --line-strong: oklch(73% 0.045 250);
-  --blue: oklch(53% 0.19 255);
+  --blue: #0069d2;
   --blue-deep: oklch(29% 0.12 255);
   --blue-pale: oklch(92.5% 0.045 255);
   --blue-ink: oklch(25% 0.12 255);
@@ -45,6 +45,11 @@ body {
   line-height: 1.55;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+}
+
+body.site-index {
+  min-width: 0;
+  overflow-x: clip;
 }
 
 h1,

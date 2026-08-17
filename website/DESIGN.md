@@ -1,74 +1,112 @@
 # CopyLasso website design system
 
-## Discovery
+## Context
 
-- Artifact: static product landing page and temporary design lab.
-- Audience: Mac users who need text from pixels, plus privacy-conscious open-source users.
-- Primary outcome: understand the capture workflow and choose the v0.3.0 download.
-- Secondary outcome: inspect the source on GitHub.
-- Positioning: technical, independent, calm, and useful.
-- Brand adjectives: clear, quiet, precise, human.
-- Aesthetic essence: a clean page with one blue gesture.
-- Single-minded proposition: select visible text, copy clean text, keep the capture on your Mac.
+- Artifact type: technical product landing page.
+- Audience: Mac users who need text from pixels, including privacy-conscious open-source users.
+- Primary action: download CopyLasso 0.3.0. Secondary action: inspect the source on GitHub.
+- Adjectives: clear, quiet, precise, human.
+- Visual translations: clear means one dominant headline and one primary action; quiet means cool near-whites and crisp edges; precise means a literal selection animation; human means direct copy and a street-corner example.
+- Aesthetic essence: calm, useful, assured.
+- Single-minded proposition: select anything visible and get clean clipboard text.
+- References: the before-and-after clarity of design option 8, the three-step rhythm of options 5 and 6, and the visual feature specimens and quiet close of option 10.
+- Mode: light only. Density: airy with compact proof regions.
+- Constraints: static Astro output, no hydration, no external fonts, no remote assets, no analytics, no third-party scripts, no serif or monospace type.
 
-## Shared design commitments
+## Aesthetic
 
-- Astro static output with no hydrated framework, external font, image request, analytics, or third-party script.
-- System sans typography only. `Avenir Next` and `Helvetica Neue` lead the stack on macOS; the fallback remains sans-serif.
-- Blue is the only chromatic family. No purple/indigo gradients, sepia tones, glass, or decorative glow.
-- Layouts stay minimal but use one intentional compositional gesture per direction: a paper window, proof strip, margin note, line, clipboard, desktop, still frame, split screen, or one-gesture stage.
-- No eyebrow text, pointless dot/pill indicators, or cards with accent left borders.
-- No monospace type anywhere. Do not use tiny utility labels as decoration; if information matters, give it normal reading size and a sensible place in the page.
-- Headings use a light or regular weight, with deliberate line breaks and generous whitespace. The page is always a light theme.
-- Real page text remains in semantic HTML. Decorative motion is CSS-only, causally tied to selection and clipboard output, and has a reduced-motion state.
-- Primary action: `Download CopyLasso 0.3.0` with a real download icon. Do not repeat the version elsewhere in the page.
-- The only supporting hero metadata is `macOS 14+ · Apple silicon + Intel`.
-- Secondary action: `View source on GitHub`.
+- Direction: cool editorial utility.
+- Defining trait: large sections alternate between centered product promise and left-aligned evidence.
+- Signature move: the street-corner crop, where one blue selection bridges a street sign and storefront before resolving to one natural clipboard phrase.
+- Forbidden: eyebrow text, leading-zero section numbers, pointless dot or pill indicators, sepia, dark theme, accent-left-border cards, glass, gradients, tiny decorative metadata, or diffuse shadows.
 
-## Content contract
+## Typography
 
-- Hero: copy text from anywhere on the Mac's capturable screen.
-- How it works: press `⇧⌘2`, select a region, and receive plain text on the clipboard.
-- Features: on-device Apple Vision OCR, supported QR/barcode recognition, language selection, optional encrypted history, menu-bar operation, and configurable shortcut.
-- Privacy: screenshots are never retained; capture and recognition stay local; no account, cloud OCR, analytics, or telemetry; history is optional and encrypted locally.
-- Compatibility: macOS 14 or newer, Apple silicon or Intel, Screen Recording permission for region capture.
-- Footer: Created by Bennett Hilberg; `me@bennetthilberg.com`; MIT source link.
+- Display: `Avenir Next`, local macOS face, with `Helvetica Neue` and the platform sans stack as fallbacks.
+- Body: `Avenir Next`, local macOS face, with `Helvetica Neue` and the platform sans stack as fallbacks.
+- Typeface downloads are intentionally avoided to protect the load-time requirement. The local Avenir lead keeps the face more specific than a generic `system-ui` declaration.
+- Scale: approximately 1.25 from a 16px base. Hero 51 to 120px at 0.92 line height; section heading 36 to 76px at 0.98; component heading 22px at 1.2; body 16 to 22px at 1.55 to 1.6.
+- Weights: 400 body, 500 supporting display, 550 primary headings, 600 actions and compact headings.
+- Measure: body copy is capped around 43rem. Only short hero and closing copy is centered.
+- No text role uses a monospace family. Shortcut and code specimens inherit the sans stack.
 
-## Ten directions
+## Color
 
-1. **Paper Window** — a quiet split layout turns a believable spreadsheet capture into a clean clipboard result.
-2. **Proof Strip** — a wide single hero is followed by three visual proof moments for language, QR, and code recognition.
-3. **Margin Note** — a reading-first column leaves room for a blue selection note and a visible before/after.
-4. **Blue Line** — one thin blue route carries the eye from screen pixels through OCR to copied text.
-5. **Clipboard First** — the result is the hero; a source image and selection box sit behind it as context.
-6. **Window Within** — a restrained macOS-like surface makes the crosshair-and-copy sequence immediately legible.
-7. **Still Frame** — a street-sign-like still image becomes a tactile OCR demonstration without needing a remote asset.
-8. **Split Screen** — `what you see` and `what you get` stay side by side, with language and QR examples in the proof row.
-9. **Quiet Catalog** — a sparse editorial page uses large visual samples instead of feature-card copy.
-10. **One Gesture** — the smallest direction: one oversized hero action, one animated selection, and only the essential proof below.
+- Strategy: one clear cyan-blue family over cool white and blue-gray neutrals. Color explains selection and action rather than decorating every section.
+- Distribution: 70 neutral, 25 blue-tinted surfaces, 5 saturated action blue.
+- Palette, role to OKLCH and fallback:
+  - background: `oklch(98.3% 0.008 245)` | `#f7faff`
+  - surface: `oklch(94.8% 0.018 245)` | `#edf3fa`
+  - foreground: `oklch(19% 0.035 250)` | `#152235`
+  - supporting: `oklch(37% 0.04 250)` | `#46586d`
+  - muted: `oklch(50% 0.035 250)` | `#697b90`
+  - border: `oklch(73% 0.045 250)` | `#a6b8ca`
+  - accent: `oklch(48% 0.18 255)` | `#0069d2`
+  - accent foreground: `oklch(98% 0.008 245)` | `#f7faff`
+  - deep blue: `oklch(29% 0.12 255)` | `#163d70`
 
-## Token table
+## Spacing, radius, and edge
 
-| Role | Token |
-| --- | --- |
-| Display and body type | `Avenir Next`, `Helvetica Neue`, `-apple-system`, `BlinkMacSystemFont`, sans-serif |
-| Utility type | Same system sans stack; no monospace type |
-| Type ratio | 1.25, base 16px |
-| Spacing unit | 4px; section spacing uses 16/24/40/64/96px relationships |
-| Radii | 8px for controls; 14px for product surfaces |
-| Edge approach | crisp borders; no border plus diffuse shadow on one element |
-| Background | cool near-white surfaces only |
-| Foreground | deep blue-black |
-| Muted | desaturated blue-gray |
-| Accent | clear medium blue |
-| Accent foreground | cool white |
-| Success | dark green with text label when used |
-| Focus | high-contrast blue outline |
+- Spacing base: 4px. Working scale: 4, 8, 12, 16, 24, 32, 48, 64, 80, 112, 144.
+- Radius: 8px controls and visual interiors; 14px for the single hero demo surface.
+- Edge approach: defined borders only. No border is paired with a wide diffuse shadow.
+- Tight within groups, generous between narrative sections.
 
-## Signature move
+## Layout and composition
 
-Every option uses one restrained blue lasso/selection gesture to make the invisible act of selecting pixels visible. It never replaces text, controls, or accessible state.
+- Grid: bounded 74rem editorial grid with fluid gutters.
+- Scanning: centered Z-pattern hero, then left-aligned F-pattern evidence sections.
+- Signature layout move: the wide hero statement and actions lead directly into an asymmetric 1.45-to-0.75 before/after demo.
+- Feature specimens share one continuous ruled field rather than three floating cards.
+- Responsive: mobile-first reading order. At 52rem, the demo, workflow, trust, and feature specimens stack. At 38rem, hero actions become Download then View source.
 
-## Verification status
+## Components and states
 
-The ten-route redesign builds as 12 static Astro pages (overview, index, and ten options). The ten option routes all use the exact hero heading `Copy anything on your screen.`, light system-sans typography, a real download icon, a selection-to-clipboard animation, and no visible duplicate version label. Browser checks at the default 1280px viewport and an explicit 390px viewport found one `h1`, no horizontal overflow, the required CTA/source/compatibility content, and visual proof for QR, language, code, or clipboard behavior on every route. All ten routes include reduced-motion CSS fallbacks. Representative desktop renders were reviewed for Paper Window, Clipboard First, Still Frame, and One Gesture; the overview is left open in the local dev server for comparison.
+- Buttons: primary filled blue; secondary outlined; tertiary underlined text. Hover uses a 2px lift only on hover-capable devices. Active state retains shape and contrast.
+- Focus: global 3px high-contrast blue outline with 4px offset.
+- Targets: principal actions are at least 58px tall; navigation targets are at least 44px tall.
+- Surfaces: use spacing and a single divider before adding enclosure. No nested cards.
+- Empty, loading, and error states do not apply to this static front-end prototype. Download wiring remains intentionally deferred.
+
+## Motion
+
+- Duration: 160ms for interaction feedback. The explanatory capture loop is seven seconds with a long static read state.
+- Easing: `cubic-bezier(0.23, 1, 0.32, 1)` for draws and reveals; linear only for opacity timing.
+- Only transform and opacity animate. The four pre-sized selection edges scale from their physical drawing origins.
+- Reduced motion shows the completed selection and clipboard result without movement.
+
+## Iconography
+
+- Custom 24px outline icons with 1.8 to 2px rounded strokes.
+- The download control uses a literal arrow-to-baseline icon. The copied state uses one matching check.
+
+## Imagery and illustration
+
+- Mode: CSS-built product demonstration, not stock photography.
+- Rules: cool flat architectural shapes, crisp borders, no people, and enough detail to read as a street corner without becoming a decorative illustration.
+- The storefront uses text only, not a copied logo or brand asset.
+- Avoid corporate-Memphis figures, 3D blobs, AI-generated photography, glossy device frames, and decorative images that do not explain the product.
+- Text-over-image contrast is fixed because all demonstration surfaces are controlled CSS colors.
+
+## Accessibility
+
+- Semantic heading order, native links, a skip link, and descriptive hidden text accompany the decorative demo.
+- Meaning is not color-only: selection has a frame shape, and success has both a check and text.
+- Keyboard focus is visible and source order matches reading order.
+- Reduced motion is explicit. The page must reflow without horizontal document scrolling at 320px and 200 percent zoom.
+
+## Tokens
+
+The source of truth is the global token block in `src/styles/global.css`; the page consumes those tokens and adds only page-local layout values. Adapter: plain scoped Astro CSS.
+
+## Slop audit
+
+- Date: 2026-08-17.
+- Result: pass after rendered desktop, 390px, and 320px review.
+- Corrections: darkened the primary blue to pass AA button-text contrast, removed the inherited design-lab minimum width that caused 320px overflow, and tightened the stacked demo result.
+- Craft and accessibility gate: one named signature move, no prohibited card/eyebrow/pill/gradient treatment, visible keyboard focus, semantic headings, no document overflow, and an explicit reduced-motion final state.
+- Intentional exception: one local sans family leads both display and body roles because zero font requests and fast first render outrank a decorative pairing.
+
+## Changelog
+
+- 2026-08-17: committed the selected landing-page direction from the ten-option lab, including the street-corner proof, centered hero actions, three-step workflow, continuous feature field, and simple close.
