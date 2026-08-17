@@ -2,246 +2,270 @@
 import SiteLayout from "../../layouts/SiteLayout.astro";
 import { compatibilityFacts, features, privacyFacts, site } from "../../data/site";
 
-const featureGroups = [
-  {
-    id: "capture",
-    label: "Capture",
-    items: features.slice(0, 3),
-  },
-  {
-    id: "settings",
-    label: "Settings",
-    items: [features[3], features[5]],
-  },
-  {
-    id: "privacy",
-    label: "Privacy",
-    items: [
-      features[4],
-      {
-        title: "No account required",
-        body: "There is no account, cloud OCR, analytics, or telemetry in the capture path.",
-      },
-    ],
-  },
+const qrPattern = [
+  "1111111010101",
+  "1000001011101",
+  "1011101000101",
+  "1011101010101",
+  "1011101001101",
+  "1000001010101",
+  "1111111010101",
+  "0010010111010",
+  "1101101001011",
+  "0101010110100",
+  "1010011101110",
+  "0110100010011",
+  "1101011011101",
 ];
+
+const qrCells = qrPattern.flatMap((row) => row.split(""));
+const description =
+  "CopyLasso turns a selected region of your Mac screen into clean clipboard text with local Apple Vision OCR.";
 ---
 
 <SiteLayout
+  title="Clipboard First · CopyLasso"
+  description={description}
   optionNumber={5}
-  optionName="Shortcut Console"
-  description="CopyLasso turns screen selections into clipboard text with one shortcut, using local Apple Vision OCR on macOS."
+  optionName="Clipboard First"
   previousHref="/design-options/option-4/"
   nextHref="/design-options/option-6/"
 >
-  <div class="option-five-shell">
-    <header class="console-site-header">
-      <a class="console-brand" href="#main-content" aria-label="CopyLasso home">
-        <span class="console-brand-mark" aria-hidden="true"></span>
+  <div class="clipboard-page">
+    <header class="page-header">
+      <a class="brand" href="#main-content" aria-label="CopyLasso home">
+        <span class="brand-mark" aria-hidden="true"></span>
         <span>{site.name}</span>
       </a>
-      <nav class="console-header-nav" aria-label="Page sections">
-        <a href="#features">Features</a>
+
+      <nav class="page-nav" aria-label="Page sections">
+        <a href="#how-it-works">How it works</a>
+        <a href="#proof">Proof</a>
         <a href="#privacy">Privacy</a>
-        <a href={site.githubUrl}>GitHub</a>
+        <a href={site.githubUrl} target="_blank" rel="noreferrer">GitHub</a>
       </nav>
     </header>
 
-    <main id="main-content" class="console-main">
-      <section class="console-hero" aria-labelledby="hero-heading">
+    <main id="main-content">
+      <section class="hero-section" aria-labelledby="hero-heading">
         <div class="hero-copy">
-          <h1 id="hero-heading">Copy what you can see.</h1>
+          <h1 id="hero-heading">Copy anything on your screen.</h1>
           <p class="hero-lede">
-            CopyLasso turns a region of your Mac screen into clean, paste-ready text. It is a small
-            local utility for the moments when selecting is faster than retyping.
+            CopyLasso puts the result first. Select the words you can see, and a clean plain-text copy is ready for
+            the next app before you leave the one you are using.
           </p>
 
-          <div class="shortcut-callout">
-            <span class="shortcut-keys">
-              <span aria-hidden="true">{site.shortcut}</span>
-              <span class="sr-only">Shift Command 2</span>
-            </span>
-            <span>press to select a region</span>
-          </div>
-
           <div class="hero-actions">
-            <a class="primary-action" href={site.downloadHref}>
+            <a class="download-button" href={site.downloadHref}>
               <span>{site.downloadLabel}</span>
-              <span class="action-arrow" aria-hidden="true">↗</span>
+              <svg class="download-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 3v11"></path>
+                <path d="m7.5 10 4.5 4.5 4.5-4.5"></path>
+                <path d="M4 16.5v4h16v-4"></path>
+              </svg>
             </a>
-            <div class="release-meta">
-              <span>{site.versionLabel}</span>
-              <span>{site.requirements}</span>
-            </div>
+            <a class="source-link" href={site.githubUrl} target="_blank" rel="noreferrer">View source on GitHub</a>
+            <p class="hero-requirements">{site.requirements}</p>
           </div>
         </div>
 
-        <figure class="console-demo" aria-labelledby="demo-caption">
-          <div class="console-window">
-            <div class="console-titlebar">
-              <span>CopyLasso / capture</span>
-              <span class="console-titlebar-meta">on-device</span>
+        <figure class="hero-visual" aria-hidden="true">
+          <div class="source-window">
+            <div class="source-window-bar">
+              <span class="source-window-title">Team chat</span>
+              <span class="source-window-context">Project notes</span>
             </div>
-            <div class="console-screen">
-              <div class="transcript-panel">
-                <p class="console-column-label">command transcript</p>
-                <ol class="state-list">
-                  <li class="state-row">
-                    <span class="state-time">00:00</span>
-                    <div>
-                      <strong>READY</strong>
-                      <p>waiting for <span class="mono">⇧⌘2</span></p>
-                    </div>
-                  </li>
-                  <li class="state-row">
-                    <span class="state-time">00:01</span>
-                    <div>
-                      <strong>SELECTING</strong>
-                      <p>region selected on screen</p>
-                    </div>
-                  </li>
-                  <li class="state-row state-row-final">
-                    <span class="state-time">00:02</span>
-                    <div>
-                      <strong>COPIED</strong>
-                      <p>plain text on clipboard</p>
-                    </div>
-                  </li>
-                </ol>
-              </div>
 
-              <div class="clipboard-panel">
-                <p class="console-column-label">clipboard state</p>
-                <div class="clipboard-result">
-                  <span class="result-label">PLAIN TEXT</span>
-                  <p>Copy text from any<br />capturable screen.</p>
-                  <span class="result-status">ready to paste</span>
+            <div class="source-window-body">
+              <aside class="source-sidebar">
+                <span class="sidebar-heading">Channels</span>
+                <span class="sidebar-item sidebar-item-active">Launch</span>
+                <span class="sidebar-item">Design</span>
+                <span class="sidebar-item">Support</span>
+                <span class="sidebar-heading sidebar-heading-spaced">Direct</span>
+                <span class="sidebar-item">Maya Chen</span>
+              </aside>
+
+              <div class="source-thread">
+                <div class="thread-heading">
+                  <strong>Launch</strong>
+                  <span>3 messages</span>
                 </div>
-                <p class="clipboard-note">Recognized locally by Apple Vision.</p>
+
+                <article class="chat-message">
+                  <span class="message-avatar">MC</span>
+                  <div class="message-content">
+                    <strong>Maya Chen</strong>
+                    <p>Keep the source app open.</p>
+                  </div>
+                </article>
+
+                <article class="chat-message chat-message-selected">
+                  <span class="message-avatar message-avatar-blue">JR</span>
+                  <div class="message-content">
+                    <strong>Jon Rivera</strong>
+                    <p>Copy only the words you need.</p>
+                  </div>
+                </article>
+
+                <article class="chat-message chat-message-muted">
+                  <span class="message-avatar">AK</span>
+                  <div class="message-content">
+                    <strong>Alex Kim</strong>
+                    <p>The result stays on your Mac.</p>
+                  </div>
+                </article>
+
+                <div class="source-selection">
+                  <span class="selection-label">Selected text</span>
+                </div>
               </div>
             </div>
           </div>
-          <figcaption id="demo-caption">
-            One shortcut moves a selection from the screen into the clipboard.
-          </figcaption>
+
+          <div class="clipboard-sheet">
+            <div class="clipboard-clip" aria-hidden="true"></div>
+            <div class="clipboard-sheet-header">
+              <span>Clipboard result</span>
+              <span>Plain text</span>
+            </div>
+            <div class="clipboard-sheet-rule" aria-hidden="true"></div>
+            <div class="clipboard-copy">
+              <p>Keep the source app open.</p>
+              <p>Copy only the words you need.</p>
+            </div>
+            <div class="clipboard-confirmation">
+              <span class="confirmation-check" aria-hidden="true">✓</span>
+              <span>Copied to clipboard</span>
+            </div>
+          </div>
         </figure>
       </section>
 
-      <section id="workflow" class="console-section workflow-section" aria-labelledby="workflow-heading">
-        <div class="section-heading">
-          <h2 id="workflow-heading">A repeatable three-second routine.</h2>
+      <section id="how-it-works" class="content-section process-section" aria-labelledby="process-heading">
+        <div class="section-intro">
+          <h2 id="process-heading">Three moves. One clean result.</h2>
           <p>
-            Keep your hands where the work is. CopyLasso handles the screen boundary and recognition,
-            then leaves the result in the clipboard you already use.
+            The source can be a document, a message, a photo, or a remote desktop. CopyLasso only needs the pixels you
+            choose.
           </p>
         </div>
 
-        <ol class="workflow-list">
-          <li class="workflow-step">
-            <span class="step-number">01</span>
-            <h3>Press the shortcut</h3>
-            <p>Use <span class="mono">⇧⌘2</span>, or choose your own shortcut in settings.</p>
+        <ol class="process-list">
+          <li class="process-step">
+            <span class="process-step-key"><kbd>{site.shortcut}</kbd></span>
+            <div>
+              <h3>Press the shortcut</h3>
+              <p>Bring up the system selection crosshair without leaving the app in front of you.</p>
+            </div>
           </li>
-          <li class="workflow-step">
-            <span class="step-number">02</span>
-            <h3>Select the region</h3>
-            <p>Drag across text, a QR code, or a barcode on the capturable screen.</p>
+          <li class="process-step">
+            <span class="process-step-key" aria-hidden="true">02</span>
+            <div>
+              <h3>Select the words</h3>
+              <p>Draw a region around text, a QR code, a barcode, or anything else visible on screen.</p>
+            </div>
           </li>
-          <li class="workflow-step">
-            <span class="step-number">03</span>
-            <h3>Paste the result</h3>
-            <p>Recognized content arrives as plain text on your clipboard, ready for the next app.</p>
+          <li class="process-step">
+            <span class="process-step-key" aria-hidden="true">03</span>
+            <div>
+              <h3>Copy and continue</h3>
+              <p>Local Apple Vision recognition leaves the useful result as plain text on your clipboard.</p>
+            </div>
           </li>
         </ol>
       </section>
 
-      <section id="features" class="console-section features-section" aria-labelledby="features-heading">
-        <div class="section-heading">
-          <h2 id="features-heading">The utility stays small. The details are solid.</h2>
+      <section id="proof" class="content-section proof-section" aria-labelledby="proof-heading">
+        <div class="section-intro">
+          <h2 id="proof-heading">The clipboard can carry more than a sentence.</h2>
           <p>
-            Every control earns its place in the capture loop, from on-device recognition to the few
-            choices worth keeping close.
+            The same selection gesture handles the text that normally gets stranded inside images, interfaces, and
+            screenshots.
           </p>
         </div>
 
-        <div class="feature-groups">
-          {featureGroups.map((group) => (
-            <section class="feature-group" aria-labelledby={`feature-${group.id}-heading`}>
-              <h3 id={`feature-${group.id}-heading`}>{group.label}</h3>
-              <ul>
-                {group.items.map((feature) => (
-                  <li>
-                    <strong>{feature.title}</strong>
-                    <p>{feature.body}</p>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
+        <div class="proof-grid">
+          <article class="proof-item">
+            <div class="language-sample" aria-hidden="true">
+              <span>Bonjour, CopyLasso.</span>
+              <span>こんにちは、CopyLasso。</span>
+              <span>مرحبا، CopyLasso.</span>
+            </div>
+            <h3>Multiple scripts</h3>
+            <p>{features[3].body}</p>
+          </article>
+
+          <article class="proof-item">
+            <div class="code-sample" aria-hidden="true">
+              <span><b>let</b> selectedText = “visible words”;</span>
+              <span><b>return</b> selectedText;</span>
+            </div>
+            <h3>Code characters</h3>
+            <p>Keep punctuation, symbols, and line breaks useful when the source is a code sample.</p>
+          </article>
+
+          <article class="proof-item">
+            <div class="qr-sample" aria-hidden="true">
+              <div class="qr-code">
+                {qrCells.map((cell) => <span class:list={["qr-cell", cell === "1" && "qr-cell-filled"]}></span>)}
+              </div>
+              <span class="qr-result">plain text result</span>
+            </div>
+            <h3>Codes included</h3>
+            <p>{features[2].body}</p>
+          </article>
         </div>
       </section>
 
-      <section id="privacy" class="console-section privacy-section" aria-labelledby="privacy-heading">
-        <div class="privacy-layout">
-          <div class="section-heading">
-            <h2 id="privacy-heading">Nothing leaves the Mac.</h2>
+      <section id="privacy" class="content-section privacy-section" aria-labelledby="privacy-heading">
+        <div class="split-content">
+          <div class="section-intro">
+            <h2 id="privacy-heading">The clipboard stays yours.</h2>
             <p>
-              Capture and recognition happen locally. CopyLasso keeps the boundary clear: no account,
-              no cloud OCR, and no background collection.
+              The capture is temporary by design. Recognition happens on this Mac, and CopyLasso does not need an
+              account or a cloud handoff to do its job.
             </p>
           </div>
 
-          <ol class="privacy-list">
-            {privacyFacts.map((fact, index) => (
-              <li>
-                <span class="privacy-index">{String(index + 1).padStart(2, "0")}</span>
-                <span>{fact}</span>
-              </li>
-            ))}
-          </ol>
+          <ul class="fact-list">
+            {privacyFacts.map((fact) => <li>{fact}</li>)}
+          </ul>
         </div>
       </section>
 
-      <section id="compatibility" class="console-section compatibility-section" aria-labelledby="compatibility-heading">
-        <div class="compatibility-layout">
-          <div class="section-heading">
-            <h2 id="compatibility-heading">Made for the Mac you already use.</h2>
+      <section id="compatibility" class="content-section compatibility-section" aria-labelledby="compatibility-heading">
+        <div class="split-content">
+          <div class="section-intro">
+            <h2 id="compatibility-heading">Ready for the Mac you use.</h2>
             <p>
-              CopyLasso is a free, open-source macOS utility. Grant Screen Recording permission once
-              so region capture can see the pixels you choose.
+              CopyLasso is a free, open-source utility that stays in the menu bar. Give it Screen Recording permission
+              once so it can read the region you choose.
             </p>
           </div>
 
-          <ul class="compatibility-list">
-            {compatibilityFacts.map((fact) => (
-              <li>{fact}</li>
-            ))}
+          <ul class="fact-list compatibility-list">
+            {compatibilityFacts.map((fact) => <li>{fact}</li>)}
           </ul>
         </div>
       </section>
 
       <section id="download" class="download-section" aria-labelledby="download-heading">
         <div>
-          <h2 id="download-heading">Keep the next capture close.</h2>
-          <p>One shortcut, local recognition, and a clipboard that is ready before the thought moves on.</p>
+          <h2 id="download-heading">Keep the clean result close.</h2>
+          <p>
+            One shortcut, one selection, and a useful clipboard result without sending the screen anywhere else.
+          </p>
         </div>
-        <div class="download-actions">
-          <a class="primary-action" href={site.downloadHref}>
-            <span>{site.downloadLabel}</span>
-            <span class="action-arrow" aria-hidden="true">↗</span>
-          </a>
-          <div class="release-meta release-meta-dark">
-            <span>{site.versionLabel}</span>
-            <span>{site.requirements}</span>
-          </div>
-        </div>
+        <p class="download-note">Free, open source, and built for the Mac already in front of you.</p>
       </section>
     </main>
 
-    <footer class="console-footer">
+    <footer class="page-footer">
       <p>Created by <a href={`mailto:${site.email}`}>Bennett Hilberg</a>.</p>
       <nav aria-label="Footer links">
-        <a href={site.githubUrl}>View source on GitHub</a>
+        <a href={`mailto:${site.email}`}>{site.email}</a>
+        <a href={site.githubUrl} target="_blank" rel="noreferrer">View source on GitHub</a>
         <span>MIT licensed</span>
       </nav>
     </footer>
@@ -249,546 +273,655 @@ const featureGroups = [
 </SiteLayout>
 
 <style>
-  .option-five-shell {
-    --console-bg: oklch(15% 0.035 250);
-    --console-surface: oklch(19% 0.038 250);
-    --console-surface-high: oklch(23% 0.043 250);
-    --console-line: oklch(36% 0.045 250);
-    --console-line-soft: oklch(29% 0.04 250);
-    --console-text: oklch(95% 0.012 245);
-    --console-muted: oklch(73% 0.035 250);
-    --console-faint: oklch(59% 0.04 250);
-    --console-blue: oklch(68% 0.17 255);
-    --console-blue-light: oklch(83% 0.105 255);
-    --console-blue-dark: oklch(22% 0.1 255);
-    --console-success: oklch(78% 0.12 155);
-    --console-focus: oklch(83% 0.14 255);
+  .clipboard-page {
+    --page-line: oklch(85% 0.028 250);
+    --page-line-strong: oklch(70% 0.05 250);
+    --page-ink: oklch(20% 0.035 250);
+    --page-ink-soft: oklch(39% 0.038 250);
+    --page-blue: oklch(53% 0.19 255);
+    --page-blue-deep: oklch(29% 0.12 255);
+    --page-blue-pale: oklch(93% 0.045 255);
+    --page-blue-wash: oklch(97% 0.018 255);
+    --page-paper: oklch(99.3% 0.006 245);
+    --page-paper-deep: oklch(95.3% 0.018 245);
     min-height: 100vh;
     overflow-x: clip;
-    background: var(--console-bg);
-    color: var(--console-text);
+    background: var(--paper);
+    color: var(--page-ink);
   }
 
-  :global(body.option-5) {
-    background: var(--console-bg, oklch(15% 0.035 250));
-  }
-
-  :global(body.option-5 .lab-nav) {
-    border-color: oklch(43% 0.045 250);
-    background: oklch(18% 0.04 250);
-    box-shadow: none;
-    color: oklch(93% 0.014 245);
-  }
-
-  :global(body.option-5 .lab-nav a) {
-    color: oklch(82% 0.1 255);
-  }
-
-  :global(body.option-5 .lab-nav a:hover) {
-    color: oklch(92% 0.08 255);
-  }
-
-  :global(body.option-5 .lab-nav summary) {
-    color: oklch(74% 0.035 250);
-  }
-
-  :global(body.option-5 .lab-nav .lab-nav-controls) {
-    border-top-color: oklch(31% 0.04 250);
-  }
-
-  .option-five-shell :focus-visible {
-    outline: 3px solid var(--console-focus);
-    outline-offset: 4px;
-  }
-
-  .console-site-header,
-  .console-main,
-  .console-footer {
-    width: min(calc(100% - 2rem), 72rem);
+  .page-header,
+  .hero-section,
+  .content-section,
+  .download-section,
+  .page-footer {
+    width: min(calc(100% - 2rem), 74rem);
     margin-inline: auto;
   }
 
-  .console-site-header {
+  .page-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1.5rem;
-    padding-block: clamp(5.5rem, 8vw, 7rem) 1.5rem;
-    border-bottom: 1px solid var(--console-line);
+    padding-block: 5.75rem 1.5rem;
+    border-bottom: 1px solid var(--page-line);
   }
 
-  .console-brand {
+  .brand {
     display: inline-flex;
     align-items: center;
-    gap: 0.65rem;
-    color: var(--console-text);
-    font-size: 1.08rem;
-    font-weight: 800;
-    letter-spacing: -0.045em;
+    flex-shrink: 0;
+    gap: 0.6rem;
+    color: var(--page-ink);
+    font-size: 1.05rem;
+    font-weight: 600;
     text-decoration: none;
   }
 
-  .console-brand:hover {
-    color: var(--console-text);
+  .brand:hover {
+    color: var(--page-ink);
   }
 
-  .console-brand-mark {
+  .brand-mark {
     position: relative;
     display: block;
-    width: 1.4rem;
-    height: 1.4rem;
-    border: 2px solid var(--console-blue);
+    width: 1.35rem;
+    height: 1.35rem;
+    border: 2px solid var(--page-blue);
     border-radius: 50%;
   }
 
-  .console-brand-mark::after {
+  .brand-mark::after {
     position: absolute;
     right: -0.28rem;
     bottom: -0.16rem;
-    width: 0.5rem;
+    width: 0.48rem;
     height: 2px;
-    background: var(--console-blue);
+    background: var(--page-blue);
     content: "";
     transform: rotate(45deg);
     transform-origin: left center;
   }
 
-  .console-header-nav,
-  .console-footer nav {
+  .page-nav,
+  .page-footer nav {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 1rem 1.35rem;
-    color: var(--console-muted);
-    font-size: 0.86rem;
+    justify-content: flex-end;
+    gap: 0.7rem 1.35rem;
+    color: var(--page-ink-soft);
+    font-size: 0.9rem;
   }
 
-  .console-header-nav a,
-  .console-footer a {
-    color: inherit;
+  .page-nav a,
+  .page-footer a {
     text-decoration: none;
   }
 
-  .console-header-nav a:hover,
-  .console-footer a:hover {
-    color: var(--console-blue-light);
+  .hero-section {
+    display: grid;
+    grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+    gap: clamp(2.5rem, 6vw, 6.5rem);
+    align-items: center;
+    padding-block: clamp(5rem, 10vw, 8.5rem) clamp(5.5rem, 11vw, 9.5rem);
   }
 
-  .console-hero {
-    display: grid;
-    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
-    gap: clamp(2.75rem, 7vw, 6.5rem);
-    align-items: center;
-    padding-block: clamp(4.5rem, 9vw, 8rem) clamp(5rem, 10vw, 9rem);
+  .hero-copy {
+    min-width: 0;
   }
 
   .hero-copy h1 {
     max-width: 8ch;
     margin: 0;
-    color: var(--console-text);
-    font-size: clamp(3.2rem, 7vw, 6.35rem);
-    letter-spacing: -0.09em;
-    line-height: 0.91;
+    color: var(--page-ink);
+    font-size: clamp(3.25rem, 6.4vw, 6.1rem);
+    font-weight: 400;
+    line-height: 0.92;
   }
 
   .hero-lede {
-    max-width: 31rem;
-    margin: 1.65rem 0 0;
-    color: var(--console-muted);
-    font-size: clamp(1.05rem, 1.8vw, 1.2rem);
+    max-width: 32rem;
+    margin: 1.75rem 0 0;
+    color: var(--page-ink-soft);
+    font-size: clamp(1.05rem, 1.5vw, 1.2rem);
     line-height: 1.55;
   }
 
-  .shortcut-callout {
-    display: flex;
-    align-items: center;
-    gap: 0.85rem;
-    margin-top: 2rem;
-    color: var(--console-text);
-    font-size: 0.92rem;
-  }
-
-  .shortcut-keys {
-    display: inline-flex;
-    min-height: 3rem;
-    align-items: center;
-    padding: 0.6rem 0.8rem;
-    border: 1px solid var(--console-blue);
-    border-radius: 8px;
-    background: var(--console-surface-high);
-    color: var(--console-blue-light);
-    font-family: var(--mono);
-    font-size: 1.18rem;
-    font-weight: 700;
-    letter-spacing: -0.08em;
-    line-height: 1;
-  }
-
-  .hero-actions,
-  .download-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 1rem 1.25rem;
+  .hero-actions {
+    display: grid;
+    justify-items: start;
+    gap: 0.9rem;
     margin-top: 2.25rem;
   }
 
-  .primary-action {
+  .download-button {
     display: inline-flex;
     min-height: 3.25rem;
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
-    padding: 0.85rem 1rem 0.85rem 1.15rem;
-    border: 1px solid var(--console-blue);
-    border-radius: 8px;
-    background: var(--console-blue);
-    color: var(--console-bg);
-    font-weight: 800;
+    padding: 0.85rem 1.05rem 0.85rem 1.15rem;
+    border: 1px solid var(--page-blue);
+    border-radius: var(--r-control);
+    background: var(--page-blue);
+    color: var(--blue-white);
+    font-weight: 600;
     line-height: 1.1;
     text-decoration: none;
-    transition: background var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+    transition: background var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
   }
 
-  .primary-action:hover {
-    border-color: var(--console-blue-light);
-    background: var(--console-blue-light);
-    color: var(--console-bg);
+  .download-button:hover {
+    border-color: var(--page-blue-deep);
+    background: var(--page-blue-deep);
+    color: var(--blue-white);
     transform: translateY(-2px);
   }
 
-  .action-arrow {
-    font-size: 1.2rem;
-    font-weight: 500;
-    line-height: 0.8;
+  .download-icon {
+    width: 1.2rem;
+    height: 1.2rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
   }
 
-  .release-meta {
-    display: grid;
-    gap: 0.2rem;
-    color: var(--console-muted);
-    font-family: var(--mono);
-    font-size: 0.7rem;
-    line-height: 1.45;
+  .source-link {
+    color: var(--page-blue-deep);
+    font-size: 0.95rem;
+    font-weight: 600;
   }
 
-  .release-meta span:first-child {
-    color: var(--console-text);
-  }
-
-  .console-demo {
-    min-width: 0;
-    margin: 0;
-  }
-
-  .console-window {
-    overflow: hidden;
-    border: 1px solid var(--console-line);
-    border-radius: 14px;
-    background: var(--console-surface);
-  }
-
-  .console-titlebar {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.8rem 1rem;
-    border-bottom: 1px solid var(--console-line);
-    color: var(--console-text);
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    letter-spacing: -0.02em;
-  }
-
-  .console-titlebar-meta {
-    color: var(--console-blue-light);
-  }
-
-  .console-screen {
-    display: grid;
-    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
-  }
-
-  .transcript-panel,
-  .clipboard-panel {
-    min-width: 0;
-    padding: clamp(1rem, 3vw, 1.5rem);
-  }
-
-  .transcript-panel {
-    border-right: 1px solid var(--console-line);
-  }
-
-  .clipboard-panel {
-    background: var(--console-surface-high);
-  }
-
-  .console-column-label {
-    margin: 0;
-    color: var(--console-blue-light);
-    font-family: var(--mono);
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    line-height: 1.3;
-    text-transform: uppercase;
-  }
-
-  .state-list {
-    display: grid;
-    margin: 1rem 0 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .state-row {
-    display: grid;
-    grid-template-columns: 3.1rem minmax(0, 1fr);
-    gap: 0.55rem;
-    padding: 0.95rem 0;
-    border-top: 1px solid var(--console-line-soft);
-  }
-
-  .state-row strong {
-    display: block;
-    color: var(--console-text);
-    font-family: var(--mono);
-    font-size: 0.76rem;
-    letter-spacing: 0.04em;
-  }
-
-  .state-row-final strong {
-    color: var(--console-success);
-  }
-
-  .state-row p,
-  .clipboard-note,
-  .clipboard-result p {
-    margin: 0;
-  }
-
-  .state-row p {
-    margin-top: 0.25rem;
-    color: var(--console-muted);
-    font-size: 0.79rem;
-    line-height: 1.4;
-  }
-
-  .state-time {
-    color: var(--console-faint);
-    font-family: var(--mono);
-    font-size: 0.68rem;
-  }
-
-  .mono {
-    font-family: var(--mono);
-    letter-spacing: -0.05em;
-  }
-
-  .clipboard-result {
-    margin-top: 1rem;
-    padding: 1.1rem;
-    border: 1px solid var(--console-line);
-    background: var(--console-bg);
-  }
-
-  .result-label,
-  .result-status {
-    color: var(--console-faint);
-    font-family: var(--mono);
-    font-size: 0.68rem;
-    letter-spacing: 0.08em;
-  }
-
-  .clipboard-result p {
-    margin-top: 1.2rem;
-    color: var(--console-text);
-    font-family: var(--mono);
-    font-size: clamp(0.9rem, 1.7vw, 1.04rem);
-    line-height: 1.6;
-  }
-
-  .result-status {
-    display: block;
-    margin-top: 1.4rem;
-    color: var(--console-success);
-    letter-spacing: 0;
-  }
-
-  .clipboard-note {
-    margin-top: 1rem;
-    color: var(--console-muted);
-    font-size: 0.78rem;
-    line-height: 1.45;
-  }
-
-  .console-demo figcaption {
-    margin-top: 0.85rem;
-    color: var(--console-faint);
-    font-size: 0.76rem;
-  }
-
-  .console-section {
-    padding-block: clamp(4.5rem, 9vw, 8rem);
-    border-top: 1px solid var(--console-line);
-  }
-
-  .section-heading {
-    max-width: 39rem;
-    margin-bottom: 2.75rem;
-  }
-
-  .section-heading h2,
-  .download-section h2 {
-    max-width: 15ch;
-    margin: 0.85rem 0 1rem;
-    color: var(--console-text);
-    font-size: clamp(2rem, 4.5vw, 3.65rem);
-    letter-spacing: -0.075em;
-    line-height: 0.96;
-  }
-
-  .section-heading p,
-  .download-section p {
-    max-width: 39rem;
-    margin: 0;
-    color: var(--console-muted);
-    font-size: 1rem;
-  }
-
-  .workflow-list {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    border-top: 1px solid var(--console-line);
-  }
-
-  .workflow-step {
-    min-width: 0;
-    padding: 1.25rem clamp(1rem, 3vw, 2rem) 0 0;
-  }
-
-  .workflow-step + .workflow-step {
-    padding-left: clamp(1rem, 3vw, 2rem);
-    border-left: 1px solid var(--console-line);
-  }
-
-  .step-number,
-  .privacy-index {
-    color: var(--console-blue-light);
-    font-family: var(--mono);
-    font-size: 0.72rem;
-  }
-
-  .workflow-step h3 {
-    margin: 2rem 0 0.6rem;
-    color: var(--console-text);
-    font-size: 1.18rem;
-    letter-spacing: -0.035em;
-  }
-
-  .workflow-step p {
-    margin: 0;
-    color: var(--console-muted);
+  .hero-requirements {
+    margin: 0.1rem 0 0;
+    color: var(--page-ink-soft);
     font-size: 0.92rem;
   }
 
-  .feature-groups {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: clamp(1.5rem, 4vw, 3.5rem);
-  }
-
-  .feature-group {
+  .hero-visual {
+    position: relative;
     min-width: 0;
-    border-top: 2px solid var(--console-blue);
-  }
-
-  .feature-group h3 {
-    margin: 1rem 0 1.2rem;
-    color: var(--console-text);
-    font-size: 1.2rem;
-    letter-spacing: -0.04em;
-  }
-
-  .feature-group ul {
+    min-height: clamp(31rem, 48vw, 37rem);
     margin: 0;
-    padding: 0;
-    list-style: none;
   }
 
-  .feature-group li {
-    padding-block: 1rem;
-    border-top: 1px solid var(--console-line);
+  .source-window {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: min(100%, 36rem);
+    overflow: hidden;
+    border: 1px solid var(--page-line-strong);
+    border-radius: var(--r-surface);
+    background: var(--page-paper);
   }
 
-  .feature-group strong {
-    color: var(--console-text);
-    font-size: 0.95rem;
-  }
-
-  .feature-group li p {
-    margin: 0.35rem 0 0;
-    color: var(--console-muted);
-    font-size: 0.88rem;
-    line-height: 1.5;
-  }
-
-  .privacy-section {
-    background: var(--console-surface);
-  }
-
-  .privacy-layout,
-  .compatibility-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-    gap: clamp(2rem, 8vw, 7rem);
-    align-items: start;
-  }
-
-  .privacy-layout .section-heading,
-  .compatibility-layout .section-heading {
-    margin-bottom: 0;
-  }
-
-  .privacy-list,
-  .compatibility-list {
-    display: grid;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    border-top: 1px solid var(--console-line);
-  }
-
-  .privacy-list li {
-    display: grid;
-    grid-template-columns: 3rem minmax(0, 1fr);
+  .source-window-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: 1rem;
-    padding: 1rem 0;
-    border-bottom: 1px solid var(--console-line);
-    color: var(--console-text);
-    font-size: 0.95rem;
+    min-height: 3.15rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--page-line);
+    color: var(--page-ink);
+    font-size: 0.86rem;
   }
 
-  .privacy-index {
-    padding-top: 0.15rem;
+  .source-window-context {
+    color: var(--page-ink-soft);
   }
 
-  .compatibility-list li {
-    padding: 1rem 0;
-    border-bottom: 1px solid var(--console-line);
-    color: var(--console-text);
+  .source-window-body {
+    display: grid;
+    grid-template-columns: 8.8rem minmax(0, 1fr);
+    min-height: 21.25rem;
+  }
+
+  .source-sidebar {
+    display: grid;
+    align-content: start;
+    gap: 0.55rem;
+    padding: 1.15rem 0.85rem;
+    border-right: 1px solid var(--page-line);
+    background: var(--page-paper-deep);
+    color: var(--page-ink-soft);
+    font-size: 0.82rem;
+  }
+
+  .sidebar-heading {
+    color: var(--page-ink);
+    font-size: 0.84rem;
+    font-weight: 600;
+  }
+
+  .sidebar-heading-spaced {
+    margin-top: 0.8rem;
+  }
+
+  .sidebar-item {
+    min-width: 0;
+    overflow: hidden;
+    padding: 0.35rem 0.45rem;
+    border-radius: 5px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sidebar-item-active {
+    background: var(--page-blue-pale);
+    color: var(--page-blue-deep);
+    font-weight: 600;
+  }
+
+  .source-thread {
+    position: relative;
+    min-width: 0;
+    padding: 1.2rem 1.2rem 1rem;
+  }
+
+  .thread-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid var(--page-line);
+    color: var(--page-ink-soft);
+    font-size: 0.82rem;
+  }
+
+  .thread-heading strong {
+    color: var(--page-ink);
     font-size: 1rem;
   }
 
-  .compatibility-list li::before {
+  .chat-message {
+    display: flex;
+    gap: 0.7rem;
+    padding: 1rem 0.25rem;
+    border-bottom: 1px solid var(--page-line);
+  }
+
+  .message-avatar {
+    display: grid;
+    width: 1.85rem;
+    height: 1.85rem;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--page-paper-deep);
+    color: var(--page-ink-soft);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .message-avatar-blue {
+    background: var(--page-blue-pale);
+    color: var(--page-blue-deep);
+  }
+
+  .message-content {
+    min-width: 0;
+  }
+
+  .message-content strong {
+    display: block;
+    color: var(--page-ink);
+    font-size: 0.86rem;
+    font-weight: 600;
+  }
+
+  .message-content p {
+    margin: 0.22rem 0 0;
+    color: var(--page-ink-soft);
+    font-size: 0.95rem;
+    line-height: 1.45;
+  }
+
+  .chat-message-muted {
+    opacity: 0.65;
+  }
+
+  .source-selection {
+    position: absolute;
+    inset: 6.35rem 1rem 2.25rem 0.7rem;
+    border: 2px solid var(--page-blue);
+    background: rgb(42 111 214 / 0.04);
+    clip-path: inset(0);
+  }
+
+  .selection-label {
+    position: absolute;
+    top: -1.05rem;
+    left: -2px;
+    padding: 0.22rem 0.42rem;
+    background: var(--page-blue);
+    color: var(--blue-white);
+    font-size: 0.8rem;
+    line-height: 1.2;
+  }
+
+  .clipboard-sheet {
+    position: absolute;
+    z-index: 2;
+    bottom: 0;
+    left: 0;
+    width: min(84%, 31rem);
+    min-height: 23rem;
+    padding: 2.45rem clamp(1.35rem, 3vw, 2.2rem) 1.5rem;
+    border: 1px solid var(--page-line-strong);
+    background: var(--page-paper);
+    box-shadow: 0.75rem 0.85rem 0 var(--page-blue-pale);
+    transform: rotate(-2deg);
+  }
+
+  .clipboard-clip {
+    position: absolute;
+    top: -0.9rem;
+    left: 50%;
+    width: 6.2rem;
+    height: 2rem;
+    border: 1px solid var(--page-line-strong);
+    border-bottom: 0;
+    border-radius: 0.65rem 0.65rem 0 0;
+    background: var(--page-paper);
+    transform: translateX(-50%);
+  }
+
+  .clipboard-clip::after {
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0.35rem;
+    left: 0.75rem;
+    height: 0.35rem;
+    border: 1px solid var(--page-line-strong);
+    border-radius: 0.2rem;
+    content: "";
+  }
+
+  .clipboard-sheet-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    color: var(--page-ink-soft);
+    font-size: 0.88rem;
+  }
+
+  .clipboard-sheet-header span:first-child {
+    color: var(--page-ink);
+    font-weight: 600;
+  }
+
+  .clipboard-sheet-rule {
+    height: 1px;
+    margin-top: 1rem;
+    background: var(--page-line);
+  }
+
+  .clipboard-copy {
+    max-width: 24rem;
+    margin-top: 2.2rem;
+    color: var(--page-ink);
+    font-size: clamp(1.35rem, 2.6vw, 1.9rem);
+    font-weight: 400;
+    line-height: 1.22;
+  }
+
+  .clipboard-copy p {
+    margin: 0;
+  }
+
+  .clipboard-copy p + p {
+    margin-top: 0.35rem;
+  }
+
+  .clipboard-confirmation {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-top: 2.2rem;
+    padding: 0.75rem 0.85rem;
+    background: var(--page-blue-pale);
+    color: var(--page-blue-deep);
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .confirmation-check {
+    display: grid;
+    width: 1.35rem;
+    height: 1.35rem;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--page-blue);
+    color: var(--blue-white);
+    font-size: 0.9rem;
+    line-height: 1;
+  }
+
+  .content-section {
+    padding-block: clamp(4.5rem, 9vw, 8rem);
+    border-top: 1px solid var(--page-line);
+  }
+
+  .section-intro {
+    max-width: 40rem;
+  }
+
+  .section-intro h2,
+  .download-section h2 {
+    max-width: 16ch;
+    margin: 0 0 1rem;
+    color: var(--page-ink);
+    font-size: clamp(2.25rem, 4.5vw, 4rem);
+    font-weight: 400;
+    line-height: 0.98;
+  }
+
+  .section-intro p,
+  .download-section p {
+    max-width: 39rem;
+    margin: 0;
+    color: var(--page-ink-soft);
+    font-size: 1rem;
+  }
+
+  .process-section {
+    display: grid;
+    grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+    gap: clamp(2.5rem, 8vw, 8rem);
+    align-items: start;
+  }
+
+  .process-list {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--page-line-strong);
+  }
+
+  .process-step {
+    display: grid;
+    grid-template-columns: 4rem minmax(0, 1fr);
+    gap: 1rem;
+    padding: 1.35rem 0;
+    border-bottom: 1px solid var(--page-line);
+  }
+
+  .process-step-key {
+    padding-top: 0.1rem;
+    color: var(--page-blue-deep);
+    font-size: 1rem;
+  }
+
+  .process-step kbd {
+    display: inline-flex;
+    min-height: 2rem;
+    align-items: center;
+    padding: 0.3rem 0.45rem;
+    border: 1px solid var(--page-line-strong);
+    border-radius: 5px;
+    background: var(--page-blue-wash);
+    color: var(--page-blue-deep);
+    font: inherit;
+    font-size: 0.95rem;
+    white-space: nowrap;
+  }
+
+  .process-step h3,
+  .proof-item h3 {
+    margin: 0;
+    color: var(--page-ink);
+    font-size: 1.15rem;
+    font-weight: 600;
+  }
+
+  .process-step p,
+  .proof-item p {
+    margin: 0.4rem 0 0;
+    color: var(--page-ink-soft);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .proof-section {
+    background: var(--page-blue-wash);
+  }
+
+  .proof-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(1.25rem, 3vw, 2.5rem);
+    margin-top: 3rem;
+  }
+
+  .proof-item {
+    min-width: 0;
+    padding-top: 1.25rem;
+    border-top: 2px solid var(--page-blue);
+  }
+
+  .language-sample,
+  .code-sample,
+  .qr-sample {
+    min-height: 10.5rem;
+    margin-bottom: 1.35rem;
+    border: 1px solid var(--page-line-strong);
+    background: var(--page-paper);
+  }
+
+  .language-sample {
+    display: grid;
+    align-content: center;
+    gap: 0.45rem;
+    padding: 1.1rem;
+    color: var(--page-ink);
+    font-size: 1.05rem;
+  }
+
+  .language-sample span:nth-child(2) {
+    color: var(--page-blue-deep);
+  }
+
+  .language-sample span:nth-child(3) {
+    color: var(--page-ink-soft);
+  }
+
+  .code-sample {
+    display: grid;
+    align-content: center;
+    gap: 0.55rem;
+    padding: 1.1rem;
+    color: var(--page-ink);
+    font-size: 1rem;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .code-sample span:last-child {
+    color: var(--page-blue-deep);
+  }
+
+  .code-sample b {
+    color: var(--page-blue);
+    font-weight: 600;
+  }
+
+  .qr-sample {
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    gap: 0.8rem;
+    padding: 1rem;
+  }
+
+  .qr-code {
+    display: grid;
+    width: 8rem;
+    height: 8rem;
+    flex: 0 0 auto;
+    grid-template-columns: repeat(13, 1fr);
+    grid-template-rows: repeat(13, 1fr);
+    padding: 0.35rem;
+    border: 1px solid var(--page-ink);
+    background: var(--page-paper);
+  }
+
+  .qr-cell-filled {
+    background: var(--page-ink);
+  }
+
+  .qr-result {
+    max-width: 6rem;
+    color: var(--page-blue-deep);
+    font-size: 0.86rem;
+    line-height: 1.35;
+  }
+
+  .split-content {
+    display: grid;
+    grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+    gap: clamp(2.5rem, 8vw, 8rem);
+    align-items: start;
+  }
+
+  .fact-list {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--page-line-strong);
+  }
+
+  .fact-list li {
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--page-line);
+    color: var(--page-ink);
+    font-size: 1rem;
+  }
+
+  .fact-list li::before {
     display: inline-block;
     width: 1.5rem;
-    margin-right: 0.75rem;
-    color: var(--console-blue-light);
-    content: "—";
+    margin-right: 0.7rem;
+    color: var(--page-blue);
+    content: "✓";
+    font-weight: 600;
+  }
+
+  .privacy-section {
+    background: var(--page-paper-deep);
+  }
+
+  .compatibility-section {
+    padding-bottom: clamp(4rem, 8vw, 7rem);
   }
 
   .download-section {
@@ -796,177 +929,254 @@ const featureGroups = [
     align-items: end;
     justify-content: space-between;
     gap: 2rem;
-    padding-block: clamp(4rem, 7vw, 6rem);
-    border-top: 1px solid var(--console-blue);
+    padding-block: clamp(4rem, 8vw, 6.5rem);
+    border-top: 1px solid var(--page-blue);
   }
 
   .download-section h2 {
-    margin-top: 0;
-    margin-bottom: 0.8rem;
+    margin-bottom: 0.85rem;
   }
 
-  .download-actions {
-    flex-shrink: 0;
-    margin-top: 0;
+  .download-note {
+    max-width: 18rem;
   }
 
-  .release-meta-dark {
-    color: var(--console-muted);
-  }
-
-  .console-footer {
+  .page-footer {
     display: flex;
     flex-wrap: wrap;
+    align-items: baseline;
     justify-content: space-between;
     gap: 1rem 2rem;
-    padding-block: 1.5rem 2.5rem;
-    border-top: 1px solid var(--console-line);
-    color: var(--console-muted);
-    font-size: 0.84rem;
+    padding-block: 1.5rem 2.75rem;
+    border-top: 1px solid var(--page-line);
+    color: var(--page-ink-soft);
+    font-size: 0.9rem;
   }
 
-  .console-footer p {
+  .page-footer p {
     margin: 0;
   }
 
+  .page-footer nav {
+    gap: 0.65rem 1.25rem;
+  }
+
   @media (prefers-reduced-motion: no-preference) {
-    .state-row {
-      opacity: 0;
-      transform: translateY(0.45rem);
-      animation: state-arrive 520ms var(--ease-out) forwards;
+    .source-selection {
+      animation: draw-selection 7.2s var(--ease-out) infinite;
     }
 
-    .state-row:nth-child(2) {
-      animation-delay: 140ms;
-    }
-
-    .state-row:nth-child(3) {
-      animation-delay: 280ms;
-    }
-
-    .clipboard-result {
-      opacity: 0;
-      transform: translateY(0.45rem);
-      animation: state-arrive 520ms 420ms var(--ease-out) forwards;
+    .clipboard-confirmation {
+      animation: confirmation-arrives 7.2s var(--ease-out) infinite;
     }
   }
 
-  @keyframes state-arrive {
-    to {
+  @keyframes draw-selection {
+    0%,
+    10% {
+      clip-path: inset(0 100% 0 0);
+    }
+
+    34%,
+    84%,
+    100% {
+      clip-path: inset(0);
+    }
+  }
+
+  @keyframes confirmation-arrives {
+    0%,
+    36% {
+      opacity: 0.82;
+      transform: translateY(0.25rem);
+    }
+
+    48%,
+    84% {
       opacity: 1;
       transform: translateY(0);
     }
+
+    100% {
+      opacity: 0.82;
+      transform: translateY(0.25rem);
+    }
   }
 
-  @media (max-width: 54rem) {
-    .console-hero {
+  @media (max-width: 58rem) {
+    .hero-section,
+    .process-section,
+    .split-content {
       grid-template-columns: 1fr;
+    }
+
+    .hero-section {
+      gap: 4rem;
     }
 
     .hero-copy h1 {
       max-width: 10ch;
     }
 
-    .console-demo {
-      max-width: 44rem;
+    .hero-visual {
+      min-height: 36rem;
     }
 
-    .privacy-layout,
-    .compatibility-layout {
-      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-      gap: 2.5rem;
+    .process-section,
+    .split-content {
+      gap: 2.75rem;
     }
 
-    .download-section {
-      align-items: start;
-      flex-direction: column;
-    }
-
-    .download-actions {
-      margin-top: 0.5rem;
+    .section-intro {
+      max-width: 42rem;
     }
   }
 
-  @media (max-width: 42rem) {
-    .console-site-header {
+  @media (max-width: 44rem) {
+    .page-header {
       align-items: flex-start;
     }
 
-    .console-header-nav {
-      justify-content: flex-end;
+    .page-nav {
       gap: 0.6rem 0.9rem;
-      font-size: 0.78rem;
+      font-size: 0.84rem;
     }
 
-    .workflow-list,
-    .feature-groups,
-    .privacy-layout,
-    .compatibility-layout {
+    .proof-grid {
       grid-template-columns: 1fr;
     }
 
-    .workflow-step,
-    .workflow-step + .workflow-step {
-      padding: 1.25rem 0;
-      border-top: 1px solid var(--console-line);
-      border-left: 0;
+    .proof-item + .proof-item {
+      margin-top: 0.75rem;
     }
 
-    .workflow-step:first-child {
-      border-top: 0;
+    .download-section {
+      align-items: flex-start;
+      flex-direction: column;
     }
 
-    .workflow-step h3 {
-      margin-top: 1.25rem;
-    }
-
-    .feature-group + .feature-group {
-      margin-top: 1.5rem;
-    }
-
-    .privacy-layout .section-heading,
-    .compatibility-layout .section-heading {
-      margin-bottom: 1.25rem;
+    .download-note {
+      max-width: 30rem;
     }
   }
 
   @media (max-width: 34rem) {
-    .console-site-header {
+    .page-header {
       display: grid;
       gap: 1rem;
+      padding-top: 5.25rem;
     }
 
-    .console-header-nav {
+    .page-nav {
       justify-content: flex-start;
     }
 
-    .console-screen {
-      grid-template-columns: 1fr;
+    .hero-section {
+      gap: 3rem;
+      padding-top: 4rem;
     }
 
-    .transcript-panel {
-      border-right: 0;
-      border-bottom: 1px solid var(--console-line);
+    .hero-copy h1 {
+      font-size: clamp(3rem, 14vw, 4.2rem);
     }
 
-    .hero-actions,
-    .download-actions {
-      align-items: stretch;
-      flex-direction: column;
-    }
-
-    .primary-action {
+    .download-button {
       width: 100%;
     }
 
-    .release-meta {
-      padding-inline: 0.15rem;
+    .hero-visual {
+      min-height: 39rem;
+    }
+
+    .source-window {
+      width: 100%;
+    }
+
+    .source-sidebar {
+      display: none;
+    }
+
+    .source-window-body {
+      grid-template-columns: 1fr;
+      min-height: 23rem;
+    }
+
+    .source-thread {
+      padding-inline: 1rem;
+    }
+
+    .source-selection {
+      inset: 6.35rem 0.8rem 2.25rem 0.55rem;
+    }
+
+    .clipboard-sheet {
+      width: 92%;
+      min-height: 22rem;
+      padding-inline: 1.2rem;
+    }
+
+    .clipboard-copy {
+      font-size: 1.35rem;
+    }
+
+    .clipboard-confirmation {
+      margin-top: 1.8rem;
+    }
+
+    .process-step {
+      grid-template-columns: 3.2rem minmax(0, 1fr);
+      gap: 0.7rem;
+    }
+
+    .qr-sample {
+      justify-content: flex-start;
+    }
+
+    .page-footer {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .page-footer nav {
+      justify-content: flex-start;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .primary-action {
+    .source-selection,
+    .clipboard-confirmation,
+    .download-button {
+      animation: none;
       transition: none;
+    }
+
+    .source-selection {
+      clip-path: inset(0);
+    }
+
+    .clipboard-confirmation {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @media (min-width: 59rem) and (max-height: 760px) {
+    .page-header {
+      padding-top: 2.25rem;
+    }
+
+    .hero-section {
+      padding-block: 3.25rem 4rem;
+    }
+
+    .hero-copy h1 {
+      max-width: 9ch;
+      font-size: clamp(3.1rem, 5.8vw, 5.6rem);
+    }
+
+    .hero-lede,
+    .hero-actions {
+      margin-top: 1.2rem;
     }
   }
 </style>

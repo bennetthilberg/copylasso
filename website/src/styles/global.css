@@ -14,7 +14,6 @@
   --green: oklch(40% 0.1 150);
   --focus: oklch(62% 0.2 255);
   --sans: "Avenir Next", "Helvetica Neue", -apple-system, BlinkMacSystemFont, sans-serif;
-  --mono: "SF Mono", Menlo, Consolas, monospace;
   --measure: 70rem;
   --reading: 68ch;
   --r-control: 8px;
@@ -46,6 +45,13 @@ body {
   line-height: 1.55;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 500;
 }
 
 a {
@@ -127,7 +133,7 @@ button {
   gap: 0.55rem;
   color: var(--ink);
   font-size: 1.05rem;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: -0.04em;
   text-decoration: none;
 }
@@ -167,7 +173,7 @@ button {
   border-radius: var(--r-control);
   background: var(--blue);
   color: var(--blue-white);
-  font-weight: 750;
+  font-weight: 600;
   line-height: 1.1;
   text-decoration: none;
   transition: background var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
@@ -193,7 +199,7 @@ button {
 
 .text-link {
   color: var(--blue-ink);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .section {
@@ -218,11 +224,6 @@ button {
   max-width: var(--reading);
   margin: 0;
   color: var(--ink-soft);
-}
-
-.mono {
-  font-family: var(--mono);
-  letter-spacing: -0.05em;
 }
 
 .lab-nav {
@@ -252,7 +253,7 @@ button {
 
 .lab-nav a {
   color: var(--blue-ink);
-  font-weight: 750;
+  font-weight: 600;
 }
 
 .lab-nav a:hover {
@@ -262,7 +263,7 @@ button {
 .lab-nav summary {
   cursor: pointer;
   color: var(--ink-soft);
-  font-weight: 750;
+  font-weight: 600;
 }
 
 .lab-nav ol {
@@ -324,8 +325,7 @@ button {
 
 .direction-number {
   color: var(--blue);
-  font-family: var(--mono);
-  font-size: 0.8rem;
+  font-size: 1rem;
 }
 
 .direction-row h2 {
@@ -344,7 +344,7 @@ button {
 .direction-link {
   white-space: nowrap;
   color: var(--blue-ink);
-  font-weight: 750;
+  font-weight: 600;
 }
 
 .footer {

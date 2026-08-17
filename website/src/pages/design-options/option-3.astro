@@ -2,887 +2,1199 @@
 import SiteLayout from "../../layouts/SiteLayout.astro";
 import { compatibilityFacts, features, privacyFacts, site } from "../../data/site";
 
-const description = "Copy visible text from any screen region with local Apple Vision OCR on your Mac.";
+const description =
+  "CopyLasso turns a selected region of your Mac screen into clean clipboard text with local Apple Vision OCR.";
+
+const scriptSamples = [
+  "English / select visible text",
+  "日本語 / 画面の文字をコピー",
+  "Español / copiar texto visible",
+  "العربية / نص على الشاشة",
+];
+
+const qrPattern = [
+  1, 1, 1, 0, 1, 0, 1, 1, 1,
+  1, 0, 1, 1, 0, 1, 0, 0, 1,
+  1, 1, 1, 0, 1, 1, 1, 1, 1,
+  0, 1, 0, 1, 0, 0, 1, 0, 1,
+  1, 0, 1, 1, 1, 1, 0, 1, 0,
+  0, 1, 1, 0, 1, 0, 1, 1, 1,
+  1, 1, 0, 1, 0, 1, 1, 0, 0,
+  1, 0, 1, 1, 1, 0, 1, 1, 0,
+  1, 1, 1, 0, 1, 1, 0, 1, 1,
+];
 ---
 
 <SiteLayout
-  title="Desktop Canvas · CopyLasso"
+  title="Margin Note · CopyLasso"
   description={description}
   optionNumber={3}
-  optionName="Desktop Canvas"
+  optionName="Margin Note"
   previousHref="/design-options/option-2/"
   nextHref="/design-options/option-4/"
 >
-  <main id="main-content" class="canvas-page">
-    <section class="canvas-hero" aria-labelledby="hero-title">
-      <header class="site-header canvas-header">
-        <a class="brand canvas-brand" href="/design-options/">
-          <span class="brand-mark" aria-hidden="true">⌁</span>
-          <span>{site.name}</span>
-        </a>
+  <div class="margin-page">
+    <header class="site-header margin-header">
+      <a class="brand" href="/design-options/" aria-label="CopyLasso design directions">
+        <span class="brand-mark" aria-hidden="true">+</span>
+        <span>{site.name}</span>
+      </a>
 
-        <nav class="header-nav canvas-nav" aria-label="Primary">
-          <a href="#how-it-works">How it works</a>
-          <a href="#features">Features</a>
-          <a href="#privacy">Privacy</a>
-          <a href={site.githubUrl} rel="noreferrer">GitHub</a>
-        </nav>
-      </header>
+      <nav class="header-nav" aria-label="Page navigation">
+        <a href="#how-it-works">How it works</a>
+        <a href="#features">Features</a>
+        <a href="#privacy">Privacy</a>
+        <a href={site.githubUrl} target="_blank" rel="noreferrer">GitHub</a>
+      </nav>
+    </header>
 
-      <div class="hero-stage site-width">
-        <div class="hero-copy">
-          <h1 id="hero-title">Copy text from anywhere on your screen.</h1>
-          <p>
-            Select a region, let Apple Vision read the pixels, and keep the useful words on your clipboard.
-            CopyLasso stays local, quick, and out of the way.
-          </p>
+    <main id="main-content">
+      <section class="margin-hero" aria-labelledby="hero-title">
+        <div class="site-width margin-hero-grid">
+          <div class="reading-column hero-copy">
+            <h1 id="hero-title">Copy anything on your screen.</h1>
+            <p class="hero-lede">
+              Select a region, let Apple Vision read the pixels, and put the useful words on your clipboard. CopyLasso
+              stays local so the screen you are looking at remains yours.
+            </p>
 
-          <div class="hero-actions">
-            <a class="button hero-download" href={site.downloadHref}>{site.downloadLabel}</a>
-            <span class="release-meta">
-              <span>{site.versionLabel}</span>
-              <span>{site.requirements}</span>
-            </span>
+            <div class="hero-actions">
+              <a class="button margin-primary" href={site.downloadHref}>
+                <span>{site.downloadLabel}</span>
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                  <path d="M12 3v11"></path>
+                  <path d="m8.5 10.5 3.5 3.5 3.5-3.5"></path>
+                  <path d="M4 16.5V19a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2.5"></path>
+                </svg>
+              </a>
+              <a class="hero-source" href={site.githubUrl} target="_blank" rel="noreferrer">View source on GitHub</a>
+              <p class="hero-meta">{site.requirements}</p>
+            </div>
           </div>
 
-          <p class="hero-note">Local Apple Vision OCR · No account required</p>
-        </div>
+          <figure class="margin-story" aria-labelledby="hero-demo-caption">
+            <div class="story-stage">
+              <div class="capture-panel" aria-hidden="true">
+                <div class="capture-toolbar">
+                  <span class="toolbar-title">Project notes</span>
+                  <span class="toolbar-context">visible on screen</span>
+                </div>
 
-        <figure class="canvas-demo" aria-labelledby="demo-caption">
-          <div class="desktop-surface">
-            <div class="surface-toolbar">
-              <span class="surface-title">Screen selection</span>
-              <span class="surface-context">CopyLasso · local</span>
-            </div>
+                <div class="source-canvas">
+                  <div class="source-intro">
+                    <p class="source-heading">A useful sentence is already in view.</p>
+                    <p class="source-body">Keep the source app open. Select only the words you need.</p>
+                  </div>
 
-            <div class="surface-viewport">
-              <div class="screen-copy" aria-hidden="true">
-                <span class="screen-label">A visible note</span>
-                <p class="screen-lead">The fastest path is the one you can see.</p>
-                <p class="screen-detail">Keep the source app open. Copy only the words you need.</p>
+                  <div class="sheet-grid">
+                    <span class="sheet-cell sheet-corner"></span>
+                    <span class="sheet-cell sheet-heading">A</span>
+                    <span class="sheet-cell sheet-heading">B</span>
+                    <span class="sheet-cell sheet-heading">C</span>
+                    <span class="sheet-cell sheet-heading">D</span>
+                    <span class="sheet-cell sheet-row">1</span>
+                    <span class="sheet-cell">today</span>
+                    <span class="sheet-cell sheet-wide">copy the words</span>
+                    <span class="sheet-cell">ready</span>
+                    <span class="sheet-cell">local</span>
+                    <span class="sheet-cell sheet-row">2</span>
+                    <span class="sheet-cell">screen</span>
+                    <span class="sheet-cell sheet-wide">you can already see</span>
+                    <span class="sheet-cell">plain text</span>
+                    <span class="sheet-cell">safe</span>
+                    <span class="sheet-cell sheet-row">3</span>
+                    <span class="sheet-cell">paste</span>
+                    <span class="sheet-cell sheet-wide">without leaving the app</span>
+                    <span class="sheet-cell">clipboard</span>
+                    <span class="sheet-cell">done</span>
+                  </div>
+
+                  <div class="selection-box">
+                    <span class="selection-tag">selected region</span>
+                    <span class="selection-handle selection-handle-one"></span>
+                    <span class="selection-handle selection-handle-two"></span>
+                    <span class="selection-handle selection-handle-three"></span>
+                    <span class="selection-handle selection-handle-four"></span>
+                  </div>
+                </div>
+
+                <div class="result-strip">
+                  <span class="result-status">Copied to clipboard</span>
+                  <p class="result-text">Copy the words you can already see.</p>
+                </div>
               </div>
 
-              <div class="selection-window" aria-hidden="true">
-                <span class="selection-label">Selected region</span>
-                <span class="selection-line">The fastest path</span>
+              <aside class="margin-note" aria-hidden="true">
+                <div class="note-rule"></div>
+                <p class="note-result">Copy the words you can already see.</p>
+                <p class="note-state">Copied to clipboard</p>
+              </aside>
+            </div>
+
+            <figcaption id="hero-demo-caption">
+              A blue frame closes around visible words, then the margin note keeps the result plain and ready to paste.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section id="how-it-works" class="margin-section workflow-section" aria-labelledby="workflow-title">
+        <div class="site-width section-grid">
+          <div class="reading-column section-copy">
+            <h2 id="workflow-title">A short path from pixels to paste.</h2>
+            <p>
+              CopyLasso follows the shape of the task. There is no document to import and no new window to learn—just
+              the screen you already have open.
+            </p>
+          </div>
+
+          <ol class="workflow-list">
+            <li>
+              <span class="step-number">1</span>
+              <div>
+                <h3>Press <kbd>{site.shortcut}</kbd></h3>
+                <p>Bring up the native selection crosshair with the configurable shortcut.</p>
+              </div>
+            </li>
+            <li>
+              <span class="step-number">2</span>
+              <div>
+                <h3>Select a region</h3>
+                <p>Drag across words, a QR code, or a barcode inside the screen area you need.</p>
+              </div>
+            </li>
+            <li>
+              <span class="step-number">3</span>
+              <div>
+                <h3>Copy the result</h3>
+                <p>Apple Vision recognizes the selection locally and places plain text on your clipboard.</p>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section id="features" class="margin-section proof-section" aria-labelledby="features-title">
+        <div class="site-width proof-layout">
+          <div class="section-copy proof-copy">
+            <h2 id="features-title">The proof is in what the frame can read.</h2>
+            <p>
+              The utility stays small, but the visible source can be wide-ranging. These are the useful edges without an
+              icon wall.
+            </p>
+
+            <ul class="feature-list">
+              {features.map((feature) => (
+                <li>
+                  <h3>{feature.title}</h3>
+                  <p>{feature.body}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <figure class="recognition-proof" aria-labelledby="recognition-caption">
+            <div class="proof-heading">
+              <h3>What can sit inside the frame</h3>
+              <p>Words, scripts, code, and codes stay legible as ordinary text.</p>
+            </div>
+
+            <div class="script-samples">
+              {scriptSamples.map((sample) => <p>{sample}</p>)}
+            </div>
+
+            <div class="proof-lower">
+              <div class="qr-proof">
+                <div class="qr-grid" role="img" aria-label="QR-like code example">
+                  {qrPattern.map((filled) => <span class={filled ? "qr-cell is-filled" : "qr-cell"}></span>)}
+                </div>
+                <p>QR and barcode results become pasteable text.</p>
+              </div>
+
+              <div class="code-proof">
+                <p class="code-sample" aria-label="Code characters example">
+                  <span>const</span> copy = region <strong>→</strong> clipboard
+                </p>
+                <p>Code characters remain readable without changing the type system.</p>
               </div>
             </div>
 
-            <div class="output-strip">
-              <span class="output-label">Plain text on the clipboard</span>
-              <p class="output-copy">The fastest path</p>
-            </div>
+            <figcaption id="recognition-caption">
+              Visual proof, not a promise hidden behind feature tiles.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section id="privacy" class="margin-section privacy-section" aria-labelledby="privacy-title">
+        <div class="site-width section-grid">
+          <div class="reading-column section-copy">
+            <h2 id="privacy-title">Privacy belongs in the main column.</h2>
+            <p>
+              The capture is useful because it is temporary. Screenshots and recognized strings stay in memory only as
+              long as the action needs them.
+            </p>
           </div>
 
-          <figcaption id="demo-caption">
-            <strong>Select visible words.</strong>
-            <span>The outlined region becomes clean text beneath the surface.</span>
-          </figcaption>
-        </figure>
-      </div>
-    </section>
-
-    <section id="how-it-works" class="canvas-band how-band" aria-labelledby="how-title">
-      <div class="band-inner">
-        <header class="section-heading">
-          <h2 id="how-title">Three moves from screen to clipboard.</h2>
-          <p>CopyLasso works with pixels, so the source can be any app, image, video, or remote desktop.</p>
-        </header>
-
-        <ol class="process-list">
-          <li>
-            <span class="step-number" aria-hidden="true">01</span>
-            <div>
-              <h3>Press <kbd>{site.shortcut}</kbd></h3>
-              <p>Use the configurable shortcut to bring up the system selection crosshair.</p>
-            </div>
-          </li>
-          <li>
-            <span class="step-number" aria-hidden="true">02</span>
-            <div>
-              <h3>Drag a region</h3>
-              <p>Frame the words on screen. CopyLasso only needs the pixels inside your selection.</p>
-            </div>
-          </li>
-          <li>
-            <span class="step-number" aria-hidden="true">03</span>
-            <div>
-              <h3>Keep the words</h3>
-              <p>Local Apple Vision OCR turns the selection into plain text on the clipboard.</p>
-            </div>
-          </li>
-        </ol>
-      </div>
-    </section>
-
-    <section id="features" class="canvas-band features-band" aria-labelledby="features-title">
-      <div class="band-inner feature-layout">
-        <header class="section-heading">
-          <h2 id="features-title">A small utility with useful edges.</h2>
-          <p>Enough recognition power for the screen in front of you, without turning capture into a project.</p>
-        </header>
-
-        <ul class="feature-list">
-          {features.map((feature) => (
-            <li>
-              <h3>{feature.title}</h3>
-              <p>{feature.body}</p>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-
-    <section id="privacy" class="canvas-band privacy-band" aria-labelledby="privacy-title">
-      <div class="band-inner privacy-layout">
-        <header class="section-heading">
-          <h2 id="privacy-title">The screen stays on your Mac.</h2>
-          <p>Local-first is not a footnote here. It is the boundary around the action.</p>
-        </header>
-
-        <ul class="privacy-list">
-          {privacyFacts.map((fact) => (
-            <li>
-              <span class="privacy-mark" aria-hidden="true">✓</span>
-              <span>{fact}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-
-    <section id="compatibility" class="canvas-band compatibility-band" aria-labelledby="compatibility-title">
-      <div class="band-inner compatibility-layout">
-        <header class="section-heading">
-          <h2 id="compatibility-title">Made for the Mac you already use.</h2>
-          <p>CopyLasso is a native, open-source utility with one permission and no account setup.</p>
-        </header>
-
-        <ul class="compatibility-list">
-          {compatibilityFacts.map((fact) => <li>{fact}</li>)}
-        </ul>
-      </div>
-    </section>
-
-    <section id="download" class="download-band" aria-labelledby="download-title">
-      <div class="download-inner site-width">
-        <div class="download-copy">
-          <h2 id="download-title">Make the next screen copyable.</h2>
-          <p>Download the free, open-source utility and keep capture where it belongs: on your Mac.</p>
+          <ul class="annotation-list">
+            {privacyFacts.map((fact) => (
+              <li>
+                <span class="annotation-mark" aria-hidden="true">—</span>
+                <span>{fact}</span>
+              </li>
+            ))}
+          </ul>
         </div>
+      </section>
 
-        <div class="download-actions">
-          <div class="download-action-row">
-            <a class="button download-button" href={site.downloadHref}>{site.downloadLabel}</a>
-            <span class="release-meta download-meta">
-              <span>{site.versionLabel}</span>
-              <span>{site.requirements}</span>
-            </span>
+      <section id="compatibility" class="margin-section compatibility-section" aria-labelledby="compatibility-title">
+        <div class="site-width section-grid">
+          <div class="reading-column section-copy">
+            <h2 id="compatibility-title">Made for the Mac already on your desk.</h2>
+            <p>
+              CopyLasso is a free, open-source menu-bar utility with a focused permission boundary and no account
+              setup.
+            </p>
           </div>
-          <a class="download-source" href={site.githubUrl} rel="noreferrer">View source on GitHub</a>
+
+          <div class="compatibility-copy">
+            <ul class="compatibility-list">
+              {compatibilityFacts.map((fact) => <li>{fact}</li>)}
+            </ul>
+            <p class="compatibility-note">
+              Screen Recording permission is required for reading the pixels inside the region you select.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="download" class="download-section" aria-labelledby="download-title">
+        <div class="site-width download-grid">
+          <div>
+            <h2 id="download-title">Make the next screen copyable.</h2>
+            <p>Keep the source visible, take only what you need, and return to the work already in front of you.</p>
+          </div>
+          <a class="button margin-secondary" href={site.downloadHref}>
+            <span>{site.downloadLabel}</span>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <path d="M12 3v11"></path>
+              <path d="m8.5 10.5 3.5 3.5 3.5-3.5"></path>
+              <path d="M4 16.5V19a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2.5"></path>
+            </svg>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer margin-footer">
+      <div class="footer-row">
+        <p>Created by Bennett Hilberg.</p>
+        <div class="footer-links">
+          <a href={`mailto:${site.email}`}>{site.email}</a>
+          <a href={site.githubUrl} target="_blank" rel="noreferrer">View source on GitHub</a>
         </div>
       </div>
-    </section>
-  </main>
-
-  <footer class="footer canvas-footer">
-    <div class="footer-row">
-      <p>Created by Bennett Hilberg.</p>
-      <div class="footer-links">
-        <a href={`mailto:${site.email}`}>{site.email}</a>
-        <a href={site.githubUrl} rel="noreferrer">View source on GitHub</a>
-      </div>
-    </div>
-  </footer>
+    </footer>
+  </div>
 </SiteLayout>
 
 <style>
-  .canvas-page {
-    --canvas-blue: oklch(49% 0.19 255);
-    --canvas-blue-deep: oklch(29% 0.13 255);
-    --canvas-blue-soft: oklch(83% 0.1 255);
-    --canvas-text: oklch(98% 0.008 245);
-    --canvas-muted: oklch(91% 0.035 255);
-    --canvas-surface: oklch(97.5% 0.008 245);
-    --canvas-surface-deep: oklch(93.5% 0.018 245);
-    --canvas-ink: oklch(20% 0.035 250);
-    --canvas-ink-soft: oklch(40% 0.04 250);
-    --canvas-line: oklch(78% 0.03 250);
+  .margin-page {
+    --margin-paper: oklch(98.4% 0.008 245);
+    --margin-paper-blue: oklch(94.5% 0.028 250);
+    --margin-ink: oklch(20% 0.035 250);
+    --margin-ink-soft: oklch(40% 0.04 250);
+    --margin-muted: oklch(49% 0.035 250);
+    --margin-line: oklch(85% 0.025 250);
+    --margin-line-strong: oklch(70% 0.045 250);
+    --margin-blue: oklch(53% 0.19 255);
+    --margin-blue-deep: oklch(30% 0.12 255);
+    --margin-blue-pale: oklch(90.8% 0.065 255);
+    --margin-blue-white: oklch(98% 0.008 245);
     overflow-x: clip;
+    background: var(--margin-paper);
+    color: var(--margin-ink);
   }
 
-  .canvas-hero {
-    overflow: hidden;
-    background: var(--canvas-blue);
-    color: var(--canvas-text);
+  .margin-header {
+    border-bottom: 1px solid var(--margin-line);
+    background: var(--margin-paper);
   }
 
-  .canvas-header {
-    position: relative;
-    border-bottom: 1px solid rgb(247 250 255 / 0.26);
-    color: var(--canvas-text);
+  .margin-header .brand {
+    color: var(--margin-ink);
   }
 
-  .canvas-header .brand,
-  .canvas-header .header-nav a {
-    color: var(--canvas-text);
+  .margin-header .brand-mark {
+    color: var(--margin-blue);
   }
 
-  .canvas-header .brand-mark {
-    color: var(--canvas-text);
+  .margin-header .header-nav {
+    color: var(--margin-ink-soft);
   }
 
-  .canvas-header .header-nav {
-    color: var(--canvas-muted);
+  .margin-header .header-nav a:hover {
+    color: var(--margin-blue);
   }
 
-  .canvas-header a:hover {
-    color: white;
+  .margin-hero {
+    border-bottom: 1px solid var(--margin-line-strong);
+    background: var(--margin-paper);
   }
 
-  .hero-stage {
+  .margin-hero-grid {
     display: grid;
-    grid-template-columns: minmax(18rem, 0.78fr) minmax(0, 1.22fr);
-    gap: clamp(2rem, 6vw, 6rem);
+    grid-template-columns: minmax(15rem, 0.7fr) minmax(0, 1.3fr);
+    gap: clamp(3rem, 7vw, 8rem);
     align-items: center;
-    padding-block: clamp(4.5rem, 10vw, 9rem) clamp(5.5rem, 12vw, 11rem);
+    padding-block: clamp(5rem, 10vw, 9rem) clamp(5.5rem, 10vw, 9rem);
   }
 
-  .hero-copy {
-    position: relative;
-    z-index: 1;
+  .reading-column {
+    max-width: 32rem;
   }
 
   .hero-copy h1 {
-    max-width: 9ch;
+    max-width: 8.6ch;
     margin: 0;
-    color: var(--canvas-text);
-    font-size: clamp(3.25rem, 7.8vw, 7rem);
-    font-weight: 750;
-    letter-spacing: -0.09em;
-    line-height: 0.88;
+    color: var(--margin-ink);
+    font-size: clamp(3.35rem, 7vw, 6.4rem);
+    font-weight: 400;
+    letter-spacing: -0.075em;
+    line-height: 0.91;
   }
 
-  .hero-copy > p:not(.hero-note) {
-    max-width: 34rem;
+  .hero-lede {
+    max-width: 31rem;
     margin: 1.8rem 0 0;
-    color: var(--canvas-muted);
-    font-size: clamp(1.05rem, 1.7vw, 1.25rem);
-    line-height: 1.5;
+    color: var(--margin-ink-soft);
+    font-size: clamp(1.05rem, 1.7vw, 1.2rem);
+    line-height: 1.6;
   }
 
   .hero-actions {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 1rem 1.25rem;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.85rem;
     margin-top: 2rem;
   }
 
-  .hero-download,
-  .download-button {
-    background: var(--canvas-surface);
-    color: var(--canvas-blue-deep);
+  .margin-primary {
+    border-color: var(--margin-blue);
+    background: var(--margin-blue);
+    color: var(--margin-blue-white);
   }
 
-  .hero-download:hover,
-  .download-button:hover {
-    background: white;
-    color: var(--canvas-blue-deep);
+  .margin-primary:hover {
+    background: var(--margin-blue-deep);
+    color: var(--margin-blue-white);
   }
 
-  .release-meta {
-    display: grid;
-    gap: 0.2rem;
-    max-width: 18rem;
-    color: var(--canvas-muted);
-    font-family: var(--mono);
-    font-size: 0.69rem;
-    letter-spacing: -0.03em;
-    line-height: 1.35;
+  .margin-primary svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
   }
 
-  .release-meta span:first-child {
-    color: var(--canvas-text);
-    font-weight: 700;
+  .hero-source {
+    color: var(--margin-blue-deep);
+    font-weight: 600;
   }
 
-  .hero-note {
-    margin: 1.35rem 0 0;
-    color: var(--canvas-muted);
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    letter-spacing: -0.02em;
+  .hero-source:hover {
+    color: var(--margin-blue);
   }
 
-  .canvas-demo {
-    width: 100%;
+  .hero-meta {
+    margin: 0.35rem 0 0;
+    color: var(--margin-muted);
+    font-size: 0.95rem;
+  }
+
+  .margin-story {
     min-width: 0;
     margin: 0;
-    transform: translateY(1.15rem) rotate(1.15deg);
   }
 
-  .desktop-surface {
+  .story-stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 10.5rem;
+    align-items: stretch;
+  }
+
+  .capture-panel {
+    min-width: 0;
     overflow: hidden;
-    border: 1px solid rgb(10 28 63 / 0.34);
-    border-radius: var(--r-surface);
-    background: var(--canvas-surface);
-    color: var(--canvas-ink);
+    border: 1px solid var(--margin-line-strong);
+    border-radius: var(--r-surface) 0 0 var(--r-surface);
+    background: var(--margin-paper);
   }
 
-  .surface-toolbar {
+  .capture-toolbar {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
     justify-content: space-between;
-    gap: 0.5rem 1rem;
-    min-height: 3.25rem;
-    padding: 0.9rem 1.15rem;
-    border-bottom: 1px solid var(--canvas-line);
+    gap: 0.6rem 1rem;
+    min-height: 3.6rem;
+    padding: 0.95rem 1.15rem;
+    border-bottom: 1px solid var(--margin-line);
   }
 
-  .surface-title {
-    font-size: 0.83rem;
-    font-weight: 750;
-    letter-spacing: -0.02em;
+  .toolbar-title {
+    color: var(--margin-ink);
+    font-size: 0.95rem;
+    font-weight: 600;
   }
 
-  .surface-context,
-  .screen-label,
-  .selection-label,
-  .output-label {
-    color: var(--canvas-ink-soft);
-    font-family: var(--mono);
-    font-size: 0.65rem;
-    letter-spacing: -0.03em;
+  .toolbar-context {
+    color: var(--margin-muted);
+    font-size: 0.86rem;
   }
 
-  .surface-context {
-    overflow-wrap: anywhere;
-  }
-
-  .surface-viewport {
+  .source-canvas {
     position: relative;
-    min-height: clamp(22rem, 35vw, 28rem);
+    min-height: clamp(23rem, 34vw, 27rem);
     overflow: hidden;
-    padding: clamp(1.5rem, 4vw, 3.25rem);
-    background: var(--canvas-surface-deep);
+    padding: clamp(1.4rem, 3vw, 2.4rem);
+    background: var(--margin-paper-blue);
   }
 
-  .screen-copy {
+  .source-intro {
     position: relative;
     z-index: 1;
-    max-width: 75%;
+    max-width: 25rem;
   }
 
-  .screen-label {
-    display: block;
-    margin-bottom: 0.85rem;
-  }
-
-  .screen-lead {
-    max-width: 16ch;
+  .source-heading {
+    max-width: 18ch;
     margin: 0;
-    color: var(--canvas-ink);
-    font-size: clamp(1.55rem, 3.2vw, 2.45rem);
-    font-weight: 700;
-    letter-spacing: -0.07em;
-    line-height: 0.98;
-  }
-
-  .screen-detail {
-    max-width: 29ch;
-    margin: 1.25rem 0 0;
-    color: var(--canvas-ink-soft);
-    font-size: 0.92rem;
-  }
-
-  .selection-window {
-    position: absolute;
-    z-index: 2;
-    top: 35%;
-    left: 16%;
-    display: grid;
-    width: 62%;
-    min-height: 7.5rem;
-    align-content: end;
-    gap: 0.3rem;
-    padding: 0.75rem 0.9rem;
-    border: 2px solid var(--canvas-blue);
-    background: rgb(211 224 255 / 0.34);
-    color: var(--canvas-blue-deep);
-  }
-
-  .selection-window::before,
-  .selection-window::after {
-    position: absolute;
-    width: 0.7rem;
-    height: 0.7rem;
-    border: 2px solid var(--canvas-blue);
-    background: var(--canvas-surface-deep);
-    content: "";
-  }
-
-  .selection-window::before {
-    top: -0.45rem;
-    left: -0.45rem;
-  }
-
-  .selection-window::after {
-    right: -0.45rem;
-    bottom: -0.45rem;
-  }
-
-  .selection-label {
-    color: var(--canvas-blue-deep);
-  }
-
-  .selection-line {
-    font-size: clamp(1rem, 2.1vw, 1.45rem);
-    font-weight: 750;
-    letter-spacing: -0.05em;
+    color: var(--margin-ink);
+    font-size: clamp(1.45rem, 3vw, 2.3rem);
+    font-weight: 400;
+    letter-spacing: -0.055em;
     line-height: 1;
   }
 
-  .output-strip {
+  .source-body {
+    max-width: 28ch;
+    margin: 0.9rem 0 0;
+    color: var(--margin-ink-soft);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .sheet-grid {
+    position: absolute;
+    right: clamp(1.4rem, 3vw, 2.4rem);
+    bottom: 1.8rem;
+    left: clamp(1.4rem, 3vw, 2.4rem);
     display: grid;
-    grid-template-columns: minmax(8rem, 0.6fr) minmax(0, 1.4fr);
+    grid-template-columns: 2.25rem repeat(4, minmax(0, 1fr));
+    gap: 1px;
+    overflow: hidden;
+    border: 1px solid var(--margin-line-strong);
+    background: var(--margin-line-strong);
+  }
+
+  .sheet-cell {
+    min-width: 0;
+    min-height: 2.1rem;
+    overflow: hidden;
+    padding: 0.55rem 0.5rem;
+    background: var(--margin-paper);
+    color: var(--margin-ink-soft);
+    font-size: 0.82rem;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
+  .sheet-heading,
+  .sheet-row,
+  .sheet-corner {
+    background: var(--margin-paper-blue);
+    color: var(--margin-muted);
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .sheet-wide {
+    color: var(--margin-blue-deep);
+    font-weight: 600;
+  }
+
+  .selection-box {
+    position: absolute;
+    z-index: 2;
+    top: 54%;
+    left: 18%;
+    width: 62%;
+    height: 24%;
+    border: 2px solid var(--margin-blue);
+    background: rgb(213 227 255 / 0.28);
+    opacity: 0;
+    transform: scale(0.03);
+    transform-origin: 0 0;
+    animation: margin-selection 6.8s var(--ease-out) infinite;
+  }
+
+  .selection-tag {
+    position: absolute;
+    top: -1.75rem;
+    left: -2px;
+    padding: 0.25rem 0.42rem;
+    background: var(--margin-blue);
+    color: var(--margin-blue-white);
+    font-size: 0.82rem;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .selection-handle {
+    position: absolute;
+    width: 0.65rem;
+    height: 0.65rem;
+    border: 2px solid var(--margin-blue);
+    background: var(--margin-paper);
+  }
+
+  .selection-handle-one {
+    top: -0.42rem;
+    left: -0.42rem;
+  }
+
+  .selection-handle-two {
+    top: -0.42rem;
+    right: -0.42rem;
+  }
+
+  .selection-handle-three {
+    right: -0.42rem;
+    bottom: -0.42rem;
+  }
+
+  .selection-handle-four {
+    bottom: -0.42rem;
+    left: -0.42rem;
+  }
+
+  .result-strip {
+    display: grid;
+    grid-template-columns: minmax(8rem, 0.7fr) minmax(0, 1.3fr);
     gap: 1rem;
     align-items: baseline;
-    min-height: 4.5rem;
+    min-height: 5.4rem;
     padding: 1rem 1.15rem;
-    border-top: 2px solid var(--canvas-blue);
-    background: var(--canvas-surface);
+    border-top: 2px solid var(--margin-blue);
+    background: var(--margin-paper);
   }
 
-  .output-copy {
-    overflow-wrap: anywhere;
+  .result-status {
+    color: var(--margin-blue-deep);
+    font-size: 0.86rem;
+    font-weight: 600;
+  }
+
+  .result-text {
     margin: 0;
-    color: var(--canvas-ink);
-    font-size: 1.05rem;
-    font-weight: 700;
-    letter-spacing: -0.03em;
+    color: var(--margin-ink);
+    font-size: 1.02rem;
+    font-weight: 500;
+    line-height: 1.35;
+    opacity: 0;
+    transform: translateY(0.45rem);
+    animation: copied-result 6.8s var(--ease-out) infinite;
   }
 
-  .canvas-demo figcaption {
+  .margin-note {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem 0.8rem;
-    margin-top: 1.1rem;
-    color: var(--canvas-muted);
-    font-size: 0.79rem;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.25rem;
+    border: 2px solid var(--margin-blue);
+    border-left: 0;
+    border-radius: 0 var(--r-surface) var(--r-surface) 0;
+    background: var(--margin-blue-pale);
+    color: var(--margin-blue-deep);
   }
 
-  .canvas-demo figcaption strong {
-    color: var(--canvas-text);
+  .note-rule {
+    width: 3.2rem;
+    height: 2px;
+    background: var(--margin-blue);
   }
 
-  .canvas-band {
-    position: relative;
-    overflow: hidden;
-    padding-block: clamp(4.5rem, 9vw, 8.5rem);
+  .note-result {
+    margin: 0;
+    color: var(--margin-ink);
+    font-size: clamp(1.05rem, 2vw, 1.35rem);
+    font-weight: 400;
+    letter-spacing: -0.035em;
+    line-height: 1.12;
+    opacity: 0;
+    transform: translateY(0.45rem);
+    animation: copied-result 6.8s var(--ease-out) infinite;
   }
 
-  .canvas-band::before {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: max(1rem, calc((100vw - 72rem) / 2));
-    width: 0.22rem;
-    background: var(--canvas-blue);
-    content: "";
+  .note-state {
+    margin: 0;
+    color: var(--margin-blue-deep);
+    font-size: 0.9rem;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(0.45rem);
+    animation: copied-result 6.8s var(--ease-out) infinite;
   }
 
-  .band-inner {
+  .margin-story figcaption {
+    max-width: 58rem;
+    margin-top: 1.05rem;
+    color: var(--margin-ink-soft);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .margin-section {
+    border-bottom: 1px solid var(--margin-line-strong);
+    padding-block: clamp(4.5rem, 9vw, 8rem);
+  }
+
+  .section-grid {
     display: grid;
-    grid-template-columns: minmax(13rem, 0.72fr) minmax(0, 1.28fr);
-    gap: clamp(2.5rem, 7vw, 8rem);
-    width: min(calc(100% - 3rem), 68rem);
-    margin-left: max(2.25rem, calc((100vw - 72rem) / 2 + 2.25rem));
+    grid-template-columns: minmax(15rem, 0.7fr) minmax(0, 1.3fr);
+    gap: clamp(3rem, 7vw, 8rem);
+    align-items: start;
   }
 
-  .section-heading {
-    max-width: 28rem;
-    margin: 0;
-  }
-
-  .section-heading h2 {
+  .section-copy h2,
+  .download-grid h2 {
     max-width: 13ch;
-    margin: 0 0 1rem;
-    color: var(--canvas-ink);
-    font-size: clamp(2rem, 4.5vw, 3.75rem);
-    letter-spacing: -0.08em;
-    line-height: 0.92;
-  }
-
-  .section-heading p {
-    max-width: 34rem;
     margin: 0;
-    color: var(--canvas-ink-soft);
+    color: var(--margin-ink);
+    font-size: clamp(2.25rem, 4.6vw, 4rem);
+    font-weight: 400;
+    letter-spacing: -0.07em;
+    line-height: 0.95;
   }
 
-  .how-band {
-    border-top: 1px solid var(--line);
-    background: var(--paper);
+  .section-copy > p,
+  .download-grid > div > p {
+    max-width: 34rem;
+    margin: 1.2rem 0 0;
+    color: var(--margin-ink-soft);
+    font-size: 1.02rem;
+    line-height: 1.6;
   }
 
-  .process-list,
+  .workflow-list,
   .feature-list,
-  .privacy-list,
+  .annotation-list,
   .compatibility-list {
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  .process-list {
-    border-top: 1px solid var(--canvas-ink);
+  .workflow-list {
+    border-top: 1px solid var(--margin-ink);
   }
 
-  .process-list li {
+  .workflow-list li {
     display: grid;
-    grid-template-columns: 4rem minmax(0, 1fr);
-    gap: 1.25rem;
-    padding: 1.4rem 0 1.6rem;
-    border-bottom: 1px solid var(--line-strong);
+    grid-template-columns: 2.4rem minmax(0, 1fr);
+    gap: 1rem;
+    padding: 1.45rem 0 1.6rem;
+    border-bottom: 1px solid var(--margin-line-strong);
   }
 
   .step-number {
-    color: var(--canvas-blue);
-    font-family: var(--mono);
-    font-size: 0.78rem;
-    line-height: 1.4;
+    color: var(--margin-blue);
+    font-size: 1rem;
+    line-height: 1.5;
   }
 
-  .process-list h3,
-  .feature-list h3 {
+  .workflow-list h3,
+  .feature-list h3,
+  .proof-heading h3 {
     margin: 0;
-    color: var(--canvas-ink);
-    font-size: clamp(1.15rem, 2vw, 1.5rem);
-    letter-spacing: -0.045em;
-    line-height: 1.05;
+    color: var(--margin-ink);
+    font-size: clamp(1.15rem, 2vw, 1.45rem);
+    font-weight: 600;
+    letter-spacing: -0.035em;
+    line-height: 1.1;
   }
 
-  .process-list p,
-  .feature-list p {
+  .workflow-list p,
+  .feature-list p,
+  .proof-heading p,
+  .code-proof p,
+  .qr-proof p {
     max-width: 42rem;
     margin: 0.55rem 0 0;
-    color: var(--canvas-ink-soft);
+    color: var(--margin-ink-soft);
+    line-height: 1.55;
   }
 
   kbd {
     display: inline-block;
-    padding: 0.2rem 0.35rem;
-    border: 1px solid var(--line-strong);
+    padding: 0.18rem 0.4rem;
+    border: 1px solid var(--margin-line-strong);
     border-radius: var(--r-control);
-    background: var(--paper-deep);
-    color: var(--canvas-blue-deep);
-    font-family: var(--mono);
-    font-size: 0.78em;
-    font-weight: 700;
-    letter-spacing: -0.06em;
+    background: var(--margin-paper-blue);
+    color: var(--margin-blue-deep);
+    font-family: var(--sans);
+    font-size: 0.82em;
+    font-weight: 600;
     line-height: 1;
     vertical-align: 0.08em;
   }
 
-  .features-band {
-    background: var(--paper-deep);
+  .proof-section {
+    background: var(--margin-paper-blue);
+  }
+
+  .proof-layout {
+    display: grid;
+    grid-template-columns: minmax(15rem, 0.85fr) minmax(0, 1.15fr);
+    gap: clamp(3rem, 7vw, 8rem);
+    align-items: start;
+  }
+
+  .proof-copy {
+    max-width: none;
   }
 
   .feature-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    border-top: 1px solid var(--canvas-ink);
+    margin-top: 2.8rem;
+    border-top: 1px solid var(--margin-ink);
   }
 
   .feature-list li {
+    padding: 1.25rem 0 1.35rem;
+    border-bottom: 1px solid var(--margin-line-strong);
+  }
+
+  .feature-list p {
+    max-width: 34rem;
+  }
+
+  .recognition-proof {
     min-width: 0;
-    padding: 1.35rem 1.5rem 1.6rem 0;
-    border-bottom: 1px solid var(--line-strong);
+    margin: 0;
+    padding: clamp(1.25rem, 3vw, 2rem);
+    border: 1px solid var(--margin-line-strong);
+    background: var(--margin-paper);
   }
 
-  .feature-list li:nth-child(even) {
-    padding-right: 0;
-    padding-left: 1.5rem;
-    border-left: 1px solid var(--line-strong);
+  .proof-heading {
+    padding-bottom: 1.4rem;
+    border-bottom: 1px solid var(--margin-line);
   }
 
-  .privacy-band {
-    background: var(--canvas-blue-deep);
-    color: var(--canvas-text);
-  }
-
-  .privacy-band::before {
-    background: var(--canvas-blue-soft);
-  }
-
-  .privacy-band .section-heading h2 {
-    color: var(--canvas-text);
-  }
-
-  .privacy-band .section-heading p {
-    color: var(--canvas-muted);
-  }
-
-  .privacy-list {
-    border-top: 1px solid rgb(247 250 255 / 0.38);
-  }
-
-  .privacy-list li {
+  .script-samples {
     display: grid;
-    grid-template-columns: 2rem minmax(0, 1fr);
+    gap: 0.65rem;
+    padding-block: 1.35rem;
+  }
+
+  .script-samples p {
+    margin: 0;
+    color: var(--margin-ink);
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+
+  .script-samples p:nth-child(2) {
+    color: var(--margin-blue-deep);
+  }
+
+  .script-samples p:nth-child(3) {
+    color: var(--margin-muted);
+  }
+
+  .proof-lower {
+    display: grid;
+    grid-template-columns: minmax(8rem, 0.75fr) minmax(0, 1.25fr);
+    gap: clamp(1.25rem, 4vw, 2.5rem);
+    align-items: center;
+    padding-top: 1.35rem;
+    border-top: 1px solid var(--margin-line);
+  }
+
+  .qr-proof {
+    min-width: 0;
+  }
+
+  .qr-grid {
+    display: grid;
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+    width: min(11rem, 100%);
+    aspect-ratio: 1;
+    gap: 0.15rem;
+    padding: 0.7rem;
+    border: 1px solid var(--margin-ink);
+    background: var(--margin-paper);
+  }
+
+  .qr-cell {
+    min-width: 0;
+    background: transparent;
+  }
+
+  .qr-cell.is-filled {
+    background: var(--margin-blue-deep);
+  }
+
+  .qr-proof p,
+  .code-proof p {
+    font-size: 0.9rem;
+  }
+
+  .code-sample {
+    color: var(--margin-ink) !important;
+    font-size: clamp(1.05rem, 2vw, 1.35rem) !important;
+    line-height: 1.35 !important;
+  }
+
+  .code-sample span,
+  .code-sample strong {
+    color: var(--margin-blue);
+    font-weight: 600;
+  }
+
+  .recognition-proof figcaption {
+    margin-top: 1.4rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--margin-line);
+    color: var(--margin-muted);
+    font-size: 0.9rem;
+  }
+
+  .privacy-section {
+    background: var(--margin-paper);
+  }
+
+  .annotation-list {
+    border-top: 1px solid var(--margin-ink);
+  }
+
+  .annotation-list li {
+    display: grid;
+    grid-template-columns: 2.2rem minmax(0, 1fr);
     gap: 1rem;
     align-items: start;
-    padding: 1.25rem 0 1.4rem;
-    border-bottom: 1px solid rgb(247 250 255 / 0.22);
-    color: var(--canvas-text);
+    padding: 1.35rem 0 1.5rem;
+    border-bottom: 1px solid var(--margin-line-strong);
+    color: var(--margin-ink);
+    font-size: 1.02rem;
+    line-height: 1.55;
   }
 
-  .privacy-mark {
-    color: var(--canvas-blue-soft);
-    font-family: var(--mono);
-    font-size: 1.1rem;
-    font-weight: 700;
-    line-height: 1.3;
+  .annotation-mark {
+    color: var(--margin-blue);
+    font-size: 1.35rem;
+    line-height: 1.1;
   }
 
-  .compatibility-band {
-    background: var(--paper);
+  .compatibility-section {
+    background: var(--margin-paper-blue);
   }
 
   .compatibility-list {
-    border-top: 1px solid var(--canvas-ink);
+    border-top: 1px solid var(--margin-ink);
   }
 
   .compatibility-list li {
     padding: 1.15rem 0 1.25rem;
-    border-bottom: 1px solid var(--line-strong);
-    color: var(--canvas-ink);
-    font-size: clamp(1.05rem, 2vw, 1.35rem);
-    font-weight: 700;
-    letter-spacing: -0.04em;
+    border-bottom: 1px solid var(--margin-line-strong);
+    color: var(--margin-ink);
+    font-size: 1.12rem;
+    font-weight: 600;
+    line-height: 1.35;
   }
 
-  .download-band {
-    overflow: hidden;
-    padding-block: clamp(4rem, 8vw, 7rem);
-    background: var(--canvas-blue);
-    color: var(--canvas-text);
+  .compatibility-note {
+    max-width: 36rem;
+    margin: 1.35rem 0 0;
+    color: var(--margin-ink-soft);
+    line-height: 1.55;
   }
 
-  .download-inner {
+  .download-section {
+    padding-block: clamp(4.5rem, 9vw, 8rem);
+    background: var(--margin-blue-pale);
+  }
+
+  .download-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.8fr);
-    gap: 2rem 5rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2rem 4rem;
     align-items: end;
   }
 
-  .download-copy h2 {
-    max-width: 10ch;
-    margin: 0;
-    color: var(--canvas-text);
-    font-size: clamp(2.5rem, 6vw, 5.5rem);
-    letter-spacing: -0.09em;
-    line-height: 0.9;
+  .download-grid h2 {
+    max-width: 11ch;
   }
 
-  .download-copy p {
-    max-width: 34rem;
-    margin: 1.25rem 0 0;
-    color: var(--canvas-muted);
+  .download-grid > div > p {
+    max-width: 32rem;
   }
 
-  .download-actions {
-    display: grid;
-    justify-items: start;
-    gap: 1.1rem;
+  .margin-secondary {
+    border-color: var(--margin-blue);
+    background: var(--margin-blue);
+    color: var(--margin-blue-white);
+    white-space: nowrap;
   }
 
-  .download-action-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 1rem 1.25rem;
+  .margin-secondary:hover {
+    background: var(--margin-blue-deep);
+    color: var(--margin-blue-white);
   }
 
-  .download-meta {
-    color: var(--canvas-muted);
+  .margin-footer {
+    background: var(--margin-paper);
   }
 
-  .download-meta span:first-child {
-    color: var(--canvas-text);
-  }
-
-  .download-source {
-    color: var(--canvas-text);
-    font-weight: 700;
-  }
-
-  .download-source:hover {
-    color: white;
-  }
-
-  .canvas-footer {
-    background: var(--paper);
-  }
-
-  .canvas-footer a {
+  .margin-footer a {
     overflow-wrap: anywhere;
   }
 
+  @keyframes margin-selection {
+    0%,
+    10% {
+      opacity: 0;
+      transform: scale(0.03);
+    }
+
+    19% {
+      opacity: 1;
+      transform: scale(0.03);
+    }
+
+    34%,
+    60% {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    72%,
+    100% {
+      opacity: 0;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes copied-result {
+    0%,
+    39% {
+      opacity: 0;
+      transform: translateY(0.45rem);
+    }
+
+    49%,
+    81% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    92%,
+    100% {
+      opacity: 0;
+      transform: translateY(0.45rem);
+    }
+  }
+
   @media (max-width: 62rem) {
-    .hero-stage {
-      grid-template-columns: minmax(16rem, 0.76fr) minmax(0, 1.24fr);
-      gap: 2.5rem;
-    }
-
-    .hero-copy h1 {
-      font-size: clamp(3rem, 7.8vw, 5.5rem);
-    }
-
-    .band-inner {
+    .margin-hero-grid,
+    .section-grid,
+    .proof-layout {
       gap: 3rem;
+    }
+
+    .story-stage {
+      grid-template-columns: minmax(0, 1fr) 9.5rem;
+    }
+
+    .margin-note {
+      padding: 1rem;
     }
   }
 
   @media (max-width: 52rem) {
-    .hero-stage,
-    .band-inner,
-    .download-inner {
+    .margin-hero-grid,
+    .section-grid,
+    .proof-layout,
+    .download-grid {
       grid-template-columns: 1fr;
     }
 
-    .hero-stage {
-      gap: 4rem;
+    .margin-hero-grid {
+      align-items: start;
+      padding-block: 4rem 5.5rem;
     }
 
-    .hero-copy h1 {
-      max-width: 10ch;
+    .reading-column {
+      max-width: 38rem;
     }
 
-    .canvas-demo {
-      width: min(100%, 48rem);
-      justify-self: end;
+    .margin-story {
+      width: min(100%, 52rem);
     }
 
-    .band-inner {
-      gap: 2.5rem;
+    .section-copy h2,
+    .download-grid h2 {
+      max-width: 15ch;
     }
 
-    .download-inner {
+    .download-grid {
       align-items: start;
     }
   }
 
-  @media (max-width: 44rem) {
-    .canvas-header {
-      align-items: center;
-    }
-
-    .canvas-header .header-nav a:not(.button) {
-      display: none;
-    }
-
-    .hero-stage {
-      display: flex;
-      flex-direction: column;
-      gap: 3rem;
-      padding-block: 2.5rem 5.5rem;
-    }
-
-    .canvas-demo {
-      order: -1;
-      transform: none;
-    }
-
-    .surface-viewport {
-      min-height: 18rem;
-      padding: 1.35rem;
-    }
-
-    .screen-copy {
-      max-width: 84%;
-    }
-
-    .screen-lead {
-      font-size: clamp(1.45rem, 8vw, 2.25rem);
-    }
-
-    .selection-window {
-      top: 35%;
-      left: 10%;
-      width: 80%;
-      min-height: 6.3rem;
-    }
-
-    .output-strip {
+  @media (max-width: 42rem) {
+    .story-stage {
       grid-template-columns: 1fr;
-      gap: 0.3rem;
+    }
+
+    .capture-panel {
+      border-radius: var(--r-surface) var(--r-surface) 0 0;
+    }
+
+    .margin-note {
+      min-height: 10rem;
+      flex-direction: row;
+      align-items: end;
+      justify-content: flex-start;
+      border-left: 2px solid var(--margin-blue);
+      border-top: 0;
+      border-radius: 0 0 var(--r-surface) var(--r-surface);
+    }
+
+    .note-rule {
+      align-self: start;
+      width: 2px;
+      height: 3.2rem;
+    }
+
+    .note-result {
+      max-width: 13ch;
+    }
+
+    .note-state {
+      margin-left: auto;
+    }
+  }
+
+  @media (max-width: 34rem) {
+    .margin-hero-grid {
+      width: calc(100% - 1.5rem);
+      padding-block: 3.5rem 4.5rem;
     }
 
     .hero-copy h1 {
       max-width: 9ch;
-      font-size: clamp(2.85rem, 14vw, 4.45rem);
+      font-size: clamp(3rem, 15vw, 4.2rem);
     }
 
-    .hero-copy > p:not(.hero-note) {
-      font-size: 1.05rem;
+    .source-canvas {
+      min-height: 22rem;
+      padding: 1.1rem;
     }
 
-    .hero-actions {
-      align-items: flex-start;
-      flex-direction: column;
+    .source-heading {
+      font-size: clamp(1.35rem, 8vw, 1.85rem);
     }
 
-    .release-meta {
-      max-width: 100%;
+    .sheet-grid {
+      right: 1.1rem;
+      bottom: 1.1rem;
+      left: 1.1rem;
+      grid-template-columns: 1.8rem repeat(4, minmax(0, 1fr));
     }
 
-    .canvas-band {
-      padding-block: 4rem 5rem;
+    .sheet-cell {
+      min-height: 1.9rem;
+      padding: 0.42rem 0.3rem;
+      font-size: 0.8rem;
     }
 
-    .canvas-band::before {
-      left: 1rem;
-      width: 0.18rem;
+    .selection-box {
+      top: 55%;
+      left: 14%;
+      width: 70%;
+      height: 23%;
     }
 
-    .band-inner {
-      width: calc(100% - 3rem);
-      margin-left: 2.25rem;
+    .result-strip {
+      grid-template-columns: 1fr;
+      gap: 0.35rem;
     }
 
-    .section-heading h2 {
-      max-width: 12ch;
-      font-size: clamp(2rem, 12vw, 3.25rem);
-    }
-
-    .feature-list {
+    .proof-lower {
       grid-template-columns: 1fr;
     }
 
-    .feature-list li,
-    .feature-list li:nth-child(even) {
-      padding: 1.25rem 0 1.4rem;
-      border-left: 0;
+    .qr-grid {
+      width: min(10rem, 100%);
     }
 
-    .download-inner {
-      width: calc(100% - 2rem);
+    .margin-section,
+    .download-section {
+      padding-block: 4rem 5rem;
     }
 
-    .download-copy h2 {
-      font-size: clamp(2.7rem, 14vw, 4.5rem);
+    .section-grid,
+    .proof-layout,
+    .download-grid {
+      width: calc(100% - 1.5rem);
+    }
+
+    .section-copy h2,
+    .download-grid h2 {
+      font-size: clamp(2.25rem, 13vw, 3.5rem);
+    }
+
+    .margin-note {
+      min-height: 9rem;
+      padding: 1rem;
+    }
+
+    .note-state {
+      max-width: 8ch;
+      font-size: 0.86rem;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .canvas-page,
-    .canvas-page *,
-    .canvas-page *::before,
-    .canvas-page *::after {
-      animation: none !important;
-      transition: none !important;
+    .selection-box,
+    .result-text,
+    .note-result,
+    .note-state {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @media (min-width: 59rem) and (max-height: 760px) {
+    .margin-hero-grid {
+      padding-block: 3.25rem 4rem;
+    }
+
+    .hero-copy h1 {
+      max-width: 9ch;
+      font-size: clamp(3.1rem, 6.2vw, 5.8rem);
+    }
+
+    .hero-lede,
+    .hero-actions {
+      margin-top: 1.2rem;
     }
   }
 </style>

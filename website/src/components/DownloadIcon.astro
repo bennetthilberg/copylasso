@@ -1,0 +1,31 @@
+---
+interface Props {
+  size?: number;
+}
+
+const { size = 18 } = Astro.props;
+---
+
+<svg
+  class="download-icon"
+  width={size}
+  height={size}
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.8"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+  focusable="false"
+>
+  <path d="M12 3v11" />
+  <path d="m7.5 10 4.5 4.5 4.5-4.5" />
+  <path d="M4 19.5h16" />
+</svg>
+
+<style>
+  .download-icon {
+    flex: 0 0 auto;
+  }
+</style>

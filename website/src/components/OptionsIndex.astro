@@ -7,9 +7,9 @@ import { directions, site } from "../data/site";
     <span class="brand-mark" aria-hidden="true">⌁</span>
     <span>{site.name}</span>
   </a>
-  <h1>Six ways to make the screen copyable.</h1>
+  <h1>Ten ways to make the screen copyable.</h1>
   <p>
-    A small design lab for the first CopyLasso landing page. Each direction keeps the same fast, local-first product story and tests a different visual hierarchy.
+    A small design lab for the first CopyLasso landing page. Each direction keeps the same fast, local-first product story and tests a different way to show the gesture.
   </p>
 </header>
 
@@ -17,7 +17,7 @@ import { directions, site } from "../data/site";
   <div class="direction-list">
     {directions.map((direction) => (
       <article class="direction-row">
-        <span class="direction-number">{String(direction.number).padStart(2, "0")}</span>
+        <span class="direction-number">{direction.number}</span>
         <div>
           <h2>{direction.name}</h2>
           <p>{direction.thesis}</p>

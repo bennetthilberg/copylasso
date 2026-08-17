@@ -1,7 +1,6 @@
 export const site = {
   name: "CopyLasso",
   version: "0.3.0",
-  versionLabel: "v0.3.0",
   requirements: "macOS 14+ · Apple silicon + Intel",
   shortcut: "⇧⌘2",
   githubUrl: "https://github.com/bennetthilberg/copylasso",
@@ -13,39 +12,63 @@ export const site = {
 export const directions = [
   {
     number: 1,
-    name: "Crosshair Stage",
+    name: "Paper Window",
     href: "/design-options/option-1/",
-    thesis: "Make the capture action understandable within the first viewport.",
+    thesis: "A quiet document window turns a spreadsheet capture into a clean clipboard result.",
   },
   {
     number: 2,
-    name: "Three-Beat Rail",
+    name: "Proof Strip",
     href: "/design-options/option-2/",
-    thesis: "Explain the product as a simple three-step mechanism.",
+    thesis: "Three visual proof moments show QR, language, and code recognition without feature-card clutter.",
   },
   {
     number: 3,
-    name: "Desktop Canvas",
+    name: "Margin Note",
     href: "/design-options/option-3/",
-    thesis: "Let users recognize the native screen-selection moment immediately.",
+    thesis: "A generous reading column and a blue margin note frame the before-and-after capture story.",
   },
   {
     number: 4,
-    name: "Privacy Receipt",
+    name: "Blue Line",
     href: "/design-options/option-4/",
-    thesis: "Make privacy and data boundaries the primary conversion proof.",
+    thesis: "One restrained blue route carries the eye from screen pixels through recognition to clipboard.",
   },
   {
     number: 5,
-    name: "Shortcut Console",
+    name: "Clipboard First",
     href: "/design-options/option-5/",
-    thesis: "Position CopyLasso as a one-keystroke Mac utility for repeatable capture.",
+    thesis: "The clean clipboard result is the hero object; source pixels sit behind it as context.",
   },
   {
     number: 6,
-    name: "Copy Sheet",
+    name: "Window Within",
     href: "/design-options/option-6/",
-    thesis: "Show the transformation from visible text to clipboard with almost no chrome.",
+    thesis: "A restrained light Mac-like window makes the capture gesture immediately legible.",
+  },
+  {
+    number: 7,
+    name: "Still Frame",
+    href: "/design-options/option-7/",
+    thesis: "A tactile street-sign-like still proves CopyLasso can read text that is not selectable.",
+  },
+  {
+    number: 8,
+    name: "Split Screen",
+    href: "/design-options/option-8/",
+    thesis: "What you see and what you get stay side by side so the value is clear at a glance.",
+  },
+  {
+    number: 9,
+    name: "Quiet Catalog",
+    href: "/design-options/option-9/",
+    thesis: "Large visual specimens show the range of readable things instead of repeating feature copy.",
+  },
+  {
+    number: 10,
+    name: "One Gesture",
+    href: "/design-options/option-10/",
+    thesis: "One oversized hero gesture and only the essential proof keep the page almost weightless.",
   },
 ];
 
