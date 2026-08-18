@@ -17,7 +17,6 @@ const description =
         <span>CopyLasso</span>
       </a>
       <nav class="landing-nav" aria-label="Page sections">
-        <a href="#how-it-works">How it works</a>
         <a href="#features">Features</a>
         <a href="#privacy">Privacy</a>
         <a href={site.githubUrl} target="_blank" rel="noreferrer">GitHub</a>
@@ -816,18 +815,25 @@ const description =
   }
 
   .closing-actions {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, auto);
     align-items: center;
     justify-content: center;
     gap: 1rem 1.5rem;
     margin-top: 3rem;
   }
 
+  .closing-actions .download-button {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
   .closing .download-button { border-color: var(--blue-white); background: var(--blue-white); color: var(--blue-deep); }
   .closing .download-button:hover { border-color: #d4eafa; background: #d4eafa; color: var(--blue-deep); }
 
   .closing-actions > a:last-child {
+    grid-column: 1;
+    grid-row: 1;
     min-height: 2.75rem;
     display: inline-flex;
     align-items: center;
@@ -898,6 +904,9 @@ const description =
     .hero-actions { grid-template-columns: 1fr; }
     .hero-actions .download-button { grid-column: 1; grid-row: 1; }
     .hero-actions .source-button { grid-column: 1; grid-row: 2; }
+    .closing-actions { grid-template-columns: 1fr; }
+    .closing-actions .download-button { grid-column: 1; grid-row: 1; }
+    .closing-actions > a:last-child { grid-column: 1; grid-row: 2; }
     .capture-demo { margin-top: 3.5rem; }
     .result-body { min-height: 9rem; padding-top: 1rem; }
     .result-target { min-height: 8.5rem; }
