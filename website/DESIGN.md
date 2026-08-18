@@ -17,7 +17,7 @@
 
 - Direction: cool editorial utility.
 - Defining trait: large sections alternate between centered product promise and left-aligned evidence.
-- Signature move: the street-corner crop, where one blue selection bridges a street sign and storefront before resolving to one natural clipboard phrase.
+- Signature move: the sunny street-corner crop, where one crosshair-led blue selection bridges a street sign and storefront before resolving to one natural clipboard phrase.
 - Forbidden: eyebrow text, leading-zero section numbers, pointless dot or pill indicators, sepia, dark theme, accent-left-border cards, glass, gradients, tiny decorative metadata, or diffuse shadows.
 
 ## Typography
@@ -84,7 +84,7 @@
 
 - Mode: one purpose-generated photorealistic street image with a lightweight SVG interface overlay.
 - The source image is locally served as a 1440px WebP and lazy-loaded below the primary hero actions; it adds no client JavaScript or remote request.
-- The visible scene places the `7th Street` sign above the `STARBUCKS COFFEE` fascia so the selection can capture `7th Street` and `STARBUCKS` while clearly leaving `COFFEE` outside its right edge.
+- The visible sunny-day scene places the `7th Street` sign above the `STARBUCKS COFFEE` fascia so the selection can capture `7th Street` and `STARBUCKS` while clearly leaving `COFFEE` outside its right edge.
 - The SVG overlay uses a lightly tinted rectangle and an outlined crosshair, echoing a native screen-region drag rather than adding ornamental animation.
 - Avoid unrelated decorative imagery, glossy device frames, gradients, or text overlays that compete with the source text being demonstrated.
 
@@ -109,5 +109,6 @@ The source of truth is the global token block in `src/styles/global.css`; the pa
 
 ## Changelog
 
+- 2026-08-17: warmed the demonstration photo, strengthened the capture crosshair, added the GitHub mark, removed the fixed shortcut from public copy, and replaced the illustrative QR pattern with a working `copylasso.com` code.
 - 2026-08-17: replaced the synthetic street scene with a purpose-generated photograph and rebuilt the capture loop as a crosshair-led region drag that deliberately excludes `COFFEE`.
 - 2026-08-17: committed the selected landing-page direction from the ten-option lab, including the street-corner proof, centered hero actions, three-step workflow, continuous feature field, and simple close.
