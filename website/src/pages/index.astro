@@ -142,7 +142,7 @@ const description =
         </ol>
 
         <div class="local-path-end">
-          <strong>The line ends here.</strong>
+          <strong>The line ends there.</strong>
           <span>No account, cloud OCR, analytics, or telemetry.</span>
         </div>
 
@@ -155,7 +155,6 @@ const description =
       <section id="features" class="features" aria-labelledby="features-title">
         <div class="section-shell feature-heading">
           <h2 id="features-title">It reads more than paragraphs.</h2>
-          <!-- Saved for a later section: Copy the things that usually make you stop and retype. -->
         </div>
 
         <div class="section-shell feature-specimens">
@@ -226,8 +225,7 @@ const description =
 
       <section id="download" class="closing" aria-labelledby="closing-title">
         <div class="section-shell closing-inner">
-          <h2 id="closing-title">The words are already there.</h2>
-          <p>Copy them.</p>
+          <h2 id="closing-title">Instantly the text that makes you stop and retype</h2>
           <div class="closing-actions">
             <a class="download-button" href={site.downloadHref}>
               <DownloadIcon />
@@ -240,7 +238,7 @@ const description =
     </main>
 
     <footer class="section-shell landing-footer">
-      <p>Created by <a href={`mailto:${site.email}`}>Bennett Hilberg</a>.</p>
+      <p>Created by Bennett Hilberg.</p>
       <div>
         <a href={`mailto:${site.email}`}>{site.email}</a>
         <a href={site.githubUrl} target="_blank" rel="noreferrer">GitHub</a>
@@ -755,11 +753,11 @@ const description =
     gap: 0 0.4ch;
     padding-top: 2.5rem;
     color: #173750;
-    font-family: inherit;
+    font-family: "SFMono-Regular", "SF Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
     font-size: clamp(1.9rem, 3.5vw, 3.35rem);
     font-weight: 500;
-    letter-spacing: -0.04em;
-    line-height: 1.15;
+    letter-spacing: 0;
+    line-height: 1.2;
   }
 
   .code-sample strong { color: var(--blue); font-weight: 600; }
@@ -804,12 +802,10 @@ const description =
     text-align: center;
   }
 
-  .closing h2 { max-width: 14ch; margin-inline: auto; }
-
-  .closing-inner > p {
-    margin: 1rem 0 0;
-    color: #b7d7f0;
-    font-size: clamp(1.35rem, 2.5vw, 2rem);
+  .closing h2 {
+    max-width: 21ch;
+    margin-inline: auto;
+    font-size: clamp(2.1rem, 4.4vw, 4.25rem);
   }
 
   .closing-actions {
