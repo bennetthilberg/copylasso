@@ -2,7 +2,7 @@
 import SiteLayout from "../layouts/SiteLayout.astro";
 import DownloadIcon from "../components/DownloadIcon.astro";
 import GitHubIcon from "../components/GitHubIcon.astro";
-import { compatibilityFacts, privacyFacts, site } from "../data/site";
+import { privacyFacts, site } from "../data/site";
 
 const description =
   "Copy anything on your Mac screen. CopyLasso turns selected pixels into clipboard text with private, on-device OCR.";
@@ -212,12 +212,6 @@ const description =
             <h3>Private by default</h3>
             <ul>
               {privacyFacts.map((fact) => <li>{fact}</li>)}
-            </ul>
-          </div>
-          <div id="compatibility">
-            <h3>Made for recent Macs</h3>
-            <ul>
-              {compatibilityFacts.map((fact) => <li>{fact}</li>)}
             </ul>
           </div>
         </div>
@@ -767,15 +761,13 @@ const description =
 
   .trust {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: clamp(3rem, 9vw, 8rem);
+    grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr);
+    gap: clamp(3rem, 7vw, 6rem);
     padding-block: var(--section-space);
   }
 
-  .trust-statement h2 { max-width: 11ch; }
-  .trust-details { display: grid; gap: 3rem; }
-
-  .trust-details > div + div { padding-top: 3rem; border-top: 1px solid var(--line-strong); }
+  .trust-statement h2 { max-width: 14ch; }
+  .trust-details { display: grid; }
 
   .trust-details ul {
     display: grid;
