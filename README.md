@@ -3,8 +3,9 @@
 [![CI](https://github.com/bennetthilberg/copylasso/actions/workflows/ci.yml/badge.svg)](https://github.com/bennetthilberg/copylasso/actions/workflows/ci.yml)
 
 CopyLasso is a free, open-source macOS app that copies text and supported codes
-from anywhere on your screen. Press `Shift-Command-2`, drag over the content,
-and CopyLasso puts the result on your clipboard.
+from anywhere on your screen. Press your keyboard shortcut and drag over the
+content. CopyLasso puts the result on your clipboard. The default shortcut is
+`Command-Shift-2`.
 
 Recognition runs on your Mac with Apple Vision. CopyLasso does not upload or
 save screenshots.
@@ -30,7 +31,7 @@ The command should print `CopyLasso-0.3.0.dmg: OK`.
 
 ## Use CopyLasso
 
-1. Press `Shift-Command-2`, or choose **Capture** from the menu bar.
+1. Press your keyboard shortcut or choose **Capture** from the menu bar.
 2. Drag over text or a supported code. Press `Esc` to cancel.
 3. Paste the recognized content into another app.
 
