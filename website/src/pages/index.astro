@@ -12,7 +12,10 @@ const description =
 <SiteLayout title="CopyLasso · Copy anything on your screen" description={description}>
   <div class="landing-page">
     <header class="site-header landing-header">
-      <a class="landing-brand" href="#main-content" aria-label="CopyLasso home">CopyLasso</a>
+      <a class="landing-brand" href="#main-content" aria-label="CopyLasso home">
+        <img src="/images/copylasso-app-icon.png" width="128" height="128" alt="" decoding="async" />
+        <span>CopyLasso</span>
+      </a>
       <nav class="landing-nav" aria-label="Page sections">
         <a href="#how-it-works">How it works</a>
         <a href="#features">Features</a>
@@ -52,7 +55,6 @@ const description =
           <div class="demo-pane demo-source">
             <div class="demo-heading">
               <strong>What you see</strong>
-              <span>A photo on your screen</span>
             </div>
 
             <div class="street-scene">
@@ -93,7 +95,21 @@ const description =
           <div class="demo-pane demo-result">
             <div class="demo-heading">
               <strong>What you get</strong>
-              <span>Clipboard</span>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M9 5.5h6M9.5 3h5A1.5 1.5 0 0 1 16 4.5v1A1.5 1.5 0 0 1 14.5 7h-5A1.5 1.5 0 0 1 8 5.5v-1A1.5 1.5 0 0 1 9.5 3Z"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                ></path>
+                <path
+                  d="M8 5H6.75A1.75 1.75 0 0 0 5 6.75v12.5C5 20.22 5.78 21 6.75 21h10.5c.97 0 1.75-.78 1.75-1.75V6.75C19 5.78 18.22 5 17.25 5H16"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                ></path>
+              </svg>
             </div>
             <div class="result-body">
               <p class="result-copy">7th Street Starbucks</p>
@@ -255,11 +271,20 @@ const description =
   .landing-header { padding-block: 1.4rem; }
 
   .landing-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
     color: var(--ink);
     font-size: 1.12rem;
     font-weight: 600;
     letter-spacing: -0.035em;
     text-decoration: none;
+  }
+
+  .landing-brand img {
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 auto;
   }
 
   .landing-nav {
@@ -398,7 +423,7 @@ const description =
 
   .demo-heading {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: 1rem;
     margin-bottom: 1rem;
@@ -409,9 +434,11 @@ const description =
     font-weight: 600;
   }
 
-  .demo-heading span {
+  .demo-heading > svg {
+    width: 1.3rem;
+    height: 1.3rem;
+    flex: 0 0 auto;
     color: var(--muted);
-    font-size: 0.95rem;
   }
 
   .street-scene {
@@ -459,7 +486,8 @@ const description =
     display: flex;
     flex: 1;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: 1.2rem;
     min-height: 14rem;
     padding: clamp(1.25rem, 3vw, 2rem) 0 0;
   }
@@ -765,7 +793,6 @@ const description =
     .hero-actions { grid-template-columns: 1fr; }
     .source-button { grid-row: 2; }
     .capture-demo { margin-top: 3.5rem; }
-    .demo-heading { align-items: flex-start; flex-direction: column; gap: 0.15rem; }
     .result-body { min-height: 9rem; padding-top: 1rem; }
     .workflow { gap: 2.5rem; }
     .feature-specimen { padding: 1.5rem 0; }

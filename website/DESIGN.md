@@ -109,6 +109,7 @@ The source of truth is the global token block in `src/styles/global.css`; the pa
 
 ## Changelog
 
+- 2026-08-17: tightened the before-and-after labels and QR quiet zone, grouped the clipboard confirmation with its result, and added the shipping app icon to the navigation wordmark.
 - 2026-08-17: replaced the intersecting CSS crosshair with the supplied Apple pointer asset at a smaller optical size, preserving its open center and native edge treatment.
 - 2026-08-17: warmed the demonstration photo, strengthened the capture crosshair, added the GitHub mark, removed the fixed shortcut from public copy, and replaced the illustrative QR pattern with a working `copylasso.com` code.
 - 2026-08-17: replaced the synthetic street scene with a purpose-generated photograph and rebuilt the capture loop as a crosshair-led region drag that deliberately excludes `COFFEE`.
