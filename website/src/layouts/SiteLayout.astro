@@ -1,30 +1,19 @@
 ---
 import "../styles/global.css";
-import DesignLabNav from "../components/DesignLabNav.astro";
 import { site } from "../data/site";
 
 interface Props {
   title?: string;
   description?: string;
-  optionNumber?: number;
-  optionName?: string;
-  previousHref?: string;
-  nextHref?: string;
 }
 
 const {
-  title = "CopyLasso website directions",
-  description = "Ten fast, minimal landing-page directions for CopyLasso, the local-first screen OCR utility for macOS.",
-  optionNumber,
-  optionName,
-  previousHref,
-  nextHref,
+  title = "CopyLasso · Copy anything on your screen",
+  description = "Copy anything on your Mac screen. CopyLasso turns selected pixels into clipboard text with private, on-device OCR.",
 } = Astro.props;
 
 const siteUrl = new URL("/", Astro.site ?? Astro.url).toString();
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toString();
-const isDesignLab = Astro.url.pathname.startsWith("/design-options");
-const fullTitle = optionName ? `${optionName} · CopyLasso` : title;
 const structuredData = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
@@ -57,24 +46,24 @@ const structuredData = {
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
-    {isDesignLab && <meta name="robots" content="noindex, nofollow" />}
     <meta name="application-name" content={site.name} />
     <meta name="theme-color" content="#0069d2" />
     <link rel="canonical" href={canonicalUrl} />
-    <meta property="og:title" content={fullTitle} />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/images/copylasso-app-icon.png" />
+    <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:site_name" content={site.name} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalUrl} />
     <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-    <script type="application/ld+json" set:html={JSON.stringify(structuredData)}></script>
-    <title>{fullTitle}</title>
+    <script type="application/ld+json" set:html={JSON.stringify(structuredData)} is:inline></script>
+    <title>{title}</title>
   </head>
-  <body class:list={[isDesignLab ? (optionNumber ? `option-${optionNumber}` : "lab-index") : "site-index"]}>
+  <body class="site-index">
     <a class="skip-link" href="#main-content">Skip to content</a>
-    {isDesignLab && <DesignLabNav current={optionNumber} previousHref={previousHref} nextHref={nextHref} />}
     <slot />
   </body>
 </html>
