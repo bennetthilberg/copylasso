@@ -57,6 +57,7 @@ const description =
 
             <div class="street-scene">
               <img
+                class="street-photo"
                 src="/images/copylasso-street-capture.webp"
                 width="1440"
                 height="811"
@@ -78,7 +79,14 @@ const description =
                   ></rect>
                 </g>
               </svg>
-              <span class="capture-crosshair"></span>
+              <img
+                class="capture-crosshair"
+                src="/images/apple-crosshair-pointer.png"
+                width="62"
+                height="60"
+                alt=""
+                decoding="async"
+              />
             </div>
           </div>
 
@@ -414,7 +422,7 @@ const description =
     background: #c7d0d7;
   }
 
-  .street-scene img,
+  .street-photo,
   .capture-overlay {
     position: absolute;
     inset: 0;
@@ -422,7 +430,7 @@ const description =
     height: 100%;
   }
 
-  .street-scene img {
+  .street-photo {
     display: block;
     object-fit: cover;
   }
@@ -440,28 +448,12 @@ const description =
     top: 64.12%;
     left: 78.13%;
     z-index: 3;
-    width: 2rem;
-    height: 2rem;
+    width: 1.5rem;
+    height: auto;
     pointer-events: none;
     transform: translate(-50%, -50%);
+    user-select: none;
   }
-
-  .capture-crosshair::before,
-  .capture-crosshair::after {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    box-sizing: border-box;
-    border: 1px solid white;
-    border-radius: 2px;
-    background: #101b27;
-    box-shadow: 0 0 0 1px rgb(16 27 39 / 0.55);
-    content: "";
-    transform: translate(-50%, -50%);
-  }
-
-  .capture-crosshair::before { width: 100%; height: 4px; }
-  .capture-crosshair::after { width: 4px; height: 100%; }
 
   .result-body {
     display: flex;
