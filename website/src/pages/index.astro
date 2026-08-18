@@ -244,6 +244,7 @@ const description =
 <style>
   .landing-page {
     --page-width: 74rem;
+    --content-inset: clamp(3rem, 8vw, 7rem);
     --section-space: clamp(5rem, 10vw, 9rem);
     --app-gradient: linear-gradient(135deg, #0b3b83 0%, #1c7ff4 100%);
     min-width: 0;
@@ -251,8 +252,12 @@ const description =
   }
 
   .section-shell,
-  .landing-header,
   .hero {
+    width: min(calc(100% - var(--content-inset)), var(--page-width));
+    margin-inline: auto;
+  }
+
+  .landing-header {
     width: min(calc(100% - 2rem), var(--page-width));
     margin-inline: auto;
   }
