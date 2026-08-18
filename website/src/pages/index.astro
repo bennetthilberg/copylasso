@@ -684,13 +684,22 @@ const description =
   .feature-copy h3,
   .trust-details h3 {
     margin: 0;
-    font-size: 1.35rem;
     font-weight: 600;
     letter-spacing: -0.025em;
     line-height: 1.2;
   }
 
-  .feature-copy p { max-width: 35rem; margin: 0.45rem 0 0; color: var(--ink-soft); }
+  .feature-copy h3 { font-size: 1.5rem; }
+  .trust-details h3 { font-size: 1.35rem; }
+
+  .feature-copy p {
+    max-width: 35rem;
+    margin: 0.45rem 0 0;
+    color: var(--ink-soft);
+    font-size: 1.0625rem;
+    font-weight: 500;
+    line-height: 1.55;
+  }
 
   .features { padding-block: var(--section-space); background: #eaf3fb; }
 
@@ -775,6 +784,9 @@ const description =
     margin: 1.25rem 0 0;
     padding: 0;
     color: var(--ink-soft);
+    font-size: 1.0625rem;
+    font-weight: 500;
+    line-height: 1.55;
     list-style: none;
   }
 
@@ -809,7 +821,7 @@ const description =
     align-items: center;
     justify-content: center;
     gap: 1rem 1.5rem;
-    margin-top: 2.5rem;
+    margin-top: 3rem;
   }
 
   .closing .download-button { border-color: var(--blue-white); background: var(--blue-white); color: var(--blue-deep); }
