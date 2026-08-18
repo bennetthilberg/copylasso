@@ -250,6 +250,7 @@ const description =
   .landing-page {
     --page-width: 74rem;
     --section-space: clamp(5rem, 10vw, 9rem);
+    --app-gradient: linear-gradient(135deg, #0b3b83 0%, #1c7ff4 100%);
     min-width: 0;
     overflow-x: clip;
   }
@@ -335,6 +336,8 @@ const description =
   .hero-actions .download-button {
     grid-column: 2;
     grid-row: 1;
+    border-color: #1458b5;
+    background: var(--app-gradient);
   }
 
   .hero-actions .source-button {
@@ -384,6 +387,12 @@ const description =
     border-color: var(--blue-bright);
     background: var(--blue-bright);
     color: var(--blue-white);
+  }
+
+  .hero-actions .download-button:hover {
+    border-color: #278cff;
+    background: var(--app-gradient);
+    filter: brightness(1.1) saturate(1.04);
   }
 
   .source-button:hover {
@@ -818,6 +827,7 @@ const description =
         background-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
         border-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
         color 160ms cubic-bezier(0.23, 1, 0.32, 1),
+        filter 160ms cubic-bezier(0.23, 1, 0.32, 1),
         transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
     }
 
