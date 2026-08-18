@@ -4,9 +4,9 @@ import SwiftUI
 
 struct PermissionRecoveryContent: Equatable {
   static let instructions =
-    "Open System Settings > Privacy & Security > Screen & System Audio Recording and enable "
-    + "CopyLasso. If macOS asks, choose Quit & Reopen. Otherwise return here and choose Try "
-    + "Again."
+    "In System Settings, open Privacy & Security, then Screen & System Audio Recording, and "
+    + "turn on CopyLasso. If macOS asks, choose Quit & Reopen. Otherwise, choose Try Again "
+    + "in CopyLasso."
 
   let title = "Screen Recording Access Needed"
   let status: String
@@ -17,12 +17,11 @@ struct PermissionRecoveryContent: Equatable {
     case .granted:
       status = "Screen Recording access is available."
     case .notGrantedNeverRequested:
-      status = "Screen Recording access is not available yet."
+      status = "Screen Recording access is unavailable."
     case .notGrantedAfterRequest:
-      status =
-        "macOS does not tell CopyLasso whether access was denied or is still awaiting approval."
+      status = "Screen Recording access is unavailable. Check its status in System Settings."
     case .notGrantedAfterPreviouslyGranted:
-      status = "Screen Recording access was available before and may have been turned off."
+      status = "Screen Recording access may have been turned off."
     }
   }
 }
@@ -46,7 +45,7 @@ final class PermissionRecoveryModel {
     if isRetrying {
       retryStatus =
         "Access is still unavailable. If you chose Later, quit and reopen CopyLasso, then "
-        + "choose Try Again."
+        + "try again."
     } else {
       retryStatus = nil
     }
@@ -176,8 +175,8 @@ private struct PermissionRecoveryView: View {
 
       if model.settingsOpenFailed {
         Text(
-          "System Settings could not be opened automatically. Open it manually and go to "
-            + "Privacy & Security > Screen & System Audio Recording."
+          "CopyLasso couldn't open System Settings. Open Privacy & Security, then Screen & "
+            + "System Audio Recording."
         )
         .foregroundStyle(.red)
         .fixedSize(horizontal: false, vertical: true)

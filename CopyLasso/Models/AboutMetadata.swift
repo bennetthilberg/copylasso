@@ -13,7 +13,7 @@ struct AboutMetadata: Equatable, Sendable {
   let build: String
   let creatorDescription = "Created by Bennett Hilberg"
   let licenseName = "MIT License"
-  let summary = "Free and open source. Private, offline, and local."
+  let summary = "Copy text and codes from anywhere on your screen."
   let repositoryURL = URL(string: "https://github.com/bennetthilberg/copylasso")!
   let privacyURL = URL(
     string: "https://github.com/bennetthilberg/copylasso/blob/main/PRIVACY.md"
