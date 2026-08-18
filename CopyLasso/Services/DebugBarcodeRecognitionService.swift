@@ -6,7 +6,7 @@
     private let result: Result<[RecognizedCodeObservation], VisionBarcodeError>
 
     init(arguments: [String]) {
-      switch arguments.first(where: { $0.hasPrefix("--g38-code-result=") })?
+      switch arguments.first(where: { $0.hasPrefix("--code-recognition-result=") })?
         .split(separator: "=", maxSplits: 1).last
       {
       case "success":

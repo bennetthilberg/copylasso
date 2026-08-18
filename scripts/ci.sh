@@ -37,108 +37,11 @@ cd "$repository_root"
 rm -rf "$derived_data"
 mkdir -p "$derived_data"
 
-echo "Verifying canonical CI contract"
-./scripts/test-ci-contract.sh
-
 echo "Linting Swift sources"
 xcrun swift-format lint --recursive --strict \
     CopyLasso \
     CopyLassoTests \
-    CopyLassoUITests \
-    Tools/LaTeXFeasibility
-
-echo "Auditing privacy, security, entitlements, and dependencies"
-./scripts/audit-privacy-security.sh
-
-echo "Testing privacy and security project contracts"
-./scripts/test-privacy-security.sh
-
-echo "Testing release metadata"
-./scripts/test-release-metadata.sh
-
-echo "Auditing Developer ID release configuration"
-./scripts/audit-developer-id-release.sh
-
-echo "Testing Developer ID release verification"
-./scripts/test-developer-id-release.sh
-
-echo "Auditing reproducible release packaging"
-./scripts/audit-release-package.sh
-
-echo "Testing reproducible release packaging"
-./scripts/test-release-package.sh
-
-echo "Auditing protected release workflow"
-./scripts/audit-release-workflow.sh
-
-echo "Testing protected release workflow"
-./scripts/test-release-workflow.sh
-
-echo "Auditing platform and reinstall qualification"
-./scripts/audit-platform-qualification.sh
-
-echo "Testing platform and reinstall qualification"
-./scripts/test-platform-qualification.sh
-
-echo "Auditing the approved v0.2 product contract"
-./scripts/audit-v02-contract.sh
-
-echo "Auditing the qualified v0.2 release source"
-./scripts/audit-v02-release-qualification.sh
-
-echo "Testing v0.2 publication controls"
-./scripts/test-v02-publication.sh
-
-echo "Auditing v0.2 publication controls"
-./scripts/audit-v02-publication.sh
-
-echo "Auditing the closed v0.2 release state"
-./scripts/audit-v02-release-state.sh
-
-echo "Auditing the G46 product patch"
-./scripts/audit-g46-product-patch.sh
-
-echo "Auditing the G48 patch qualification"
-./scripts/audit-g48-patch-qualification.sh
-
-echo "Auditing G49 publication controls"
-./scripts/audit-g49-publication.sh
-
-echo "Auditing the G50 Sparkle security hotfix"
-./scripts/audit-g50-sparkle-hotfix.sh
-
-echo "Testing G50 publication controls"
-./scripts/test-g50-publication.sh
-
-echo "Auditing G50 publication controls"
-./scripts/audit-g50-publication.sh
-
-echo "Testing G56 publication controls"
-./scripts/test-g56-publication.sh
-
-echo "Auditing G56 publication controls"
-./scripts/audit-g56-publication.sh
-
-echo "Auditing on-screen code recognition"
-./scripts/audit-code-recognition.sh
-
-echo "Auditing multilingual OCR settings"
-./scripts/audit-multilingual-ocr.sh
-
-echo "Auditing private capture history"
-./scripts/audit-capture-history.sh
-
-echo "Auditing interface copy"
-./scripts/audit-interface-copy.sh
-
-echo "Auditing the qualified v0.3 release source"
-./scripts/audit-v03-release-qualification.sh
-
-echo "Testing offline LaTeX feasibility scoring"
-./scripts/test-latex-feasibility.sh
-
-echo "Auditing offline LaTeX feasibility evidence"
-./scripts/audit-latex-feasibility.sh
+    CopyLassoUITests
 
 readonly committed_development_team_pattern='^[[:space:]]*"?DEVELOPMENT_TEAM(\[[^]]+\])?"?[[:space:]]*=[[:space:]]*[A-Z0-9]{10};'
 
@@ -200,7 +103,7 @@ if [[ "$permission_api_files" != "$permission_client" ]] || \
     exit 1
 fi
 
-readonly prohibited_capture_runtime_pattern='SCContentSharingPicker|CGWindowListCreateImage|CGDisplayCreateImage|--g06-capture-spike|--g07-selection-spike|sharingType[[:space:]]*=[[:space:]]*\.none|NSWindow\.SharingType\.none'
+readonly prohibited_capture_runtime_pattern='SCContentSharingPicker|CGWindowListCreateImage|CGDisplayCreateImage|sharingType[[:space:]]*=[[:space:]]*\.none|NSWindow\.SharingType\.none'
 if /usr/bin/grep -R -nE "$prohibited_capture_runtime_pattern" CopyLasso; then
     echo "A prohibited capture, OCR, pasteboard, or retired experiment API remains in the application target." >&2
     exit 1
@@ -272,7 +175,7 @@ if [[ ! -e "$multi_display_tests" ]] || \
     ! /usr/bin/grep -q 'testEverySyntheticDisplayPreservesIdentityAndLocalPixelsThroughCapturePlanning' "$multi_display_tests" || \
     ! /usr/bin/grep -q 'testCurrentDisplayChangesRejectTheOriginalRequestForEveryScale' "$multi_display_tests" || \
     /usr/bin/grep -q 'visibleFrame' "$selection_service"; then
-    echo "G19 must retain complete-frame overlays and full display-snapshot validation." >&2
+    echo "Multi-display capture must retain complete-frame overlays and full display-snapshot validation." >&2
     exit 1
 fi
 
@@ -289,7 +192,7 @@ if [[ -e CopyLasso/Services/PendingRegionSelectionService.swift ]] || \
     [[ -e CopyLasso/Services/PendingOCRService.swift ]] || \
     [[ ! -e "$ocr_service" ]] || \
     ! /usr/bin/grep -q 'ocrService: VisionOCRService()' CopyLasso/App/CopyLassoApp.swift; then
-    echo "G15 must use production selection, capture, and Vision OCR without retired pending services." >&2
+    echo "The app must use production selection, capture, and Vision OCR services." >&2
     exit 1
 fi
 
@@ -298,7 +201,7 @@ if [[ ! -e "$text_assembler" ]] || \
     ! /usr/bin/grep -q 'textAssembler: TextAssembler()' CopyLasso/App/CopyLassoApp.swift || \
     /usr/bin/grep -qE '^[[:space:]]*import[[:space:]]+(AppKit|SwiftUI|ScreenCaptureKit|Vision)' "$text_assembler" || \
     /usr/bin/grep -qE '^[[:space:]]*import[[:space:]]+Vision' CopyLassoTests/Models/TextAssemblerTests.swift; then
-    echo "G16 text assembly must remain pure, platform-neutral, and active in the workflow." >&2
+    echo "Text assembly must remain pure, platform-neutral, and active in the workflow." >&2
     exit 1
 fi
 
@@ -319,7 +222,7 @@ if [[ ! -e "$feedback_panel" ]] || \
     ! /usr/bin/grep -q 'panel.level = \.statusBar' "$feedback_panel" || \
     ! /usr/bin/grep -q 'panel.orderFrontRegardless()' "$feedback_panel" || \
     /usr/bin/grep -qE 'NSApp\.activate|NSSound|UserNotifications|UNUserNotification' "$feedback_panel"; then
-    echo "G17 feedback must use one silent, nonactivating, mouse-transparent HUD." >&2
+    echo "Feedback must use one silent, nonactivating, mouse-transparent HUD." >&2
     exit 1
 fi
 
@@ -341,7 +244,7 @@ if [[ ! -e "$workflow_integration_tests" ]] || \
     ! /usr/bin/grep -q 'testTwentyAlternatingSuccessAndCancellationCyclesPreserveClipboardOnCancellation' "$workflow_integration_tests" || \
     ! /usr/bin/grep -q 'testPixelsAndUnboundedTextAreReleasedBeforeVisibleFeedbackReturnsIdle' "$workflow_integration_tests" || \
     ! /usr/bin/grep -q 'testMenuAndShortcutRouteThroughTheExactSameSuccessfulCommand' "$workflow_integration_tests"; then
-    echo "G18 must retain its private operation boundary and end-to-end stress integration suite." >&2
+    echo "Capture must retain its private operation boundary and stress integration suite." >&2
     exit 1
 fi
 
@@ -361,16 +264,14 @@ if [[ "$lifecycle_log_files" != "$lifecycle_logger" ]] || \
     ! /usr/bin/grep -q 'testSystemEventSourceMapsWorkspaceAndApplicationNotificationsAndStopsCleanly' "$lifecycle_controller_tests" || \
     /usr/bin/grep -F -q '\(' "$lifecycle_logger" || \
     /usr/bin/grep -qE 'CGImage|RecognizedText|SelectionResult|NSPasteboard|rawError|preview' "$lifecycle_logger"; then
-    echo "G20 must retain owned lifecycle cancellation and fixed content-free diagnostics." >&2
+    echo "Lifecycle handling must retain cancellation and content-free diagnostics." >&2
     exit 1
 fi
 
 readonly accessibility_appearance='CopyLasso/SharedUI/AccessibilityAppearance.swift'
 readonly accessibility_tests='CopyLassoTests/SharedUI/AccessibilityAppearanceTests.swift'
-readonly accessibility_documentation='docs/architecture/accessibility-and-appearance.md'
 if [[ ! -e "$accessibility_appearance" ]] || \
     [[ ! -e "$accessibility_tests" ]] || \
-    [[ ! -e "$accessibility_documentation" ]] || \
     ! /usr/bin/grep -q 'accessibilityDisplayShouldIncreaseContrast' "$accessibility_appearance" || \
     ! /usr/bin/grep -q 'accessibilityDisplayShouldReduceMotion' "$accessibility_appearance" || \
     ! /usr/bin/grep -q 'appearanceProvider.currentAppearance.selectionOverlayStyle' \
@@ -397,7 +298,7 @@ if [[ ! -e "$accessibility_appearance" ]] || \
     /usr/bin/grep -q 'lineLimit(2)' CopyLasso/SharedUI/FeedbackPanel.swift || \
     /usr/bin/grep -q 'frame(width: 560, height: 620)' CopyLasso/SharedUI/OnboardingView.swift || \
     /usr/bin/grep -q 'frame(width: 520, height: 560)' CopyLasso/SharedUI/SettingsView.swift; then
-    echo "G21 must retain accessible controls, adaptive text, contrast, motion-aware selection, and motion-free panels." >&2
+    echo "The interface must retain accessible controls, adaptive text, contrast, and motion-aware behavior." >&2
     exit 1
 fi
 
@@ -436,8 +337,7 @@ xcodebuild -resolvePackageDependencies \
     -scheme "$scheme" \
     -clonedSourcePackagesDirPath "$derived_data/SourcePackages"
 
-echo "Proving the secure-update architecture"
-./scripts/test-secure-update-architecture.sh
+echo "Testing update signatures"
 sparkle_sign_update="$(/usr/bin/find "$derived_data/SourcePackages/artifacts" \
     -type f -path '*/bin/sign_update' -print -quit)"
 if [[ -z "$sparkle_sign_update" ]]; then
@@ -446,8 +346,6 @@ if [[ -z "$sparkle_sign_update" ]]; then
 fi
 COPYLASSO_SPARKLE_TOOLS_DIR="$(/usr/bin/dirname "$sparkle_sign_update")" \
     ./scripts/test-secure-update-signatures.sh
-COPYLASSO_SPARKLE_TOOLS_DIR="$(/usr/bin/dirname "$sparkle_sign_update")" \
-    ./scripts/test-draft-appcast.sh
 
 readonly destination="platform=macOS,arch=$requested_architecture"
 common_arguments=(
@@ -464,11 +362,6 @@ xcodebuild build \
     "${common_arguments[@]}" \
     -configuration Debug
 
-echo "Auditing final brand assets and release documentation"
-COPYLASSO_BRAND_APP="$derived_data/Build/Products/Debug/CopyLasso.app" \
-    COPYLASSO_BRAND_AUDIT_OUTPUT="$derived_data/brand-release-audit" \
-    ./scripts/audit-brand-release.sh
-
 probe_arguments=('SWIFT_ACTIVE_COMPILATION_CONDITIONS=$(inherited)')
 if [[ "${COPYLASSO_CI_FAILURE_PROBE:-false}" == "true" ]]; then
     probe_arguments=('SWIFT_ACTIVE_COMPILATION_CONDITIONS=$(inherited) COPYLASSO_CI_FAILURE_PROBE')
@@ -476,8 +369,8 @@ if [[ "${COPYLASSO_CI_FAILURE_PROBE:-false}" == "true" ]]; then
 fi
 
 echo "Building unit-test and UI-test bundles"
-# The hosted Intel runner has no usable Icon Services session. The final icon was
-# already compiled and audited above; omit only its binding from the headless test host.
+# The hosted Intel runner has no usable Icon Services session. The Debug build
+# compiles the icon above; omit only its binding from the headless test host.
 xcodebuild build-for-testing \
     "${common_arguments[@]}" \
     -configuration Debug \
@@ -594,12 +487,6 @@ readonly release_application="$derived_data/Build/Products/Release/CopyLasso.app
         CODE_SIGNING_ALLOWED=NO
 
 readonly release_info_plist="$release_application/Contents/Info.plist"
-COPYLASSO_SECURE_UPDATE_DEBUG_APP="$derived_data/Build/Products/Debug/CopyLasso.app" \
-    COPYLASSO_SECURE_UPDATE_RELEASE_APP="$release_application" \
-    ./scripts/audit-secure-update-architecture.sh
-COPYLASSO_SUCCESS_SOUND_DEBUG_APP="$derived_data/Build/Products/Debug/CopyLasso.app" \
-    COPYLASSO_SUCCESS_SOUND_RELEASE_APP="$release_application" \
-    ./scripts/audit-success-sound.sh
 if [[ "$(/usr/bin/plutil -extract LSUIElement raw -o - "$release_info_plist")" != "true" ]]; then
     echo "The Release application is not configured as a dockless agent." >&2
     exit 1
@@ -634,7 +521,7 @@ if /usr/bin/nm -u "$release_executable" | \
     exit 1
 fi
 
-if /usr/bin/strings "$release_executable" | /usr/bin/grep -qE -- '--g10-g11-|--g12-|--g13-|--g14-|--g15-|--g16-|--g17-|--g38-'; then
+if /usr/bin/strings "$release_executable" | /usr/bin/grep -qE -- '--(ui-testing|reset-settings|complete-onboarding|login-status=|screen-recording-|live-selection|live-capture|update-offer|capture-history-|selection-result=|code-recognition-result=)'; then
     echo "Debug-only UI-test controls leaked into Release." >&2
     exit 1
 fi

@@ -8,7 +8,7 @@
 
     init(arguments: [String]) {
       let sequence = Self.argumentValue(
-        prefix: "--g12-permission-sequence=",
+        prefix: "--screen-recording-permission-sequence=",
         arguments: arguments
       )?
       .split(separator: ",")
@@ -18,20 +18,20 @@
         currentResults = sequence
       } else {
         let value = Self.argumentValue(
-          prefix: "--g12-permission=",
+          prefix: "--screen-recording-permission=",
           arguments: arguments
         )
         currentResults = [Self.observation(named: value ?? "granted") ?? .granted]
       }
 
       let requestValue = Self.argumentValue(
-        prefix: "--g12-request=",
+        prefix: "--screen-recording-request=",
         arguments: arguments
       )
       requestResult =
         Self.observation(named: requestValue ?? "after-request")
         ?? .notGrantedAfterRequest
-      settingsOpenResult = !arguments.contains("--g12-settings-open=failure")
+      settingsOpenResult = !arguments.contains("--screen-recording-settings-open=failure")
     }
 
     func currentObservation() -> ScreenCaptureAuthorizationObservation {

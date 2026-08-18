@@ -9,19 +9,19 @@ import SwiftUI
     }
 
     var isUITesting: Bool {
-      arguments.contains("--g10-g11-ui-testing")
+      arguments.contains("--ui-testing")
     }
 
     var isLiveSelectionTesting: Bool {
-      arguments.contains("--g13-live-selection")
+      arguments.contains("--live-selection")
     }
 
     var isLiveCaptureTesting: Bool {
-      arguments.contains("--g14-live-capture")
+      arguments.contains("--live-capture")
     }
 
     var showsUpdateOffer: Bool {
-      arguments.contains("--g43a-update-offer")
+      arguments.contains("--update-offer")
     }
 
     var usesDebugCaptureService: Bool {
@@ -33,7 +33,7 @@ import SwiftUI
     }
 
     var usesSystemCaptureHistoryStore: Bool {
-      arguments.contains("--g52-history-system-store")
+      arguments.contains("--capture-history-system-store")
     }
 
   }
@@ -78,7 +78,7 @@ struct CopyLassoApp: App {
       } else {
         launchAtLoginService = SystemLaunchAtLoginService()
       }
-      if arguments.contains("--g10-g11-reset-settings") {
+      if arguments.contains("--reset-settings") {
         if !runtimeOptions.isUITesting {
           try? launchAtLoginService.disable()
         }
@@ -88,10 +88,10 @@ struct CopyLassoApp: App {
         settingsStore.reset()
         shortcutStore.reset()
       }
-      if arguments.contains("--g10-g11-complete-onboarding") {
+      if arguments.contains("--complete-onboarding") {
         settingsStore.completedOnboardingVersion = SettingsController.currentOnboardingVersion
       }
-      if arguments.contains("--g52-history-enabled") {
+      if arguments.contains("--capture-history-enabled") {
         settingsStore.isCaptureHistoryEnabled = true
       }
       permissionService =
@@ -136,8 +136,8 @@ struct CopyLassoApp: App {
     #if DEBUG
       if runtimeOptions.showsUpdateOffer {
         let releaseNotes =
-          ProcessInfo.processInfo.environment["COPYLASSO_G43A_UPDATE_NOTES"]
-          ?? "# CopyLasso 0.2.0\n\nNo release-note fixture was provided."
+          ProcessInfo.processInfo.environment["COPYLASSO_UPDATE_NOTES"]
+          ?? "# CopyLasso 0.3.0\n\nNo release-note fixture was provided."
         DispatchQueue.main.async {
           SystemSecureUpdatePresenter().showUpdateAvailable(
             Self.debugUpdateOffer(releaseNotes: releaseNotes)
@@ -302,8 +302,8 @@ struct CopyLassoApp: App {
   #if DEBUG
     private static func debugUpdateOffer(releaseNotes: String) -> SecureUpdateOffer {
       SecureUpdateOffer(
-        displayVersion: "0.2.0",
-        build: "3",
+        displayVersion: "0.3.0",
+        build: "6",
         releaseNotes: releaseNotes,
         contentLength: 3_700_000
       )
@@ -312,7 +312,7 @@ struct CopyLassoApp: App {
     private static func debugLaunchAtLoginStatus(arguments: [String]) -> LaunchAtLoginStatus {
       guard
         let argument = arguments.first(where: {
-          $0.hasPrefix("--g10-g11-login-status=")
+          $0.hasPrefix("--login-status=")
         })
       else {
         return .disabled
