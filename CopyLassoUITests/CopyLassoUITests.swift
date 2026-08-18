@@ -93,8 +93,8 @@ final class CopyLassoUITests: XCTestCase {
     for (result, expectedAccessibilityLabel) in cases {
       let app = completedApp(
         extraArguments: [
-          "--g38-selection=selected",
-          "--g38-code-result=\(result)",
+          "--selection-result=selected",
+          "--code-recognition-result=\(result)",
         ]
       )
       app.launch()
@@ -114,9 +114,9 @@ final class CopyLassoUITests: XCTestCase {
   func testPermissionRecoveryRetriesUnifiedCaptureAndPreservesCodePrecedence() {
     let app = completedApp(
       extraArguments: [
-        "--g12-permission-sequence=after-request,granted",
-        "--g38-selection=selected",
-        "--g38-code-result=success",
+        "--screen-recording-permission-sequence=after-request,granted",
+        "--selection-result=selected",
+        "--code-recognition-result=success",
       ]
     )
     app.launch()
@@ -165,7 +165,7 @@ final class CopyLassoUITests: XCTestCase {
 
   @MainActor
   func testLiveSelectionOverlayIsAccessibleAndEscapeCleansItUp() {
-    let app = completedApp(extraArguments: ["--g13-live-selection"])
+    let app = completedApp(extraArguments: ["--live-selection"])
     app.launch()
     defer { app.terminate() }
 
@@ -183,7 +183,7 @@ final class CopyLassoUITests: XCTestCase {
 
   @MainActor
   func testLiveSelectionClickAndValidDragCleanUpWithoutClipboardMutation() {
-    let app = completedApp(extraArguments: ["--g13-live-selection"])
+    let app = completedApp(extraArguments: ["--live-selection"])
     app.launch()
     defer { app.terminate() }
     let pasteboardChangeCount = NSPasteboard.general.changeCount
@@ -208,7 +208,7 @@ final class CopyLassoUITests: XCTestCase {
 
   @MainActor
   func testLiveSelectionRemainsReusableAcrossTwentyMixedSessions() {
-    let app = completedApp(extraArguments: ["--g13-live-selection"])
+    let app = completedApp(extraArguments: ["--live-selection"])
     app.launch()
     defer { app.terminate() }
     let pasteboardChangeCount = NSPasteboard.general.changeCount
@@ -251,7 +251,7 @@ final class CopyLassoUITests: XCTestCase {
       throw XCTSkip("Cross-display UI verification requires an extended display")
     }
 
-    let app = completedApp(extraArguments: ["--g13-live-selection"])
+    let app = completedApp(extraArguments: ["--live-selection"])
     app.launch()
     defer { app.terminate() }
     let pasteboardChangeCount = NSPasteboard.general.changeCount
@@ -300,6 +300,9 @@ final class CopyLassoUITests: XCTestCase {
       menuItem("About CopyLasso", in: app).click()
       let aboutTitle = app.staticTexts["copylasso.about.title"]
       XCTAssertTrue(aboutTitle.waitForExistence(timeout: 5))
+      XCTAssertTrue(
+        app.staticTexts["Copy text and codes from anywhere on your screen."].exists
+      )
       let aboutIcon = app.images["copylasso.about.icon"]
       XCTAssertTrue(aboutIcon.exists)
       // SwiftUI's accessibility frames extend beyond the visible icon and text
@@ -311,7 +314,7 @@ final class CopyLassoUITests: XCTestCase {
         -8
       )
       assertAccessibleText(
-        app.staticTexts["copylasso.about.version"], equals: "Version 0.3.0 (6)"
+        app.staticTexts["copylasso.about.version"], equals: "Version 0.3.1 (7)"
       )
       assertAccessibleText(
         app.staticTexts["copylasso.about.creator"],
@@ -350,7 +353,9 @@ final class CopyLassoUITests: XCTestCase {
 
   @MainActor
   func testHistoryMenuOpensSingletonPopulatedState() {
-    let app = completedApp(extraArguments: ["--g52-history-enabled", "--g52-history-populated"])
+    let app = completedApp(extraArguments: [
+      "--capture-history-enabled", "--capture-history-populated",
+    ])
     app.launch()
     defer { app.terminate() }
     for _ in 0..<2 {
@@ -370,7 +375,9 @@ final class CopyLassoUITests: XCTestCase {
 
   @MainActor
   func testHistorySettingsOptInAndDestructiveDisableConfirmation() {
-    let app = completedApp(extraArguments: ["--g52-history-enabled", "--g52-history-populated"])
+    let app = completedApp(extraArguments: [
+      "--capture-history-enabled", "--capture-history-populated",
+    ])
     app.launch()
     defer { app.terminate() }
 
@@ -382,13 +389,18 @@ final class CopyLassoUITests: XCTestCase {
     toggle.click()
 
     XCTAssertTrue(app.buttons["Delete History and Turn Off"].waitForExistence(timeout: 5))
+    XCTAssertTrue(
+      app.staticTexts[
+        "This deletes all saved captures and their encryption key. Backups may still contain older copies."
+      ].exists
+    )
     app.sheets.buttons["Cancel"].click()
     XCTAssertTrue(switchIsOn(toggle))
   }
 
   @MainActor
   func testHistoryEmptyState() {
-    let app = completedApp(extraArguments: ["--g52-history-enabled"])
+    let app = completedApp(extraArguments: ["--capture-history-enabled"])
     app.launch()
     defer { app.terminate() }
 
@@ -400,7 +412,7 @@ final class CopyLassoUITests: XCTestCase {
   @MainActor
   func testHistoryUnreadableStateFailsClosed() {
     let app = completedApp(
-      extraArguments: ["--g52-history-enabled", "--g52-history-unreadable"]
+      extraArguments: ["--capture-history-enabled", "--capture-history-unreadable"]
     )
     app.launch()
     defer { app.terminate() }
@@ -414,7 +426,7 @@ final class CopyLassoUITests: XCTestCase {
   @MainActor
   func testHistoryCopyAndDeleteRemainNonrecursive() {
     let app = completedApp(
-      extraArguments: ["--g52-history-enabled", "--g52-history-populated"]
+      extraArguments: ["--capture-history-enabled", "--capture-history-populated"]
     )
     app.launch()
     defer { app.terminate() }
@@ -443,7 +455,9 @@ final class CopyLassoUITests: XCTestCase {
 
   @MainActor
   func testHistoryConfirmedClearLeavesHistoryEnabledAndEmpty() {
-    let app = completedApp(extraArguments: ["--g52-history-enabled", "--g52-history-populated"])
+    let app = completedApp(extraArguments: [
+      "--capture-history-enabled", "--capture-history-populated",
+    ])
     app.launch()
     defer { app.terminate() }
     openMenu(in: app)
@@ -451,6 +465,11 @@ final class CopyLassoUITests: XCTestCase {
     XCTAssertTrue(app.buttons["Clear All"].waitForExistence(timeout: 5))
     app.buttons["Clear All"].click()
     XCTAssertTrue(app.sheets.buttons["Clear All"].waitForExistence(timeout: 5))
+    XCTAssertTrue(
+      app.staticTexts[
+        "This deletes all saved captures and replaces the encryption key. Backups may still contain older copies."
+      ].exists
+    )
     app.sheets.buttons["Clear All"].click()
     XCTAssertTrue(app.staticTexts["No Saved Captures"].waitForExistence(timeout: 5))
     XCTAssertTrue(app.buttons["Clear All"].exists)
@@ -460,9 +479,9 @@ final class CopyLassoUITests: XCTestCase {
   func testSystemHistoryStorePersistsSyntheticCodeAcrossRelaunch() {
     var app = completedApp(
       extraArguments: [
-        "--g52-history-system-store",
-        "--g38-selection=selected",
-        "--g38-code-result=success",
+        "--capture-history-system-store",
+        "--selection-result=selected",
+        "--code-recognition-result=success",
       ]
     )
     app.launch()
@@ -489,9 +508,9 @@ final class CopyLassoUITests: XCTestCase {
 
     app = XCUIApplication()
     app.launchArguments = [
-      "--g10-g11-ui-testing",
-      "--g52-history-system-store",
-      "--g12-permission=granted",
+      "--ui-testing",
+      "--capture-history-system-store",
+      "--screen-recording-permission=granted",
     ]
     app.launch()
     defer { app.terminate() }
@@ -589,6 +608,18 @@ final class CopyLassoUITests: XCTestCase {
     defer { app.terminate() }
 
     XCTAssertTrue(app.staticTexts["copylasso.onboarding.title"].waitForExistence(timeout: 5))
+    XCTAssertTrue(
+      app.staticTexts["Copy text and codes from anywhere on your screen."].exists
+    )
+    XCTAssertTrue(app.staticTexts["Recognition stays on this Mac."].exists)
+    XCTAssertTrue(
+      app.staticTexts[
+        "CopyLasso doesn't save screenshots. macOS asks for Screen Recording access when you make your first capture."
+      ].exists
+    )
+    XCTAssertTrue(
+      app.staticTexts["This setting takes effect when you continue."].exists
+    )
     let shortcut = app.descendants(matching: .any)["copylasso.onboarding.shortcut"]
     let launchAtLogin = app.descendants(matching: .any)[
       "copylasso.onboarding.launch-at-login"
@@ -763,6 +794,11 @@ final class CopyLassoUITests: XCTestCase {
     XCTAssertFalse(switchIsOn(captureHistory))
     XCTAssertTrue(app.buttons["copylasso.settings.view-history"].exists)
     XCTAssertEqual(app.buttons["copylasso.settings.view-history"].label, "View History")
+    XCTAssertTrue(
+      app.staticTexts[
+        "CopyLasso encrypts successful captures and keeps them on this Mac for seven days."
+      ].exists
+    )
     let checkForUpdates = app.buttons["copylasso.settings.check-for-updates"]
     XCTAssertTrue(checkForUpdates.isEnabled)
     XCTAssertEqual(checkForUpdates.label, "Check for Updates")
@@ -771,7 +807,7 @@ final class CopyLassoUITests: XCTestCase {
     )
     XCTAssertTrue(app.staticTexts["Privacy"].exists)
     XCTAssertTrue(app.staticTexts["Version"].exists)
-    XCTAssertTrue(app.staticTexts["Version 0.3.0 (6)"].exists)
+    XCTAssertTrue(app.staticTexts["Version 0.3.1 (7)"].exists)
     XCTAssertTrue(app.links["Project Repository"].exists)
     XCTAssertTrue(app.links["Privacy Policy"].exists)
     XCTAssertTrue(app.links["MIT License"].exists)
@@ -796,7 +832,7 @@ final class CopyLassoUITests: XCTestCase {
 
   @MainActor
   func testApprovalRequiredStateOffersLoginItemsRecovery() {
-    let app = freshApp(extraArguments: ["--g10-g11-login-status=requires-approval"])
+    let app = freshApp(extraArguments: ["--login-status=requires-approval"])
     app.launch()
     defer { app.terminate() }
 
@@ -815,7 +851,7 @@ final class CopyLassoUITests: XCTestCase {
 
   @MainActor
   func testSettingsCanRemoveAnApprovalRequiredLoginItem() {
-    let app = completedApp(extraArguments: ["--g10-g11-login-status=requires-approval"])
+    let app = completedApp(extraArguments: ["--login-status=requires-approval"])
     app.launch()
     defer { app.terminate() }
 
@@ -832,7 +868,7 @@ final class CopyLassoUITests: XCTestCase {
 
   @MainActor
   func testPermissionRecoveryExplainsPriorRequestWithoutTouchingTCC() {
-    let app = completedApp(extraArguments: ["--g12-permission=after-request"])
+    let app = completedApp(extraArguments: ["--screen-recording-permission=after-request"])
     app.launch()
     defer { app.terminate() }
     let pasteboardChangeCount = NSPasteboard.general.changeCount
@@ -844,6 +880,15 @@ final class CopyLassoUITests: XCTestCase {
       app.staticTexts["copylasso.permission-recovery.title"]
         .waitForExistence(timeout: 5)
     )
+    assertAccessibleText(
+      app.staticTexts["copylasso.permission-recovery.status"],
+      equals: "Screen Recording access is unavailable. Check its status in System Settings."
+    )
+    assertAccessibleText(
+      app.staticTexts["copylasso.permission-recovery.instructions"],
+      equals:
+        "In System Settings, open Privacy & Security, then Screen & System Audio Recording, and turn on CopyLasso. If macOS asks, choose Quit & Reopen. Otherwise, choose Try Again in CopyLasso."
+    )
     XCTAssertTrue(app.staticTexts["copylasso.permission-recovery.status"].exists)
     XCTAssertTrue(app.buttons["copylasso.permission-recovery.open-settings"].exists)
     XCTAssertTrue(app.buttons["copylasso.permission-recovery.try-again"].exists)
@@ -853,7 +898,7 @@ final class CopyLassoUITests: XCTestCase {
 
   @MainActor
   func testLikelyRevokedRecoveryRemainsSingletonAcrossRepeatedAttempts() {
-    let app = completedApp(extraArguments: ["--g12-permission=previously-granted"])
+    let app = completedApp(extraArguments: ["--screen-recording-permission=previously-granted"])
     app.launch()
     defer { app.terminate() }
 
@@ -883,8 +928,8 @@ final class CopyLassoUITests: XCTestCase {
   func testPermissionRecoverySettingsFailureRetryAndCancel() {
     let app = completedApp(
       extraArguments: [
-        "--g12-permission-sequence=after-request,granted,after-request",
-        "--g12-settings-open=failure",
+        "--screen-recording-permission-sequence=after-request,granted,after-request",
+        "--screen-recording-settings-open=failure",
       ]
     )
     app.launch()
@@ -935,7 +980,7 @@ final class CopyLassoUITests: XCTestCase {
 
   @MainActor
   func testPermissionRecoverySupportsKeyboardCancelAndAccessibleButtonLabels() {
-    let app = completedApp(extraArguments: ["--g12-permission=after-request"])
+    let app = completedApp(extraArguments: ["--screen-recording-permission=after-request"])
     app.launch()
     defer { app.terminate() }
 
@@ -968,8 +1013,8 @@ final class CopyLassoUITests: XCTestCase {
 
   @MainActor
   func testUpdateOfferRendersBoundedScrollableNotesAndSupportsEscape() throws {
-    let app = completedApp(extraArguments: ["--g43a-update-offer"])
-    app.launchEnvironment["COPYLASSO_G43A_UPDATE_NOTES"] = try Self.reviewedV020ReleaseNotes()
+    let app = completedApp(extraArguments: ["--update-offer"])
+    app.launchEnvironment["COPYLASSO_UPDATE_NOTES"] = try Self.releaseNotesFixture()
     app.launch()
     defer { app.terminate() }
 
@@ -981,9 +1026,18 @@ final class CopyLassoUITests: XCTestCase {
     let notes = app.scrollViews["copylasso.update.release-notes"]
     XCTAssertTrue(notes.exists)
     XCTAssertEqual(notes.label, "Release Notes")
-    XCTAssertTrue(app.staticTexts["CopyLasso 0.2.0"].exists)
-    XCTAssertTrue(app.staticTexts["What Is New"].exists)
-    XCTAssertFalse(app.staticTexts["# CopyLasso 0.2.0"].exists)
+    XCTAssertTrue(app.staticTexts["CopyLasso 0.3.0"].exists)
+    XCTAssertTrue(app.staticTexts["What's new"].exists)
+    XCTAssertFalse(app.staticTexts["# CopyLasso 0.3.0"].exists)
+    assertAccessibleText(
+      app.staticTexts["copylasso.update.authenticated-source"],
+      equals: "Verified source: GitHub Releases (github.com/bennetthilberg/copylasso)"
+    )
+    XCTAssertTrue(
+      app.staticTexts[
+        "CopyLasso will download and verify the update. You'll confirm again before installation."
+      ].exists
+    )
     XCTAssertTrue(app.buttons["copylasso.update.download"].isEnabled)
     XCTAssertTrue(app.buttons["copylasso.update.later"].isEnabled)
     attachScreenshotOnFailure(named: "CopyLasso bounded update offer")
@@ -1051,10 +1105,10 @@ final class CopyLassoUITests: XCTestCase {
     let app = XCUIApplication()
     app.launchArguments =
       [
-        "--g10-g11-ui-testing",
-        "--g10-g11-reset-settings",
-        "--g10-g11-complete-onboarding",
-        "--g12-permission=granted",
+        "--ui-testing",
+        "--reset-settings",
+        "--complete-onboarding",
+        "--screen-recording-permission=granted",
       ] + extraArguments
     return app
   }
@@ -1064,8 +1118,8 @@ final class CopyLassoUITests: XCTestCase {
     let app = XCUIApplication()
     app.launchArguments =
       [
-        "--g10-g11-ui-testing",
-        "--g10-g11-reset-settings",
+        "--ui-testing",
+        "--reset-settings",
       ] + extraArguments
     return app
   }
@@ -1073,7 +1127,7 @@ final class CopyLassoUITests: XCTestCase {
   @MainActor
   private func unfinishedAppWithoutReset() -> XCUIApplication {
     let app = XCUIApplication()
-    app.launchArguments = ["--g10-g11-ui-testing"]
+    app.launchArguments = ["--ui-testing"]
     return app
   }
 
@@ -1086,12 +1140,14 @@ final class CopyLassoUITests: XCTestCase {
     "Quit CopyLasso",
   ]
 
-  private static func reviewedV020ReleaseNotes() throws -> String {
+  private static func releaseNotesFixture() throws -> String {
     let repositoryRoot = URL(fileURLWithPath: #filePath)
       .deletingLastPathComponent()
       .deletingLastPathComponent()
     let data = try Data(
-      contentsOf: repositoryRoot.appendingPathComponent("docs/release-notes/0.2.0.md")
+      contentsOf: repositoryRoot.appendingPathComponent(
+        "CopyLassoTests/Fixtures/update-release-notes.md"
+      )
     )
     return String(decoding: data, as: UTF8.self)
   }

@@ -1,78 +1,48 @@
 # Contributing to CopyLasso
 
-Thank you for helping build CopyLasso. CopyLasso 0.2.2 is publicly released.
-Focused changes that preserve its privacy and reliability contracts are the
-easiest to review. Every implementation goal still requires its own bounded
-plan and approval.
+CopyLasso welcomes focused fixes and improvements. Keep each change small enough
+to review and verify as one unit.
 
-## Before Making a Change
+## Set up the project
 
-- Read the [v0.1 product contract](docs/v0.1-product-contract.md) for supported behavior, privacy guarantees, and non-goals.
-- Read the [v0.2 product contract](docs/v0.2-product-contract.md) when working
-  near updater, sound, or QR/barcode behavior. Those features ship in public
-  0.2.2. G39 concluded no-go for LaTeX, so adding it requires a new contract
-  and roadmap decision.
-- Read the [v0.3 product contract](docs/v0.3-product-contract.md) when working
-  near multilingual OCR or optional encrypted capture history. The source is
-  release-qualified as 0.3.0 (6), while public 0.2.2 remains the latest
-  download during G54.
-- Review the [development environment](docs/development-environment.md) and use the documented stable Xcode toolchain.
-- Open an issue before starting a large feature, architectural change, new dependency, or product-scope change.
-- Never include credentials, signing material, captured screen content, recognized private text, or other sensitive data in a commit, issue, test fixture, screenshot, or log.
+CopyLasso requires macOS, Xcode 26.6, and the Swift tools bundled with Xcode.
 
-## Development Expectations
+1. Clone the repository.
+2. Open `CopyLasso.xcodeproj`.
+3. Run the shared `CopyLasso` scheme.
 
-- Keep each pull request small, cohesive, and limited to one clear purpose.
-- Develop production behavior test-first. Add focused failing tests, confirm the expected failure, implement the smallest passing change, and run the relevant broader suite.
-- Test success, failure, cancellation, boundary, and state-transition behavior introduced by the change.
-- Use native Apple frameworks when they meet the requirement cleanly.
-- Format Swift with the version bundled with Xcode: `xcrun swift-format`.
-- Treat new compiler and analyzer warnings as failures.
-- Update public documentation whenever user-visible behavior, requirements, privacy, or limitations change.
-
-Before submitting, run the canonical clean pipeline:
+Before you submit a change, run:
 
 ```sh
 ./scripts/ci.sh
 ```
 
-It lints Swift, resolves dependencies, builds Debug and Universal 2 Release, builds both XCTest bundles, runs unit tests, asserts required build settings, and verifies the Release architectures. Run UI tests separately through Xcode with runnable local signing when the change affects launch or interface behavior.
+The script formats and builds the app, runs the unit tests and coverage checks,
+tests with networking denied, checks repeatability, and builds a Universal 2
+Release app.
 
-Some macOS behavior, including real privacy dialogs, global shortcut delivery, visual overlays, display capture, signing, notarization, and Gatekeeper checks, requires manual verification. Separate and automate the testable logic first, then describe the manual procedure and result in the pull request.
+## Make a change
 
-## Original Work and Privacy
+- Add tests for new behavior and regressions.
+- Cover success, failure, cancellation, and boundary cases that your change
+  affects.
+- Format Swift with `xcrun swift-format`.
+- Treat new warnings as errors.
+- Update public documentation when behavior, requirements, privacy, or security
+  changes.
+- Do not commit credentials, signing material, personal captures, recognized
+  private text, or other sensitive data.
 
-Contributions must be original or compatible with the MIT License. Do not copy proprietary source code, private implementation details, branding, icons, screenshots, interface assets, website copy, or other protected material.
+CopyLasso must not upload or log screenshots, recognized content, clipboard
+content, or capture-history entries. It must not persist screenshots. Keep
+platform APIs behind narrow interfaces so their behavior remains testable.
 
-CopyLasso must never log or transmit screenshots, recognized text, clipboard
-text, or HUD preview text, and must never persist screenshots. The only reviewed
-content-persistence boundary is the off-by-default encrypted capture-history
-adapter in the unreleased v0.3 source contract; changes to it require explicit
-contract and security review. Preserve the existing clipboard on every
-cancellation and failure path, and keep platform APIs behind testable boundaries
-where practical.
+## Submit a pull request
 
-## Pull Requests
+Explain what changed, why it changed, how you tested it, and whether it affects
+privacy, security, accessibility, or user-visible behavior. Submit green,
+cohesive commits and call out any remaining limitation.
 
-A pull request should explain:
-
-- what changed and why;
-- the tests and manual checks performed;
-- any user-visible, privacy, security, or accessibility impact; and
-- any remaining limitation or follow-up work.
-
-Submit only green commits. Reviewers may ask for a change to be split if unrelated work makes the behavior or verification difficult to assess.
-
-Codex automated review is limited to three requests per pull request, including
-an automatic review that actually runs. Maintainers triage every result, fix
-and verify valid findings, and dispose of stale, duplicate, or inapplicable
-findings with evidence. After the third request, no fourth review is requested:
-the final head receives a direct diff, CI, and unresolved-thread audit instead.
-A pull request is review-clean when no valid blocking finding remains after
-that bounded disposition. Any unresolved valid blocker or accepted residual
-risk must be reported to the maintainer rather than hidden behind another
-automated-review loop.
-
-Maintainers may temporarily apply the `ci-failure-probe` pull-request label to verify that both CI architectures report a controlled failing unit test. The label must be removed after the red result; removal reruns the same commit without the probe. Do not add a deliberately failing commit for this purpose.
-
-By contributing, you agree that your contribution is licensed under the repository's [MIT License](LICENSE).
+Contributions must be original or compatible with the MIT License. By
+contributing, you agree that your contribution is licensed under the
+repository's [MIT License](LICENSE).

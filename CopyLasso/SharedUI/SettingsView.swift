@@ -168,11 +168,12 @@ struct SettingsView: View {
           )
         )
         .accessibilityHint(
-          "Saves only successful text and code output encrypted on this Mac for seven days."
+          "Encrypt and save successful text and code captures on this Mac for seven days."
         )
         .accessibilityIdentifier("copylasso.settings.capture-history")
+        .listRowSeparator(.hidden, edges: .bottom)
 
-        Text("Only successful text and code output is encrypted locally for seven days.")
+        Text("CopyLasso encrypts successful captures and keeps them on this Mac for seven days.")
           .font(.caption)
           .foregroundStyle(.secondary)
           .fixedSize(horizontal: false, vertical: true)
@@ -182,10 +183,6 @@ struct SettingsView: View {
         }
         .accessibilityIdentifier("copylasso.settings.view-history")
 
-        Text(
-          "Screenshots are never saved. Recognition stays local and is never sent to a cloud service."
-        )
-        .fixedSize(horizontal: false, vertical: true)
       }
 
       Section("CopyLasso") {
@@ -245,7 +242,7 @@ struct SettingsView: View {
       }
     } message: {
       Text(
-        "This removes CopyLasso's active encrypted archive and encryption key. APFS snapshots or external backups may retain prior bytes."
+        "This deletes all saved captures and their encryption key. Backups may still contain older copies."
       )
     }
     #if DEBUG

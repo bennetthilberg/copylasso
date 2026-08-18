@@ -23,7 +23,7 @@ final class VisionBarcodeServiceTests: XCTestCase {
   private let fixtures = [
     Fixture(
       name: "code-qr",
-      payload: "https://copylasso.com/g38?mode=qr",
+      payload: "https://copylasso.com/test?mode=qr",
       symbology: .qr
     ),
     Fixture(
@@ -141,7 +141,7 @@ final class VisionBarcodeServiceTests: XCTestCase {
 
     let correctablePayloads = try await service.recognizeCodes(in: correctable).map(\.payload)
     let uncorrectableObservations = try await service.recognizeCodes(in: uncorrectable)
-    XCTAssertEqual(correctablePayloads, ["https://copylasso.com/g38?mode=qr"])
+    XCTAssertEqual(correctablePayloads, ["https://copylasso.com/test?mode=qr"])
     XCTAssertEqual(uncorrectableObservations, [])
   }
 
@@ -154,13 +154,13 @@ final class VisionBarcodeServiceTests: XCTestCase {
     let distinctPayloads = Set(
       try await service.recognizeCodes(in: distinct).compactMap(\.payload)
     )
-    XCTAssertEqual(distinctPayloads, ["https://copylasso.com/g38?mode=qr", "DM"])
+    XCTAssertEqual(distinctPayloads, ["https://copylasso.com/test?mode=qr", "DM"])
 
     let duplicates = try sideBySide(qr, qr)
     let duplicatePayloads = try await service.recognizeCodes(in: duplicates).compactMap(\.payload)
     XCTAssertEqual(
       duplicatePayloads,
-      ["https://copylasso.com/g38?mode=qr", "https://copylasso.com/g38?mode=qr"]
+      ["https://copylasso.com/test?mode=qr", "https://copylasso.com/test?mode=qr"]
     )
   }
 

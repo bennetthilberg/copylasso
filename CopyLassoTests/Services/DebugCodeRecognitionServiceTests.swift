@@ -9,23 +9,23 @@
       let image = try XCTUnwrap(Self.makeImage())
 
       let success = try await DebugBarcodeRecognitionService(
-        arguments: ["--g38-code-result=success"]
+        arguments: ["--code-recognition-result=success"]
       ).recognizeCodes(in: image)
       XCTAssertEqual(success.map(\.payload), ["COPYLASSO UI CODE"])
 
       let noCode = try await DebugBarcodeRecognitionService(
-        arguments: ["--g38-code-result=no-code"]
+        arguments: ["--code-recognition-result=no-code"]
       ).recognizeCodes(in: image)
       XCTAssertTrue(noCode.isEmpty)
 
       let ambiguous = try await DebugBarcodeRecognitionService(
-        arguments: ["--g38-code-result=ambiguous"]
+        arguments: ["--code-recognition-result=ambiguous"]
       ).recognizeCodes(in: image)
       XCTAssertEqual(ambiguous.map(\.payload), ["FIRST\nLINE", "SECOND"])
 
       do {
         _ = try await DebugBarcodeRecognitionService(
-          arguments: ["--g38-code-result=failure"]
+          arguments: ["--code-recognition-result=failure"]
         ).recognizeCodes(in: image)
         XCTFail("Expected the deterministic UI failure")
       } catch {
@@ -39,7 +39,7 @@
       XCTAssertEqual(cancelled, .cancelled(.escape))
 
       let selected = try await DebugRegionSelectionService(
-        arguments: ["--g38-selection=selected"]
+        arguments: ["--selection-result=selected"]
       ).selectRegion()
       guard case .selected(let selection) = selected else {
         return XCTFail("Expected deterministic selected geometry")

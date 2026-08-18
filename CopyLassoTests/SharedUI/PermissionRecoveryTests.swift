@@ -13,11 +13,11 @@ final class PermissionRecoveryTests: XCTestCase {
     XCTAssertEqual(content.title, "Screen Recording Access Needed")
     XCTAssertEqual(
       content.status,
-      "macOS does not tell CopyLasso whether access was denied or is still awaiting approval."
+      "Screen Recording access is unavailable. Check its status in System Settings."
     )
     XCTAssertEqual(
       content.instructions,
-      "Open System Settings > Privacy & Security > Screen & System Audio Recording and enable CopyLasso. If macOS asks, choose Quit & Reopen. Otherwise return here and choose Try Again."
+      "In System Settings, open Privacy & Security, then Screen & System Audio Recording, and turn on CopyLasso. If macOS asks, choose Quit & Reopen. Otherwise, choose Try Again in CopyLasso."
     )
   }
 
@@ -28,7 +28,7 @@ final class PermissionRecoveryTests: XCTestCase {
 
     XCTAssertEqual(
       content.status,
-      "Screen Recording access was available before and may have been turned off."
+      "Screen Recording access may have been turned off."
     )
     XCTAssertFalse(content.status.localizedCaseInsensitiveContains("revoked"))
   }
@@ -117,7 +117,7 @@ final class PermissionRecoveryTests: XCTestCase {
     controller.present(.notGrantedAfterRequest)
     XCTAssertEqual(
       controller.model.retryStatus,
-      "Access is still unavailable. If you chose Later, quit and reopen CopyLasso, then choose Try Again."
+      "Access is still unavailable. If you chose Later, quit and reopen CopyLasso, then try again."
     )
   }
 

@@ -1,14 +1,14 @@
-# Third-Party Notices
+# Third-party notices
 
-CopyLasso includes the following open-source dependencies.
+CopyLasso uses the open-source packages listed below. Each license is included
+here or linked to the file that ships with the app.
 
 ## KeyboardShortcuts 3.0.1
 
-- Purpose: user-configurable global keyboard-shortcut recording, persistence, validation, and delivery
+- Use: Global keyboard shortcuts
 - Source: <https://github.com/sindresorhus/KeyboardShortcuts>
 - Copyright: Copyright (c) Sindre Sorhus
 - License: MIT
-- Justification: macOS exposes lower-level shortcut event APIs but no native SwiftUI control that combines global registration, conflict-aware recording, persistence, replacement, and clearing. This focused dependency materially reduces input-handling and lifecycle risk while avoiding any runtime network service.
 
 ```text
 MIT License
@@ -36,11 +36,10 @@ SOFTWARE.
 
 ## Sparkle 2.9.5
 
-- Purpose: authenticated update checks, bounded staging, installation, and relaunch
+- Use: App updates
 - Source: <https://github.com/sparkle-project/Sparkle>
 - Copyright: Sparkle Project contributors and the bundled component authors
 - License: BSD-style permissive terms plus bundled third-party notices
-- Justification: Sparkle provides maintained Ed25519 feed and archive verification, sandboxed installation services, recovery, and Universal 2 support for a security-sensitive boundary that should not be reimplemented casually.
 
-The exact complete license bundle shipped inside CopyLasso is tracked at
+The complete license bundle included with CopyLasso is available at
 [`CopyLasso/Resources/Sparkle-2.9.5-LICENSE.txt`](CopyLasso/Resources/Sparkle-2.9.5-LICENSE.txt).

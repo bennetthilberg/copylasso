@@ -7,7 +7,7 @@ import XCTest
 final class SecureUpdateReleaseNotesPresentationTests: XCTestCase {
   func testLongReleaseNotesBecomeSemanticBlocksWithoutMarkdownMarkers() throws {
     let presentation = SecureUpdateReleaseNotesPresentation(
-      markdown: try Self.reviewedV020ReleaseNotes()
+      markdown: try Self.releaseNotesFixture()
     )
 
     XCTAssertEqual(presentation.blocks.first?.kind, .heading(level: 1))
@@ -15,9 +15,9 @@ final class SecureUpdateReleaseNotesPresentationTests: XCTestCase {
     XCTAssertTrue(presentation.blocks.contains { $0.kind == .listItem })
 
     let renderedText = presentation.blocks.map(\.plainText).joined(separator: "\n")
-    XCTAssertTrue(renderedText.contains("CopyLasso 0.2.0"))
-    XCTAssertTrue(renderedText.contains("User-controlled secure updates."))
-    XCTAssertTrue(renderedText.contains("macOS 14 or newer"))
+    XCTAssertTrue(renderedText.contains("CopyLasso 0.3.0"))
+    XCTAssertTrue(renderedText.contains("OCR language settings."))
+    XCTAssertTrue(renderedText.contains("macOS 14 or later"))
     XCTAssertFalse(renderedText.contains("# CopyLasso"))
     XCTAssertFalse(renderedText.contains("## What Is New"))
     XCTAssertFalse(renderedText.contains("**"))
@@ -63,13 +63,15 @@ final class SecureUpdateReleaseNotesPresentationTests: XCTestCase {
     )
   }
 
-  private static func reviewedV020ReleaseNotes() throws -> String {
+  private static func releaseNotesFixture() throws -> String {
     let repositoryRoot = URL(fileURLWithPath: #filePath)
       .deletingLastPathComponent()
       .deletingLastPathComponent()
       .deletingLastPathComponent()
     let data = try Data(
-      contentsOf: repositoryRoot.appendingPathComponent("docs/release-notes/0.2.0.md")
+      contentsOf: repositoryRoot.appendingPathComponent(
+        "CopyLassoTests/Fixtures/update-release-notes.md"
+      )
     )
     return String(decoding: data, as: UTF8.self)
   }

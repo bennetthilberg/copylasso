@@ -39,7 +39,7 @@ final class SystemClipboardServiceTests: XCTestCase {
   }
 
   func testAppKitBackendWritesOnlyAStringRepresentationToAnIsolatedPasteboard() throws {
-    let pasteboard = NSPasteboard(name: NSPasteboard.Name("copylasso.g17.\(UUID())"))
+    let pasteboard = NSPasteboard(name: NSPasteboard.Name("copylasso.clipboard-test.\(UUID())"))
     pasteboard.clearContents()
     pasteboard.setString("previous", forType: .string)
     defer { pasteboard.clearContents() }

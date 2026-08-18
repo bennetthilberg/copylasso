@@ -34,7 +34,7 @@ final class UpdateController {
       availabilityMessage = nil
     } catch {
       availabilityMessage =
-        "Secure updates are unavailable. Capture remains fully usable; reinstall CopyLasso or try again later."
+        "Updates are unavailable. Reinstall CopyLasso or try again later."
     }
     refresh()
   }
