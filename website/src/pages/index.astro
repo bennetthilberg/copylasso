@@ -124,35 +124,28 @@ const description =
         </figure>
       </section>
 
-      <section id="how-it-works" class="section-shell workflow" aria-labelledby="workflow-title">
-        <div class="section-intro">
-          <h2 id="workflow-title">Three moves.</h2>
-          <p>No app switching, file importing, or retyping. The whole workflow lives in one shortcut.</p>
+      <section id="how-it-works" class="section-shell local-path-section" aria-labelledby="workflow-title">
+        <div class="local-path-intro">
+          <h2 id="workflow-title">Fast, free, and private.</h2>
+          <p>One short path, all on your Mac.</p>
         </div>
 
-        <ol class="workflow-list">
-          <li>
-            <span class="step-number">1</span>
-            <div>
-              <h3>Press your shortcut</h3>
-              <p>Start a capture from whatever app is already in front of you.</p>
-            </div>
-          </li>
-          <li>
-            <span class="step-number">2</span>
-            <div>
-              <h3>Draw</h3>
-              <p>Drag a box around the words, code, or sign you want.</p>
-            </div>
-          </li>
-          <li>
-            <span class="step-number">3</span>
-            <div>
-              <h3>Paste</h3>
-              <p>The recognized result is already waiting on your clipboard.</p>
-            </div>
-          </li>
+        <ol class="local-path" aria-label="The local CopyLasso data path">
+          <li>Your screen</li>
+          <li>Local capture</li>
+          <li>Local recognition</li>
+          <li>Your clipboard</li>
         </ol>
+
+        <div class="local-path-end">
+          <strong>The line ends here.</strong>
+          <span>No account, cloud OCR, analytics, or telemetry.</span>
+        </div>
+
+        <p class="local-path-details">
+          Fully free and MIT open source. Screenshots are never stored; Capture History is off by default and
+          encrypted locally if enabled.
+        </p>
       </section>
 
       <section id="features" class="features" aria-labelledby="features-title">
@@ -559,15 +552,12 @@ const description =
     91%, 100% { opacity: 0; }
   }
 
-  .workflow {
-    display: grid;
-    grid-template-columns: minmax(15rem, 0.75fr) minmax(0, 1.5fr);
-    gap: clamp(3rem, 8vw, 7rem);
+  .local-path-section {
     padding-block: var(--section-space);
     border-top: 1px solid var(--line-strong);
   }
 
-  .section-intro h2,
+  .local-path-intro h2,
   .feature-heading h2,
   .trust h2,
   .closing h2 {
@@ -578,29 +568,92 @@ const description =
     line-height: 0.98;
   }
 
-  .section-intro p,
+  .local-path-intro p,
   .trust-statement > p {
     max-width: 34rem;
     margin: 1rem 0 0;
-    color: var(--ink-soft);
-    font-size: 1.1rem;
+    color: var(--ink);
+    font-size: 1.2rem;
     line-height: 1.6;
   }
 
-  .workflow-list { margin: 0; padding: 0; list-style: none; }
-
-  .workflow-list li {
-    display: grid;
-    grid-template-columns: 2.5rem minmax(0, 1fr);
-    gap: 1.25rem;
-    padding: 0 0 2rem;
-    border-bottom: 1px solid var(--line);
+  .local-path-intro {
+    max-width: 48rem;
+    margin-inline: auto;
+    text-align: center;
   }
 
-  .workflow-list li + li { padding-top: 2rem; }
-  .step-number { color: var(--blue); font-size: 1.15rem; font-weight: 600; }
+  .local-path-intro p { margin-inline: auto; }
 
-  .workflow-list h3,
+  .local-path {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin: 3.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .local-path::before {
+    position: absolute;
+    top: 0.5rem;
+    right: 12.5%;
+    left: 12.5%;
+    height: 2px;
+    background: var(--blue);
+    content: "";
+  }
+
+  .local-path li {
+    position: relative;
+    padding-top: 2rem;
+    color: var(--ink);
+    font-size: 1.05rem;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .local-path li::before {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid var(--blue);
+    border-radius: 50%;
+    background: var(--paper);
+    content: "";
+    transform: translateX(-50%);
+  }
+
+  .local-path-end {
+    width: min(100%, 40rem);
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.65rem 1rem;
+    margin: 2.75rem auto 0;
+    color: var(--ink);
+    font-size: 1.2rem;
+    line-height: 1.5;
+  }
+
+  .local-path-end strong {
+    flex: 0 0 auto;
+    color: var(--blue-ink);
+    font-weight: 600;
+  }
+
+  .local-path-details {
+    max-width: 54rem;
+    margin: 2rem auto 0;
+    color: var(--ink);
+    font-size: 1.15rem;
+    line-height: 1.65;
+    text-align: center;
+  }
+
   .feature-copy h3,
   .trust-details h3 {
     margin: 0;
@@ -610,7 +663,6 @@ const description =
     line-height: 1.2;
   }
 
-  .workflow-list p,
   .feature-copy p { max-width: 35rem; margin: 0.45rem 0 0; color: var(--ink-soft); }
 
   .features { padding-block: var(--section-space); background: #eaf3fb; }
@@ -789,8 +841,12 @@ const description =
     .capture-demo { grid-template-columns: 1fr; }
     .demo-source { border-right: 0; border-bottom: 1px solid var(--line-strong); }
     .result-body { min-height: 12rem; }
-    .workflow,
     .trust { grid-template-columns: 1fr; }
+    .local-path { grid-template-columns: 1fr; gap: 1rem; }
+    .local-path::before { top: 0.5rem; bottom: 0.5rem; left: 0.5rem; width: 2px; height: auto; }
+    .local-path li { padding: 0 0 0 2rem; text-align: left; }
+    .local-path li::before { top: 0.25rem; left: 0; transform: none; }
+    .local-path-end { align-items: flex-start; flex-direction: column; text-align: left; }
     .feature-specimens { grid-template-columns: 1fr; }
     .feature-specimen { min-height: auto; }
     .feature-specimen + .feature-specimen { border-top: 1px solid #a8c0d3; border-left: 0; }
@@ -805,7 +861,7 @@ const description =
     .hero-actions .source-button { grid-column: 1; grid-row: 2; }
     .capture-demo { margin-top: 3.5rem; }
     .result-body { min-height: 9rem; padding-top: 1rem; }
-    .workflow { gap: 2.5rem; }
+    .local-path-details { text-align: left; }
     .feature-specimen { padding: 1.5rem 0; }
     .feature-specimens { border-top: 1px solid #a8c0d3; }
     .landing-footer { align-items: flex-start; flex-direction: column; }

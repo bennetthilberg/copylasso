@@ -1,7 +1,7 @@
 export const site = {
   name: "CopyLasso",
   version: "0.3.0",
-  requirements: "macOS 14+ · Apple silicon + Intel",
+  requirements: "macOS 14+ · Apple silicon + Intel · 3.73 MB",
   shortcut: "⇧⌘2",
   githubUrl: "https://github.com/bennetthilberg/copylasso",
   email: "me@bennetthilberg.com",
