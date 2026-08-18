@@ -1,0 +1,309 @@
+---
+import {
+  fontOptionHref,
+  fontOptions,
+  scriptFontUrls,
+  type FontOption,
+} from "../../data/font-options";
+
+export function getStaticPaths() {
+  return fontOptions.map((option) => ({
+    params: { option: `option-${option.number}` },
+    props: { option },
+  }));
+}
+
+interface Props {
+  option: FontOption;
+}
+
+const { option } = Astro.props;
+const previous = fontOptions[(option.number - 2 + fontOptions.length) % fontOptions.length];
+const next = fontOptions[option.number % fontOptions.length];
+const latinFontUrl = option.googleQuery
+  ? `https://fonts.googleapis.com/css2?family=${option.googleQuery}&display=swap`
+  : null;
+const injectedFontUrls = option.number === 1
+  ? []
+  : [latinFontUrl, ...scriptFontUrls].filter((url): url is string => Boolean(url));
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#111827" />
+    <title>{option.name} · CopyLasso font options</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+        background: #111827;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-width: 320px;
+        margin: 0;
+        overflow: hidden;
+      }
+
+      a,
+      summary {
+        color: inherit;
+      }
+
+      a:focus-visible,
+      summary:focus-visible {
+        outline: 3px solid #60a5fa;
+        outline-offset: 3px;
+      }
+
+      .font-nav {
+        position: fixed;
+        z-index: 10;
+        inset: 0 0 auto;
+        min-height: 3.75rem;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+        gap: 0.65rem;
+        align-items: center;
+        padding: 0.55rem 0.75rem;
+        border-bottom: 1px solid #374151;
+        background: #111827;
+        color: #f9fafb;
+        font-size: 0.875rem;
+      }
+
+      .font-nav a {
+        min-height: 2.5rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.45rem 0.7rem;
+        border: 1px solid #4b5563;
+        border-radius: 6px;
+        text-decoration: none;
+      }
+
+      .font-nav a:hover {
+        border-color: #93c5fd;
+      }
+
+      .font-title {
+        min-width: 0;
+        display: flex;
+        gap: 0.65rem;
+        align-items: baseline;
+      }
+
+      .font-title span {
+        color: #9ca3af;
+        white-space: nowrap;
+      }
+
+      .font-title strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      details {
+        position: relative;
+      }
+
+      summary {
+        min-height: 2.5rem;
+        display: inline-flex;
+        align-items: center;
+        padding: 0.45rem 0.7rem;
+        border: 1px solid #4b5563;
+        border-radius: 6px;
+        cursor: pointer;
+        list-style: none;
+      }
+
+      summary::-webkit-details-marker {
+        display: none;
+      }
+
+      details ol {
+        position: absolute;
+        top: calc(100% + 0.45rem);
+        right: 0;
+        width: 15rem;
+        max-height: min(70vh, 28rem);
+        padding: 0.4rem;
+        margin: 0;
+        overflow-y: auto;
+        border: 1px solid #4b5563;
+        border-radius: 8px;
+        background: #111827;
+        box-shadow: 0 16px 40px rgb(0 0 0 / 0.35);
+        list-style: none;
+      }
+
+      details li a {
+        width: 100%;
+        justify-content: flex-start;
+        border-color: transparent;
+      }
+
+      details li a[aria-current="page"] {
+        border-color: #60a5fa;
+        background: #1f2937;
+      }
+
+      .preview-status {
+        position: fixed;
+        z-index: 2;
+        inset: 3.75rem 0 0;
+        display: grid;
+        place-items: center;
+        background: #f7faff;
+        color: #46586d;
+        font-size: 0.9rem;
+      }
+
+      iframe {
+        position: fixed;
+        z-index: 3;
+        inset: 3.75rem 0 0;
+        width: 100%;
+        height: calc(100dvh - 3.75rem);
+        border: 0;
+        background: #f7faff;
+        opacity: 0;
+      }
+
+      iframe.is-ready {
+        opacity: 1;
+      }
+
+      @media (max-width: 46rem) {
+        .font-nav {
+          grid-template-columns: auto minmax(0, 1fr) auto;
+        }
+
+        .font-nav > a[rel] {
+          display: none;
+        }
+
+        .font-title span {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="font-nav" aria-label="Font option navigator">
+      <a href="/font-options/" aria-label="Back to all font options">All fonts</a>
+      <div class="font-title">
+        <span>{option.number} / {fontOptions.length}</span>
+        <strong>{option.name}</strong>
+      </div>
+      <details>
+        <summary>Choose</summary>
+        <ol>
+          {fontOptions.map((item) => (
+            <li>
+              <a href={fontOptionHref(item)} aria-current={item.number === option.number ? "page" : undefined}>
+                {item.number}. {item.name}
+              </a>
+            </li>
+          ))}
+        </ol>
+      </details>
+      <a href={fontOptionHref(previous)} rel="prev" aria-label={`Previous font: ${previous.name}`}>← Previous</a>
+      <a href={fontOptionHref(next)} rel="next" aria-label={`Next font: ${next.name}`}>Next →</a>
+    </nav>
+
+    <div class="preview-status" id="preview-status" role="status">Loading {option.name}…</div>
+    <iframe id="font-preview" src="/" title={`CopyLasso landing page using ${option.name}`}></iframe>
+
+    <script define:vars={{ option, injectedFontUrls }}>
+      const frame = document.querySelector("#font-preview");
+      const status = document.querySelector("#preview-status");
+
+      function loadStylesheet(doc, href) {
+        return new Promise((resolve) => {
+          const link = doc.createElement("link");
+          link.rel = "stylesheet";
+          link.href = href;
+          link.addEventListener("load", resolve, { once: true });
+          link.addEventListener("error", resolve, { once: true });
+          doc.head.append(link);
+        });
+      }
+
+      frame.addEventListener("load", async () => {
+        const doc = frame.contentDocument;
+
+        if (!doc) {
+          status.textContent = "The font preview could not be loaded.";
+          return;
+        }
+
+        doc.documentElement.style.setProperty("--sans", option.stack);
+
+        if (injectedFontUrls.length > 0) {
+          const languageStyles = doc.createElement("style");
+          languageStyles.textContent = `
+            .language-stack [lang="zh-Hans"] {
+              font-family: "Noto Sans SC", ${option.stack};
+            }
+            .language-stack [lang="ja"] {
+              font-family: "Noto Sans JP", ${option.stack};
+            }
+            .language-stack [lang="ar"] {
+              font-family: "Noto Sans Arabic", ${option.stack};
+            }
+          `;
+          doc.head.append(languageStyles);
+          await Promise.all(injectedFontUrls.map((href) => loadStylesheet(doc, href)));
+
+          if (doc.fonts) {
+            await Promise.all([
+              doc.fonts.load(`400 1em "${option.family}"`),
+              doc.fonts.load('400 1em "Noto Sans SC"', "你好"),
+              doc.fonts.load('400 1em "Noto Sans JP"', "こんにちは"),
+              doc.fonts.load('400 1em "Noto Sans Arabic"', "مرحبا"),
+            ]);
+          }
+        }
+
+        const metrics = {
+          bodyFont: getComputedStyle(doc.body).fontFamily,
+          heroFont: getComputedStyle(doc.querySelector(".hero h1")).fontFamily,
+          zhFont: getComputedStyle(doc.querySelector('[lang="zh-Hans"]')).fontFamily,
+          jaFont: getComputedStyle(doc.querySelector('[lang="ja"]')).fontFamily,
+          arFont: getComputedStyle(doc.querySelector('[lang="ar"]')).fontFamily,
+          latinReady: doc.fonts ? doc.fonts.check(`400 1em "${option.family}"`) : true,
+          zhReady: doc.fonts
+            ? doc.fonts.check(`400 1em "${option.number === 1 ? "PingFang SC" : "Noto Sans SC"}"`, "你好")
+            : true,
+          jaReady: doc.fonts
+            ? doc.fonts.check(`400 1em "${option.number === 1 ? "Hiragino Sans" : "Noto Sans JP"}"`, "こんにちは")
+            : true,
+          arReady: doc.fonts
+            ? doc.fonts.check(`400 1em "${option.number === 1 ? "Geeza Pro" : "Noto Sans Arabic"}"`, "مرحبا")
+            : true,
+          languages: [
+            doc.querySelector('[lang="zh-Hans"]').textContent,
+            doc.querySelector('[lang="ja"]').textContent,
+            doc.querySelector('[lang="ar"]').textContent,
+          ],
+          childOverflow: doc.documentElement.scrollWidth > doc.documentElement.clientWidth,
+        };
+        status.dataset.metrics = JSON.stringify(metrics);
+        frame.classList.add("is-ready");
+        status.hidden = true;
+      });
+    </script>
+  </body>
+</html>
