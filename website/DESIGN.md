@@ -110,6 +110,7 @@ The source of truth is the global token block in `src/styles/global.css`; the pa
 
 ## Changelog
 
+- 2026-08-18: restored the original sunny 7th Street storefront photograph selected for the capture demo.
 - 2026-08-18: repainted the storefront fascia dark evergreen, corrected the street-sign lettering perspective, and placed View source left of Download on desktop while retaining Download-first stacking on mobile.
 - 2026-08-18: subtly darkened the storefront fascia and aligned the “7th Street” lettering to the sign’s perspective, improving crosshair visibility without changing the sunny scene.
 - 2026-08-18: tightened the hero and brand spacing, enlarged the clipboard feedback, accelerated its reveal, and made the primary hover state brighter while retaining AA contrast.
