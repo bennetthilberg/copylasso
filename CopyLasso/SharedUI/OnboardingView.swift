@@ -17,17 +17,17 @@ struct OnboardingView: View {
         Text("Welcome to CopyLasso")
           .font(.largeTitle.weight(.semibold))
           .accessibilityIdentifier("copylasso.onboarding.title")
-        Text("Copy visible text and codes from anywhere on your screen.")
+        Text("Copy text and codes from anywhere on your screen.")
           .font(.title3)
           .foregroundStyle(.secondary)
       }
 
       GroupBox {
         VStack(alignment: .leading, spacing: 10) {
-          Label("OCR runs locally on this Mac.", systemImage: "lock.shield")
+          Label("Recognition stays on this Mac.", systemImage: "lock.shield")
           Text(
-            "CopyLasso keeps screen images in memory only while a capture is active. "
-              + "Screen Recording access is requested later, only when you start your first capture."
+            "CopyLasso doesn't save screenshots. macOS asks for Screen Recording access "
+              + "when you make your first capture."
           )
           .foregroundStyle(.secondary)
           .fixedSize(horizontal: false, vertical: true)
@@ -54,7 +54,7 @@ struct OnboardingView: View {
             .accessibilityLabel(AccessibilityAuditCopy.launchAtLoginLabel)
             .accessibilityHint(AccessibilityAuditCopy.launchAtLoginHelp)
             .accessibilityIdentifier("copylasso.onboarding.launch-at-login")
-          Text("This choice is applied only after you continue.")
+          Text("This setting takes effect when you continue.")
             .font(.caption)
             .foregroundStyle(.secondary)
           LaunchAtLoginStatusView(

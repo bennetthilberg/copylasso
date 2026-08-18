@@ -14,7 +14,7 @@ final class SystemSecureUpdatePresenter: NSObject, SecureUpdatePresenting, NSWin
     showProgress(
       SecureUpdateProgressState(
         title: "Checking for Updates",
-        message: "Looking for a signed CopyLasso update",
+        message: "Verifying update information",
         fraction: nil,
         canCancel: true,
         actionTitle: nil
@@ -63,7 +63,7 @@ final class SystemSecureUpdatePresenter: NSObject, SecureUpdatePresenting, NSWin
   func showNoUpdate(acknowledgement: @escaping () -> Void) {
     showAcknowledgement(
       title: "CopyLasso Is Up to Date",
-      message: "You already have the newest authenticated version available."
+      message: "You have the latest version of CopyLasso."
     )
     acknowledgement()
   }
@@ -71,8 +71,7 @@ final class SystemSecureUpdatePresenter: NSObject, SecureUpdatePresenting, NSWin
   func showError(acknowledgement: @escaping () -> Void) {
     showAcknowledgement(
       title: "Unable to Check for Updates",
-      message:
-        "CopyLasso could not verify an update. The installed app was not changed. Try again later."
+      message: "CopyLasso couldn't verify the update. Try again later."
     )
     acknowledgement()
   }
@@ -86,7 +85,7 @@ final class SystemSecureUpdatePresenter: NSObject, SecureUpdatePresenting, NSWin
     showProgress(
       SecureUpdateProgressState(
         title: "Downloading Update",
-        message: "Downloading and verifying signed update data",
+        message: "Downloading and verifying the update",
         fraction: fraction,
         canCancel: true,
         actionTitle: nil
@@ -99,7 +98,7 @@ final class SystemSecureUpdatePresenter: NSObject, SecureUpdatePresenting, NSWin
     showProgress(
       SecureUpdateProgressState(
         title: "Preparing Update",
-        message: "Verifying and preparing CopyLasso for installation",
+        message: "Preparing CopyLasso for installation",
         fraction: min(max(progress, 0), 1),
         canCancel: false,
         actionTitle: nil
@@ -113,8 +112,8 @@ final class SystemSecureUpdatePresenter: NSObject, SecureUpdatePresenting, NSWin
     let alert = NSAlert()
     alert.messageText = "Ready to Install CopyLasso"
     alert.informativeText =
-      "CopyLasso will quit, install the verified update, and relaunch. "
-      + "Choose Later to keep using the current version."
+      "CopyLasso will quit, install the update, and reopen. "
+      + "Choose Later to keep using this version."
     alert.alertStyle = .informational
     let installButton = alert.addButton(withTitle: "Install and Relaunch")
     installButton.setAccessibilityIdentifier("copylasso.update.install-relaunch")
@@ -130,7 +129,7 @@ final class SystemSecureUpdatePresenter: NSObject, SecureUpdatePresenting, NSWin
       SecureUpdateProgressState(
         title: "Installing Update",
         message: applicationTerminated
-          ? "Installing the verified CopyLasso update"
+          ? "Installing the update"
           : "CopyLasso did not quit. Close any blocking dialog, then try again.",
         fraction: nil,
         canCancel: false,
@@ -146,7 +145,7 @@ final class SystemSecureUpdatePresenter: NSObject, SecureUpdatePresenting, NSWin
     if !relaunched {
       showAcknowledgement(
         title: "Update Installed",
-        message: "The verified update was installed. Open CopyLasso again to continue."
+        message: "The update is installed. Open CopyLasso to continue."
       )
     }
     acknowledgement()
@@ -315,8 +314,9 @@ private struct SecureUpdateOfferView: View {
           Text("CopyLasso \(offer.displayVersion) Is Available")
             .font(.title2.bold())
             .accessibilityAddTraits(.isHeader)
-          Text("Authenticated source: \(offer.authenticatedSource)")
+          Text("Verified source: \(offer.authenticatedSource)")
             .fixedSize(horizontal: false, vertical: true)
+            .accessibilityIdentifier("copylasso.update.authenticated-source")
           Text("Download size: \(offer.formattedDownloadSize)")
         }
       }
@@ -337,8 +337,7 @@ private struct SecureUpdateOfferView: View {
       .accessibilityIdentifier("copylasso.update.release-notes")
 
       Text(
-        "CopyLasso will download and verify the update. Installation and relaunch "
-          + "require a second confirmation."
+        "CopyLasso will download and verify the update. You'll confirm again before installation."
       )
       .font(.callout)
       .fixedSize(horizontal: false, vertical: true)

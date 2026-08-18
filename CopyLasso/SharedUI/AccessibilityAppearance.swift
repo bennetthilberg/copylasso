@@ -90,17 +90,17 @@ enum AccessibilityAuditCopy {
   static let suggestedShortcutHelp =
     "Restore the suggested Shift-Command-2 shortcut."
   static let automaticUpdatesHelp =
-    "Choose whether CopyLasso checks its signed update feed about once per day."
+    "Choose whether CopyLasso checks for updates each day."
   static let checkForUpdatesHelp =
-    "Check the signed CopyLasso update feed now."
+    "Check for CopyLasso updates now."
   static let successSoundHelp =
     "Play a brief sound only after CopyLasso successfully copies recognized content."
   static let textLanguagesHelp =
     "Choose one or more OCR languages and arrange their recognition priority."
   static let openScreenRecordingSettingsHelp =
-    "Open the Screen Recording privacy pane in System Settings."
+    "Open Screen & System Audio Recording in System Settings."
   static let retryPermissionHelp =
-    "CopyLasso checks again for Screen Recording access only after you choose this button."
+    "Check again for Screen Recording access."
   static let cancelPermissionHelp =
-    "Close this guidance without changing Screen Recording access."
+    "Close this window without changing Screen Recording access."
 }

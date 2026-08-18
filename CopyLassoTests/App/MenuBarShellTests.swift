@@ -84,7 +84,7 @@ final class MenuBarShellTests: XCTestCase {
     XCTAssertEqual(metadata.licenseName, "MIT License")
     XCTAssertEqual(
       metadata.summary,
-      "Free and open source. Private, offline, and local."
+      "Copy text and codes from anywhere on your screen."
     )
     XCTAssertEqual(
       metadata.repositoryURL.absoluteString,

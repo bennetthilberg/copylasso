@@ -45,7 +45,7 @@ struct CaptureHistoryView: View {
       }
     } message: {
       Text(
-        "This removes CopyLasso's active encrypted archive and encryption key, then creates a new key for future captures. APFS snapshots or external backups may retain prior bytes."
+        "This deletes all saved captures and replaces the encryption key. Backups may still contain older copies."
       )
     }
   }

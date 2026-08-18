@@ -12,11 +12,11 @@ save screenshots.
 
 ## Install CopyLasso
 
-CopyLasso 0.3.0 is the latest release. It requires macOS 14 or later and runs
+CopyLasso 0.3.1 is the latest release. It requires macOS 14 or later and runs
 natively on Apple silicon and Intel Macs.
 
-1. Download [CopyLasso 0.3.0](https://github.com/bennetthilberg/copylasso/releases/tag/v0.3.0).
-2. Open `CopyLasso-0.3.0.dmg`.
+1. Download [CopyLasso 0.3.1](https://github.com/bennetthilberg/copylasso/releases/tag/v0.3.1).
+2. Open `CopyLasso-0.3.1.dmg`.
 3. Drag CopyLasso to Applications, then open it.
 4. Follow the setup prompts and grant Screen Recording access when macOS asks.
 
@@ -24,10 +24,10 @@ To verify the download, place the DMG and checksum file in the same folder and
 run:
 
 ```sh
-shasum -a 256 -c CopyLasso-0.3.0.dmg.sha256
+shasum -a 256 -c CopyLasso-0.3.1.dmg.sha256
 ```
 
-The command should print `CopyLasso-0.3.0.dmg: OK`.
+The command should print `CopyLasso-0.3.1.dmg: OK`.
 
 ## Use CopyLasso
 

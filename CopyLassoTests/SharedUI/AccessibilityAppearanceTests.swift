@@ -114,10 +114,26 @@ final class AccessibilityAppearanceTests: XCTestCase {
       "Restore the suggested Shift-Command-2 shortcut."
     )
     XCTAssertTrue(AccessibilityAuditCopy.launchAtLoginHelp.contains("starts automatically"))
-    XCTAssertTrue(
-      AccessibilityAuditCopy.openScreenRecordingSettingsHelp.contains("System Settings")
+    XCTAssertEqual(
+      AccessibilityAuditCopy.automaticUpdatesHelp,
+      "Choose whether CopyLasso checks for updates each day."
     )
-    XCTAssertTrue(AccessibilityAuditCopy.retryPermissionHelp.contains("checks again"))
+    XCTAssertEqual(
+      AccessibilityAuditCopy.checkForUpdatesHelp,
+      "Check for CopyLasso updates now."
+    )
+    XCTAssertEqual(
+      AccessibilityAuditCopy.openScreenRecordingSettingsHelp,
+      "Open Screen & System Audio Recording in System Settings."
+    )
+    XCTAssertEqual(
+      AccessibilityAuditCopy.retryPermissionHelp,
+      "Check again for Screen Recording access."
+    )
+    XCTAssertEqual(
+      AccessibilityAuditCopy.cancelPermissionHelp,
+      "Close this window without changing Screen Recording access."
+    )
   }
 
   func testSystemProviderReadsEverySupportedWorkspaceAccessibilityFlag() {
