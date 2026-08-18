@@ -225,7 +225,7 @@ const description =
 
       <section id="download" class="closing" aria-labelledby="closing-title">
         <div class="section-shell closing-inner">
-          <h2 id="closing-title">Instantly the text that makes you stop and retype</h2>
+          <h2 id="closing-title">Instantly copy the text that makes you stop and retype</h2>
           <div class="closing-actions">
             <a class="download-button" href={site.downloadHref}>
               <DownloadIcon />
@@ -753,12 +753,15 @@ const description =
     gap: 0 0.4ch;
     padding-top: 2.5rem;
     color: #173750;
-    font-family: "SFMono-Regular", "SF Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
+    font-family: Menlo, Monaco, "Courier New", monospace;
     font-size: clamp(1.9rem, 3.5vw, 3.35rem);
     font-weight: 500;
     letter-spacing: 0;
     line-height: 1.2;
   }
+
+  .code-sample span,
+  .code-sample strong { white-space: nowrap; }
 
   .code-sample strong { color: var(--blue); font-weight: 600; }
 
@@ -803,7 +806,7 @@ const description =
   }
 
   .closing h2 {
-    max-width: 21ch;
+    max-width: 23.5ch;
     margin-inline: auto;
     font-size: clamp(2.1rem, 4.4vw, 4.25rem);
   }
