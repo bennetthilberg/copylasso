@@ -7,6 +7,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: website-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     name: verify website
@@ -57,9 +61,6 @@ jobs:
     permissions:
       pages: write
       id-token: write
-    concurrency:
-      group: github-pages
-      cancel-in-progress: false
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
