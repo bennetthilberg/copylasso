@@ -95,24 +95,28 @@ const description =
           <div class="demo-pane demo-result">
             <div class="demo-heading">
               <strong>What you get</strong>
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path
-                  d="M9 5.5h6M9.5 3h5A1.5 1.5 0 0 1 16 4.5v1A1.5 1.5 0 0 1 14.5 7h-5A1.5 1.5 0 0 1 8 5.5v-1A1.5 1.5 0 0 1 9.5 3Z"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                ></path>
-                <path
-                  d="M8 5H6.75A1.75 1.75 0 0 0 5 6.75v12.5C5 20.22 5.78 21 6.75 21h10.5c.97 0 1.75-.78 1.75-1.75V6.75C19 5.78 18.22 5 17.25 5H16"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                ></path>
-              </svg>
             </div>
             <div class="result-body">
-              <p class="result-copy">7th Street Starbucks</p>
+              <div class="result-target">
+                <span class="result-clipboard-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M9 5.5h6M9.5 3h5A1.5 1.5 0 0 1 16 4.5v1A1.5 1.5 0 0 1 14.5 7h-5A1.5 1.5 0 0 1 8 5.5v-1A1.5 1.5 0 0 1 9.5 3Z"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    ></path>
+                    <path
+                      d="M8 5H6.75A1.75 1.75 0 0 0 5 6.75v12.5C5 20.22 5.78 21 6.75 21h10.5c.97 0 1.75-.78 1.75-1.75V6.75C19 5.78 18.22 5 17.25 5H16"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    ></path>
+                  </svg>
+                </span>
+                <p class="result-copy">7th Street Starbucks</p>
+              </div>
               <div class="result-status">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="m5 12.5 4 4L19 6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -446,13 +450,6 @@ const description =
     font-weight: 600;
   }
 
-  .demo-heading > svg {
-    width: 1.5rem;
-    height: 1.5rem;
-    flex: 0 0 auto;
-    color: var(--muted);
-  }
-
   .street-scene {
     position: relative;
     aspect-ratio: 16 / 9;
@@ -499,9 +496,38 @@ const description =
     flex: 1;
     flex-direction: column;
     justify-content: flex-start;
-    gap: 1.2rem;
+    gap: 1rem;
     min-height: 14rem;
     padding: clamp(1.25rem, 3vw, 2rem) 0 0;
+  }
+
+  .result-target {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 11.5rem;
+    padding: clamp(1.5rem, 3vw, 2rem);
+    border: 2px dotted #8da8bd;
+    border-radius: 10px;
+  }
+
+  .result-clipboard-icon {
+    position: absolute;
+    top: 0;
+    right: 1.1rem;
+    display: grid;
+    width: 2.4rem;
+    height: 2.4rem;
+    place-items: center;
+    padding-inline: 0.35rem;
+    background: var(--paper);
+    color: var(--ink-soft);
+    transform: translateY(-50%);
+  }
+
+  .result-clipboard-icon svg {
+    width: 1.65rem;
+    height: 1.65rem;
   }
 
   .result-copy {
@@ -871,6 +897,7 @@ const description =
     .hero-actions .source-button { grid-column: 1; grid-row: 2; }
     .capture-demo { margin-top: 3.5rem; }
     .result-body { min-height: 9rem; padding-top: 1rem; }
+    .result-target { min-height: 8.5rem; }
     .local-path-details { text-align: left; }
     .feature-specimen { padding: 1.5rem 0; }
     .feature-specimens { border-top: 1px solid #a8c0d3; }
