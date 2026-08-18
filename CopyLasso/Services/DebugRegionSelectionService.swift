@@ -10,7 +10,7 @@
     }
 
     convenience init(arguments: [String]) {
-      guard arguments.contains("--g38-selection=selected") else {
+      guard arguments.contains("--selection-result=selected") else {
         self.init()
         return
       }

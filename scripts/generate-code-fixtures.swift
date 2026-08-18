@@ -143,12 +143,12 @@ func dataMatrixImage(payload: String) throws -> CIImage {
 let fixtures = [
   CodeFixture(
     filename: "code-qr.png",
-    payload: "https://copylasso.com/g38?mode=qr"
+    payload: "https://copylasso.com/test?mode=qr"
   ) {
     try generatedImage(
       filterName: "CIQRCodeGenerator",
       parameters: [
-        "inputMessage": Data("https://copylasso.com/g38?mode=qr".utf8),
+        "inputMessage": Data("https://copylasso.com/test?mode=qr".utf8),
         "inputCorrectionLevel": "H",
       ]
     )

@@ -6,8 +6,8 @@
     private let isUnreadable: Bool
 
     init(arguments: [String], now: Date = Date()) {
-      isUnreadable = arguments.contains("--g52-history-unreadable")
-      if arguments.contains("--g52-history-populated") {
+      isUnreadable = arguments.contains("--capture-history-unreadable")
+      if arguments.contains("--capture-history-populated") {
         entries = [
           CaptureHistoryEntry(
             id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,

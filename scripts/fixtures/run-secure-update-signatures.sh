@@ -22,7 +22,7 @@ readonly parser_probe_source="$repository_root/scripts/fixtures/SignedAppcastPar
 [[ -d "$sparkle_frameworks/Sparkle.framework" ]] || fail "Sparkle framework is unavailable."
 [[ -f "$parser_probe_source" ]] || fail "Signed appcast parser probe is unavailable."
 
-readonly temporary_directory="$(/usr/bin/mktemp -d "${TMPDIR:-/private/tmp}/copylasso-g35-signatures.XXXXXX")"
+readonly temporary_directory="$(/usr/bin/mktemp -d "${TMPDIR:-/private/tmp}/copylasso-update-signatures.XXXXXX")"
 trap '/bin/rm -rf "$temporary_directory"' EXIT
 
 readonly signing_key="$temporary_directory/signing-key"
@@ -93,7 +93,7 @@ DYLD_FRAMEWORK_PATH="$sparkle_frameworks" "$parser_probe" accept "$feed" || \
 DYLD_FRAMEWORK_PATH="$sparkle_frameworks" "$parser_probe" reject "$malformed_feed" || \
     fail "Sparkle parsed an authenticated malformed appcast fixture."
 
-# The package must expose the reviewed feed-generation tool even though G35
+# The package must expose the reviewed feed-generation tool even when the release workflow is not running
 # deliberately does not generate or publish a production appcast.
 "$generate_appcast" --help >/dev/null 2>&1 || fail "Sparkle generate_appcast is unusable."
 
