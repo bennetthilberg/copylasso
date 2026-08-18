@@ -42,6 +42,7 @@
   - muted: `oklch(50% 0.035 250)` | `#697b90`
   - border: `oklch(73% 0.045 250)` | `#a6b8ca`
   - accent: `oklch(48% 0.18 255)` | `#0069d2`
+  - accent hover: `#0872dc`
   - accent foreground: `oklch(98% 0.008 245)` | `#f7faff`
   - deep blue: `oklch(29% 0.12 255)` | `#163d70`
 
@@ -109,6 +110,8 @@ The source of truth is the global token block in `src/styles/global.css`; the pa
 
 ## Changelog
 
+- 2026-08-18: subtly darkened the storefront fascia and aligned the “7th Street” lettering to the sign’s perspective, improving crosshair visibility without changing the sunny scene.
+- 2026-08-18: tightened the hero and brand spacing, enlarged the clipboard feedback, accelerated its reveal, and made the primary hover state brighter while retaining AA contrast.
 - 2026-08-17: tightened the before-and-after labels and QR quiet zone, grouped the clipboard confirmation with its result, and added the shipping app icon to the navigation wordmark.
 - 2026-08-17: replaced the intersecting CSS crosshair with the supplied Apple pointer asset at a smaller optical size, preserving its open center and native edge treatment.
 - 2026-08-17: warmed the demonstration photo, strengthened the capture crosshair, added the GitHub mark, removed the fixed shortcut from public copy, and replaced the illustrative QR pattern with a working `copylasso.com` code.
