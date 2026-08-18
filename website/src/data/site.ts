@@ -1,12 +1,12 @@
 export const site = {
   name: "CopyLasso",
-  version: "0.3.0",
+  version: "0.3.1",
   requirements: "macOS 14+ · Apple silicon + Intel · 3.73 MB",
   shortcut: "⇧⌘2",
   githubUrl: "https://github.com/bennetthilberg/copylasso",
   email: "me@bennetthilberg.com",
   downloadHref: "#download",
-  downloadLabel: "Download CopyLasso 0.3.0",
+  downloadLabel: "Download CopyLasso 0.3.1",
 };
 
 export const directions = [
