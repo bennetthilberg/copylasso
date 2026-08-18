@@ -339,6 +339,16 @@ const description =
     margin: 2.25rem auto 0;
   }
 
+  .hero-actions .download-button {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .hero-actions .source-button {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
   .download-button,
   .source-button {
     min-height: 3.65rem;
@@ -791,7 +801,8 @@ const description =
     .hero h1 { font-size: clamp(3rem, 16vw, 4.4rem); }
     .hero-copy > p { font-size: 1.08rem; }
     .hero-actions { grid-template-columns: 1fr; }
-    .source-button { grid-row: 2; }
+    .hero-actions .download-button { grid-column: 1; grid-row: 1; }
+    .hero-actions .source-button { grid-column: 1; grid-row: 2; }
     .capture-demo { margin-top: 3.5rem; }
     .result-body { min-height: 9rem; padding-top: 1rem; }
     .workflow { gap: 2.5rem; }
