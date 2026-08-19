@@ -33,7 +33,17 @@ const description =
           </p>
         </div>
 
-        <div class="hero-actions">
+        <div class="hero-actions hero-actions-desktop">
+          <a class="source-button" href={site.githubUrl} target="_blank" rel="noreferrer">
+            <GitHubIcon />
+            View source on GitHub
+          </a>
+          <a class="download-button" href={site.downloadHref}>
+            <DownloadIcon />
+            <span>{site.downloadLabel}</span>
+          </a>
+        </div>
+        <div class="hero-actions hero-actions-mobile">
           <a class="download-button" href={site.downloadHref}>
             <DownloadIcon />
             <span>{site.downloadLabel}</span>
@@ -219,12 +229,23 @@ const description =
       <section id="download" class="closing" aria-labelledby="closing-title">
         <div class="section-shell closing-inner">
           <h2 id="closing-title">Instantly copy the text that makes you stop and retype</h2>
-          <div class="closing-actions">
+          <div class="closing-actions closing-actions-desktop">
+            <a class="closing-source-link" href={site.githubUrl} target="_blank" rel="noreferrer">
+              View source on GitHub
+            </a>
             <a class="download-button" href={site.downloadHref}>
               <DownloadIcon />
               <span>{site.downloadLabel}</span>
             </a>
-            <a href={site.githubUrl} target="_blank" rel="noreferrer">View source on GitHub</a>
+          </div>
+          <div class="closing-actions closing-actions-mobile">
+            <a class="download-button" href={site.downloadHref}>
+              <DownloadIcon />
+              <span>{site.downloadLabel}</span>
+            </a>
+            <a class="closing-source-link" href={site.githubUrl} target="_blank" rel="noreferrer">
+              View source on GitHub
+            </a>
           </div>
         </div>
       </section>
@@ -333,16 +354,11 @@ const description =
     margin: 2.25rem auto 0;
   }
 
+  .hero-actions-mobile { display: none; }
+
   .hero-actions .download-button {
-    grid-column: 1;
-    grid-row: 1;
     border-color: #1458b5;
     background: var(--app-gradient);
-  }
-
-  .hero-actions .source-button {
-    grid-column: 2;
-    grid-row: 1;
   }
 
   .download-button,
@@ -828,17 +844,12 @@ const description =
     margin-top: 3rem;
   }
 
-  .closing-actions .download-button {
-    grid-column: 1;
-    grid-row: 1;
-  }
+  .closing-actions-mobile { display: none; }
 
   .closing .download-button { border-color: var(--blue-white); background: var(--blue-white); color: var(--blue-deep); }
   .closing .download-button:hover { border-color: #d4eafa; background: #d4eafa; color: var(--blue-deep); }
 
-  .closing-actions > a:last-child {
-    grid-column: 2;
-    grid-row: 1;
+  .closing-source-link {
     min-height: 2.75rem;
     display: inline-flex;
     align-items: center;
@@ -907,11 +918,11 @@ const description =
     .hero h1 { font-size: clamp(3rem, 16vw, 4.4rem); }
     .hero-copy > p { font-size: 1.08rem; }
     .hero-actions { grid-template-columns: 1fr; }
-    .hero-actions .download-button { grid-column: 1; grid-row: 1; }
-    .hero-actions .source-button { grid-column: 1; grid-row: 2; }
+    .hero-actions-desktop { display: none; }
+    .hero-actions-mobile { display: grid; }
     .closing-actions { grid-template-columns: 1fr; }
-    .closing-actions .download-button { grid-column: 1; grid-row: 1; }
-    .closing-actions > a:last-child { grid-column: 1; grid-row: 2; }
+    .closing-actions-desktop { display: none; }
+    .closing-actions-mobile { display: grid; }
     .capture-demo { margin-top: 3.5rem; }
     .result-body { min-height: 9rem; padding-top: 1rem; }
     .result-target { min-height: 8.5rem; }
