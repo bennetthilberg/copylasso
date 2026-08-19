@@ -14,6 +14,7 @@ const {
 
 const siteUrl = new URL("/", Astro.site ?? Astro.url).toString();
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toString();
+const socialImageUrl = new URL("/images/copylasso-social-card.png", siteUrl).toString();
 const structuredData = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
@@ -56,9 +57,16 @@ const structuredData = {
     <meta property="og:site_name" content={site.name} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalUrl} />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:image" content={socialImageUrl} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="CopyLasso: Copy anything on your screen" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={socialImageUrl} />
+    <meta name="twitter:image:alt" content="CopyLasso: Copy anything on your screen" />
     <script type="application/ld+json" set:html={JSON.stringify(structuredData)} is:inline></script>
     <title>{title}</title>
   </head>

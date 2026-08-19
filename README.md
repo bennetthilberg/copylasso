@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="BrandAssets/copylasso-wordmark.png" alt="CopyLasso" width="600">
+</p>
+
 # CopyLasso
 
 [![CI](https://github.com/bennetthilberg/copylasso/actions/workflows/ci.yml/badge.svg)](https://github.com/bennetthilberg/copylasso/actions/workflows/ci.yml)
