@@ -13,10 +13,24 @@ const index = readFileSync(new URL("index.html", dist), "utf8");
 const downloadUrl =
   "https://github.com/bennetthilberg/copylasso/releases/download/v0.3.1/CopyLasso-0.3.1.dmg";
 
-assert.equal(index.split(downloadUrl).length - 1, 2, "Both download buttons must use the release DMG.");
+assert.equal(index.split(downloadUrl).length - 1, 4, "Every responsive download button must use the release DMG.");
 assert(!index.includes('href="#download"'), "Download buttons must not link to the page section.");
 assert(index.includes('href="/favicon.png"'), "The page must link to the favicon.");
 assert(existsSync(new URL("favicon.png", dist)), "The favicon must be included in the build.");
+
+function assertActionOrder(groupClass, firstLabel, secondLabel) {
+  const match = index.match(new RegExp(`<div class="${groupClass}"[^>]*>([\\s\\S]*?)</div>`));
+  assert(match, `The page must include ${groupClass}.`);
+  assert(
+    match[1].indexOf(firstLabel) < match[1].indexOf(secondLabel),
+    `${firstLabel} must precede ${secondLabel} in ${groupClass}.`,
+  );
+}
+
+assertActionOrder("hero-actions hero-actions-desktop", "View source on GitHub", "Download CopyLasso");
+assertActionOrder("hero-actions hero-actions-mobile", "Download CopyLasso", "View source on GitHub");
+assertActionOrder("closing-actions closing-actions-desktop", "View source on GitHub", "Download CopyLasso");
+assertActionOrder("closing-actions closing-actions-mobile", "Download CopyLasso", "View source on GitHub");
 
 for (const relic of ["design-options", "font-options", "section-options"]) {
   assert(!index.includes(relic), `The public page must not include ${relic}.`);
