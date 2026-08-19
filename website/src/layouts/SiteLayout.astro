@@ -1,0 +1,69 @@
+---
+import "../styles/global.css";
+import { site } from "../data/site";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "CopyLasso · Copy anything on your screen",
+  description = "Copy anything on your Mac screen. CopyLasso turns selected pixels into clipboard text with private, on-device OCR.",
+} = Astro.props;
+
+const siteUrl = new URL("/", Astro.site ?? Astro.url).toString();
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toString();
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: site.name,
+  description,
+  applicationCategory: "UtilitiesApplication",
+  operatingSystem: "macOS 14+",
+  softwareVersion: site.version,
+  url: siteUrl,
+  author: {
+    "@type": "Person",
+    name: "Bennett Hilberg",
+    email: `mailto:${site.email}`,
+  },
+  codeRepository: site.githubUrl,
+  license: "https://opensource.org/license/mit/",
+  isAccessibleForFree: true,
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+  },
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="description" content={description} />
+    <meta name="application-name" content={site.name} />
+    <meta name="theme-color" content="#0069d2" />
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/images/copylasso-app-icon.png" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <script type="application/ld+json" set:html={JSON.stringify(structuredData)} is:inline></script>
+    <title>{title}</title>
+  </head>
+  <body class="site-index">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <slot />
+  </body>
+</html>

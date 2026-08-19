@@ -1,0 +1,924 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+import DownloadIcon from "../components/DownloadIcon.astro";
+import GitHubIcon from "../components/GitHubIcon.astro";
+import { privacyFacts, site } from "../data/site";
+
+const description =
+  "Copy anything on your Mac screen. CopyLasso turns selected pixels into clipboard text with private, on-device OCR.";
+
+---
+
+<SiteLayout title="CopyLasso · Copy anything on your screen" description={description}>
+  <div class="landing-page">
+    <header class="site-header landing-header">
+      <a class="landing-brand" href="#main-content" aria-label="CopyLasso home">
+        <img src="/images/copylasso-app-icon.png" width="128" height="128" alt="" decoding="async" />
+        <span>CopyLasso</span>
+      </a>
+      <nav class="landing-nav" aria-label="Page sections">
+        <a href="#features">Features</a>
+        <a href="#privacy">Privacy</a>
+        <a href={site.githubUrl} target="_blank" rel="noreferrer">GitHub</a>
+      </nav>
+    </header>
+
+    <main id="main-content">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <h1 id="hero-title">Copy anything on your screen</h1>
+          <p>
+            Draw around text you can see anywhere on your Mac. CopyLasso reads the pixels locally and puts clean
+            text on your clipboard.
+          </p>
+        </div>
+
+        <div class="hero-actions">
+          <a class="download-button" href={site.downloadHref}>
+            <DownloadIcon />
+            <span>{site.downloadLabel}</span>
+          </a>
+          <a class="source-button" href={site.githubUrl} target="_blank" rel="noreferrer">
+            <GitHubIcon />
+            View source on GitHub
+          </a>
+        </div>
+        <p class="hero-requirements">{site.requirements}</p>
+
+        <p class="sr-only">
+          A demonstration shows a street sign reading 7th Street above a storefront reading Starbucks Coffee. A
+          selection is drawn around both, producing the clipboard text 7th Street Starbucks.
+        </p>
+
+        <figure class="capture-demo" aria-hidden="true">
+          <div class="demo-pane demo-source">
+            <div class="demo-heading">
+              <strong>What you see</strong>
+            </div>
+
+            <div class="street-scene">
+              <img
+                class="street-photo"
+                src="/images/copylasso-street-capture.webp"
+                width="1440"
+                height="811"
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
+              <svg class="capture-overlay" viewBox="0 0 1440 811" preserveAspectRatio="xMidYMid meet">
+                <g class="selection-box">
+                  <rect
+                    x="140"
+                    y="90"
+                    width="985"
+                    height="430"
+                    fill="rgb(0 105 210 / 0.08)"
+                    stroke="#0069d2"
+                    stroke-width="4"
+                    vector-effect="non-scaling-stroke"
+                  ></rect>
+                </g>
+              </svg>
+              <img
+                class="capture-crosshair"
+                src="/images/apple-crosshair-pointer.png"
+                width="62"
+                height="60"
+                alt=""
+                decoding="async"
+              />
+            </div>
+          </div>
+
+          <div class="demo-pane demo-result">
+            <div class="demo-heading">
+              <strong>What you get</strong>
+            </div>
+            <div class="result-body">
+              <div class="result-target">
+                <span class="result-clipboard-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M9 5.5h6M9.5 3h5A1.5 1.5 0 0 1 16 4.5v1A1.5 1.5 0 0 1 14.5 7h-5A1.5 1.5 0 0 1 8 5.5v-1A1.5 1.5 0 0 1 9.5 3Z"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    ></path>
+                    <path
+                      d="M8 5H6.75A1.75 1.75 0 0 0 5 6.75v12.5C5 20.22 5.78 21 6.75 21h10.5c.97 0 1.75-.78 1.75-1.75V6.75C19 5.78 18.22 5 17.25 5H16"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    ></path>
+                  </svg>
+                </span>
+                <p class="result-copy">7th Street Starbucks</p>
+              </div>
+              <div class="result-status">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="m5 12.5 4 4L19 6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                <span>Copied to clipboard</span>
+              </div>
+            </div>
+          </div>
+        </figure>
+      </section>
+
+      <section id="how-it-works" class="section-shell local-path-section" aria-labelledby="workflow-title">
+        <div class="local-path-intro">
+          <h2 id="workflow-title">Fast, free, and private</h2>
+          <p>One short path, all on your Mac.</p>
+        </div>
+
+        <ol class="local-path" aria-label="The local CopyLasso data path">
+          <li>Your screen</li>
+          <li>Local capture</li>
+          <li>Local recognition</li>
+          <li>Your clipboard</li>
+        </ol>
+
+        <div class="local-path-end">
+          <strong>The line ends there.</strong>
+          <span>No account, cloud OCR, analytics, or telemetry.</span>
+        </div>
+
+        <p class="local-path-details">
+          Fully free and MIT open source. Screenshots are never stored; Capture History is off by default and
+          encrypted locally if enabled.
+        </p>
+      </section>
+
+      <section id="features" class="features" aria-labelledby="features-title">
+        <div class="section-shell feature-heading">
+          <h2 id="features-title">It reads more than paragraphs</h2>
+        </div>
+
+        <div class="section-shell feature-specimens">
+          <article class="feature-specimen feature-codes">
+            <img
+              class="qr-code"
+              src="/images/copylasso-site-qr.png"
+              width="180"
+              height="180"
+              alt="QR code for copylasso.com"
+              loading="lazy"
+              decoding="async"
+            />
+            <div class="feature-copy">
+              <h3>QR and barcodes</h3>
+              <p>Recognize supported codes as inert plain text, ready to paste.</p>
+            </div>
+          </article>
+
+          <article class="feature-specimen feature-languages">
+            <div class="language-stack">
+              <span>Hello</span>
+              <span lang="zh-Hans">你好</span>
+              <span lang="ja">こんにちは</span>
+              <span lang="ar" dir="rtl">مرحبا</span>
+            </div>
+            <div class="feature-copy">
+              <h3>Your languages</h3>
+              <p>Choose and prioritize the OCR languages available on your Mac.</p>
+            </div>
+          </article>
+
+          <article class="feature-specimen feature-code">
+            <div class="code-sample">
+              <span>const result =</span>
+              <strong>"copied"</strong>
+              <span>;</span>
+            </div>
+            <div class="feature-copy">
+              <h3>Text from any app</h3>
+              <p>Photos, paused videos, remote desktops, menus, and code are all just screen pixels.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="privacy" class="section-shell trust" aria-labelledby="privacy-title">
+        <div class="trust-statement">
+          <h2 id="privacy-title">Your screen stays on your Mac</h2>
+          <p>CopyLasso uses Apple Vision on device. There is no account, cloud OCR, analytics, or telemetry.</p>
+        </div>
+
+        <div class="trust-details">
+          <div>
+            <h3>Private by default</h3>
+            <ul>
+              {privacyFacts.map((fact) => <li>{fact}</li>)}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="download" class="closing" aria-labelledby="closing-title">
+        <div class="section-shell closing-inner">
+          <h2 id="closing-title">Instantly copy the text that makes you stop and retype</h2>
+          <div class="closing-actions">
+            <a class="download-button" href={site.downloadHref}>
+              <DownloadIcon />
+              <span>{site.downloadLabel}</span>
+            </a>
+            <a href={site.githubUrl} target="_blank" rel="noreferrer">View source on GitHub</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="section-shell landing-footer">
+      <p>Created by Bennett Hilberg</p>
+      <div>
+        <a href={`mailto:${site.email}`}>{site.email}</a>
+        <a href={site.githubUrl} target="_blank" rel="noreferrer">GitHub</a>
+        <span>MIT licensed</span>
+      </div>
+    </footer>
+  </div>
+</SiteLayout>
+
+<style>
+  .landing-page {
+    --page-width: 74rem;
+    --content-inset: clamp(3rem, 8vw, 7rem);
+    --section-space: clamp(5rem, 10vw, 9rem);
+    --app-gradient: linear-gradient(135deg, #0b3b83 0%, #1c7ff4 100%);
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  .section-shell,
+  .hero {
+    width: min(calc(100% - var(--content-inset)), var(--page-width));
+    margin-inline: auto;
+  }
+
+  .landing-header {
+    width: min(calc(100% - 2rem), var(--page-width));
+    margin-inline: auto;
+  }
+
+  .landing-header { padding-block: 1.4rem; }
+
+  .landing-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--ink);
+    font-size: 1.12rem;
+    font-weight: 600;
+    letter-spacing: -0.035em;
+    text-decoration: none;
+  }
+
+  .landing-brand img {
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 auto;
+  }
+
+  .landing-nav {
+    display: flex;
+    align-items: center;
+    gap: clamp(1rem, 2.5vw, 2rem);
+    color: var(--ink-soft);
+  }
+
+  .landing-nav a {
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .hero {
+    padding: clamp(4rem, 8vw, 7rem) 0 var(--section-space);
+    text-align: center;
+  }
+
+  .hero-copy {
+    width: min(100%, 66rem);
+    margin-inline: auto;
+  }
+
+  .hero h1 {
+    margin: 0;
+    font-size: clamp(3.2rem, 8vw, 7.5rem);
+    font-weight: 550;
+    letter-spacing: -0.07em;
+    line-height: 0.92;
+    text-wrap: balance;
+  }
+
+  .hero-copy > p {
+    max-width: 43rem;
+    margin: 1.75rem auto 0;
+    color: var(--ink);
+    font-size: clamp(1.1rem, 2vw, 1.35rem);
+    line-height: 1.55;
+    text-wrap: balance;
+  }
+
+  .hero-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    width: min(100%, 37rem);
+    margin: 2.25rem auto 0;
+  }
+
+  .hero-actions .download-button {
+    grid-column: 1;
+    grid-row: 1;
+    border-color: #1458b5;
+    background: var(--app-gradient);
+  }
+
+  .hero-actions .source-button {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .download-button,
+  .source-button {
+    min-height: 3.65rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+    padding: 0.9rem 1.2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+  }
+
+  .download-button {
+    border: 1px solid var(--blue);
+    background: var(--blue);
+    color: var(--blue-white);
+  }
+
+  .download-button :global(svg) {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex: 0 0 auto;
+  }
+
+  .source-button :global(svg) {
+    width: 1.2rem;
+    height: 1.2rem;
+    flex: 0 0 auto;
+  }
+
+  .source-button {
+    border: 1px solid var(--line-strong);
+    background: transparent;
+    color: var(--ink);
+  }
+
+  .download-button:hover {
+    border-color: var(--blue-bright);
+    background: var(--blue-bright);
+    color: var(--blue-white);
+  }
+
+  .hero-actions .download-button:hover {
+    border-color: #278cff;
+    background: var(--app-gradient);
+    filter: brightness(1.1) saturate(1.04);
+  }
+
+  .source-button:hover {
+    border-color: var(--blue);
+    color: var(--blue-ink);
+  }
+
+  .hero-requirements {
+    margin: 0.9rem 0 0;
+    color: oklch(44% 0.037 250);
+    font-size: 1rem;
+  }
+
+  .capture-demo {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(17rem, 0.75fr);
+    margin: clamp(4rem, 8vw, 7rem) 0 0;
+    border: 1px solid var(--line-strong);
+    border-radius: 14px;
+    overflow: hidden;
+    background: white;
+    text-align: left;
+  }
+
+  .demo-pane {
+    min-width: 0;
+    padding: clamp(1rem, 2.5vw, 1.75rem);
+  }
+
+  .demo-source {
+    border-right: 1px solid var(--line-strong);
+    background: var(--paper-deep);
+  }
+
+  .demo-result {
+    display: flex;
+    flex-direction: column;
+    background: var(--paper);
+  }
+
+  .demo-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .demo-heading strong {
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .street-scene {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 8px;
+    background: #c7d0d7;
+  }
+
+  .street-photo,
+  .capture-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .street-photo {
+    display: block;
+    object-fit: cover;
+  }
+
+  .capture-overlay { z-index: 2; overflow: visible; }
+
+  .selection-box {
+    transform: scale(1);
+    transform-box: fill-box;
+    transform-origin: top left;
+  }
+
+  .capture-crosshair {
+    position: absolute;
+    top: 64.12%;
+    left: 78.13%;
+    z-index: 3;
+    width: 1.5rem;
+    height: auto;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    user-select: none;
+  }
+
+  .result-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 1rem;
+    min-height: 14rem;
+    padding: clamp(1.25rem, 3vw, 2rem) 0 0;
+  }
+
+  .result-target {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 11.5rem;
+    padding: clamp(1.5rem, 3vw, 2rem);
+    border: 2px dotted #8da8bd;
+    border-radius: 10px;
+  }
+
+  .result-clipboard-icon {
+    position: absolute;
+    top: 0;
+    right: 1.1rem;
+    display: grid;
+    width: 2.4rem;
+    height: 2.4rem;
+    place-items: center;
+    padding-inline: 0.35rem;
+    background: var(--paper);
+    color: var(--ink-soft);
+    transform: translateY(-50%);
+  }
+
+  .result-clipboard-icon svg {
+    width: 1.65rem;
+    height: 1.65rem;
+  }
+
+  .result-copy {
+    max-width: 11ch;
+    margin: 0;
+    color: var(--ink);
+    font-size: clamp(2.15rem, 4.3vw, 4.25rem);
+    font-weight: 550;
+    letter-spacing: -0.055em;
+    line-height: 0.98;
+    opacity: 0;
+    transform: translateX(-0.75rem);
+  }
+
+  .result-status {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: var(--blue-ink);
+    font-size: 1.1rem;
+    font-weight: 600;
+    opacity: 0;
+  }
+
+  .result-status svg { width: 1.4rem; height: 1.4rem; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .selection-box { animation: drag-selection 7s cubic-bezier(0.23, 1, 0.32, 1) infinite; }
+    .capture-crosshair { animation: drag-crosshair 7s cubic-bezier(0.23, 1, 0.32, 1) infinite; }
+    .result-copy { animation: show-result 7s cubic-bezier(0.23, 1, 0.32, 1) infinite; }
+    .result-status { animation: show-status 7s linear infinite; }
+  }
+
+  @keyframes drag-selection {
+    0%, 8% { opacity: 0; transform: scale(0.01); }
+    12% { opacity: 1; transform: scale(0.01); }
+    32%, 82% { opacity: 1; transform: scale(1); }
+    91%, 100% { opacity: 0; transform: scale(1); }
+  }
+
+  @keyframes drag-crosshair {
+    0%, 8% { top: 11.1%; left: 9.72%; opacity: 0; }
+    12% { top: 11.1%; left: 9.72%; opacity: 1; }
+    32%, 82% { top: 64.12%; left: 78.13%; opacity: 1; }
+    91%, 100% { top: 64.12%; left: 78.13%; opacity: 0; }
+  }
+
+  @keyframes show-result {
+    0%, 30% { opacity: 0; transform: translateX(-0.75rem); }
+    37%, 82% { opacity: 1; transform: translateX(0); }
+    91%, 100% { opacity: 0; transform: translateX(0); }
+  }
+
+  @keyframes show-status {
+    0%, 35% { opacity: 0; }
+    39%, 82% { opacity: 1; }
+    91%, 100% { opacity: 0; }
+  }
+
+  .local-path-section {
+    padding-block: var(--section-space);
+    border-top: 1px solid var(--line-strong);
+  }
+
+  .local-path-intro h2,
+  .feature-heading h2,
+  .trust h2,
+  .closing h2 {
+    margin: 0;
+    font-size: clamp(2.25rem, 5vw, 4.75rem);
+    font-weight: 550;
+    letter-spacing: -0.06em;
+    line-height: 0.98;
+  }
+
+  .local-path-intro p,
+  .trust-statement > p {
+    max-width: 34rem;
+    margin: 1rem 0 0;
+    color: var(--ink);
+    font-size: 1.2rem;
+    line-height: 1.6;
+  }
+
+  .local-path-intro {
+    max-width: 48rem;
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  .local-path-intro p { margin-inline: auto; }
+
+  .local-path {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin: 3.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .local-path::before {
+    position: absolute;
+    top: 0.5rem;
+    right: 12.5%;
+    left: 12.5%;
+    height: 2px;
+    background: var(--blue);
+    content: "";
+  }
+
+  .local-path li {
+    position: relative;
+    padding-top: 2rem;
+    color: var(--ink);
+    font-size: 1.05rem;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .local-path li::before {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid var(--blue);
+    border-radius: 50%;
+    background: var(--paper);
+    content: "";
+    transform: translateX(-50%);
+  }
+
+  .local-path-end {
+    width: min(100%, 40rem);
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.65rem 1rem;
+    margin: 2.75rem auto 0;
+    color: var(--ink);
+    font-size: 1.2rem;
+    line-height: 1.5;
+  }
+
+  .local-path-end strong {
+    flex: 0 0 auto;
+    color: var(--blue-ink);
+    font-weight: 600;
+  }
+
+  .local-path-details {
+    max-width: 54rem;
+    margin: 2rem auto 0;
+    color: var(--ink);
+    font-size: 1.15rem;
+    line-height: 1.65;
+    text-align: center;
+  }
+
+  .feature-copy h3,
+  .trust-details h3 {
+    margin: 0;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+  }
+
+  .feature-copy h3 { font-size: 1.625rem; }
+  .trust-details h3 { font-size: 1.5rem; }
+
+  .feature-copy p {
+    max-width: 35rem;
+    margin: 0.45rem 0 0;
+    color: var(--ink-soft);
+    font-size: 1.0625rem;
+    font-weight: 500;
+    line-height: 1.55;
+  }
+
+  .features { padding-block: var(--section-space); background: #eaf3fb; }
+
+  .feature-heading {
+    margin-bottom: clamp(3rem, 6vw, 5rem);
+  }
+
+  .feature-heading h2 { max-width: 12ch; }
+
+  .feature-specimens {
+    display: grid;
+    grid-template-columns: 0.85fr 1.15fr 1.25fr;
+    border-block: 1px solid #a8c0d3;
+  }
+
+  .feature-specimen {
+    min-width: 0;
+    display: flex;
+    min-height: 28rem;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 3rem;
+    padding: clamp(1.5rem, 3.5vw, 2.5rem);
+  }
+
+  .feature-specimen + .feature-specimen { border-left: 1px solid #a8c0d3; }
+
+  .qr-code {
+    width: min(100%, 11rem);
+    aspect-ratio: 1;
+    align-self: center;
+    padding: 0.65rem;
+    background: white;
+    color: #173750;
+    shape-rendering: crispEdges;
+  }
+
+  .language-stack {
+    display: grid;
+    align-self: stretch;
+    color: #173750;
+    font-size: clamp(2.15rem, 4vw, 3.75rem);
+    font-weight: 500;
+    letter-spacing: -0.045em;
+    line-height: 1.15;
+  }
+
+  .language-stack span { padding-block: 0.35rem; border-bottom: 1px solid #b7cada; }
+
+  .code-sample {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.4ch;
+    padding-top: 2.5rem;
+    color: #173750;
+    font-family: Menlo, Monaco, "Courier New", monospace;
+    font-size: clamp(1.9rem, 3.5vw, 3.35rem);
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1.2;
+  }
+
+  .code-sample span,
+  .code-sample strong { white-space: nowrap; }
+
+  .code-sample strong { color: var(--blue); font-weight: 600; }
+
+  .trust {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr);
+    gap: clamp(3rem, 7vw, 6rem);
+    padding-block: var(--section-space);
+  }
+
+  .trust-statement h2 { max-width: 14ch; }
+  .trust-details { display: grid; }
+
+  .trust-details ul {
+    display: grid;
+    gap: 0.75rem;
+    margin: 1.25rem 0 0;
+    padding: 0;
+    color: var(--ink-soft);
+    font-size: 1.0625rem;
+    font-weight: 500;
+    line-height: 1.55;
+    list-style: none;
+  }
+
+  .trust-details li { position: relative; padding-left: 1.4rem; }
+
+  .trust-details li::before {
+    position: absolute;
+    top: 0.7em;
+    left: 0;
+    width: 0.55rem;
+    height: 2px;
+    background: var(--blue);
+    content: "";
+  }
+
+  .closing {
+    padding-block: clamp(6rem, 13vw, 11rem);
+    background: var(--blue-deep);
+    color: var(--blue-white);
+    text-align: center;
+  }
+
+  .closing h2 {
+    max-width: 23.5ch;
+    margin-inline: auto;
+    font-size: clamp(2.1rem, 4.4vw, 4.25rem);
+  }
+
+  .closing-actions {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    align-items: center;
+    justify-content: center;
+    gap: 1rem 1.5rem;
+    margin-top: 3rem;
+  }
+
+  .closing-actions .download-button {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .closing .download-button { border-color: var(--blue-white); background: var(--blue-white); color: var(--blue-deep); }
+  .closing .download-button:hover { border-color: #d4eafa; background: #d4eafa; color: var(--blue-deep); }
+
+  .closing-actions > a:last-child {
+    grid-column: 2;
+    grid-row: 1;
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+    color: var(--blue-white);
+    font-weight: 600;
+  }
+
+  .landing-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    padding-block: 2.25rem;
+    color: var(--ink-soft);
+  }
+
+  .landing-footer p { margin: 0; }
+  .landing-footer div { display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; }
+  .landing-footer a { font-weight: 500; }
+
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .download-button,
+    .source-button,
+    .landing-nav a {
+      transition:
+        background-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
+        border-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
+        color 160ms cubic-bezier(0.23, 1, 0.32, 1),
+        filter 160ms cubic-bezier(0.23, 1, 0.32, 1),
+        transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    .download-button:hover,
+    .source-button:hover { transform: translateY(-2px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .selection-box,
+    .capture-crosshair,
+    .result-copy,
+    .result-status { animation: none; opacity: 1; }
+
+    .selection-box { transform: scale(1); }
+    .capture-crosshair { top: 64.12%; left: 78.13%; }
+    .result-copy { transform: none; }
+  }
+
+  @media (max-width: 52rem) {
+    .landing-nav a:not(:last-child) { display: none; }
+    .capture-demo { grid-template-columns: 1fr; }
+    .demo-source { border-right: 0; border-bottom: 1px solid var(--line-strong); }
+    .result-body { min-height: 12rem; }
+    .trust { grid-template-columns: 1fr; }
+    .local-path { grid-template-columns: 1fr; gap: 1rem; }
+    .local-path::before { top: 0.5rem; bottom: 0.5rem; left: 0.5rem; width: 2px; height: auto; }
+    .local-path li { padding: 0 0 0 2rem; text-align: left; }
+    .local-path li::before { top: 0.25rem; left: 0; transform: none; }
+    .local-path-end { align-items: flex-start; flex-direction: column; text-align: left; }
+    .feature-specimens { grid-template-columns: 1fr; }
+    .feature-specimen { min-height: auto; }
+    .feature-specimen + .feature-specimen { border-top: 1px solid #a8c0d3; border-left: 0; }
+  }
+
+  @media (max-width: 38rem) {
+    .hero { padding-top: 3.25rem; }
+    .hero h1 { font-size: clamp(3rem, 16vw, 4.4rem); }
+    .hero-copy > p { font-size: 1.08rem; }
+    .hero-actions { grid-template-columns: 1fr; }
+    .hero-actions .download-button { grid-column: 1; grid-row: 1; }
+    .hero-actions .source-button { grid-column: 1; grid-row: 2; }
+    .closing-actions { grid-template-columns: 1fr; }
+    .closing-actions .download-button { grid-column: 1; grid-row: 1; }
+    .closing-actions > a:last-child { grid-column: 1; grid-row: 2; }
+    .capture-demo { margin-top: 3.5rem; }
+    .result-body { min-height: 9rem; padding-top: 1rem; }
+    .result-target { min-height: 8.5rem; }
+    .local-path-details { text-align: left; }
+    .feature-specimen { padding: 1.5rem 0; }
+    .feature-specimens { border-top: 1px solid #a8c0d3; }
+    .landing-footer { align-items: flex-start; flex-direction: column; }
+    .landing-footer div { flex-direction: column; }
+  }
+</style>
