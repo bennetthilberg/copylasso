@@ -1,4 +1,5 @@
 import CoreGraphics
+import CoreML
 import Foundation
 import ImageIO
 import Vision
@@ -106,7 +107,11 @@ struct VisionOCRService: OCRService {
 
   init(configuration: VisionOCRConfiguration = .englishAccurate) {
     self.configuration = configuration
-    self.performer = Self.performRecognition
+    self.performer = { image, configuration, cancellation in
+      try Self.performRecognition(
+        image: image, configuration: configuration, cancellation: cancellation
+      )
+    }
   }
 
   init(
@@ -169,35 +174,47 @@ struct VisionOCRService: OCRService {
     }
   }
 
-  private static func performRecognition(
+  static func performRecognition(
     image: CGImage,
     configuration: VisionOCRConfiguration,
-    cancellation: VisionOCRCancellation
+    cancellation: VisionOCRCancellation,
+    requestPerformer: @Sendable (CGImage, VNRecognizeTextRequest) throws -> Void = {
+      image, request in
+      try VNImageRequestHandler(cgImage: image, orientation: .up, options: [:]).perform([request])
+    },
+    supportedComputeDevices:
+      @Sendable (VNRecognizeTextRequest) throws -> [VNComputeStage: [MLComputeDevice]] = {
+        try $0.supportedComputeStageDevices
+      }
   ) throws -> [RecognizedTextObservation] {
-    let request = VNRecognizeTextRequest()
-    request.revision = configuration.revision
-    switch configuration.recognitionLevel {
-    case .accurate:
-      request.recognitionLevel = .accurate
-    }
-    request.recognitionLanguages = configuration.recognitionLanguages
-    request.automaticallyDetectsLanguage = configuration.automaticallyDetectsLanguage
-    request.usesLanguageCorrection = configuration.usesLanguageCorrection
-    request.minimumTextHeight = 0
-
-    guard cancellation.install(request) else {
-      throw VisionOCRError.cancelled
-    }
-    defer { cancellation.clear(request) }
-
-    let handler = VNImageRequestHandler(cgImage: image, orientation: .up, options: [:])
+    var request = makeRequest(configuration: configuration)
     do {
-      try handler.perform([request])
+      try perform(request, image: image, cancellation: cancellation, using: requestPerformer)
     } catch {
-      if cancellation.isCancelled {
+      guard !cancellation.isCancelled else {
         throw VisionOCRError.cancelled
       }
-      throw error
+      guard canRetryOnCPU(error) else { throw error }
+
+      // A request can retain failed engine state. Retry with a fresh request and
+      // only devices Vision reports as supported for this exact configuration.
+      let retry = makeRequest(configuration: configuration)
+      let supported = try? supportedComputeDevices(retry)
+      guard !cancellation.isCancelled else {
+        throw VisionOCRError.cancelled
+      }
+      guard let supported, !supported.isEmpty else { throw error }
+      for (stage, devices) in supported {
+        guard
+          let cpu = devices.first(where: {
+            if case .cpu = $0 { return true }
+            return false
+          })
+        else { throw error }
+        retry.setComputeDevice(cpu, for: stage)
+      }
+      try perform(retry, image: image, cancellation: cancellation, using: requestPerformer)
+      request = retry
     }
 
     guard !cancellation.isCancelled else {
@@ -212,6 +229,57 @@ struct VisionOCRService: OCRService {
         confidence: candidate.confidence,
         boundingBox: observation.boundingBox
       )
+    }
+  }
+
+  private static func canRetryOnCPU(_ error: Error) -> Bool {
+    let error = error as NSError
+    guard error.domain == VNErrorDomain else { return false }
+    switch error.code {
+    case VNErrorCode.operationFailed.rawValue, VNErrorCode.internalError.rawValue,
+      VNErrorCode.unsupportedComputeDevice.rawValue:
+      return true
+    default:
+      return false
+    }
+  }
+
+  private static func makeRequest(configuration: VisionOCRConfiguration) -> VNRecognizeTextRequest {
+    let request = VNRecognizeTextRequest()
+    request.revision = configuration.revision
+    switch configuration.recognitionLevel {
+    case .accurate:
+      request.recognitionLevel = .accurate
+    }
+    request.recognitionLanguages = configuration.recognitionLanguages
+    request.automaticallyDetectsLanguage = configuration.automaticallyDetectsLanguage
+    request.usesLanguageCorrection = configuration.usesLanguageCorrection
+    request.minimumTextHeight = 0
+    return request
+  }
+
+  private static func perform(
+    _ request: VNRecognizeTextRequest,
+    image: CGImage,
+    cancellation: VisionOCRCancellation,
+    using requestPerformer: @Sendable (CGImage, VNRecognizeTextRequest) throws -> Void
+  ) throws {
+    guard cancellation.install(request) else {
+      throw VisionOCRError.cancelled
+    }
+    defer { cancellation.clear(request) }
+
+    do {
+      try requestPerformer(image, request)
+    } catch {
+      if cancellation.isCancelled {
+        throw VisionOCRError.cancelled
+      }
+      throw error
+    }
+
+    guard !cancellation.isCancelled else {
+      throw VisionOCRError.cancelled
     }
   }
 }
