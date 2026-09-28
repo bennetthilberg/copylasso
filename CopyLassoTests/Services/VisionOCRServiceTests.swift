@@ -1,5 +1,6 @@
 import AppKit
 import CoreGraphics
+import CoreML
 import Foundation
 import ImageIO
 import Vision
@@ -184,6 +185,210 @@ final class VisionOCRServiceTests: XCTestCase {
       XCTFail("Expected recognition to fail")
     } catch {
       XCTAssertEqual(error as? VisionOCRError, .recognitionFailed)
+    }
+  }
+
+  func testEngineFailuresRetryOnceOnCPUWithFreshUnchangedRequests() async throws {
+    for code in [VNErrorCode.operationFailed, .internalError, .unsupportedComputeDevice] {
+      let probe = RequestPerformerProbe(failure: visionError(code), failingAttempts: 1)
+      let service = VisionOCRService(requestPerformer: probe.perform)
+      let preferences = OCRRecognitionPreferences(languageIdentifiers: ["en-US", "es-ES"])
+
+      let observations = try await service.recognizeText(
+        in: loadFixture(named: "clean-multiline"), preferences: preferences
+      )
+
+      XCTAssertEqual(
+        normalizedText(observations),
+        "Read every visible line Keep the original order Process all text offline"
+      )
+      XCTAssertEqual(probe.requests.count, 2)
+      XCTAssertFalse(probe.requests[0] === probe.requests[1])
+      XCTAssertNil(probe.requests[0].computeDevice(for: .main))
+      guard case .cpu = probe.requests[1].computeDevice(for: .main) else {
+        return XCTFail("Expected a CPU retry")
+      }
+      for request in probe.requests {
+        XCTAssertEqual(request.revision, VNRecognizeTextRequestRevision3)
+        XCTAssertEqual(request.recognitionLevel, .accurate)
+        XCTAssertEqual(request.recognitionLanguages, preferences.languageIdentifiers)
+        XCTAssertTrue(request.automaticallyDetectsLanguage)
+        XCTAssertTrue(request.usesLanguageCorrection)
+        XCTAssertEqual(request.minimumTextHeight, 0)
+      }
+      XCTAssertTrue(probe.imageIdentities.allSatisfy { $0 == probe.imageIdentities.first })
+      XCTAssertEqual(probe.mainThreadObservations, [false, false])
+    }
+  }
+
+  func testSuccessfulAndEmptyRecognitionDoNotRetry() async throws {
+    for image in [try loadFixture(named: "clean-multiline"), try makeBlankImage()] {
+      let probe = RequestPerformerProbe()
+      _ = try await VisionOCRService(requestPerformer: probe.perform).recognizeText(in: image)
+      XCTAssertEqual(probe.requests.count, 1)
+      XCTAssertNil(probe.requests[0].computeDevice(for: .main))
+    }
+  }
+
+  func testEmptyCPURetryRemainsNoTextAndNextCaptureUsesDefaultDevices() async throws {
+    let probe = RequestPerformerProbe(failure: visionError(.internalError), failingAttempts: 1)
+    let service = VisionOCRService(requestPerformer: probe.perform)
+
+    let empty = try await service.recognizeText(in: makeBlankImage())
+    let text = try await service.recognizeText(in: loadFixture(named: "small-text"))
+
+    XCTAssertEqual(empty, [])
+    XCTAssertEqual(normalizedText(text), "Small screen text should remain readable")
+    XCTAssertEqual(probe.requests.count, 3)
+    XCTAssertNil(probe.requests[2].computeDevice(for: .main))
+  }
+
+  func testInvalidInputConfigurationAndUnrelatedErrorsDoNotRetry() async throws {
+    let errors = [
+      visionError(.invalidImage), visionError(.invalidFormat), visionError(.invalidOption),
+      visionError(.unsupportedRevision), visionError(.outOfMemory), visionError(.requestCancelled),
+      NSError(domain: "Unrelated", code: VNErrorCode.operationFailed.rawValue),
+    ]
+    for error in errors {
+      let probe = RequestPerformerProbe(failure: error, failingAttempts: 2)
+      await assertRecognitionFailure(VisionOCRService(requestPerformer: probe.perform))
+      XCTAssertEqual(probe.requests.count, 1)
+    }
+  }
+
+  func testFailedCPURetryEndsAfterTwoAttempts() async throws {
+    let probe = RequestPerformerProbe(failure: visionError(.internalError), failingAttempts: 3)
+    await assertRecognitionFailure(VisionOCRService(requestPerformer: probe.perform))
+    XCTAssertEqual(probe.requests.count, 2)
+  }
+
+  func testMissingCPUAtAnyStageDoesNotRunAnAcceleratedRetry() async throws {
+    let cpuDevices =
+      try VNRecognizeTextRequest().supportedComputeStageDevices[.main]?
+      .filter {
+        if case .cpu = $0 { return true }
+        return false
+      } ?? []
+    XCTAssertFalse(cpuDevices.isEmpty)
+    for devices: [VNComputeStage: [MLComputeDevice]] in [
+      [:], [.main: []], [.main: cpuDevices, .postProcessing: []],
+    ] {
+      let probe = RequestPerformerProbe(failure: visionError(.internalError), failingAttempts: 1)
+      let service = VisionOCRService(
+        requestPerformer: probe.perform, supportedComputeDevices: { _ in devices }
+      )
+      await assertRecognitionFailure(service)
+      XCTAssertEqual(probe.requests.count, 1)
+    }
+  }
+
+  func testComputeDeviceDiscoveryFailureDoesNotPerformRetry() async throws {
+    let probe = RequestPerformerProbe(failure: visionError(.internalError), failingAttempts: 1)
+    let service = VisionOCRService(
+      requestPerformer: probe.perform,
+      supportedComputeDevices: { _ in throw TestError.injected }
+    )
+    await assertRecognitionFailure(service)
+    XCTAssertEqual(probe.requests.count, 1)
+  }
+
+  func testCancellationAfterEngineFailurePreventsRetry() async throws {
+    let cancellation = VisionOCRCancellation()
+    let probe = RequestPerformerProbe(
+      failure: visionError(.internalError), failingAttempts: 1,
+      cancellation: cancellation, cancelOnAttempt: 1
+    )
+    let service = VisionOCRService(
+      requestPerformer: probe.perform, cancellation: cancellation
+    )
+    await assertCancelled(service)
+    XCTAssertEqual(probe.requests.count, 1)
+  }
+
+  func testCancellationDuringDeviceDiscoveryPreventsRetry() async throws {
+    let cancellation = VisionOCRCancellation()
+    let probe = RequestPerformerProbe(failure: visionError(.internalError), failingAttempts: 1)
+    let service = VisionOCRService(
+      requestPerformer: probe.perform,
+      supportedComputeDevices: { request in
+        let devices = try request.supportedComputeStageDevices
+        cancellation.cancel()
+        return devices
+      },
+      cancellation: cancellation
+    )
+    await assertCancelled(service)
+    XCTAssertEqual(probe.requests.count, 1)
+  }
+
+  func testCancellationDuringFailedAndSuccessfulCPURetryRemainsCancellation() async throws {
+    for failingAttempts in [1, 2] {
+      let cancellation = VisionOCRCancellation()
+      let probe = RequestPerformerProbe(
+        failure: visionError(.internalError), failingAttempts: failingAttempts,
+        cancellation: cancellation, cancelOnAttempt: 2
+      )
+      let service = VisionOCRService(
+        requestPerformer: probe.perform, cancellation: cancellation
+      )
+      await assertCancelled(service)
+      XCTAssertEqual(probe.requests.count, 2)
+    }
+  }
+
+  func testTaskCancellationDuringCPURetryReturnsPromptlyAndReleasesImage() async throws {
+    let holding = HoldingPerformer()
+    let failure = visionError(.internalError)
+    let service = VisionOCRService(performer: { image, configuration, cancellation in
+      try VisionOCRService.performRecognition(
+        image: image, configuration: configuration, cancellation: cancellation,
+        requestPerformer: { image, request in
+          if case .cpu = request.computeDevice(for: .main) {
+            _ = try holding.perform(image, configuration, cancellation)
+          }
+          throw failure
+        }
+      )
+    })
+    var image: CGImage? = try makeBlankImage(width: 4_000, height: 2_000)
+    let weakImage = WeakImageReference(try XCTUnwrap(image))
+    let task = startRecognition(service: service, image: try XCTUnwrap(image))
+    image = nil
+    await waitUntil { holding.hasStarted }
+
+    let clock = ContinuousClock()
+    let start = clock.now
+    task.cancel()
+    do {
+      _ = try await task.value
+      XCTFail("Expected cancellation")
+    } catch {
+      XCTAssertEqual(error as? VisionOCRError, .cancelled)
+    }
+    XCTAssertLessThan(seconds(from: clock.now - start), 1)
+    await waitUntil { weakImage.image == nil }
+    XCTAssertNil(weakImage.image)
+  }
+
+  private func visionError(_ code: VNErrorCode) -> NSError {
+    NSError(domain: VNErrorDomain, code: code.rawValue)
+  }
+
+  private func assertRecognitionFailure(_ service: VisionOCRService) async {
+    do {
+      _ = try await service.recognizeText(in: makeBlankImage())
+      XCTFail("Expected recognition failure")
+    } catch {
+      XCTAssertEqual(error as? VisionOCRError, .recognitionFailed)
+    }
+  }
+
+  private func assertCancelled(_ service: VisionOCRService) async {
+    do {
+      _ = try await service.recognizeText(in: makeBlankImage())
+      XCTFail("Expected cancellation")
+    } catch {
+      XCTAssertEqual(error as? VisionOCRError, .cancelled)
     }
   }
 
@@ -443,6 +648,64 @@ final class VisionOCRServiceTests: XCTestCase {
     let components = duration.components
     return Double(components.seconds)
       + (Double(components.attoseconds) / 1_000_000_000_000_000_000)
+  }
+}
+
+extension VisionOCRService {
+  fileprivate init(
+    requestPerformer: @escaping @Sendable (CGImage, VNRecognizeTextRequest) throws -> Void,
+    supportedComputeDevices:
+      @escaping @Sendable (VNRecognizeTextRequest) throws -> [VNComputeStage: [MLComputeDevice]] = {
+        try $0.supportedComputeStageDevices
+      },
+    cancellation: VisionOCRCancellation? = nil
+  ) {
+    self.init(performer: { image, configuration, owner in
+      try Self.performRecognition(
+        image: image, configuration: configuration, cancellation: cancellation ?? owner,
+        requestPerformer: requestPerformer, supportedComputeDevices: supportedComputeDevices
+      )
+    })
+  }
+}
+
+private final class RequestPerformerProbe: @unchecked Sendable {
+  private let lock = NSLock()
+  private let failure: NSError?
+  private let failingAttempts: Int
+  private let cancellation: VisionOCRCancellation?
+  private let cancelOnAttempt: Int?
+  private var storedRequests: [VNRecognizeTextRequest] = []
+  private var storedImageIdentities: [ObjectIdentifier] = []
+  private var storedMainThreadObservations: [Bool] = []
+
+  init(
+    failure: NSError? = nil, failingAttempts: Int = 0,
+    cancellation: VisionOCRCancellation? = nil, cancelOnAttempt: Int? = nil
+  ) {
+    self.failure = failure
+    self.failingAttempts = failingAttempts
+    self.cancellation = cancellation
+    self.cancelOnAttempt = cancelOnAttempt
+  }
+
+  var requests: [VNRecognizeTextRequest] { lock.withLock { storedRequests } }
+  var imageIdentities: [ObjectIdentifier] { lock.withLock { storedImageIdentities } }
+  var mainThreadObservations: [Bool] { lock.withLock { storedMainThreadObservations } }
+
+  func perform(_ image: CGImage, _ request: VNRecognizeTextRequest) throws {
+    let attempt = lock.withLock {
+      storedRequests.append(request)
+      storedImageIdentities.append(ObjectIdentifier(image))
+      storedMainThreadObservations.append(Thread.isMainThread)
+      return storedRequests.count
+    }
+    if attempt <= failingAttempts, let failure {
+      if attempt == cancelOnAttempt { cancellation?.cancel() }
+      throw failure
+    }
+    try VNImageRequestHandler(cgImage: image, orientation: .up, options: [:]).perform([request])
+    if attempt == cancelOnAttempt { cancellation?.cancel() }
   }
 }
 
