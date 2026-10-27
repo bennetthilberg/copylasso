@@ -94,7 +94,7 @@ final class VisionOCRCancellation: @unchecked Sendable {
   }
 }
 
-struct VisionOCRService: OCRService {
+struct VisionOCRService: OCRService, RecognitionWarming {
   typealias Performer =
     @Sendable (
       _ image: CGImage,
@@ -136,16 +136,26 @@ struct VisionOCRService: OCRService {
     )
   }
 
+  /// Recognizes a built-in sample so the first real capture does not wait for
+  /// macOS to prepare the recognition models.
+  func warmUp() async throws {
+    guard let image = RecognitionWarmUpSample.makeImage() else {
+      throw VisionOCRError.recognitionFailed
+    }
+    _ = try await recognizeText(in: image, configuration: configuration, priority: .utility)
+  }
+
   private func recognizeText(
     in image: CGImage,
-    configuration: VisionOCRConfiguration
+    configuration: VisionOCRConfiguration,
+    priority: TaskPriority = .userInitiated
   ) async throws -> [RecognizedTextObservation] {
     let performer = performer
     let cancellation = VisionOCRCancellation()
 
     do {
       return try await withTaskCancellationHandler {
-        try await Task.detached(priority: .userInitiated) {
+        try await Task.detached(priority: priority) {
           guard !cancellation.isCancelled else {
             throw VisionOCRError.cancelled
           }

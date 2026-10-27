@@ -105,6 +105,7 @@ required_file_minimums=(
     "FeedbackPresentationContent.swift|10000"
     "FeedbackPreview.swift|10000"
     "GlobalShortcutStore.swift|10000"
+    "RecognitionWarmUp.swift|9000"
     "ScreenCapturePermissionHistory.swift|10000"
     "ScreenCapturePermissionService.swift|9000"
     "SecureUpdatePolicy.swift|9500"

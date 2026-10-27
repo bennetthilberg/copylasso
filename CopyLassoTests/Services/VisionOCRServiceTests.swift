@@ -188,6 +188,72 @@ final class VisionOCRServiceTests: XCTestCase {
     }
   }
 
+  func testWarmUpRecognizesBuiltInSampleWithDefaultConfigurationAtUtilityPriority() async throws {
+    let probe = PerformerProbe(
+      observations: [
+        NeutralTextObservation(
+          text: "Sample",
+          confidence: 1,
+          boundingBox: CGRect(x: 0.1, y: 0.2, width: 0.3, height: 0.1)
+        )
+      ]
+    )
+    let service = VisionOCRService(performer: probe.perform)
+
+    try await service.warmUp()
+
+    XCTAssertEqual(probe.configurations, [.englishAccurate])
+    XCTAssertEqual(
+      probe.imageSizes,
+      [
+        CGSize(
+          width: RecognitionWarmUpSample.pixelWidth,
+          height: RecognitionWarmUpSample.pixelHeight
+        )
+      ]
+    )
+    XCTAssertEqual(probe.priorities, [.utility])
+    XCTAssertEqual(probe.mainThreadObservations, [false])
+  }
+
+  func testWarmUpFailureMapsToTypedRecognitionFailure() async throws {
+    let service = VisionOCRService { _, _, _ in throw TestError.injected }
+
+    do {
+      try await service.warmUp()
+      XCTFail("Expected warm-up to fail")
+    } catch {
+      XCTAssertEqual(error as? VisionOCRError, .recognitionFailed)
+    }
+  }
+
+  func testWarmUpCancellationMapsToTypedCancellation() async throws {
+    let performer = HoldingPerformer()
+    let service = VisionOCRService(performer: performer.perform)
+    let task = Task { try await service.warmUp() }
+    await waitUntil { performer.hasStarted }
+
+    task.cancel()
+
+    do {
+      try await task.value
+      XCTFail("Expected warm-up to be cancelled")
+    } catch {
+      XCTAssertEqual(error as? VisionOCRError, .cancelled)
+    }
+  }
+
+  func testWarmUpSampleContainsTextThatRealVisionRecognizes() async throws {
+    let image = try XCTUnwrap(RecognitionWarmUpSample.makeImage())
+    XCTAssertEqual(image.width, RecognitionWarmUpSample.pixelWidth)
+    XCTAssertEqual(image.height, RecognitionWarmUpSample.pixelHeight)
+
+    let observations = try await VisionOCRService().recognizeText(in: image)
+
+    XCTAssertEqual(normalizedText(observations), RecognitionWarmUpSample.text)
+    try await VisionOCRService().warmUp()
+  }
+
   func testEngineFailuresRetryOnceOnCPUWithFreshUnchangedRequests() async throws {
     for code in [VNErrorCode.operationFailed, .internalError, .unsupportedComputeDevice] {
       let probe = RequestPerformerProbe(failure: visionError(code), failingAttempts: 1)
@@ -715,6 +781,7 @@ private final class PerformerProbe: @unchecked Sendable {
   private var storedConfigurations: [VisionOCRConfiguration] = []
   private var storedImageSizes: [CGSize] = []
   private var storedMainThreadObservations: [Bool] = []
+  private var storedPriorities: [TaskPriority?] = []
 
   init(observations: [NeutralTextObservation]) {
     self.observations = observations
@@ -732,6 +799,10 @@ private final class PerformerProbe: @unchecked Sendable {
     lock.withLock { storedMainThreadObservations }
   }
 
+  var priorities: [TaskPriority?] {
+    lock.withLock { storedPriorities }
+  }
+
   func perform(
     _ image: CGImage,
     _ configuration: VisionOCRConfiguration,
@@ -741,6 +812,7 @@ private final class PerformerProbe: @unchecked Sendable {
       storedConfigurations.append(configuration)
       storedImageSizes.append(CGSize(width: image.width, height: image.height))
       storedMainThreadObservations.append(Thread.isMainThread)
+      storedPriorities.append(Task.basePriority)
     }
     return observations
   }
