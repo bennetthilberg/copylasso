@@ -130,3 +130,7 @@ Secrets.xcconfig
 /scripts/lib/release-package-verification.sh
 /scripts/lib/release-workflow-verification.sh
 /scripts/lib/v0*.sh
+
+# Local Wrangler cache and agent notes
+/.wrangler/cache/
+/CLAUDE.md
