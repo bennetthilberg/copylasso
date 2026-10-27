@@ -50,6 +50,7 @@ struct CopyLassoApp: App {
   private let successSoundPlayer: SystemSuccessSoundPlayer
   private let updateController: UpdateController
   private let historyController: CaptureHistoryController
+  private let recognitionWarmUpController: RecognitionWarmUpController
 
   init() {
     let settingsStore = UserDefaultsSettingsStore()
@@ -62,6 +63,7 @@ struct CopyLassoApp: App {
     let barcodeService: any BarcodeRecognitionService
     let updateService: any UpdateServicing
     let historyStore: any CaptureHistoryStoring
+    let warmsRecognitionAtLaunch: Bool
 
     #if DEBUG
       let arguments = ProcessInfo.processInfo.arguments
@@ -118,6 +120,7 @@ struct CopyLassoApp: App {
         runtimeOptions.isUITesting
         ? DebugBarcodeRecognitionService(arguments: arguments)
         : VisionBarcodeService()
+      warmsRecognitionAtLaunch = !runtimeOptions.isUITesting
     #else
       launchAtLoginService = SystemLaunchAtLoginService()
       permissionService = SystemScreenCapturePermissionService(historyStore: settingsStore)
@@ -127,6 +130,7 @@ struct CopyLassoApp: App {
       barcodeService = VisionBarcodeService()
       updateService = SparkleUpdateService()
       historyStore = Self.systemCaptureHistoryStore()
+      warmsRecognitionAtLaunch = true
     #endif
 
     let updateController = UpdateController(service: updateService)
@@ -169,6 +173,10 @@ struct CopyLassoApp: App {
     let recoveryController = PermissionRecoveryPanelController(
       permissionService: permissionService
     )
+    let recognitionWarmUpController = RecognitionWarmUpController(
+      warmer: VisionOCRService()
+    )
+    self.recognitionWarmUpController = recognitionWarmUpController
     let captureCommand: CaptureCommand
     if let interactiveCaptureService {
       captureCommand = CaptureCommand(
@@ -226,11 +234,20 @@ struct CopyLassoApp: App {
       clearSensitiveState: { [weak historyController] in
         historyController?.clearDecryptedState()
       },
+      pauseBackgroundWork: { [weak recognitionWarmUpController] in
+        recognitionWarmUpController?.stop()
+      },
+      resumeBackgroundWork: { [weak recognitionWarmUpController] in
+        recognitionWarmUpController?.systemResumed()
+      },
       logger: SystemCaptureLifecycleLogger()
     )
     self.lifecycleController = lifecycleController
     globalShortcutController.start()
     lifecycleController.start()
+    if warmsRecognitionAtLaunch {
+      recognitionWarmUpController.start()
+    }
   }
 
   var body: some Scene {

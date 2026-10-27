@@ -16,12 +16,15 @@ protocol ApplicationLifecycleEventSourcing: AnyObject {
 final class ApplicationLifecycleController {
   typealias ShortcutStop = @MainActor () -> Void
   typealias SensitiveStateClear = @MainActor () -> Void
+  typealias BackgroundWork = @MainActor () -> Void
 
   private let eventSource: any ApplicationLifecycleEventSourcing
   private let captureCanceller: any ActiveCaptureCancelling
   private let recoveryPresenter: any PermissionRecoveryPresenting
   private let stopShortcutDelivery: ShortcutStop
   private let clearSensitiveState: SensitiveStateClear
+  private let pauseBackgroundWork: BackgroundWork
+  private let resumeBackgroundWork: BackgroundWork
   private let logger: any CaptureLifecycleLogging
   private var isSystemInterrupted = false
 
@@ -31,6 +34,8 @@ final class ApplicationLifecycleController {
     recoveryPresenter: any PermissionRecoveryPresenting,
     stopShortcutDelivery: @escaping ShortcutStop,
     clearSensitiveState: @escaping SensitiveStateClear = {},
+    pauseBackgroundWork: @escaping BackgroundWork = {},
+    resumeBackgroundWork: @escaping BackgroundWork = {},
     logger: any CaptureLifecycleLogging
   ) {
     self.eventSource = eventSource
@@ -38,6 +43,8 @@ final class ApplicationLifecycleController {
     self.recoveryPresenter = recoveryPresenter
     self.stopShortcutDelivery = stopShortcutDelivery
     self.clearSensitiveState = clearSensitiveState
+    self.pauseBackgroundWork = pauseBackgroundWork
+    self.resumeBackgroundWork = resumeBackgroundWork
     self.logger = logger
   }
 
@@ -61,15 +68,18 @@ final class ApplicationLifecycleController {
       let cancelled = captureCanceller.cancelActiveOperation(reason: .systemInterrupted)
       recoveryPresenter.dismiss()
       clearSensitiveState()
+      pauseBackgroundWork()
       logger.record(cancelled ? .cancelledForSystemInterruption : .systemInterruptionWhileIdle)
     case .systemResumed:
       guard isSystemInterrupted else { return }
       isSystemInterrupted = false
+      resumeBackgroundWork()
       logger.record(.systemResumed)
     case .applicationWillTerminate:
       _ = captureCanceller.cancelActiveOperation(reason: .applicationTerminated)
       recoveryPresenter.dismiss()
       clearSensitiveState()
+      pauseBackgroundWork()
       stopShortcutDelivery()
       logger.record(.applicationWillTerminate)
       stop()

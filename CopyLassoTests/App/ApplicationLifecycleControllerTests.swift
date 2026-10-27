@@ -72,6 +72,37 @@ final class ApplicationLifecycleControllerTests: XCTestCase {
     XCTAssertEqual(source.stopCallCount, 2)
   }
 
+  func testBackgroundWorkPausesOnInterruptionAndTerminationAndResumesOnlyAfterInterruption() {
+    let source = StubApplicationLifecycleEventSource()
+    var pauseCount = 0
+    var resumeCount = 0
+    let controller = ApplicationLifecycleController(
+      eventSource: source,
+      captureCanceller: SpyActiveCaptureCanceller(results: []),
+      recoveryPresenter: SpyPermissionRecoveryPresenter(),
+      stopShortcutDelivery: {},
+      pauseBackgroundWork: { pauseCount += 1 },
+      resumeBackgroundWork: { resumeCount += 1 },
+      logger: SpyCaptureLifecycleLogger()
+    )
+    controller.start()
+
+    source.send(.systemResumed)
+    XCTAssertEqual(resumeCount, 0)
+
+    source.send(.systemInterrupted)
+    source.send(.systemInterrupted)
+    XCTAssertEqual(pauseCount, 1)
+
+    source.send(.systemResumed)
+    source.send(.systemResumed)
+    XCTAssertEqual(resumeCount, 1)
+
+    source.send(.applicationWillTerminate)
+    XCTAssertEqual(pauseCount, 2)
+    XCTAssertEqual(resumeCount, 1)
+  }
+
   func testStartAndStopAreIdempotentAndReleaseTheEventHandler() {
     let source = StubApplicationLifecycleEventSource()
     let controller = ApplicationLifecycleController(
